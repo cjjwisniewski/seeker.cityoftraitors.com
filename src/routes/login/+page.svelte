@@ -4,12 +4,12 @@
     import { PUBLIC_DISCORD_CLIENT_ID } from '$env/static/public';
     import { page } from '$app/stores';
     
-    let redirectUrl = `https://discord.com/api/oauth2/authorize?client_id=${PUBLIC_DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent('http://localhost:5173/auth/callback')}&response_type=code&scope=identify%20guilds`;
+    let redirectUrl = `https://discord.com/api/oauth2/authorize?client_id=${PUBLIC_DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent('http://localhost:5173/auth/callback')}&response_type=code&scope=identify%20guilds%20guilds.members.read`;
     let redirectTo = '/';
     let errorMessage = '';
     
     onMount(() => {
-        // If we have a token, we shouldn't be on the login page
+        // Token check
         const token = document.cookie.includes('discord_token');
         if (token) {
             console.log('Token found, redirecting to home');
@@ -19,41 +19,29 @@
 
         // Handle redirect parameter
         const urlRedirectTo = $page.url.searchParams.get('redirectTo');
-        console.log('Received redirectTo:', urlRedirectTo);
-        
         if (urlRedirectTo && urlRedirectTo !== '/login') {
             redirectTo = urlRedirectTo;
-            console.log('Setting custom redirect to:', redirectTo);
-        } else {
-            redirectTo = '/'; // Explicit fallback
-            console.log('Using default redirect to:', redirectTo);
         }
 
-        // Enhanced error handling
+        // Error handling
         const error = $page.url.searchParams.get('error');
+        const message = decodeURIComponent($page.url.searchParams.get('message') || '');
+        
         if (error) {
-            console.error('Auth error details:', {
-                error,
-                url: window.location.href,
-                redirectTo,
-                searchParams: Object.fromEntries($page.url.searchParams)
-            });
-            errorMessage = error === 'server_required'
-                ? 'You must be a member of our Discord server to access this site.'
-                : error === 'auth_failed'
-                    ? 'Authentication failed. Please try again.'
-                    : `Error: ${error}`;
+            console.log('Login error detected:', { error, message });
+            errorMessage = message || 'Authentication failed. Please try again.';
         }
     });
 
-    // Helper function to build the final OAuth URL
     $: finalRedirectUrl = `${redirectUrl}&state=${encodeURIComponent(redirectTo || '/')}`;
 </script>
 
 <div class="login-container">
-    <h1>Login</h1>
+    <h2>Welcome to Seeker</h2>
     {#if errorMessage}
-        <div class="error">{errorMessage}</div>
+        <div class="error">
+            {errorMessage}
+        </div>
     {/if}
     <a href={finalRedirectUrl} class="login-button">
         Login with Discord
@@ -88,11 +76,13 @@
     }
 
     .error {
-        color: #ef4444;
         background-color: #fee2e2;
-        padding: 0.75rem;
-        border-radius: 4px;
-        margin-bottom: 1.5rem;
+        border: 1px solid #ef4444;
+        color: #991b1b;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        margin: 1rem 0;
+        max-width: 400px;
         text-align: center;
     }
 </style>
