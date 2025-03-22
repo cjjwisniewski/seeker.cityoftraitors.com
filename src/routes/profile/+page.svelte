@@ -13,7 +13,7 @@
             class="profile-avatar"
         />
         <div class="profile-title">
-            <h1>{data.user.username}</h1>
+            <h1>{data.user.global_name}</h1>
         </div>
     </div>
     
