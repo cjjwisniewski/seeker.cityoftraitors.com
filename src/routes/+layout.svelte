@@ -1,5 +1,6 @@
 <script>
     import { invalidate, goto } from '$app/navigation';
+    import Footer from '$lib/components/Footer.svelte';
     export let data;
 
     let showDropdown = false;
@@ -25,80 +26,86 @@
 <link rel="stylesheet" href="/styles/theme.css">
 <link rel="stylesheet" href="/styles/components.css">
 
-<nav>
-    <div class="nav-content">
-        <div class="nav-left">
-            <h3>Seeker</h3>
-        </div>
-        <div class="nav-right">
-            <a href="/seeking" class="seeking-link" title="Seeking">
-                <i class="fa-solid fa-sd-card"></i>
-            </a>
-            <a href="/" class="home-link" title="Home">
-                <i class="fa-solid fa-house"></i>
-            </a>
-            {#if data.user}
-                <div class="user-dropdown">
-                    <button 
-                        class="user-button" 
-                        on:click={() => showDropdown = !showDropdown}
-                        aria-expanded={showDropdown}
-                        aria-haspopup="menu"
-                    >
-                        <img 
-                            src="https://cdn.discordapp.com/avatars/{data.user.id}/{data.user.avatar}.png" 
-                            alt="{data.user.username}'s avatar"
-                            class="user-avatar"
-                        />
-                        <span class="username">{data.user.username}</span>
-                        <i class="fa-solid fa-chevron-down"></i>
-                    </button>
-                    {#if showDropdown}
-                        <div 
-                            class="dropdown-menu"
-                            role="menu"
-                            tabindex="-1"
-                            on:mouseleave={() => showDropdown = false}
+<div class="layout">
+    <nav>
+        <div class="nav-content">
+            <div class="nav-left">
+                <h3>Seeker</h3>
+            </div>
+            <div class="nav-right">
+                <a href="/seeking" class="seeking-link" title="Seeking">
+                    <i class="fa-solid fa-sd-card"></i>
+                </a>
+                <a href="/about" class="about-link" title="About">
+                    <i class="fa-solid fa-circle-info"></i>
+                </a>
+                <a href="/" class="home-link" title="Home">
+                    <i class="fa-solid fa-house"></i>
+                </a>
+                {#if data.user}
+                    <div class="user-dropdown">
+                        <button 
+                            class="user-button" 
+                            on:click={() => showDropdown = !showDropdown}
+                            aria-expanded={showDropdown}
+                            aria-haspopup="menu"
                         >
-                            <button 
-                                class="dropdown-item"
-                                role="menuitem"
-                                tabindex="0"
-                                on:click={goToProfile}
+                            <img 
+                                src="https://cdn.discordapp.com/avatars/{data.user.id}/{data.user.avatar}.png" 
+                                alt="{data.user.username}'s avatar"
+                                class="user-avatar"
+                            />
+                            <span class="username">{data.user.username}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        {#if showDropdown}
+                            <div 
+                                class="dropdown-menu"
+                                role="menu"
+                                tabindex="-1"
+                                on:mouseleave={() => showDropdown = false}
                             >
-                                <i class="fa-solid fa-user"></i>
-                                Profile
-                            </button>
-                            {#if data.user?.roles?.includes('1352632325640294411')}
                                 <button 
                                     class="dropdown-item"
                                     role="menuitem"
                                     tabindex="0"
-                                    on:click={() => goto('/admin')}
+                                    on:click={goToProfile}
                                 >
-                                    <i class="fa-solid fa-shield"></i>
-                                    Admin
+                                    <i class="fa-solid fa-user"></i>
+                                    Profile
                                 </button>
-                            {/if}
-                            <button 
-                                on:click={logout} 
-                                class="dropdown-item"
-                                role="menuitem"
-                                tabindex="0"
-                            >
-                                <i class="fa-solid fa-right-from-bracket"></i>
-                                Logout
-                            </button>
-                        </div>
-                    {/if}
-                </div>
-            {/if}
+                                {#if data.user?.roles?.includes('1352632325640294411')}
+                                    <button 
+                                        class="dropdown-item"
+                                        role="menuitem"
+                                        tabindex="0"
+                                        on:click={() => goto('/admin')}
+                                    >
+                                        <i class="fa-solid fa-shield"></i>
+                                        Admin
+                                    </button>
+                                {/if}
+                                <button 
+                                    on:click={logout} 
+                                    class="dropdown-item"
+                                    role="menuitem"
+                                    tabindex="0"
+                                >
+                                    <i class="fa-solid fa-right-from-bracket"></i>
+                                    Logout
+                                </button>
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
+            </div>
         </div>
-    </div>
-</nav>
-<main>
-    <slot/>
-</main>
+    </nav>
+    <main>
+        <slot/>
+    </main>
+    <Footer />
+</div>
 
 <style>
     nav {
@@ -145,6 +152,17 @@
     }
 
     .home-link:hover {
+        color: var(--color-text-primary);
+    }
+
+    .about-link {
+        color: var(--color-text-secondary);
+        text-decoration: none;
+        padding: 0.35rem;
+        transition: color 0.2s ease;
+    }
+
+    .about-link:hover {
         color: var(--color-text-primary);
     }
 
@@ -232,9 +250,15 @@
         color: var(--color-text-primary);
     }
 
+    .layout {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
     main {
         padding-top: var(--nav-height);
         background: var(--color-bg-primary);
-        min-height: 100vh;
+        flex: 1;
     }
 </style>
