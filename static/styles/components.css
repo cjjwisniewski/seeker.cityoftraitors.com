@@ -1,0 +1,6 @@
+.cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;  /* Increased gap between cards */
+    padding: 0.5rem;  /* Add padding around the list */
+}

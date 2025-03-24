@@ -1,25 +1,44 @@
 import { redirect } from '@sveltejs/kit';
 import { DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI } from '$env/static/private';
+import { PUBLIC_USER_TABLE_FUNCTION_URL } from '$env/static/public';
 
 const REQUIRED_GUILD_ID = '1352378110733062265';
 const REQUIRED_ROLE_ID = '1352632428342280212';
 
 export const load = async ({ url, locals, cookies }) => {
-    const code = url.searchParams.get('code');
-    const state = decodeURIComponent(url.searchParams.get('state') || '/');
-    
-    console.log('Starting OAuth callback with:', {
-        hasCode: !!code,
-        state,
-        fullUrl: url.toString()
-    });
-
-    if (!code) {
-        console.log('No code parameter found, redirecting to login');
-        throw redirect(302, '/login?error=no_code');
-    }
-
     try {
+        const code = url.searchParams.get('code');
+        const state = url.searchParams.get('state');
+
+        console.log('Full callback URL:', url.toString());
+        console.log('Parsed parameters:', {
+            code: code ? `${code.substring(0, 6)}...` : 'none',
+            state,
+            searchParams: Object.fromEntries(url.searchParams)
+        });
+
+        if (!code) {
+            throw new Error('No code provided');
+        }
+
+        // Add debug logging
+        console.log('OAuth Configuration:', {
+            redirectUri: DISCORD_REDIRECT_URI,
+            currentUrl: url.toString(),
+            code: code ? `${code.substring(0, 6)}...` : 'none'
+        });
+
+        console.log('Starting OAuth callback with:', {
+            hasCode: !!code,
+            state,
+            fullUrl: url.toString()
+        });
+
+        if (!code) {
+            console.log('No code parameter found, redirecting to login');
+            throw redirect(302, '/login?error=no_code');
+        }
+
         // Modified token request parameters
         console.log('Requesting token with code:', code);
         console.log('Token request details:', {
@@ -101,15 +120,36 @@ export const load = async ({ url, locals, cookies }) => {
             state
         });
 
+        // Initialize user's table
+        try {
+            const formattedUserId = `user${user.id}`;
+            
+            const tableResponse = await fetch(PUBLIC_USER_TABLE_FUNCTION_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-ms-client-principal-id': formattedUserId
+                }
+            });
+
+            if (!tableResponse.ok) {
+                const errorText = await tableResponse.text();
+                console.error('Failed to initialize user table:', {
+                    status: tableResponse.status,
+                    statusText: tableResponse.statusText,
+                    error: errorText,
+                    userId: formattedUserId
+                });
+            } else {
+                const result = await tableResponse.json();
+                console.log('User table initialized:', result);
+            }
+        } catch (error) {
+            console.error('Error in table initialization:', error);
+        }
+
         // Set the cookies
         cookies.set('discord_token', tokenResponse.access_token, {
-            path: '/',
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 7 // 7 days
-        });
-
-        cookies.set('token_timestamp', Date.now().toString(), {
             path: '/',
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -123,6 +163,13 @@ export const load = async ({ url, locals, cookies }) => {
         };
 
     } catch (error) {
+        console.error('Auth error details:', {
+            message: error.message,
+            status: error.status,
+            response: error.response,
+            stack: error.stack
+        });
+        
         console.error('Auth error:', error);
         
         // Check if error is already a redirect

@@ -7,6 +7,8 @@
     export let cards = [];
     export let hasSearched = false;
 
+    let selectedFinishes = {};  // Track foil status for each card
+
     async function handleSetChange(card, newPrint) {
         if (!card || !newPrint) return;
         
@@ -120,6 +122,10 @@
         dispatch('addToSeeking', cardData);  // renamed event
     }
 
+    function handleFinishChange(cardId, finish) {
+        selectedFinishes[cardId] = finish;
+    }
+
     // Only sort if cards have prints
     $: sortedCards = cards.map(card => {
         if (!card.all_prints) return card;
@@ -207,6 +213,28 @@
                                 </select>
                             </div>
                         {/if}
+                        <div class="card-finishes">
+                            <label class="finish-label">
+                                <input
+                                    type="radio"
+                                    name="finish-{card.id}"
+                                    value="nonfoil"
+                                    checked={!selectedFinishes[card.id] || selectedFinishes[card.id] === 'nonfoil'}
+                                    on:change={() => handleFinishChange(card.id, 'nonfoil')}
+                                />
+                                <span class="finish-text">Nonfoil</span>
+                            </label>
+                            <label class="finish-label">
+                                <input
+                                    type="radio"
+                                    name="finish-{card.id}"
+                                    value="foil"
+                                    checked={selectedFinishes[card.id] === 'foil'}
+                                    on:change={() => handleFinishChange(card.id, 'foil')}
+                                />
+                                <span class="finish-text">Foil</span>
+                            </label>
+                        </div>
                         <div class="card-actions">
                             <button 
                                 class="add-to-seeking-btn"
@@ -246,6 +274,14 @@
         background: var(--color-bg-elevated);
         border-radius: 8px;
         box-shadow: var(--shadow-sm);
+        border: 1px solid var(--color-border);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--color-border-hover);
     }
 
     .card-image-section {
@@ -377,6 +413,44 @@
         background-color: var(--color-disabled);
         cursor: not-allowed;
         opacity: 0.7;
+    }
+
+    .card-finishes {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        padding: 0.5rem;
+        background: #f3f4f6;
+        border-radius: 6px;
+    }
+
+    .finish-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+
+    .finish-label:hover {
+        background-color: #e5e7eb;
+    }
+
+    .finish-text {
+        font-size: 0.875rem;
+        color: #374151;
+    }
+
+    input[type="radio"] {
+        accent-color: #6b7280;
+        margin: 0;
+    }
+
+    input[type="radio"]:checked + .finish-text {
+        font-weight: 500;
+        color: #1f2937;
     }
 
     @media (max-width: 768px) {

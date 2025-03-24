@@ -5,7 +5,6 @@ const oauth = new DiscordOauth2({
     clientId: DISCORD_CLIENT_ID,
     clientSecret: DISCORD_CLIENT_SECRET,
     redirectUri: DISCORD_REDIRECT_URI,
-    version: '9'
 });
 
 const ONE_WEEK = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds

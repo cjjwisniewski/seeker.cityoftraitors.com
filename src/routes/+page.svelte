@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import CardSearchForm from '$lib/components/CardSearchForm.svelte';
     import CardList from '$lib/components/CardList.svelte';
+    import { page } from '$app/stores';
 
     let cards = [];
     let hasSearched = false;

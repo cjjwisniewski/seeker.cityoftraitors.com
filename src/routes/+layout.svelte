@@ -39,8 +39,8 @@
                 <a href="/about" class="about-link" title="About">
                     <i class="fa-solid fa-circle-info"></i>
                 </a>
-                <a href="/" class="home-link" title="Home">
-                    <i class="fa-solid fa-house"></i>
+                <a href="/" class="search-link" title="Search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
                 </a>
                 {#if data.user}
                     <div class="user-dropdown">
@@ -144,14 +144,14 @@
         align-items: center;
     }
 
-    .home-link {
+    .search-link {
         color: var(--color-text-secondary);
         text-decoration: none;
         padding: 0.35rem;
         transition: color 0.2s ease;
     }
 
-    .home-link:hover {
+    .search-link:hover {
         color: var(--color-text-primary);
     }
 
@@ -258,7 +258,7 @@
 
     main {
         padding-top: var(--nav-height);
-        background: var(--color-bg-primary);
+        background: linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%);
         flex: 1;
     }
 </style>
