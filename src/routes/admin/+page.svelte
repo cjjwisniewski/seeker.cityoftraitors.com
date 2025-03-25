@@ -155,11 +155,11 @@
                                             <tbody>
                                                 {#each expandedTableData as card}
                                                     <tr>
-                                                        <td>{card.name}</td>
-                                                        <td>{card.set_code}</td>
-                                                        <td>{card.collector_number}</td>
-                                                        <td>{card.language}</td>
-                                                        <td>{card.finish}</td>
+                                                        <td data-label="Name">{card.name}</td>
+                                                        <td data-label="Set">{card.set_code}</td>
+                                                        <td data-label="Number">{card.collector_number}</td>
+                                                        <td data-label="Language">{card.language}</td>
+                                                        <td data-label="Finish">{card.finish}</td>
                                                     </tr>
                                                 {/each}
                                             </tbody>
@@ -203,17 +203,10 @@
                         </span>
                     </div>
                     <div class="status-item">
-                        <h3>Last Modified</h3>
-                        <span>{new Date(systemStatus.last_modified).toLocaleString()}</span>
+                        <h3>Last Checked</h3>
+                        <span>{new Date(systemStatus.last_checked).toLocaleString()}</span>
                     </div>
-                    <div class="status-item">
-                        <h3>Host Names</h3>
-                        <ul>
-                            {#each systemStatus.host_names as host}
-                                <li>{host}</li>
-                            {/each}
-                        </ul>
-                    </div>
+
                     {#if systemStatus.metrics}
                         <div class="status-item metrics">
                             <h3>Metrics</h3>
@@ -222,6 +215,44 @@
                                     <li>{metric.name}: {metric.value}</li>
                                 {/each}
                             </ul>
+                        </div>
+                    {/if}
+
+                    {#if systemStatus.functions}
+                        <div class="status-item functions">
+                            <h3>Function Status</h3>
+                            <div class="function-grid">
+                                {#each systemStatus.functions as func}
+                                    <div class="function-status">
+                                        <div class="function-header">
+                                            <span class="function-name">{func.name}</span>
+                                            <span class="status-badge {func.status}">
+                                                {func.status}
+                                            </span>
+                                        </div>
+                                        <div class="function-details">
+                                            {#if func.response_time}
+                                                <span class="response-time">
+                                                    <i class="fa-solid fa-clock"></i>
+                                                    {func.response_time}
+                                                </span>
+                                            {/if}
+                                            {#if func.status_code}
+                                                <span class="status-code">
+                                                    <i class="fa-solid fa-signal"></i>
+                                                    {func.status_code}
+                                                </span>
+                                            {/if}
+                                            {#if func.error}
+                                                <span class="error-message">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                                    {func.error}
+                                                </span>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
                         </div>
                     {/if}
                 </div>
@@ -285,19 +316,29 @@
 
     .table-header {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        justify-content: space-between;
+        gap: 0.5rem;
         margin-bottom: 1rem;
     }
 
+    .table-header h3 {
+        flex: 1 1 auto;
+        margin: 0;
+        min-width: 150px;
+    }
+
     .item-count {
+        flex: 0 1 auto;
         color: var(--color-text-secondary);
         font-size: 0.9rem;
+        white-space: nowrap;
     }
 
     .table-actions {
         display: flex;
         gap: 0.5rem;
+        margin-left: auto;
     }
 
     .expand-btn {
@@ -432,5 +473,143 @@
     .refresh-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    .functions {
+        grid-column: 1 / -1;
+    }
+
+    .function-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .function-status {
+        padding: 0.75rem;
+        background: var(--color-bg);
+        border-radius: 4px;
+        border: 1px solid var(--color-border);
+    }
+
+    .function-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .function-name {
+        font-family: monospace;
+        font-size: 0.875rem;
+    }
+
+    .function-details {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.75rem;
+        color: var(--color-text-secondary);
+    }
+
+    .response-time,
+    .status-code,
+    .error-message {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .error-message {
+        color: var(--color-error);
+    }
+
+    .status-badge.error {
+        background: var(--color-error);
+        color: white;
+    }
+
+    .status-badge.degraded {
+        background: var(--color-warning);
+        color: white;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    @media (max-width: 480px) {
+        .table-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .table-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+
+        .user-table {
+            padding: 0.75rem;
+        }
+
+        table {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        td, th {
+            min-width: 120px;
+            white-space: nowrap;
+        }
+    }
+
+    .table-content {
+        margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .table-content table {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-content table tbody tr {
+            display: grid;
+            grid-template-columns: 1fr;
+            padding: 0.5rem;
+            border: 1px solid var(--color-border);
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+        }
+
+        .table-content table tbody td {
+            display: grid;
+            grid-template-columns: minmax(100px, auto) 1fr;
+            gap: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border: none;
+        }
+
+        .table-content table tbody td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: var(--color-text-secondary);
+        }
+
+        .table-content table thead {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .table-content table tbody td {
+            font-size: 0.875rem;
+        }
     }
 </style>
