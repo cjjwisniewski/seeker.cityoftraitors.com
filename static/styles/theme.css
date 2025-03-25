@@ -35,6 +35,11 @@
     /* Border color */
     --color-border: rgba(0, 0, 0, 0.1);
     --color-border-hover: rgba(0, 0, 0, 0.2);
+
+    /* Button State Colors */
+    --color-error: #dc2626;
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,6 +54,7 @@
         --color-border: #374151;
         --color-border-hover: #4b5563;
         --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+        --color-warning: #d97706;
     }
 }
 

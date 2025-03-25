@@ -17,16 +17,24 @@
         hasSearched = true;
     };
 
-    async function handleAddToSeeking(event) {
-        if (!mounted) return;
-        const cardData = event.detail;
-        console.log('Adding to Seeking:', cardData);
-        try {
-            // Add your CosmosDB API call here
-            console.log('Card added to Seeking list');
-        } catch (error) {
-            console.error('Error adding card to Seeking:', error);
+    async function handleAddToSeeking(card) {
+        const response = await fetch('/api/addToSeeking', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-finish': selectedFinishes[card.id] || 'nonfoil'
+            },
+            body: JSON.stringify(cardData)
+        });
+
+        if (!response.ok) {
+            // Handle error
+            console.error('Failed to add card to seeking list');
+            return;
         }
+
+        const result = await response.json();
+        // Handle success
     }
 </script>
 
@@ -38,7 +46,8 @@
         />
         <CardList 
             {cards} 
-            {hasSearched} 
+            {hasSearched}
+            userId={$page.data.user?.id}
             on:addToSeeking={handleAddToSeeking}
         />
     </main>

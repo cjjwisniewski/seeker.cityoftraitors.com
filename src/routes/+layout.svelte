@@ -5,15 +5,9 @@
 
     let showDropdown = false;
 
-    const logout = async () => {
-        // Delete token cookie with proper path
-        document.cookie = 'discord_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax';
-        
-        // Force page reload to clear any cached data
-        await invalidate('/');
-        
-        // Redirect to login
-        goto('/login');
+    const logout = () => {
+        // Use the server-side logout endpoint
+        window.location.href = '/auth/logout';
     };
 
     const goToProfile = () => {
@@ -30,14 +24,16 @@
     <nav>
         <div class="nav-content">
             <div class="nav-left">
-                <h3>Seeker</h3>
+                <a href="/">
+                    <h3>Seeker</h3>
+                </a>
             </div>
             <div class="nav-right">
-                <a href="/seeking" class="seeking-link" title="Seeking">
-                    <i class="fa-solid fa-sd-card"></i>
-                </a>
                 <a href="/about" class="about-link" title="About">
                     <i class="fa-solid fa-circle-info"></i>
+                </a>
+                <a href="/seeking" class="seeking-link" title="Seeking">
+                    <i class="fa-solid fa-sd-card"></i>
                 </a>
                 <a href="/" class="search-link" title="Search">
                     <i class="fa-solid fa-magnifying-glass"></i>
@@ -130,6 +126,10 @@
 
     .nav-left {
         flex: 1;
+    }
+
+    .nav-left a {
+        text-decoration: none;
     }
 
     h3 {

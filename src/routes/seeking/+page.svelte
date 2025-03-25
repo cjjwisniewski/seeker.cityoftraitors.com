@@ -1,86 +1,246 @@
 <script>
     import { onMount } from 'svelte';
+    import { page } from '$app/stores';
+    import { PUBLIC_GET_SEEKING_LIST_FUNCTION_URL, PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL } from '$env/static/public';
 
-    export let data;
-    let seekingList = [];
-    let mounted = false;
+    let cards = [];
+    let loading = true;
+    let error = null;
 
-    onMount(() => {
-        mounted = true;
-        // TODO: Fetch seeking list from CosmosDB for current user
-        // data.user.id can be used to fetch user-specific cards
-    });
+    async function fetchSeekingList() {
+        try {
+            const response = await fetch(PUBLIC_GET_SEEKING_LIST_FUNCTION_URL, {
+                headers: {
+                    'x-ms-client-principal-id': `user${$page.data.user?.id}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch seeking list');
+            }
+
+            const data = await response.json();
+            // Debug log to see the full card data
+            data.cards.forEach(card => {
+                console.log('Card data:', {
+                    id: card.id,
+                    name: card.name,
+                    set_code: card.set_code,
+                    collector_number: card.collector_number,
+                    language: card.language,
+                    finish: card.finish
+                });
+            });
+            cards = data.cards;
+        } catch (e) {
+            error = e.message;
+            console.error('Error fetching cards:', e);
+        } finally {
+            loading = false;
+        }
+    }
+
+    onMount(fetchSeekingList);
+
+    async function handleDelete(card) {
+        try {
+            // Debug log of the full card object
+            console.log('Full card object:', card);
+            
+            if (!card.collector_number) {
+                console.error('Missing collector_number for card:', card);
+                throw new Error('Card is missing collector number');
+            }
+
+            const requestBody = {
+                partitionKey: card.set_code,
+                rowKey: `${card.collector_number}_${card.language}_${card.finish}`
+            };
+            console.log('Request body:', requestBody);
+
+            const response = await fetch(PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-ms-client-principal-id': `user${$page.data.user?.id}`
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            console.log('Response status:', response.status);
+            const responseText = await response.text();
+            console.log('Response body:', responseText);
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete card: ${responseText}`);
+            }
+
+            try {
+                const responseData = JSON.parse(responseText);
+                console.log('Parsed response:', responseData);
+            } catch (e) {
+                console.log('Response was not JSON:', responseText);
+            }
+
+            // Remove the card from the local state only after successful deletion
+            cards = cards.filter(c => c.id !== card.id);
+            console.log('Card removed from local state');
+        } catch (e) {
+            error = e.message;
+            console.error('Error deleting card:', {
+                error: e,
+                message: e.message,
+                stack: e.stack
+            });
+        }
+    }
+
+    function getStockIcon(status) {
+        switch(status) {
+            case 'available':
+                return 'fa-solid fa-circle-check';
+            case 'unavailable':
+                return 'fa-solid fa-circle-xmark';
+            default:
+                return 'fa-solid fa-circle-question';
+        }
+    }
+
+    function getStockColor(status) {
+        switch(status) {
+            case 'available':
+                return 'text-success';
+            case 'unavailable':
+                return 'text-error';
+            default:
+                return 'text-muted';
+        }
+    }
 </script>
 
-{#if mounted}
-    <main class="container">
-        <h1>Seeking</h1>
-        {#if seekingList.length > 0}
-            <div class="seeking-list">
-                {#each seekingList as card}
-                    <div class="card-item">
-                        <img src={card.image_uri} alt={card.name} />
-                        <div class="card-info">
-                            <h3>{card.name}</h3>
-                            <p>{card.set_code} #{card.collector_number}</p>
-                        </div>
-                    </div>
+{#if loading}
+    <div class="loading">Loading...</div>
+{:else if error}
+    <div class="error">{error}</div>
+{:else if cards.length === 0}
+    <div class="empty">No cards in seeking list</div>
+{:else}
+    <div class="seeking-list">
+        <table>
+            <thead>
+                <tr>
+                    <th>Card</th>
+                    <th>Set</th>
+                    <th>Language</th>
+                    <th>Finish</th>
+                    <th>CardTrader</th>
+                    <th>TCGPlayer</th>
+                    <th>CardMarket</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {#each cards as card (card.id)}
+                    <tr>
+                        <td>
+                            <div class="card-info">
+                                <img src={card.image_uri} alt={card.name} />
+                                <span>{card.name}</span>
+                            </div>
+                        </td>
+                        <td>{card.set_code}</td>
+                        <td>{card.language}</td>
+                        <td>{card.finish}</td>
+                        <td>
+                            <i class="{getStockIcon(card.stock.cardtrader)} {getStockColor(card.stock.cardtrader)}"></i>
+                        </td>
+                        <td>
+                            <i class="{getStockIcon(card.stock.tcgplayer)} {getStockColor(card.stock.tcgplayer)}"></i>
+                        </td>
+                        <td>
+                            <i class="{getStockIcon(card.stock.cardmarket)} {getStockColor(card.stock.cardmarket)}"></i>
+                        </td>
+                        <td>
+                            <button 
+                                class="delete-btn" 
+                                aria-label="Delete card"
+                                on:click={() => handleDelete(card)}
+                            >
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
                 {/each}
-            </div>
-        {:else}
-            <p>No cards in seeking list yet.</p>
-        {/if}
-    </main>
+            </tbody>
+        </table>
+    </div>
 {/if}
 
 <style>
-    main {
-        text-align: center;
-        padding: 2em;
-        max-width: 800px;
-        margin: 0 auto;
-        margin-top: 2em;
-    }
-    
     .seeking-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1rem;
-        padding: 1rem;
+        margin: 2rem auto;
+        max-width: 1200px;
+        padding: 0 1rem;
     }
 
-    .card-item {
+    table {
+        width: 100%;
+        border-collapse: collapse;
         background: var(--color-bg-elevated);
         border-radius: 8px;
+        overflow: hidden;
+    }
+
+    th, td {
         padding: 1rem;
-        box-shadow: var(--shadow-sm);
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
     }
 
-    .card-item img {
-        width: 100%;
-        height: auto;
-        border-radius: 4.75%;
-    }
-
-    .card-info {
-        margin-top: 0.5rem;
-    }
-
-    h3 {
-        margin: 0;
-        font-size: 1rem;
+    th {
+        background: var(--color-bg-secondary);
+        font-weight: 600;
         color: var(--color-text-primary);
     }
 
-    p {
-        margin: 0.25rem 0 0;
-        font-size: 0.9rem;
+    .card-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .card-info img {
+        width: 40px;
+        height: auto;
+        border-radius: 4px;
+    }
+
+    .delete-btn {
+        background: none;
+        border: none;
+        color: var(--color-error);
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .delete-btn:hover {
+        background: var(--color-error);
+        color: white;
+    }
+
+    .text-success { color: var(--color-success); }
+    .text-error { color: var(--color-error); }
+    .text-muted { color: var(--color-text-muted); }
+
+    .loading, .error, .empty {
+        text-align: center;
+        padding: 2rem;
         color: var(--color-text-secondary);
     }
 
-    .user-info {
-        color: var(--color-text-secondary);
-        font-size: 0.9rem;
-        margin-bottom: 1rem;
+    .error {
+        color: var(--color-error);
     }
 </style>

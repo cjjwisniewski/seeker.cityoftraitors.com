@@ -3,6 +3,37 @@
     
     // Format the user ID with spaces for readability
     $: formattedUserId = data.user.id.match(/.{1,4}/g)?.join(' ') || data.user.id;
+
+    import { page } from '$app/stores';
+    import { PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL } from '$env/static/public';
+
+    let showConfirmDialog = false;
+    let deleteError = null;
+
+    async function handleDeleteAccount() {
+        try {
+            const response = await fetch(PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-ms-client-principal-id': `user${$page.data.user?.id}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to delete account: ${errorText}`);
+            }
+
+            // Use the server-side logout endpoint instead of client-side cookie deletion
+            window.location.href = '/auth/logout';
+        } catch (e) {
+            deleteError = e.message;
+            console.error('Error deleting account:', e);
+        } finally {
+            showConfirmDialog = false;
+        }
+    }
 </script>
 
 <div class="profile-container">
@@ -66,8 +97,47 @@
                 {/if}
             </div>
         </section>
+
+        <section class="profile-section danger-zone">
+            <h2>Danger Zone</h2>
+            <div class="danger-content">
+                <div class="danger-item">
+                    <div class="danger-info">
+                        <span class="label">Delete Account</span>
+                        <span class="description">Permanently remove your account and all associated data</span>
+                    </div>
+                    <button class="delete-btn" on:click={() => showConfirmDialog = true}>
+                        Delete Account
+                    </button>
+                </div>
+            </div>
+        </section>
+        {#if deleteError}
+            <div class="error-message">
+                {deleteError}
+            </div>
+        {/if}
     </div>
 </div>
+
+{#if showConfirmDialog}
+    <div class="modal-overlay">
+        <div class="modal">
+            <h3>Confirm Account Deletion</h3>
+            <p>Are you sure you want to delete your account? This action cannot be undone.</p>
+            <p>All your seeking list data will be permanently deleted.</p>
+            
+            <div class="modal-buttons">
+                <button class="cancel-btn" on:click={() => showConfirmDialog = false}>
+                    Cancel
+                </button>
+                <button class="confirm-btn" on:click={handleDeleteAccount}>
+                    Yes, Delete My Account
+                </button>
+            </div>
+        </div>
+    </div>
+{/if}
 
 <style>
     .profile-container {
@@ -166,5 +236,103 @@
         .info-grid, .status-grid {
             grid-template-columns: repeat(2, 1fr);
         }
+    }
+
+    .danger-zone {
+        margin-top: 2rem;
+        border: 1px solid var(--color-error);
+    }
+
+    .danger-zone h2 {
+        color: var(--color-error);
+    }
+
+    .danger-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .danger-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+    }
+
+    .danger-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .danger-info .description {
+        color: var(--color-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .delete-btn {
+        background-color: var(--color-error);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .delete-btn:hover {
+        background-color: #b91c1c;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal {
+        background: var(--color-bg-elevated);
+        padding: 2rem;
+        border-radius: 8px;
+        max-width: 400px;
+        width: 90%;
+    }
+
+    .modal-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .cancel-btn {
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-border);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .confirm-btn {
+        background: var(--color-error);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .error-message {
+        color: var(--color-error);
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--color-error);
+        border-radius: 4px;
     }
 </style>
