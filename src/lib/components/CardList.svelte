@@ -1,44 +1,74 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte'; // Added onMount
     import { getLanguageName, getAvailableLanguages } from '$lib/utils/languageUtils';
     import { PUBLIC_ADD_TO_SEEKING_FUNCTION_URL } from '$env/static/public';
-    
+
     const dispatch = createEventDispatcher();
-    
+
     export let cards = [];
     export let hasSearched = false;
-    export let userId; // Add this prop
+    export let userId; // User's ID (without 'user' prefix assumed)
 
     let selectedFinishes = {};  // Track foil status for each card
-    let buttonErrors = {}; // Add error state tracking
-    let buttonStates = {}; // Track button states (error, success)
+    let buttonErrors = {}; // Add error state tracking (original state tracking)
+    let buttonStates = {}; // Track button states (error, success, exists) (original state tracking)
+    let accessToken = null; // <<< ADDED: To store the auth token
 
+    // --- ADDED: Helper function to read a specific cookie ---
+    function getCookie(name) {
+        if (typeof document === 'undefined') return null;
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+            try {
+                return decodeURIComponent(parts.pop().split(';').shift());
+            } catch(e) {
+                console.error("Error decoding cookie", e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    // --- ADDED: Lifecycle function to read token ---
+    onMount(() => {
+        accessToken = getCookie('discord_token'); // Read the token
+        if (!accessToken) {
+            console.warn("CardList Component: Authentication token not found. 'Add to Seeking' disabled.");
+        }
+        // Keep original warning for userId prop
+        if (!userId) {
+             console.warn('CardList component requires userId prop');
+        }
+    });
+
+    // --- Original Functions (handleSetChange, handleLanguageChange, etc. - UNCHANGED from message #19) ---
     async function handleSetChange(card, newPrint) {
         if (!card || !newPrint) return;
-        
+
         // Update all card information for the selected printing
         card.set = newPrint.set_code;
-        card.image_uris = { 
-            normal: newPrint.image_uri 
+        card.image_uris = {
+            normal: newPrint.image_uri
         };
-        
+
         // Fetch available languages for this specific printing
         card.available_languages = await getAvailableLanguages(
-            card.oracle_id, 
-            newPrint.set_code, 
+            card.oracle_id,
+            newPrint.set_code,
             newPrint.collector_number
         );
-        card.selected_language = 'en';
-        
+        card.selected_language = 'en'; // Default or check availability
+
         // Update other card information
         card.flavor_text = newPrint.flavor_text;
         card.oracle_text = newPrint.oracle_text;
         card.type_line = newPrint.type_line;
         card.mana_cost = newPrint.mana_cost;
         card.collector_number = newPrint.collector_number;
-        
-        // Force a UI update
-        sortedCards = sortedCards.map(c => 
+
+        // Force a UI update using original method
+        sortedCards = sortedCards.map(c =>
             c.id === card.id ? {...c} : c
         );
     }
@@ -52,30 +82,30 @@
 
         // Construct the API URI for the language-specific card data
         const cardUri = `https://api.scryfall.com/cards/${currentPrint.set_code}/${currentPrint.collector_number}/${language}`;
-        
+
         try {
             // Fetch the language-specific card data
             const response = await fetch(cardUri);
             if (!response.ok) throw new Error('Failed to fetch card data');
             const cardData = await response.json();
-            
+
             // Get the correct image URI from the response
             const imageUri = cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal;
             if (!imageUri) throw new Error('No image URI found');
 
-            // Update card image and language while maintaining other print information
-            sortedCards = sortedCards.map(c => {
+            // Update card image and language while maintaining other print information (Original Logic)
+             sortedCards = sortedCards.map(c => {
                 if (c.id === card.id) {
                     return {
                         ...c,
                         image_uris: { normal: imageUri },
                         selected_language: language,
-                        set: currentPrint.set_code,
-                        flavor_text: cardData.flavor_text || currentPrint.flavor_text,
+                        set: currentPrint.set_code, // Ensure set remains consistent with selected print
+                        flavor_text: cardData.flavor_text || currentPrint.flavor_text, // Use language specific if available
                         oracle_text: cardData.oracle_text || currentPrint.oracle_text,
                         type_line: cardData.type_line || currentPrint.type_line,
-                        mana_cost: currentPrint.mana_cost,
-                        collector_number: currentPrint.collector_number
+                        mana_cost: currentPrint.mana_cost, // Keep from selected print
+                        collector_number: currentPrint.collector_number // Keep from selected print
                     };
                 }
                 return c;
@@ -85,20 +115,21 @@
         }
     }
 
-    async function handleLanguageDropdownOpen(card, print) {
+     async function handleLanguageDropdownOpen(card, print) {
+        // Original Logic
         if (!print.languages) {
             const languages = await getAvailableLanguages(
                 card.oracle_id,
                 print.set_code,
                 print.collector_number
             );
-            
+
             // Update the print's languages
             print.languages = languages;
-            
+
             // Update available languages for the current card state
             card.available_languages = languages;
-            
+
             // Update language URIs
             print.language_uris = languages.reduce((acc, lang) => {
                 acc[lang] = `https://api.scryfall.com/cards/${print.set_code}/${print.collector_number}/${lang}`;
@@ -110,37 +141,72 @@
         }
     }
 
+
+    // --- MODIFIED: Add Card to Seeking List ---
     async function handleAddToSeeking(card) {
+        // --- ADDED: Check for access token ---
+        if (!accessToken) {
+             console.error("Cannot add card: Access token not available.");
+             // Set error state using original structure
+             buttonStates[card.id] = { error: true, success: false, exists: false, message: "Login required" };
+             buttonStates = {...buttonStates};
+             // Reset state after timeout (original pattern)
+             setTimeout(() => {
+                 buttonStates[card.id] = { error: false, success: false, exists: false };
+                 buttonStates = {...buttonStates};
+             }, 3000);
+             return;
+        }
+         // --- Original check for userId ---
+         if (!userId) {
+             console.error("Cannot add card: userId prop missing.");
+             buttonStates[card.id] = { error: true, success: false, exists: false, message: "User context missing" };
+             buttonStates = {...buttonStates};
+             setTimeout(() => {
+                 buttonStates[card.id] = { error: false, success: false, exists: false };
+                 buttonStates = {...buttonStates};
+             }, 3000);
+             return;
+         }
+
+
         try {
+            // Reset button state (original logic)
             buttonStates[card.id] = { error: false, success: false, exists: false };
             buttonStates = {...buttonStates}; // Force Svelte reactivity
-            
+
+            const payload = { // Original payload structure
+                id: crypto.randomUUID(),
+                name: card.name,
+                set_code: card.set,
+                collector_number: card.collector_number,
+                language: card.selected_language || 'en',
+                oracle_id: card.oracle_id,
+                image_uri: card.image_uris.normal,
+                timestamp: new Date().toISOString(),
+                finish: selectedFinishes[card.id] || 'nonfoil'
+            };
+
+            // --- MODIFIED: Fetch call ---
             const response = await fetch(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-ms-client-principal-id': `user${userId}`
+                    // REMOVED: 'x-ms-client-principal-id': `user${userId}`
+                    // ADDED: Authorization header
+                    'Authorization': `Bearer ${accessToken}`
                 },
-                credentials: 'include',
-                body: JSON.stringify({
-                    id: crypto.randomUUID(),
-                    name: card.name,
-                    set_code: card.set,
-                    collector_number: card.collector_number,
-                    language: card.selected_language || 'en',
-                    oracle_id: card.oracle_id,
-                    image_uri: card.image_uris.normal,
-                    timestamp: new Date().toISOString(),
-                    finish: selectedFinishes[card.id] || 'nonfoil'
-                })
+                // REMOVED: credentials: 'include',
+                body: JSON.stringify(payload)
             });
 
             const result = await response.json();
 
+            // Original status handling logic
             if (response.status === 409) {
                 buttonStates[card.id] = { error: false, success: false, exists: true };
                 buttonStates = {...buttonStates};
-                
+
                 setTimeout(() => {
                     buttonStates[card.id] = { error: false, success: false, exists: false };
                     buttonStates = {...buttonStates};
@@ -149,23 +215,25 @@
             }
 
             if (!response.ok) {
-                throw new Error(`Failed to add card: ${result.message}`);
+                throw new Error(`Failed to add card: ${result.message || `HTTP ${response.status}`}`);
             }
 
             buttonStates[card.id] = { error: false, success: true, exists: false };
             buttonStates = {...buttonStates};
-            
+
             setTimeout(() => {
                 buttonStates[card.id] = { error: false, success: false, exists: false };
                 buttonStates = {...buttonStates};
             }, 3000);
 
-            dispatch('cardAdded', result);
+            dispatch('cardAdded', result); // Original dispatch
+
         } catch (error) {
             console.error('Error adding card to seeking list:', error);
+             // Original error handling for button state
             buttonStates[card.id] = { error: true, success: false, exists: false };
             buttonStates = {...buttonStates};
-            
+
             setTimeout(() => {
                 buttonStates[card.id] = { error: false, success: false, exists: false };
                 buttonStates = {...buttonStates};
@@ -173,16 +241,16 @@
         }
     }
 
+    // --- Original Functions (handleFinishChange, sortedCards, getManaCost, getTypeLine - UNCHANGED from message #19) ---
     function handleFinishChange(cardId, finish) {
         selectedFinishes[cardId] = finish;
     }
 
-    // Only sort if cards have prints
     $: sortedCards = cards.map(card => {
         if (!card.all_prints) return card;
         return {
             ...card,
-            all_prints: [...card.all_prints].sort((a, b) => 
+            all_prints: [...card.all_prints].sort((a, b) =>
                 (a.set || '').localeCompare(b.set || ''))
         };
     });
@@ -195,12 +263,13 @@
         return [card.type_line, card.oracle_text].filter(Boolean).join('\n');
     }
 
-    $: if (!userId) {
-        console.warn('CardList component requires userId prop');
-    }
+     // Keep original warning check
+     $: if (!userId) {
+         console.warn('CardList component requires userId prop');
+     }
+
 </script>
 
-<!-- Add prop validation -->
 <script context="module">
     export const props = {
         userId: { type: String, required: true },
@@ -216,20 +285,19 @@
         {#if sortedCards?.length > 0}
             <div class="cards-list">
                 {#each sortedCards as card (card.id)}
-                    <div class="card-item">
+                   {@const currentPrint = card.all_prints?.find(p => p.set_code === card.set)} <div class="card-item">
                         <div class="card-image-section">
                             <div class="card-image-container">
                                 {#if card.image_uris?.normal}
-                                    <img 
+                                    <img
                                         src={card.image_uris.normal}
                                         alt={card.name}
                                         class="card-image"
                                     />
                                 {/if}
                             </div>
-                            {#if card.all_prints}
-                                <div class="set-selector">
-                                    <select 
+                             {#if card.all_prints} <div class="set-selector">
+                                    <select
                                         value={card.set}
                                         on:change={(e) => {
                                             const newPrint = card.all_prints.find(p => p.set_code === e.target.value);
@@ -263,13 +331,12 @@
                                     <p class="flavor-text">"{card.flavor_text}"</p>
                                 {/if}
                             </div>
-                            {#if card.available_languages?.length > 0}
-                                <div class="language-selector">
+                             {#if card.available_languages?.length > 0} <div class="language-selector">
                                     <label for="language-{card.id}">Language:</label>
-                                    <select 
+                                    <select
                                         id="language-{card.id}"
                                         value={card.selected_language || 'en'}
-                                        on:focus={() => handleLanguageDropdownOpen(card, card.all_prints.find(p => p.set_code === card.set))}
+                                        on:focus={() => handleLanguageDropdownOpen(card, currentPrint)}
                                         on:change={(e) => handleLanguageChange(card, e.target.value)}
                                     >
                                         {#each card.available_languages as lang}
@@ -303,16 +370,17 @@
                                 </label>
                             </div>
                             <div class="card-actions">
-                                <button 
-                                    class="add-to-seeking-btn 
-                                        {buttonStates[card.id]?.error ? 'error' : ''} 
+                                <button
+                                    class="add-to-seeking-btn
+                                        {buttonStates[card.id]?.error ? 'error' : ''}
                                         {buttonStates[card.id]?.success ? 'success' : ''}
                                         {buttonStates[card.id]?.exists ? 'exists' : ''}"
                                     on:click={() => handleAddToSeeking(card)}
-                                    disabled={!card.set}
+                                    disabled={!card.set || !accessToken}
+                                    title={!accessToken ? "Login required" : (!card.set ? "Select a print first" : "Add to Seeking List")}
                                 >
-                                    {#if buttonStates[card.id]?.error}
-                                        Error Adding Card
+                                     {#if buttonStates[card.id]?.error}
+                                        Error Adding Card {buttonStates[card.id]?.message ? `(${buttonStates[card.id].message})`:''}
                                     {:else if buttonStates[card.id]?.success}
                                         Added to Seeking
                                     {:else if buttonStates[card.id]?.exists}
@@ -513,7 +581,7 @@
         10%, 90% {
             transform: translate3d(-1px, 0, 0);
         }
-        
+
         20%, 80% {
             transform: translate3d(2px, 0, 0);
         }
@@ -586,7 +654,14 @@
         margin: 1rem 0;
     }
 
-    @media (max-width: 768px) {
+     .no-results { /* Original style */
+          text-align: center;
+          color: var(--color-text-secondary);
+          margin-top: 2rem;
+     }
+
+
+    @media (max-width: 768px) { /* Original responsive styles */
         .card-item {
             flex-direction: column;
             gap: 1rem;
@@ -598,4 +673,6 @@
             margin: 0 auto;
         }
     }
+     /* Removed second media query block from previous attempt */
+
 </style>

@@ -1,5 +1,5 @@
 <script>
-    import { version } from '$app/environment';
+    import { PUBLIC_VERSION } from '$env/static/public';
 </script>
 
 <footer>
@@ -8,7 +8,7 @@
         <p>Part of the City of Traitors community.</p>
     </div>
     <div class="version">
-        <p>v{version}</p>
+        <p>v{PUBLIC_VERSION}</p>
     </div>
 </footer>
 

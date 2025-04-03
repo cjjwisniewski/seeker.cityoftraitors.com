@@ -1,36 +1,72 @@
 <script>
     import { onMount } from 'svelte';
-    import { page } from '$app/stores';
+    import { page } from '$app/stores'; // Still potentially useful for user ID display etc.
     import { PUBLIC_GET_SEEKING_LIST_FUNCTION_URL, PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL } from '$env/static/public';
 
     let cards = [];
     let loading = true;
     let error = null;
+    let accessToken = null; // Variable to store the token
+
+    // Helper function to read a specific cookie
+    function getCookie(name) {
+        if (typeof document === 'undefined') return null; // Check if running client-side
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+            // Decode the cookie value in case it contains special characters
+            try {
+                return decodeURIComponent(parts.pop().split(';').shift());
+            } catch(e) {
+                console.error("Error decoding cookie", e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    onMount(() => {
+        accessToken = getCookie('discord_token'); // Read the token on mount (client-side)
+        if (accessToken) {
+            fetchSeekingList();
+        } else {
+            error = "Authentication token not found. Please log in.";
+            loading = false;
+            console.error(error);
+            // Optional: redirect to login page
+            // import { goto } from '$app/navigation';
+            // goto('/login');
+        }
+    });
 
     async function fetchSeekingList() {
+        if (!accessToken) {
+            error = "Cannot fetch list: missing access token.";
+            loading = false;
+            return;
+        }
+        loading = true; // Set loading true when fetching starts
+        error = null; // Clear previous errors
+
         try {
+            // Call APIM endpoint directly
             const response = await fetch(PUBLIC_GET_SEEKING_LIST_FUNCTION_URL, {
                 headers: {
-                    'x-ms-client-principal-id': `user${$page.data.user?.id}`
+                    // ADD Authorization header with token from cookie
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    // REMOVE x-ms-client-principal-id header (APIM handles it)
                 }
             });
 
             if (!response.ok) {
-                throw new Error('Failed to fetch seeking list');
+                let errorBody = await response.text();
+                try { errorBody = JSON.parse(errorBody); } catch(e) { /* Ignore */ }
+                console.error("Fetch error response:", errorBody);
+                throw new Error(`Failed to fetch seeking list (Status: ${response.status})`);
             }
 
             const data = await response.json();
-            // Debug log to see the full card data
-            data.cards.forEach(card => {
-                console.log('Card data:', {
-                    id: card.id,
-                    name: card.name,
-                    set_code: card.set_code,
-                    collector_number: card.collector_number,
-                    language: card.language,
-                    finish: card.finish
-                });
-            });
             cards = data.cards;
         } catch (e) {
             error = e.message;
@@ -40,58 +76,50 @@
         }
     }
 
-    onMount(fetchSeekingList);
+    // No longer need onMount(fetchSeekingList); - it's called inside onMount now
 
     async function handleDelete(card) {
-        try {
-            // Debug log of the full card object
-            console.log('Full card object:', card);
-            
-            if (!card.collector_number) {
-                console.error('Missing collector_number for card:', card);
-                throw new Error('Card is missing collector number');
-            }
+        if (!accessToken) {
+             error = "Cannot delete card: missing access token.";
+             console.error(error);
+             return;
+        }
+        // Consider adding a loading state for delete operations if desired
 
-            const requestBody = {
+        try {
+            // ... (rest of delete logic, preparing requestBody) ...
+             const requestBody = {
                 partitionKey: card.set_code,
                 rowKey: `${card.collector_number}_${card.language}_${card.finish}`
             };
-            console.log('Request body:', requestBody);
 
+            // Call APIM endpoint directly
             const response = await fetch(PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL, {
                 method: 'DELETE',
                 headers: {
+                    // ADD Authorization header with token from cookie
+                    'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
-                    'x-ms-client-principal-id': `user${$page.data.user?.id}`
+                    // REMOVE x-ms-client-principal-id header (APIM handles it)
                 },
                 body: JSON.stringify(requestBody)
             });
 
-            console.log('Response status:', response.status);
-            const responseText = await response.text();
-            console.log('Response body:', responseText);
+            // ... (rest of response handling) ...
+             console.log('Delete Response status:', response.status);
+             const responseText = await response.text();
+             console.log('Delete Response body:', responseText);
 
-            if (!response.ok) {
-                throw new Error(`Failed to delete card: ${responseText}`);
-            }
+             if (!response.ok) {
+                 throw new Error(`Failed to delete card: ${responseText}`);
+             }
 
-            try {
-                const responseData = JSON.parse(responseText);
-                console.log('Parsed response:', responseData);
-            } catch (e) {
-                console.log('Response was not JSON:', responseText);
-            }
+             cards = cards.filter(c => c.id !== card.id);
+             console.log('Card removed from local state');
 
-            // Remove the card from the local state only after successful deletion
-            cards = cards.filter(c => c.id !== card.id);
-            console.log('Card removed from local state');
         } catch (e) {
-            error = e.message;
-            console.error('Error deleting card:', {
-                error: e,
-                message: e.message,
-                stack: e.stack
-            });
+            error = `Delete failed: ${e.message}`; // Update error state
+            console.error('Error deleting card:', e);
         }
     }
 
@@ -116,6 +144,16 @@
                 return 'text-muted';
         }
     }
+
+    function getStockStatus(stockValue) {
+        if (stockValue === true) {
+            return 'available';
+        } else if (stockValue === false) {
+            return 'unavailable';
+        } else {
+            return 'unknown';
+        }
+    }
 </script>
 
 {#if loading}
@@ -134,8 +172,9 @@
                     <th>Language</th>
                     <th>Finish</th>
                     <th>CardTrader</th>
-                    <th>TCGPlayer</th>
-                    <th>CardMarket</th>
+                    <th class="disabled-column" title="TCGPlayer stock check coming soon">TCGPlayer</th>
+                    <th class="disabled-column" title="CardMarket stock check coming soon">CardMarket</th>
+                    <th class="disabled-column" title="Ebay stock check coming soon">EBay</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -151,16 +190,19 @@
                         <td>{card.set_code}</td>
                         <td>{card.language}</td>
                         <td>{card.finish}</td>
-                        <td>
-                            <i class="{getStockIcon(card.stock.cardtrader)} {getStockColor(card.stock.cardtrader)}"></i>
+                        <td class="stock-icon">
+                            <i class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(getStockStatus(card.cardtrader_stock))}"></i>
                         </td>
-                        <td>
-                            <i class="{getStockIcon(card.stock.tcgplayer)} {getStockColor(card.stock.tcgplayer)}"></i>
+                        <td class="stock-icon disabled-column">
+                            <i class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(getStockStatus(card.tcgplayer_stock))}"></i>
                         </td>
-                        <td>
-                            <i class="{getStockIcon(card.stock.cardmarket)} {getStockColor(card.stock.cardmarket)}"></i>
+                        <td class="stock-icon disabled-column">
+                            <i class="{getStockIcon(getStockStatus(card.cardmarket_stock))} {getStockColor(getStockStatus(card.cardmarket_stock))}"></i>
                         </td>
-                        <td>
+                        <td class="stock-icon disabled-column">
+                            <i class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(getStockStatus(card.ebay_stock))}"></i>
+                        </td>
+                        <td class="delete-btn-column">
                             <button 
                                 class="delete-btn" 
                                 aria-label="Delete card"
@@ -201,6 +243,7 @@
         background: var(--color-bg-secondary);
         font-weight: 600;
         color: var(--color-text-primary);
+        text-align: center;
     }
 
     .card-info {
@@ -215,6 +258,23 @@
         border-radius: 4px;
     }
 
+    .stock-icon {
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    /* Style for visually disabled columns */
+    .disabled-column {
+        opacity: 0.5;
+        cursor: not-allowed;
+        position: relative;
+        filter: grayscale(1);
+    }
+
+    .delete-btn-column {
+        text-align: center;
+    }
+
     .delete-btn {
         background: none;
         border: none;
@@ -223,6 +283,7 @@
         padding: 0.5rem;
         border-radius: 4px;
         transition: background-color 0.2s;
+        text-align: center;
     }
 
     .delete-btn:hover {

@@ -1,6 +1,8 @@
 <script>
     import { invalidate, goto } from '$app/navigation';
     import Footer from '$lib/components/Footer.svelte';
+    import { page } from '$app/stores'; // Import the page store
+
     export let data;
 
     let showDropdown = false;
@@ -21,102 +23,115 @@
 <link rel="stylesheet" href="/styles/components.css">
 
 <div class="layout">
-    <nav>
-        <div class="nav-content">
-            <div class="nav-left">
-                <a href="/">
-                    <h3>Seeker</h3>
-                </a>
-            </div>
-            <div class="nav-right">
-                <a href="/about" class="about-link" title="About">
-                    <i class="fa-solid fa-circle-info"></i>
-                </a>
-                <a href="/seeking" class="seeking-link" title="Seeking">
-                    <i class="fa-solid fa-sd-card"></i>
-                </a>
-                <a href="/" class="search-link" title="Search">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </a>
-                {#if data.user}
-                    <div class="user-dropdown">
-                        <button 
-                            class="user-button" 
-                            on:click={() => showDropdown = !showDropdown}
-                            aria-expanded={showDropdown}
-                            aria-haspopup="menu"
-                        >
-                            <img 
-                                src="https://cdn.discordapp.com/avatars/{data.user.id}/{data.user.avatar}.png" 
-                                alt="{data.user.username}'s avatar"
-                                class="user-avatar"
-                            />
-                            <span class="username">{data.user.username}</span>
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </button>
-                        {#if showDropdown}
-                            <div 
-                                class="dropdown-menu"
-                                role="menu"
-                                tabindex="-1"
-                                on:mouseleave={() => showDropdown = false}
+    {#if $page.url.pathname !== '/login'}
+        <nav>
+            <div class="nav-content">
+                <div class="nav-left">
+                    <a href="/">
+                        <h3>Seeker</h3>
+                    </a>
+                </div>
+                <div class="nav-right">
+                    <a href="/about" class="about-link" title="About">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </a>
+                    <a href="/seeking" class="seeking-link" title="Seeking">
+                        <i class="fa-solid fa-sd-card"></i>
+                    </a>
+                    <a href="/" class="search-link" title="Search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </a>
+                    {#if data.user}
+                        <div class="user-dropdown">
+                            <button
+                                class="user-button"
+                                on:click={() => showDropdown = !showDropdown}
+                                aria-expanded={showDropdown}
+                                aria-haspopup="menu"
                             >
-                                <button 
-                                    class="dropdown-item"
-                                    role="menuitem"
-                                    tabindex="0"
-                                    on:click={goToProfile}
+                                <img
+                                    src="https://cdn.discordapp.com/avatars/{data.user.id}/{data.user.avatar}.png"
+                                    alt="{data.user.username}'s avatar"
+                                    class="user-avatar"
+                                />
+                                <span class="username">{data.user.username}</span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                            {#if showDropdown}
+                                <div
+                                    class="dropdown-menu"
+                                    role="menu"
+                                    tabindex="-1"
+                                    on:mouseleave={() => showDropdown = false}
                                 >
-                                    <i class="fa-solid fa-user"></i>
-                                    Profile
-                                </button>
-                                {#if data.user?.roles?.includes('1352632325640294411')}
-                                    <button 
+                                    <button
                                         class="dropdown-item"
                                         role="menuitem"
                                         tabindex="0"
-                                        on:click={() => goto('/admin')}
+                                        on:click={goToProfile}
                                     >
-                                        <i class="fa-solid fa-shield"></i>
-                                        Admin
+                                        <i class="fa-solid fa-user"></i>
+                                        Profile
                                     </button>
-                                {/if}
-                                <button 
-                                    on:click={logout} 
-                                    class="dropdown-item"
-                                    role="menuitem"
-                                    tabindex="0"
-                                >
-                                    <i class="fa-solid fa-right-from-bracket"></i>
-                                    Logout
-                                </button>
-                            </div>
-                        {/if}
-                    </div>
-                {/if}
+                                    {#if data.user?.roles?.includes('1352632325640294411')}
+                                        <button
+                                            class="dropdown-item"
+                                            role="menuitem"
+                                            tabindex="0"
+                                            on:click={() => goto('/admin')}
+                                        >
+                                            <i class="fa-solid fa-shield"></i>
+                                            Admin
+                                        </button>
+                                    {/if}
+                                    <button
+                                        on:click={logout}
+                                        class="dropdown-item"
+                                        role="menuitem"
+                                        tabindex="0"
+                                    >
+                                        <i class="fa-solid fa-right-from-bracket"></i>
+                                        Logout
+                                    </button>
+                                </div>
+                            {/if}
+                        </div>
+                    {/if}
+                </div>
             </div>
-        </div>
-    </nav>
-    <main>
+        </nav>
+    {/if}
+    
+    <main class={$page.url.pathname === '/login' ? 'no-padding-top' : ''}>
         <slot/>
     </main>
     <Footer />
 </div>
 
 <style>
+    /* Define nav height as variable (adjust value as needed) */
+    :root {
+        --nav-height: 57px; /* Example: Adjust based on your actual navbar height */
+    }
+
     nav {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        padding: 0.5rem;
+        height: var(--nav-height); /* Use the variable */
+        padding: 0.5rem; /* Keep original padding */
         background: var(--color-bg-elevated);
         z-index: 1000;
         border-bottom: 1px solid var(--color-border);
         box-shadow: var(--shadow-sm);
+        /* Ensure content vertical alignment if needed */
+        display: flex;
+        align-items: center;
     }
 
     .nav-content {
+        width: 100%; /* Take full width */
         max-width: 1200px;
         margin: 0 auto;
         display: flex;
@@ -144,39 +159,25 @@
         align-items: center;
     }
 
-    .search-link {
-        color: var(--color-text-secondary);
-        text-decoration: none;
-        padding: 0.35rem;
-        transition: color 0.2s ease;
-    }
-
-    .search-link:hover {
-        color: var(--color-text-primary);
-    }
-
-    .about-link {
-        color: var(--color-text-secondary);
-        text-decoration: none;
-        padding: 0.35rem;
-        transition: color 0.2s ease;
-    }
-
-    .about-link:hover {
-        color: var(--color-text-primary);
-    }
-
+    /* Links in nav-right */
+    .search-link,
+    .about-link,
     .seeking-link {
         color: var(--color-text-secondary);
         text-decoration: none;
         padding: 0.35rem;
         transition: color 0.2s ease;
+        display: inline-flex; /* Align icon */
+        align-items: center;
     }
 
+    .search-link:hover,
+    .about-link:hover,
     .seeking-link:hover {
         color: var(--color-text-primary);
     }
 
+    /* User Dropdown */
     .user-dropdown {
         position: relative;
         display: inline-block;
@@ -191,21 +192,34 @@
         background: none;
         cursor: pointer;
         border-radius: 4px;
+        transition: background-color 0.2s; /* Added transition */
     }
 
     .user-button:hover {
         background: var(--color-bg-hover);
     }
 
+     .user-button i.fa-chevron-down { /* Style chevron */
+         font-size: 0.7em;
+         margin-left: 0.25rem;
+         transition: transform 0.2s ease-in-out;
+     }
+     .user-button[aria-expanded="true"] i.fa-chevron-down {
+         transform: rotate(180deg);
+     }
+
+
     .user-avatar {
         width: 32px;
         height: 32px;
         border-radius: 50%;
+        object-fit: cover; /* Ensure avatar covers area */
     }
 
     .username {
         color: var(--color-text-primary);
         font-size: 0.9rem;
+        font-weight: 500; /* Slightly bolder */
     }
 
     .dropdown-menu {
@@ -218,6 +232,7 @@
         box-shadow: var(--shadow-md);
         min-width: 150px;
         padding: 0.25rem 0;
+        z-index: 1001; /* Ensure it's above main content */
     }
 
     /* Invisible area to prevent menu from closing when moving mouse to it */
@@ -233,7 +248,7 @@
     .dropdown-item {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.75rem; /* Increased gap slightly */
         width: 100%;
         padding: 0.5rem 1rem;
         border: none;
@@ -242,14 +257,23 @@
         color: var(--color-text-secondary);
         text-align: left;
         text-decoration: none;
-        font-size: inherit;
+        font-size: 0.9rem; /* Match username size */
+        white-space: nowrap; /* Prevent wrapping */
     }
+
+     .dropdown-item i { /* Style icons in dropdown */
+         width: 1em; /* Align icons */
+         margin-right: 0.25rem;
+         text-align: center;
+     }
+
 
     .dropdown-item:hover {
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
 
+    /* Layout structure */
     .layout {
         display: flex;
         flex-direction: column;
@@ -257,8 +281,14 @@
     }
 
     main {
-        padding-top: var(--nav-height);
+        padding-top: var(--nav-height); /* Use variable for padding */
         background: linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%);
-        flex: 1;
+        flex: 1; /* Ensure main takes remaining space */
+        /* overflow: auto; /* Handle potential overflow inside main */
+    }
+
+    /* Class to remove padding when navbar is hidden */
+    main.no-padding-top {
+        padding-top: 0;
     }
 </style>

@@ -40,7 +40,7 @@
 
 {#if mounted}
     <main class="container">
-        <h1>Seeker</h1>
+        <h1>Add to Seeking</h1>
         <CardSearchForm 
             on:search={handleSearch}
         />

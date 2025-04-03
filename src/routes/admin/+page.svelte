@@ -1,94 +1,211 @@
 <script>
     import { onMount } from 'svelte';
-    import { 
+    import {
         PUBLIC_GET_USER_TABLES_FUNCTION_URL,
         PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
         PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL,
         PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL
     } from '$env/static/public';
-    
-    export let data; // Add this line to receive the data prop
 
+    export let data; // Receives data prop (contains admin user info like data.user.username)
+
+    // State variables
     let userTables = [];
     let expandedTable = null;
-    let expandedTableData = []; // Initialize as empty array
-    let showConfirmDialog = false;
-    let tableToDelete = null;
-    let loading = true;
-    let error = null;
+    let expandedTableData = [];
+    let loading = true; // Loading state for user tables list
+    let tableDataLoading = false; // Separate loading state for expanded table data
+    let statusLoading = true; // Loading state for system status
+    let error = null; // General error display
+    let statusError = null; // Error display for system status
     let systemStatus = null;
-    let statusLoading = true;
-    let statusError = null;
+
+    let accessToken = null; // Store the admin's access token
+
+    // --- Helper function to read a specific cookie ---
+    function getCookie(name) {
+        if (typeof document === 'undefined') return null; // Check if running client-side
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+            try {
+                // Decode the cookie value in case it contains special characters
+                return decodeURIComponent(parts.pop().split(';').shift());
+            } catch(e) {
+                console.error("Error decoding cookie", e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    // --- Helper function to format date ---
+    function formatLocalDate(utcTimestamp) {
+        const date = new Date(utcTimestamp);
+        return date.toLocaleString(undefined, { /* Formatting options */ });
+    }
+
+    // --- Helper function to wrap fetch with Authentication ---
+    async function fetchWithAuth(url, options = {}) {
+        if (!accessToken) {
+             throw new Error("Authentication token not available.");
+        }
+        const headers = {
+            ...options.headers,
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': options.headers?.['Content-Type'] || 'application/json',
+            // Ensure x-ms-client-principal-id is NEVER sent from client
+        };
+         // Remove Content-Type for GET/HEAD requests if no body is intended
+        if (!options.body && (!options.method || ['GET', 'HEAD'].includes(options.method.toUpperCase()))) {
+            delete headers['Content-Type'];
+        }
+
+        console.log(`WorkspaceWithAuth: Calling ${options.method || 'GET'} ${url}`); // Debug log
+        return fetch(url, { ...options, headers });
+    }
+
+    // --- API Call Functions ---
 
     async function loadUserTables() {
+        loading = true;
+        error = null;
         try {
-            const response = await fetch(PUBLIC_GET_USER_TABLES_FUNCTION_URL);
-            if (!response.ok) throw new Error('Failed to load user tables');
+            // Use fetchWithAuth (adds admin's Authorization header)
+            const response = await fetchWithAuth(PUBLIC_GET_USER_TABLES_FUNCTION_URL);
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to load user tables (Status: ${response.status}): ${errorText}`);
+            }
             userTables = await response.json();
         } catch (e) {
             error = e.message;
+            console.error("Error loading user tables:", e);
         } finally {
             loading = false;
         }
     }
 
-    async function loadTableData(userId) {
+    async function loadTableData(targetUserId) {
+        tableDataLoading = true;
+        error = null; // Clear general error when loading specific table data
+        expandedTableData = [];
         try {
-            expandedTableData = []; // Reset to empty array while loading
-            const response = await fetch(PUBLIC_GET_SEEKING_LIST_FUNCTION_URL, {
-                headers: {
-                    'x-ms-client-principal-id': userId
-                }
+            // ***** IMPORTANT BACKEND NOTE *****
+            // The backend function at PUBLIC_GET_SEEKING_LIST_FUNCTION_URL now receives
+            // the ADMIN's identity via the APIM-injected x-ms-client-principal-id.
+            // It MUST be modified to:
+            // 1. Accept the 'targetUserId' (e.g., via query param as shown below).
+            // 2. Verify the ADMIN is authorized to view this target user's data.
+            // 3. Use the 'targetUserId' to fetch the correct data, NOT the admin's ID.
+            // **********************************
+
+            // Example: Pass targetUserId as a query parameter
+            const urlWithQuery = `${PUBLIC_GET_SEEKING_LIST_FUNCTION_URL}?targetUserId=${encodeURIComponent(targetUserId)}`;
+
+            // Use fetchWithAuth (adds admin's Authorization header)
+            const response = await fetchWithAuth(urlWithQuery, {
+                // REMOVE the manual x-ms-client-principal-id header
             });
-            
-            if (!response.ok) throw new Error('Failed to load seeking list');
-            const data = await response.json();
-            expandedTableData = data.cards || []; // Extract the cards array from the response
+
+            if (!response.ok) {
+                 const errorText = await response.text();
+                 throw new Error(`Failed to load seeking list for ${targetUserId} (Status: ${response.status}): ${errorText}`);
+            }
+            const responseData = await response.json();
+            expandedTableData = responseData.cards || [];
         } catch (e) {
-            console.error('Error loading table data:', e);
-            error = e.message;
-            expandedTableData = []; // Reset on error
+            console.error(`Error loading table data for ${targetUserId}:`, e);
+            error = e.message; // Display the error
+            expandedTableData = []; // Ensure it's reset on error
+        } finally {
+             tableDataLoading = false;
         }
     }
 
-    async function handleDeleteAccount(userId) {
-        if (confirm('Are you sure you want to delete this user account? This action cannot be undone.')) {
-            try {
-                const response = await fetch(PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-ms-client-principal-id': userId
-                    }
-                });
+    async function handleDeleteAccount(targetUserId) {
+        // Consider using your dialog variables 'showConfirmDialog' and 'tableToDelete'
+        // for a better confirmation experience instead of the basic confirm().
+        if (!confirm(`Are you sure you want to delete user account ${targetUserId}? This action cannot be undone.`)) {
+             return;
+        }
 
-                if (!response.ok) throw new Error('Failed to delete account');
-                
-                // Refresh user tables list
-                await loadUserTables();
-                expandedTable = null;
-                expandedTableData = null;
-            } catch (e) {
-                error = e.message;
+        error = null; // Clear error before attempt
+        try {
+             // ***** IMPORTANT BACKEND NOTE *****
+            // The backend function at PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL now receives
+            // the ADMIN's identity via the APIM-injected x-ms-client-principal-id.
+            // It MUST be modified to:
+            // 1. Accept the 'targetUserId' (e.g., via request body as shown below).
+            // 2. Verify the ADMIN is authorized to delete this target user.
+            // 3. Use the 'targetUserId' to perform the deletion.
+            // **********************************
+
+            // Example: Pass targetUserId in the request body
+            const requestBody = { targetUserIdToDelete: targetUserId };
+
+            // Use fetchWithAuth (adds admin's Authorization header)
+            const response = await fetchWithAuth(PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, {
+                method: 'DELETE',
+                // REMOVE the manual x-ms-client-principal-id header
+                body: JSON.stringify(requestBody) // Send target ID in body
+            });
+
+            if (!response.ok) {
+                 const errorText = await response.text();
+                 throw new Error(`Failed to delete account ${targetUserId} (Status: ${response.status}): ${errorText}`);
             }
+
+            // Refresh user tables list after successful deletion
+            await loadUserTables();
+            // Reset expansion state if the deleted user was expanded
+            if (expandedTable === targetUserId) {
+                expandedTable = null;
+                expandedTableData = [];
+            }
+        } catch (e) {
+            error = e.message;
+            console.error(`Error deleting account ${targetUserId}:`, e);
         }
     }
 
     async function loadSystemStatus() {
+        statusLoading = true;
+        statusError = null;
         try {
-            const response = await fetch(PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL);
-            if (!response.ok) throw new Error('Failed to load system status');
+            // Assuming system status requires admin authentication
+            // Use fetchWithAuth (adds admin's Authorization header)
+            const response = await fetchWithAuth(PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL);
+            if (!response.ok) {
+                 const errorText = await response.text();
+                 throw new Error(`Failed to load system status (Status: ${response.status}): ${errorText}`);
+            }
             systemStatus = await response.json();
         } catch (e) {
             statusError = e.message;
+             console.error("Error loading system status:", e);
         } finally {
             statusLoading = false;
         }
     }
 
+    // --- Lifecycle ---
     onMount(() => {
-        loadUserTables();
-        loadSystemStatus();
+        accessToken = getCookie('discord_token'); // Read the admin's token cookie
+        if (accessToken) {
+            // Token found, load initial data
+            loadUserTables();
+            loadSystemStatus();
+        } else {
+            // No token found - handle appropriately
+            error = "Authentication token not found. Please log in.";
+            loading = false; // Ensure loading states are updated
+            statusLoading = false;
+            console.error(error);
+            // Optional: Redirect to login
+            // import { goto } from '$app/navigation';
+            // goto('/login');
+        }
     });
 </script>
 
@@ -204,7 +321,7 @@
                     </div>
                     <div class="status-item">
                         <h3>Last Checked</h3>
-                        <span>{new Date(systemStatus.last_checked).toLocaleString()}</span>
+                        <span>{formatLocalDate(systemStatus.last_checked)}</span>
                     </div>
 
                     {#if systemStatus.metrics}
