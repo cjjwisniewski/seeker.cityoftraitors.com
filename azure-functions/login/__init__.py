@@ -9,8 +9,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     client_id = os.environ.get('DISCORD_CLIENT_ID')
     redirect_uri = os.environ.get('DISCORD_REDIRECT_URI') # URL of your /api/callback Azure Function
 
+    # --- Detailed Logging Added ---
+    logging.info(f"Read DISCORD_CLIENT_ID: '{client_id}' (Type: {type(client_id)})")
+    logging.info(f"Read DISCORD_REDIRECT_URI: '{redirect_uri}' (Type: {type(redirect_uri)})")
+    # --- End Detailed Logging ---
+
     if not client_id or not redirect_uri:
-        logging.error('Missing required environment variables for Discord OAuth.')
+        logging.error(f"Configuration check failed: client_id is {'set' if client_id else 'NOT set'}, redirect_uri is {'set' if redirect_uri else 'NOT set'}.")
         return func.HttpResponse("Server configuration error.", status_code=500)
 
     # Get the state (original frontend URL) from query params, default to '/'
