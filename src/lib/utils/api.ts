@@ -17,7 +17,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
         return undefined; // Or throw an error
     }
 
-    const authState = get(auth); // Get the current state non-reactively
+    let authState = get(auth); // Use let as it will be reassigned
 
     // If the store indicates loading, wait briefly for initialization
     // This is a simple mechanism; more robust solutions might use a promise in the store
