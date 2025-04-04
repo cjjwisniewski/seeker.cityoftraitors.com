@@ -1,18 +1,10 @@
 <script>
-    import { onMount } from 'svelte';
-    import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
-
-    onMount(() => {
-        const redirectTo = $page.data?.redirect || '/';
-        console.log('Attempting redirect to:', redirectTo);
-        window.location.href = redirectTo;
-    });
+    // No script logic needed here anymore, handled in +page.js
 </script>
 
 <div class="callback-container">
-    <p>Completing authentication...</p>
-    <p class="small">You will be redirected automatically.</p>
+    <p>Processing authentication...</p>
+    <p class="small">Please wait, you will be redirected shortly.</p>
 </div>
 
 <style>
