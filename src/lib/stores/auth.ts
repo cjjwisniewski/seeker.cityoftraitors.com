@@ -15,6 +15,7 @@ interface AuthState {
     token: string | null;
     user: User | null;
     isLoading: boolean; // To track initial auth check
+    intendedPath: string | null; // To store the path user was trying to access before login redirect
 }
 
 // Use environment variables for Azure Function URLs - Fallbacks removed to enforce env var usage
@@ -31,6 +32,7 @@ const createAuthStore = () => {
         token: initialToken,
         user: null, // User info will be fetched if token exists
         isLoading: true, // Start in loading state
+        intendedPath: null, // Initialize intendedPath
     });
 
     // Function to fetch user info using the token
@@ -65,7 +67,8 @@ const createAuthStore = () => {
         if (browser) {
             localStorage.removeItem('authToken');
         }
-        set({ isAuthenticated: false, token: null, user: null, isLoading: false });
+        // Reset intendedPath on clear as well
+        set({ isAuthenticated: false, token: null, user: null, isLoading: false, intendedPath: null });
     }
 
     // Function to set auth state and localStorage
@@ -73,7 +76,8 @@ const createAuthStore = () => {
         if (browser) {
             localStorage.setItem('authToken', token);
         }
-        set({ isAuthenticated: true, token: token, user: user, isLoading: false });
+        // Keep existing intendedPath when setting auth data
+        update(state => ({ ...state, isAuthenticated: true, token: token, user: user, isLoading: false }));
     }
 
     // Initialize store on load (only in browser)
@@ -83,7 +87,7 @@ const createAuthStore = () => {
             if (!LOGIN_URL || !USER_INFO_URL) {
                 console.error('AuthStore FATAL: VITE_LOGIN_URL and/or VITE_USER_INFO_URL environment variables are not set. Authentication cannot proceed.');
                 // Set loading to false but keep unauthenticated state
-                set({ isAuthenticated: false, token: null, user: null, isLoading: false });
+                update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
                 return; // Stop initialization
             }
 
@@ -100,7 +104,7 @@ const createAuthStore = () => {
                 }
             } else {
                 console.debug('AuthStore: No token found in localStorage.');
-                set({ isAuthenticated: false, token: null, user: null, isLoading: false });
+                update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
             }
         }
     }
@@ -108,12 +112,16 @@ const createAuthStore = () => {
     return {
         subscribe,
         initialize, // Expose initialize to be called from layout load
+        // Function to store the path the user was trying to access
+        setIntendedPath: (path: string) => {
+            update(state => ({ ...state, intendedPath: path }));
+        },
         login: () => {
             // Redirect to your Azure Function endpoint that starts the Discord OAuth flow
-            // Pass the current path to be redirected back after successful login
-            const redirectState = window.location.pathname + window.location.search;
-            // Append state to the login URL (adjust query param name if needed)
-            window.location.href = `${LOGIN_URL}?state=${encodeURIComponent(redirectState)}`;
+            // Use the stored intendedPath as state, default to '/'
+            const stateToUse = get(auth).intendedPath || '/';
+            console.debug(`AuthStore: Initiating login, state=${stateToUse}`);
+            window.location.href = `${LOGIN_URL}?state=${encodeURIComponent(stateToUse)}`;
         },
         logout: async () => {
             const currentToken = localStorage.getItem('authToken');

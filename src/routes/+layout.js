@@ -19,8 +19,10 @@ export const load = async ({ url }) => {
         // and we are NOT on an auth-related page, redirect to login.
         const isAuthPath = currentPath === '/login' || currentPath === '/auth/callback' || currentPath === '/auth/logout';
         if (!authState.isAuthenticated && !authState.isLoading && !isAuthPath) {
-            console.log('Client layout load: Not authenticated, redirecting to login from:', currentPath);
-            throw redirect(302, `/login?redirectTo=${encodeURIComponent(currentPath + url.search)}`);
+            const intendedPath = currentPath + url.search;
+            console.log('Client layout load: Not authenticated, storing intended path and redirecting to login from:', intendedPath);
+            auth.setIntendedPath(intendedPath); // Store the path before redirecting
+            throw redirect(302, `/login`); // Redirect without the redirectTo param
         }
 
         // If authenticated and trying to access login page, redirect to home

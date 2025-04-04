@@ -4,7 +4,7 @@
     import { page } from '$app/stores';
     import { auth } from '$lib/stores/auth'; // Import the auth store
     
-    let redirectTo = '/'; // Still needed for state preservation if login fails server-side
+    // Remove redirectTo logic - it's handled by auth store now
     let errorMessage = '';
     
     onMount(() => {
@@ -16,13 +16,7 @@
             return;
         }
 
-        // Handle redirect parameter
-        const urlRedirectTo = $page.url.searchParams.get('redirectTo');
-        if (urlRedirectTo && urlRedirectTo !== '/login') {
-            redirectTo = urlRedirectTo;
-        }
-
-        // Error handling
+        // Error handling (keep this part)
         const error = $page.url.searchParams.get('error');
         const message = decodeURIComponent($page.url.searchParams.get('message') || '');
         
