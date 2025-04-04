@@ -1,8 +1,10 @@
 <script>
+    import { onMount } from 'svelte'; // Import onMount
     import { goto } from '$app/navigation';
     import Footer from '$lib/components/Footer.svelte';
     import { page } from '$app/stores'; // Import the page store
     import { auth } from '$lib/stores/auth'; // Import the auth store
+    import { browser } from '$app/environment'; // Import browser check
 
     // Remove export let data; - Data now comes from the auth store
 
@@ -18,6 +20,33 @@
         showDropdown = false; // Close dropdown
         goto('/profile');
     };
+
+    // Handle token from URL fragment after component mounts
+    onMount(async () => {
+        if (browser) {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const token = hashParams.get('token');
+            const state = hashParams.get('state') || '/'; // Default redirect target
+
+            if (token) {
+                console.log('Layout onMount: Found token in URL fragment. Handling callback...');
+                // Clear the hash fragment using standard browser API (safe in onMount)
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+
+                const success = await auth.handleCallback(token);
+
+                if (success) {
+                    console.log('Layout onMount: Callback successful, navigating to state:', state);
+                    // Use goto for client-side navigation after successful callback
+                    await goto(state, { replaceState: true, invalidateAll: true });
+                } else {
+                    console.error('Layout onMount: Callback token handling failed, redirecting to login with error.');
+                    // Redirect to login page with error
+                    await goto('/login?error=callback_failed', { replaceState: true });
+                }
+            }
+        }
+    });
 </script>
 
 <link rel="stylesheet" href="/global.css">

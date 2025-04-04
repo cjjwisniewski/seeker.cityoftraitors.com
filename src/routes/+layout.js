@@ -6,46 +6,46 @@ import { get } from 'svelte/store'; // Import get to read store value non-reacti
 import { goto, replaceState } from '$app/navigation'; // Import goto AND replaceState
 
 export const load = async ({ url }) => {
+    // Initialize auth store on every load, client-side only.
+    // auth.initialize() handles preventing multiple initializations.
+    // Await it here to ensure localStorage token is checked before proceeding.
     if (browser) {
-        // --- Handle Callback Token ---
-        // Check the URL fragment ONLY when the page initially loads or navigates client-side
-        const hashParams = new URLSearchParams(window.location.hash.substring(1)); // Use window.location.hash
-        const token = hashParams.get('token');
-        const state = hashParams.get('state') || '/'; // Default redirect target
+        console.log('Client layout load: Ensuring auth store is initialized...');
+        await auth.initialize();
+    }
 
-        if (token) {
-            console.log('Client layout load: Found token in URL fragment. Handling callback...');
-            // Clear the hash fragment from the URL immediately BEFORE processing
-            // Use SvelteKit's replaceState to avoid warnings
-            replaceState(url.pathname + url.search, history.state);
+    // Get the latest auth state AFTER potential initialization
+    const authState = get(auth);
+    const currentPath = url.pathname;
 
-            const success = await auth.handleCallback(token);
+    // Log state AFTER initialization attempt
+    if (browser) {
+        console.log('Client layout load: Auth state after init/check:', { isAuthenticated: authState.isAuthenticated, isLoading: authState.isLoading, currentPath });
+    }
 
-            if (success) {
-                console.log('Client layout load: Callback successful, navigating to state:', state);
-                // Use goto for client-side navigation after successful callback
-                // This ensures the page re-renders with the new auth state
-                await goto(state, { replaceState: true, invalidateAll: true }); // Invalidate to ensure data reloads if needed
-                // After goto, the load function will run again for the target 'state' page.
-                // We return here to let the new load execution handle the final auth state check.
-                return {};
-            } else {
-                console.error('Client layout load: Callback token handling failed, redirecting to login with error.');
-                // Redirect to login page with error
-                throw redirect(302, '/login?error=callback_failed');
-            }
+    // Authentication checks (run server-side if SSR enabled, client-side otherwise)
+    // These checks run AFTER initialize has potentially set the auth state from localStorage
+    const isAuthPath = currentPath === '/login' || currentPath === '/auth/callback' || currentPath === '/auth/logout';
+
+    // If NOT authenticated AND NOT loading AND NOT on an auth path -> redirect to login
+    if (!authState.isAuthenticated && !authState.isLoading && !isAuthPath) {
+        const intendedPath = currentPath + url.search;
+        console.log('Client layout load: Not authenticated, storing intended path and redirecting to login from:', intendedPath);
+        if (browser) { // Only store intended path on client
+            auth.setIntendedPath(intendedPath);
         }
-        // --- End Handle Callback Token ---
+        throw redirect(302, `/login`); // Redirect without the redirectTo param
+    }
 
+    // If authenticated AND on the login page -> redirect to home
+    if (authState.isAuthenticated && currentPath === '/login') {
+         console.log('Client layout load: Authenticated, redirecting from login to /');
+         throw redirect(302, '/');
+    }
 
-        console.log('Client layout load: Initializing auth store (or re-checking after potential navigation)...');
-        // Initialize or re-check auth state if not handled by callback above
-        // Ensure initialization only runs once effectively if needed, though auth.initialize handles this
-        if (get(auth).isLoading) { // Only initialize if still loading
-             await auth.initialize();
-        }
-
-        // Check authentication status
+    // Return empty object - component uses the store directly
+    return {};
+};
         const authState = get(auth); // Get the latest state
         const currentPath = url.pathname;
 
