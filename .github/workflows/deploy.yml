@@ -3,9 +3,9 @@ name: Deploy to Azure Blob Storage and Purge CDN
 on:
   push:
     branches:
-      - main # Or your main branch name
-  workflow_dispatch: # Allow manual triggering
-
+      - main
+  workflow_dispatch: 
+  
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -79,7 +79,7 @@ jobs:
               --account-name "$ACCOUNT_NAME" \
               --account-key "$ACCOUNT_KEY" \
               --destination '$web' \
-              --source ./build \
+              --source ./.svelte-kit/output/client \
               --overwrite true
 
       - name: Purge CDN endpoint
