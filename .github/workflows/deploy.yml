@@ -75,7 +75,6 @@ jobs:
             # Corrected command: Use --container '$web' or -c '$web', remove -d '$web'
             az storage blob sync \
               --account-name "$ACCOUNT_NAME" \
-              --auth-mode login \
               --container '$web' \
               --source build/ \
               --delete-destination true
