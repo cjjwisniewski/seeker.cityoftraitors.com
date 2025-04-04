@@ -80,7 +80,103 @@ jobs:
 
       - name: Purge CDN endpoint
         uses: Azure/CLI@v1
+        with:name: Deploy to Azure Blob Storage and Purge CDN
+
+on:
+  push:
+    branches:
+      - main # Or your main branch name
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    # Using the production environment allows potential use of Environment secrets/variables
+    # Ensure your Repository secrets/variables are accessible or duplicate as Environment ones if needed.
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
+          node-version: '20' # Or your preferred Node.js version
+
+      - name: Install dependencies
+        # Use npm ci for cleaner installs in CI environments
+        run: npm ci
+
+      - name: Build
+        # Make Secrets and Variables available as environment variables for this step
+        env:
+          # --- Secrets ---
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+
+          # --- Variables ---
+          DISCORD_CLIENT_ID: ${{ vars.DISCORD_CLIENT_ID }}
+          # NOTE: Ensure this redirect URI variable holds the PRODUCTION value, not localhost
+          DISCORD_REDIRECT_URI: ${{ vars.DISCORD_REDIRECT_URI }}
+          PUBLIC_VERSION: ${{ vars.PUBLIC_VERSION }}
+          PUBLIC_DISCORD_CLIENT_ID: ${{ vars.PUBLIC_DISCORD_CLIENT_ID }}
+          # NOTE: Ensure this redirect URI variable holds the PRODUCTION value, not localhost
+          PUBLIC_DISCORD_REDIRECT_URI: ${{ vars.PUBLIC_DISCORD_REDIRECT_URI }}
+          PUBLIC_USER_TABLE_FUNCTION_URL: ${{ vars.PUBLIC_USER_TABLE_FUNCTION_URL }}
+          PUBLIC_ADD_TO_SEEKING_FUNCTION_URL: ${{ vars.PUBLIC_ADD_TO_SEEKING_FUNCTION_URL }}
+          PUBLIC_GET_SEEKING_LIST_FUNCTION_URL: ${{ vars.PUBLIC_GET_SEEKING_LIST_FUNCTION_URL }}
+          PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL: ${{ vars.PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL }}
+          PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL: ${{ vars.PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL }}
+          PUBLIC_GET_USER_TABLES_FUNCTION_URL: ${{ vars.PUBLIC_GET_USER_TABLES_FUNCTION_URL }}
+          PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL: ${{ vars.PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL }}
+          PUBLIC_AUTH_ENDPOINT: ${{ vars.PUBLIC_AUTH_ENDPOINT }}
+          PUBLIC_LOGIN_ENDPOINT: ${{ vars.PUBLIC_LOGIN_ENDPOINT }}
+          PUBLIC_LOGOUT_ENDPOINT: ${{ vars.PUBLIC_LOGOUT_ENDPOINT }}
+          # Add any other needed vars here, ensure they exist in Repo Settings -> Variables
+        run: npm run build
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          # Assuming AZURE_CREDENTIALS is a Repository Secret containing JSON output from `az ad sp create-for-rbac`
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          # Removed explicit subscription-id assuming AZURE_CREDENTIALS contains it OR SP has access to only one needed sub. Add back if login fails.
+          # subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sync to Azure Blob Storage
+        uses: Azure/CLI@v1
+        with:
+          inlineScript: |
+            # Use direct variable/secret for Storage Account Name
+            ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}" # Prioritize secret if both exist
+            if [ -z "$ACCOUNT_NAME" ]; then
+              echo "Error: STORAGE_ACCOUNT_NAME secret or variable not set."
+              exit 1
+            fi
+            echo "Syncing to Storage Account: $ACCOUNT_NAME, Container: \$web"
+            # Corrected command: Use --container '$web' or -c '$web', remove -d '$web'
+            az storage blob sync \
+              --account-name "$ACCOUNT_NAME" \
+              --auth-mode login \
+              --container '$web' \
+              --source build/ \
+              --delete-destination true
+
+      - name: Purge CDN endpoint
+        uses: Azure/CLI@v1
+        with:
+          inlineScript: |
+            # Use direct values or GitHub Variables/Secrets for these parameters
+            CDN_PROFILE="${{ vars.CDN_PROFILE_NAME || 'cityoftraitors-com-cdn-1' }}"
+            CDN_ENDPOINT="${{ vars.CDN_ENDPOINT_NAME || 'cityoftraitors-com-cdn-1' }}"
+            RESOURCE_GROUP="${{ vars.RESOURCE_GROUP_NAME || 'cameron.wisniewski_rg_Windows_eastus2' }}"
+            echo "Purging CDN Endpoint: $CDN_ENDPOINT in profile $CDN_PROFILE"
+            az cdn endpoint purge --content-paths "/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
+
+      - name: Azure Logout
+        # Ensures logout happens even if previous steps fail
+        if: always()
+        run: az logout
           inlineScript: |
             # Use direct values or GitHub Variables/Secrets for these parameters
             CDN_PROFILE="cityoftraitors-com-cdn-1" # Or ${{ vars.CDN_PROFILE_NAME }}
