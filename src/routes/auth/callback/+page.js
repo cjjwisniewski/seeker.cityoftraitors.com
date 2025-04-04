@@ -1,6 +1,10 @@
 import { redirect } from '@sveltejs/kit';
 import { browser } from '$app/environment';
+import { redirect } from '@sveltejs/kit';
+import { browser } from '$app/environment';
 import { auth } from '$lib/stores/auth';
+
+console.log('--- Callback +page.js script started ---'); // <-- Add this line
 
 export async function load({ url }) {
     if (!browser) {
