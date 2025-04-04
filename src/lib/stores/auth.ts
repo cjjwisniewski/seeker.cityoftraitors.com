@@ -3,8 +3,7 @@ import { browser } from '$app/environment';
 // fetchWithAuth is NOT used directly in fetchUserInfo anymore for the initial token validation
 // import { fetchWithAuth } from '$lib/utils/api';
 
-// Import APIM Key - **PLEASE VERIFY THIS VARIABLE NAME**
-const APIM_KEY = import.meta.env.VITE_APIM_KEY;
+// REMOVED: APIM_KEY constant
 
 // Define the shape of the user object (adjust as needed based on your Azure Function response)
 interface User {
@@ -51,17 +50,14 @@ const createAuthStore = () => {
              console.error('AuthStore: fetchUserInfo cannot proceed, USER_INFO_URL is not defined.');
              return null;
         }
-        if (!APIM_KEY) {
-             console.error('AuthStore: fetchUserInfo cannot proceed, VITE_APIM_KEY is not defined.');
-             return null;
-        }
+        // REMOVED: Check for APIM_KEY
         console.debug(`AuthStore: Attempting to fetch user info from ${USER_INFO_URL} with provided token.`);
         try {
-            // Perform direct fetch, manually adding headers for token validation
+            // Perform direct fetch, manually adding Authorization header
             const response = await fetch(USER_INFO_URL, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Ocp-Apim-Subscription-Key': APIM_KEY
+                    'Authorization': `Bearer ${token}`
+                    // REMOVED: Ocp-Apim-Subscription-Key header
                 }
             });
 
