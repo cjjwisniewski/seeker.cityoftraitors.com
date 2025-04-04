@@ -46,19 +46,6 @@
                 }
             }
         }
-                console.log('Layout onMount: Callback successful, navigating to state:', state);
-                // Use goto for client-side navigation after successful callback
-                // Move replaceState here, after successful callback handling
-                replaceState(window.location.pathname + window.location.search, history.state);
-                await goto(state, { replaceState: true, invalidateAll: true });
-            } else {
-                console.error('Layout onMount: Callback token handling failed, redirecting to login with error.');
-                // Clear hash on failure too
-                replaceState(window.location.pathname + window.location.search, history.state);
-                // Redirect to login page with error
-                await goto('/login?error=callback_failed', { replaceState: true });
-            }
-        }
     });
 </script>
 
