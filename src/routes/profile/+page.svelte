@@ -125,10 +125,6 @@
             <div class="profile-avatar placeholder-avatar">
                 <i class="fa-solid fa-user"></i>
             </div>
-        {:else}
-            <div class="profile-avatar placeholder-avatar">
-                <i class="fa-solid fa-user"></i>
-            </div>
         {/if}
         <div class="profile-title">
             <h1>{user.global_name || user.username || 'User'}</h1>
@@ -180,7 +176,6 @@
                             <i class="fa-solid {isAdmin ? 'fa-shield' : 'fa-user'}"></i> {isAdmin ? 'Admin' : 'Not Admin'}
                         </span>
                     </div>
-                {/if}
             </div>
         </section>
 
