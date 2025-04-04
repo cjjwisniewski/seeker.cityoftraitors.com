@@ -50,6 +50,14 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+          
+      - name: Verify Azure Login Context # <-- Add this verification step
+        uses: Azure/CLI@v1
+        with:
+          inlineScript: |
+            echo "Attempting to show account details..."
+            az account show
+        continue-on-error: true
 
       - name: Sync to Azure Blob Storage
         uses: Azure/CLI@v1
