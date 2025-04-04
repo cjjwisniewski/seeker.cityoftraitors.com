@@ -224,7 +224,8 @@
             </div>
         </div>
     </div>
-{/if} <!-- Closing the main else block -->
+{/if} <!-- Closing the modal #if block -->
+{/if} <!-- Closing the main #if isLoading / !user / else block -->
 
 <style>
      .loading-container, .error-container {
