@@ -6,6 +6,7 @@
 
     let cards = [];
     let error = null;
+    let loading = true; // Re-declare the loading variable
 
     // Reactive check for authentication status
     $: isAuthenticated = $auth.isAuthenticated;
