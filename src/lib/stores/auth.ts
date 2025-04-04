@@ -46,14 +46,22 @@ const createAuthStore = () => {
              console.error('AuthStore: fetchUserInfo cannot proceed, USER_INFO_URL is not defined.');
              return null;
         }
-        console.debug(`AuthStore: Attempting to fetch user info from ${USER_INFO_URL} with token.`);
+        console.debug(`AuthStore: Attempting to fetch user info from ${USER_INFO_URL} with token using fetchWithAuth.`);
         try {
-            // Assume your user info endpoint expects the token in the Authorization header
-            const response = await fetch(USER_INFO_URL, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            // Use fetchWithAuth to automatically handle token, APIM key, and 401 redirects
+            const response = await fetchWithAuth(USER_INFO_URL, {
+                 headers: {
+                     // fetchWithAuth adds Authorization and Ocp-Apim-Subscription-Key
+                     // Add other headers if needed by userinfo specifically
+                 }
+             });
+
+            // fetchWithAuth returns undefined if it triggered a login redirect (e.g., on 401)
+            if (!response) {
+                 console.warn("AuthStore: fetchUserInfo aborted because fetchWithAuth triggered a redirect.");
+                 return null; // Indicate failure/redirect
+            }
+
             if (response.ok) {
                 const userData: User = await response.json();
                 return userData;

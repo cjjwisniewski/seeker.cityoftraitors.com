@@ -3,7 +3,7 @@ import { auth } from '$lib/stores/auth';
 import { redirect } from '@sveltejs/kit';
 import { page } from '$app/stores'; // Import page store to prevent redirect loops
 import { get } from 'svelte/store'; // Import get to read store value non-reactively
-import { goto } from '$app/navigation'; // Import goto for redirect after callback
+import { goto, replaceState } from '$app/navigation'; // Import goto AND replaceState
 
 export const load = async ({ url }) => {
     if (browser) {
@@ -16,8 +16,8 @@ export const load = async ({ url }) => {
         if (token) {
             console.log('Client layout load: Found token in URL fragment. Handling callback...');
             // Clear the hash fragment from the URL immediately BEFORE processing
-            // to prevent reprocessing on errors or fast reloads.
-            history.replaceState(null, '', url.pathname + url.search);
+            // Use SvelteKit's replaceState to avoid warnings
+            replaceState(url.pathname + url.search, history.state);
 
             const success = await auth.handleCallback(token);
 
