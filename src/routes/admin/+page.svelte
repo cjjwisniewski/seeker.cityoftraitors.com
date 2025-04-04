@@ -1,13 +1,16 @@
 <script>
     import { onMount } from 'svelte';
+    import { auth } from '$lib/stores/auth'; // Import auth store
+    import { fetchWithAuth } from '$lib/utils/api'; // Import global fetch helper
+    import { goto } from '$app/navigation'; // For redirecting unauthorized users
     import {
         PUBLIC_GET_USER_TABLES_FUNCTION_URL,
         PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
         PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL,
-        PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL
     } from '$env/static/public';
 
-    export let data; // Receives data prop (contains admin user info like data.user.username)
+    // Define Role ID
+    const ADMIN_ROLE_ID = '1352632325640294411'; // Ensure this matches your setup
 
     // State variables
     let userTables = [];
@@ -20,23 +23,22 @@
     let statusError = null; // Error display for system status
     let systemStatus = null;
 
-    let accessToken = null; // Store the admin's access token
+    // Reactive variables from auth store
+    $: user = $auth.user;
+    $: token = $auth.token;
+    $: authLoading = $auth.isLoading;
+    $: isAuthenticated = $auth.isAuthenticated;
 
-    // --- Helper function to read a specific cookie ---
-    function getCookie(name) {
-        if (typeof document === 'undefined') return null; // Check if running client-side
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) {
-            try {
-                // Decode the cookie value in case it contains special characters
-                return decodeURIComponent(parts.pop().split(';').shift());
-            } catch(e) {
-                console.error("Error decoding cookie", e);
-                return null;
-            }
-        }
-        return null;
+    // Authorization check
+    $: isAdmin = user?.roles?.includes(ADMIN_ROLE_ID) ?? false;
+    $: isAuthorized = isAuthenticated && isAdmin;
+    $: showUnauthorized = !authLoading && (!isAuthenticated || !isAdmin);
+
+    // Redirect if unauthorized after loading finishes
+    $: if (showUnauthorized) {
+        console.warn('Admin Page: User is not authorized. Redirecting...');
+        // Optional: Redirect to home or login with an error message
+        // goto('/?error=unauthorized');
     }
 
     // --- Helper function to format date ---
@@ -45,34 +47,23 @@
         return date.toLocaleString(undefined, { /* Formatting options */ });
     }
 
-    // --- Helper function to wrap fetch with Authentication ---
-    async function fetchWithAuth(url, options = {}) {
-        if (!accessToken) {
-             throw new Error("Authentication token not available.");
-        }
-        const headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': options.headers?.['Content-Type'] || 'application/json',
-            // Ensure x-ms-client-principal-id is NEVER sent from client
-        };
-         // Remove Content-Type for GET/HEAD requests if no body is intended
-        if (!options.body && (!options.method || ['GET', 'HEAD'].includes(options.method.toUpperCase()))) {
-            delete headers['Content-Type'];
-        }
-
-        console.log(`WorkspaceWithAuth: Calling ${options.method || 'GET'} ${url}`); // Debug log
-        return fetch(url, { ...options, headers });
-    }
-
-    // --- API Call Functions ---
+    // --- API Call Functions (Now use imported fetchWithAuth) ---
 
     async function loadUserTables() {
+        if (!isAuthorized) return; // Don't fetch if not authorized
         loading = true;
         error = null;
         try {
-            // Use fetchWithAuth (adds admin's Authorization header)
+            // Use imported fetchWithAuth
             const response = await fetchWithAuth(PUBLIC_GET_USER_TABLES_FUNCTION_URL);
+
+            // fetchWithAuth returns undefined if it redirects (e.g., on 401)
+            if (!response) {
+                error = "Authentication failed while fetching user tables.";
+                console.error(error);
+                return; // Stop execution
+            }
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`Failed to load user tables (Status: ${response.status}): ${errorText}`);
@@ -87,26 +78,23 @@
     }
 
     async function loadTableData(targetUserId) {
+        if (!isAuthorized) return; // Don't fetch if not authorized
         tableDataLoading = true;
         error = null; // Clear general error when loading specific table data
         expandedTableData = [];
         try {
-            // ***** IMPORTANT BACKEND NOTE *****
-            // The backend function at PUBLIC_GET_SEEKING_LIST_FUNCTION_URL now receives
-            // the ADMIN's identity via the APIM-injected x-ms-client-principal-id.
-            // It MUST be modified to:
-            // 1. Accept the 'targetUserId' (e.g., via query param as shown below).
-            // 2. Verify the ADMIN is authorized to view this target user's data.
-            // 3. Use the 'targetUserId' to fetch the correct data, NOT the admin's ID.
-            // **********************************
-
-            // Example: Pass targetUserId as a query parameter
+            // Backend needs to accept targetUserId and verify admin access based on the token
             const urlWithQuery = `${PUBLIC_GET_SEEKING_LIST_FUNCTION_URL}?targetUserId=${encodeURIComponent(targetUserId)}`;
 
-            // Use fetchWithAuth (adds admin's Authorization header)
-            const response = await fetchWithAuth(urlWithQuery, {
-                // REMOVE the manual x-ms-client-principal-id header
-            });
+            // Use imported fetchWithAuth
+            const response = await fetchWithAuth(urlWithQuery);
+
+            // fetchWithAuth returns undefined if it redirects (e.g., on 401)
+            if (!response) {
+                error = `Authentication failed while fetching data for user ${targetUserId}.`;
+                console.error(error);
+                return; // Stop execution
+            }
 
             if (!response.ok) {
                  const errorText = await response.text();
@@ -129,27 +117,25 @@
         if (!confirm(`Are you sure you want to delete user account ${targetUserId}? This action cannot be undone.`)) {
              return;
         }
+        if (!isAuthorized) return; // Don't attempt if not authorized
 
         error = null; // Clear error before attempt
         try {
-             // ***** IMPORTANT BACKEND NOTE *****
-            // The backend function at PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL now receives
-            // the ADMIN's identity via the APIM-injected x-ms-client-principal-id.
-            // It MUST be modified to:
-            // 1. Accept the 'targetUserId' (e.g., via request body as shown below).
-            // 2. Verify the ADMIN is authorized to delete this target user.
-            // 3. Use the 'targetUserId' to perform the deletion.
-            // **********************************
-
-            // Example: Pass targetUserId in the request body
+            // Backend needs to accept targetUserIdToDelete in body and verify admin access based on token
             const requestBody = { targetUserIdToDelete: targetUserId };
 
-            // Use fetchWithAuth (adds admin's Authorization header)
+            // Use imported fetchWithAuth
             const response = await fetchWithAuth(PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, {
                 method: 'DELETE',
-                // REMOVE the manual x-ms-client-principal-id header
                 body: JSON.stringify(requestBody) // Send target ID in body
             });
+
+             // fetchWithAuth returns undefined if it redirects (e.g., on 401)
+            if (!response) {
+                error = `Authentication failed while attempting to delete user ${targetUserId}.`;
+                console.error(error);
+                return; // Stop execution
+            }
 
             if (!response.ok) {
                  const errorText = await response.text();
@@ -170,12 +156,20 @@
     }
 
     async function loadSystemStatus() {
+        if (!isAuthorized) return; // Don't fetch if not authorized
         statusLoading = true;
         statusError = null;
         try {
-            // Assuming system status requires admin authentication
-            // Use fetchWithAuth (adds admin's Authorization header)
+            // Use imported fetchWithAuth
             const response = await fetchWithAuth(PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL);
+
+            // fetchWithAuth returns undefined if it redirects (e.g., on 401)
+            if (!response) {
+                statusError = "Authentication failed while fetching system status.";
+                console.error(statusError);
+                return; // Stop execution
+            }
+
             if (!response.ok) {
                  const errorText = await response.text();
                  throw new Error(`Failed to load system status (Status: ${response.status}): ${errorText}`);
@@ -190,34 +184,42 @@
     }
 
     // --- Lifecycle ---
-    onMount(() => {
-        accessToken = getCookie('discord_token'); // Read the admin's token cookie
-        if (accessToken) {
-            // Token found, load initial data
-            loadUserTables();
-            loadSystemStatus();
-        } else {
-            // No token found - handle appropriately
-            error = "Authentication token not found. Please log in.";
-            loading = false; // Ensure loading states are updated
-            statusLoading = false;
-            console.error(error);
-            // Optional: Redirect to login
-            // import { goto } from '$app/navigation';
-            // goto('/login');
-        }
-    });
+    // Load data only when authorization status is confirmed
+    $: if (!authLoading && isAuthorized) {
+        console.log("Admin Page: Authorized, loading initial data...");
+        loadUserTables();
+        loadSystemStatus();
+    } else if (!authLoading && !isAuthorized) {
+        console.log("Admin Page: Not authorized or not authenticated.");
+        // Error/redirect is handled by reactive logic above
+        loading = false; // Ensure loading states reflect reality
+        statusLoading = false;
+    }
 </script>
 
-<div class="admin-container">
-    <div class="admin-header">
-        <h1>Admin Panel</h1>
-        <p class="admin-subtitle">Logged in as {data.user.username}. With great power comes great responsibility.</p>
+{#if authLoading}
+    <div class="loading-container">
+        <p>Checking authorization...</p>
     </div>
+{:else if showUnauthorized}
+    <div class="unauthorized-container">
+        <h2>Unauthorized</h2>
+        <p>You do not have permission to access the admin panel.</p>
+        <a href="/">Go to Home</a>
+    </div>
+{:else}
+    <!-- Only render content if authorized -->
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Admin Panel</h1>
+            {#if user}
+                <p class="admin-subtitle">Logged in as {user.username}. With great power comes great responsibility.</p>
+            {/if}
+        </div>
 
-    <div class="admin-content">
-        <section class="admin-section">
-            <h2>User Management</h2>
+        <div class="admin-content">
+            <section class="admin-section">
+                <h2>User Management</h2>
             {#if loading}
                 <p>Loading user data...</p>
             {:else if error}
@@ -254,7 +256,9 @@
                             </div>
                             {#if expandedTable === table.userId}
                                 <div class="table-content">
-                                    {#if error}
+                                    {#if tableDataLoading}
+                                        <p>Loading table data...</p>
+                                    {:else if error && expandedTable === table.userId}
                                         <p class="error">{error}</p>
                                     {:else if expandedTableData.length === 0}
                                         <p>No cards found in seeking list.</p>
@@ -377,8 +381,30 @@
         </section>
     </div>
 </div>
+{/if} <!-- End of authorization check block -->
 
 <style>
+    .loading-container, .unauthorized-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        text-align: center;
+        padding: 2rem;
+    }
+    .unauthorized-container h2 {
+        color: var(--color-error);
+    }
+     .unauthorized-container a {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background-color: var(--color-primary);
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+
     .admin-container {
         max-width: 1200px;
         margin: 2rem auto;
