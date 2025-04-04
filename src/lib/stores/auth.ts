@@ -37,7 +37,16 @@ const createAuthStore = () => {
 
     // Function to fetch user info using the token
     async function fetchUserInfo(token: string) {
-        if (!token) return null;
+        console.debug('AuthStore: fetchUserInfo called.'); // Log entry
+        if (!token) {
+            console.error('AuthStore: fetchUserInfo called with no token.');
+            return null;
+        }
+        if (!USER_INFO_URL) {
+             console.error('AuthStore: fetchUserInfo cannot proceed, USER_INFO_URL is not defined.');
+             return null;
+        }
+        console.debug(`AuthStore: Attempting to fetch user info from ${USER_INFO_URL} with token.`);
         try {
             // Assume your user info endpoint expects the token in the Authorization header
             const response = await fetch(USER_INFO_URL, {
@@ -143,7 +152,12 @@ const createAuthStore = () => {
         },
         // Call this from the callback page (+page.js)
         handleCallback: async (token: string) => {
-            console.debug('AuthStore: Handling callback with token...');
+            console.debug('AuthStore: handleCallback called.'); // Log entry
+            if (!token) {
+                console.error('AuthStore: handleCallback called with no token.');
+                return false;
+            }
+            console.debug('AuthStore: Calling fetchUserInfo from handleCallback...');
             const user = await fetchUserInfo(token);
             if (user) {
                 setAuthData(token, user);
