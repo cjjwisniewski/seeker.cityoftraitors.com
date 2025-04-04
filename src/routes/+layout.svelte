@@ -30,10 +30,11 @@
 
             if (token) {
                 console.log('Layout onMount: Found token in URL fragment. Handling callback...');
-                // Clear the hash fragment using SvelteKit's replaceState
-                replaceState(window.location.pathname + window.location.search, history.state);
 
                 const success = await auth.handleCallback(token);
+
+                // Clear the hash fragment AFTER handling the callback and before navigating
+                replaceState(window.location.pathname + window.location.search, history.state);
 
                 if (success) {
                     console.log('Layout onMount: Callback successful, navigating to state:', state);
