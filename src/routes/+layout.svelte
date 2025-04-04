@@ -33,11 +33,10 @@
 
                 const success = await auth.handleCallback(token);
 
-                // Clear the hash fragment AFTER handling the callback and before navigating
-                replaceState(window.location.pathname + window.location.search, history.state);
-
                 if (success) {
                     console.log('Layout onMount: Callback successful, navigating to state:', state);
+                    // Clear the hash fragment ONLY on success, right before navigating
+                    replaceState(window.location.pathname + window.location.search, history.state);
                     // Use goto for client-side navigation after successful callback
                     await goto(state, { replaceState: true, invalidateAll: true });
                 } else {

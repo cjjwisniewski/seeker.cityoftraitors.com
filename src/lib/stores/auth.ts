@@ -1,6 +1,10 @@
-import { writable, get } from 'svelte/store'; // Import get
-import { browser } from '$app/environment'; // Import browser check
-import { fetchWithAuth } from '$lib/utils/api'; // Import fetchWithAuth
+import { writable, get } from 'svelte/store';
+import { browser } from '$app/environment';
+// fetchWithAuth is NOT used directly in fetchUserInfo anymore for the initial token validation
+// import { fetchWithAuth } from '$lib/utils/api';
+
+// Import APIM Key - **PLEASE VERIFY THIS VARIABLE NAME**
+const APIM_KEY = import.meta.env.VITE_APIM_KEY;
 
 // Define the shape of the user object (adjust as needed based on your Azure Function response)
 interface User {
@@ -47,24 +51,24 @@ const createAuthStore = () => {
              console.error('AuthStore: fetchUserInfo cannot proceed, USER_INFO_URL is not defined.');
              return null;
         }
-        console.debug(`AuthStore: Attempting to fetch user info from ${USER_INFO_URL} with token using fetchWithAuth.`);
+        if (!APIM_KEY) {
+             console.error('AuthStore: fetchUserInfo cannot proceed, VITE_APIM_KEY is not defined.');
+             return null;
+        }
+        console.debug(`AuthStore: Attempting to fetch user info from ${USER_INFO_URL} with provided token.`);
         try {
-            // Use fetchWithAuth to automatically handle token, APIM key, and 401 redirects
-            const response = await fetchWithAuth(USER_INFO_URL, {
-                 headers: {
-                     // fetchWithAuth adds Authorization and Ocp-Apim-Subscription-Key
-                     // Add other headers if needed by userinfo specifically
-                 }
-             });
+            // Perform direct fetch, manually adding headers for token validation
+            const response = await fetch(USER_INFO_URL, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Ocp-Apim-Subscription-Key': APIM_KEY
+                }
+            });
 
-            // fetchWithAuth returns undefined if it triggered a login redirect (e.g., on 401)
-            if (!response) {
-                 console.warn("AuthStore: fetchUserInfo aborted because fetchWithAuth triggered a redirect.");
-                 return null; // Indicate failure/redirect
-            }
-
+            // Manually handle response status
             if (response.ok) {
                 const userData: User = await response.json();
+                console.debug('AuthStore: fetchUserInfo successful.', userData);
                 return userData;
             } else {
                 console.error('Failed to fetch user info:', response.status);
