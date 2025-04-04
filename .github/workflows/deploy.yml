@@ -64,7 +64,7 @@ jobs:
             az storage blob sync \
               --account-name "$ACCOUNT_NAME" \
               --container '$web' \
-              --auth-mode key \
+              --auth-mode login \
               --source build/ \
               --delete-destination true
 
