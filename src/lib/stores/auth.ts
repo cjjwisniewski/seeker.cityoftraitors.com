@@ -1,5 +1,6 @@
 import { writable, get } from 'svelte/store'; // Import get
 import { browser } from '$app/environment'; // Import browser check
+import { fetchWithAuth } from '$lib/utils/api'; // Import fetchWithAuth
 
 // Define the shape of the user object (adjust as needed based on your Azure Function response)
 interface User {

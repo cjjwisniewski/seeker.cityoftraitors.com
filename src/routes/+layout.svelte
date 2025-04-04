@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte'; // Import onMount
-    import { goto } from '$app/navigation';
+    import { goto, replaceState } from '$app/navigation'; // Import replaceState
     import Footer from '$lib/components/Footer.svelte';
     import { page } from '$app/stores'; // Import the page store
     import { auth } from '$lib/stores/auth'; // Import the auth store
@@ -30,8 +30,8 @@
 
             if (token) {
                 console.log('Layout onMount: Found token in URL fragment. Handling callback...');
-                // Clear the hash fragment using standard browser API (safe in onMount)
-                history.replaceState(null, '', window.location.pathname + window.location.search);
+                // Clear the hash fragment using SvelteKit's replaceState
+                replaceState(window.location.pathname + window.location.search, history.state);
 
                 const success = await auth.handleCallback(token);
 
