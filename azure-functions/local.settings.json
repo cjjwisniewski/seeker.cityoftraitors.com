@@ -1,0 +1,19 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true", // Or your Azure Storage connection string
+    "FUNCTIONS_WORKER_RUNTIME": "python", // Set to Python
+    "PYTHONUNBUFFERED": "1", // Recommended for Python logging
+    "DISCORD_CLIENT_ID": "YOUR_DISCORD_CLIENT_ID",
+    "DISCORD_CLIENT_SECRET": "YOUR_DISCORD_CLIENT_SECRET",
+    "DISCORD_REDIRECT_URI": "http://localhost:7071/api/callback", // Local callback URL
+    "REQUIRED_GUILD_ID": "YOUR_GUILD_ID",
+    "REQUIRED_ROLE_ID": "YOUR_ROLE_ID",
+    "FRONTEND_URL": "http://localhost:5173", // Your local SvelteKit dev server URL
+    "PUBLIC_USER_TABLE_FUNCTION_URL": "" // Optional: URL if needed
+  },
+  "Host": {
+    "CORS": "http://localhost:5173", // Allow requests from your local SvelteKit dev server
+    "CORSCredentials": true // Allow credentials (needed if frontend sends cookies/auth headers)
+  }
+}
