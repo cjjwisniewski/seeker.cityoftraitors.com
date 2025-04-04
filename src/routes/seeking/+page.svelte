@@ -5,60 +5,43 @@
     import { PUBLIC_GET_SEEKING_LIST_FUNCTION_URL, PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL } from '$env/static/public';
 
     let cards = [];
-    let loading = true; // Keep loading state
     let error = null;
-    let accessToken = null; // Variable to store the token
 
-    // Helper function to read a specific cookie
-    function getCookie(name) {
-        if (typeof document === 'undefined') return null; // Check if running client-side
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) {
-            // Decode the cookie value in case it contains special characters
-            try {
-                return decodeURIComponent(parts.pop().split(';').shift());
-            } catch(e) {
-                console.error("Error decoding cookie", e);
-                return null;
-            }
-        }
-        return null;
-    }
+    // Reactive check for authentication status
+    $: isAuthenticated = $auth.isAuthenticated;
+    $: authLoading = $auth.isLoading;
 
+    // Fetch data when component mounts and user is authenticated
     onMount(() => {
-        accessToken = getCookie('discord_token'); // Read the token on mount (client-side)
-        if (accessToken) {
-            fetchSeekingList();
-        } else {
-            error = "Authentication token not found. Please log in.";
-            loading = false;
-            console.error(error);
-            // Optional: redirect to login page
-            // import { goto } from '$app/navigation';
-            // goto('/login');
-        }
+        // Wait for auth store to initialize if needed
+        const unsubscribe = auth.subscribe(state => {
+            if (!state.isLoading) {
+                if (state.isAuthenticated) {
+                    fetchSeekingList();
+                } else {
+                    // Handle case where user is not logged in (layout should redirect, but good practice)
+                    error = "Please log in to view your seeking list.";
+                    loading = false;
+                }
+                unsubscribe(); // Unsubscribe after first non-loading state
+            }
+        });
     });
 
     async function fetchSeekingList() {
-        if (!accessToken) {
-            error = "Cannot fetch list: missing access token.";
-            loading = false;
-            return;
-        }
-        loading = true; // Set loading true when fetching starts
-        error = null; // Clear previous errors
+        loading = true;
+        error = null;
 
         try {
-            // Call APIM endpoint directly
-            const response = await fetch(PUBLIC_GET_SEEKING_LIST_FUNCTION_URL, {
-                headers: {
-                    // ADD Authorization header with token from cookie
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                    // REMOVE x-ms-client-principal-id header (APIM handles it)
-                }
-            });
+            // Use fetchWithAuth - it handles token and 401 errors
+            const response = await fetchWithAuth(PUBLIC_GET_SEEKING_LIST_FUNCTION_URL);
+
+            // fetchWithAuth returns undefined if it redirects (e.g., on 401)
+            if (!response) {
+                error = "Authentication failed while fetching seeking list.";
+                console.error(error);
+                return; // Stop execution
+            }
 
             if (!response.ok) {
                 let errorBody = await response.text();
