@@ -1,10 +1,11 @@
 <script>
     import { onMount } from 'svelte';
-    import { page } from '$app/stores'; // Still potentially useful for user ID display etc.
+    import { auth } from '$lib/stores/auth'; // Import auth store
+    import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
     import { PUBLIC_GET_SEEKING_LIST_FUNCTION_URL, PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL } from '$env/static/public';
 
     let cards = [];
-    let loading = true;
+    let loading = true; // Keep loading state
     let error = null;
     let accessToken = null; // Variable to store the token
 
@@ -76,45 +77,45 @@
         }
     }
 
-    // No longer need onMount(fetchSeekingList); - it's called inside onMount now
-
     async function handleDelete(card) {
-        if (!accessToken) {
-             error = "Cannot delete card: missing access token.";
-             console.error(error);
-             return;
-        }
-        // Consider adding a loading state for delete operations if desired
+        // Consider adding a specific loading state for the delete button if desired
+        error = null; // Clear previous errors
 
         try {
-            // ... (rest of delete logic, preparing requestBody) ...
-             const requestBody = {
+            const requestBody = {
                 partitionKey: card.set_code,
                 rowKey: `${card.collector_number}_${card.language}_${card.finish}`
-            };
-
-            // Call APIM endpoint directly
-            const response = await fetch(PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL, {
+            // Use fetchWithAuth for the delete request
+            const response = await fetchWithAuth(PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL, {
                 method: 'DELETE',
                 headers: {
-                    // ADD Authorization header with token from cookie
-                    'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
-                    // REMOVE x-ms-client-principal-id header (APIM handles it)
                 },
                 body: JSON.stringify(requestBody)
             });
 
-            // ... (rest of response handling) ...
+            // fetchWithAuth returns undefined if it redirects (e.g., on 401)
+            if (!response) {
+                error = `Authentication failed while attempting to delete card.`;
+                console.error(error);
+                return; // Stop execution
+            }
+
              console.log('Delete Response status:', response.status);
              const responseText = await response.text();
              console.log('Delete Response body:', responseText);
 
              if (!response.ok) {
-                 throw new Error(`Failed to delete card: ${responseText}`);
+                 throw new Error(`Failed to delete card (Status: ${response.status}): ${responseText}`);
              }
 
-             cards = cards.filter(c => c.id !== card.id);
+             // Remove card from local state on success
+             cards = cards.filter(c =>
+                !(c.set_code === card.set_code &&
+                  c.collector_number === card.collector_number &&
+                  c.language === card.language &&
+                  c.finish === card.finish)
+             );
              console.log('Card removed from local state');
 
         } catch (e) {
@@ -156,10 +157,12 @@
     }
 </script>
 
-{#if loading}
-    <div class="loading">Loading...</div>
+{#if authLoading || loading}
+    <div class="loading">Loading seeking list...</div>
 {:else if error}
     <div class="error">{error}</div>
+{:else if !isAuthenticated}
+     <div class="empty">Please log in to view your seeking list.</div>
 {:else if cards.length === 0}
     <div class="empty">No cards in seeking list</div>
 {:else}
@@ -203,10 +206,11 @@
                             <i class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(getStockStatus(card.ebay_stock))}"></i>
                         </td>
                         <td class="delete-btn-column">
-                            <button 
-                                class="delete-btn" 
+                            <button
+                                class="delete-btn"
                                 aria-label="Delete card"
                                 on:click={() => handleDelete(card)}
+                                disabled={!isAuthenticated}
                             >
                                 <i class="fa-solid fa-trash"></i>
                             </button>

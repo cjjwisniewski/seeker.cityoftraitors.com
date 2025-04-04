@@ -16,8 +16,9 @@ export const load = async ({ url }) => {
         console.log('Client layout load: Auth state after init:', { isAuthenticated: authState.isAuthenticated, isLoading: authState.isLoading, currentPath });
 
         // If still loading (should be false after await), or not authenticated,
-        // and we are NOT on the login or callback page, redirect to login.
-        if (!authState.isAuthenticated && !authState.isLoading && currentPath !== '/login' && currentPath !== '/auth/callback') {
+        // and we are NOT on an auth-related page, redirect to login.
+        const isAuthPath = currentPath === '/login' || currentPath === '/auth/callback' || currentPath === '/auth/logout';
+        if (!authState.isAuthenticated && !authState.isLoading && !isAuthPath) {
             console.log('Client layout load: Not authenticated, redirecting to login from:', currentPath);
             throw redirect(302, `/login?redirectTo=${encodeURIComponent(currentPath + url.search)}`);
         }
