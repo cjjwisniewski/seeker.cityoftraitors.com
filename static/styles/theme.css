@@ -25,7 +25,7 @@
 
     /* Primary colors */
     --color-primary: #2563eb;
-    --color-primary-dark: #1d4ed8;
+    --color-primary-dark: #1d4ed8; /* Added this line */
     --color-primary-alpha: rgba(37, 99, 235, 0.2);
     --color-disabled: #9ca3af;
 
@@ -45,7 +45,7 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --color-primary: #3b82f6;
-        --color-primary-dark: #2563eb;
+        --color-primary-dark: #2563eb; /* Added this line */
         --color-primary-alpha: rgba(59, 130, 246, 0.2);
         --color-disabled: #6b7280;
         --color-bg-elevated: #1f2937;

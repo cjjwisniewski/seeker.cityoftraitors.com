@@ -1,15 +1,17 @@
 <script>
-    import { invalidate, goto } from '$app/navigation';
+    import { goto } from '$app/navigation';
     import Footer from '$lib/components/Footer.svelte';
     import { page } from '$app/stores'; // Import the page store
+    import { auth } from '$lib/stores/auth'; // Import the auth store
 
-    export let data;
+    // Remove export let data; - Data now comes from the auth store
 
     let showDropdown = false;
 
+    // Logout function now calls the auth store's logout method
     const logout = () => {
-        // Use the server-side logout endpoint
-        window.location.href = '/auth/logout';
+        showDropdown = false; // Close dropdown
+        auth.logout();
     };
 
     const goToProfile = () => {
@@ -41,7 +43,7 @@
                     <a href="/" class="search-link" title="Search">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </a>
-                    {#if data.user}
+                    {#if $auth.isAuthenticated && $auth.user}
                         <div class="user-dropdown">
                             <button
                                 class="user-button"
@@ -49,12 +51,17 @@
                                 aria-expanded={showDropdown}
                                 aria-haspopup="menu"
                             >
-                                <img
-                                    src="https://cdn.discordapp.com/avatars/{data.user.id}/{data.user.avatar}.png"
-                                    alt="{data.user.username}'s avatar"
-                                    class="user-avatar"
-                                />
-                                <span class="username">{data.user.username}</span>
+                                {#if $auth.user.avatar}
+                                    <img
+                                        src="https://cdn.discordapp.com/avatars/{$auth.user.id}/{$auth.user.avatar}.png"
+                                        alt="{$auth.user.username}'s avatar"
+                                        class="user-avatar"
+                                    />
+                                {:else}
+                                    <!-- Placeholder or default avatar if none exists -->
+                                    <div class="user-avatar default-avatar">{$auth.user.username.charAt(0).toUpperCase()}</div>
+                                {/if}
+                                <span class="username">{$auth.user.username}</span>
                                 <i class="fa-solid fa-chevron-down"></i>
                             </button>
                             {#if showDropdown}
@@ -73,7 +80,8 @@
                                         <i class="fa-solid fa-user"></i>
                                         Profile
                                     </button>
-                                    {#if data.user?.roles?.includes('1352632325640294411')}
+                                    <!-- Check roles from the auth store user object -->
+                                    {#if $auth.user?.roles?.includes('1352632325640294411')}
                                         <button
                                             class="dropdown-item"
                                             role="menuitem"
@@ -96,6 +104,9 @@
                                 </div>
                             {/if}
                         </div>
+                    {:else if !$auth.isLoading}
+                         <!-- Optionally show a Login button if not authenticated and not loading -->
+                         <a href="/login" class="login-button">Login</a>
                     {/if}
                 </div>
             </div>
@@ -216,6 +227,20 @@
         object-fit: cover; /* Ensure avatar covers area */
     }
 
+    /* Style for default avatar placeholder */
+    .default-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: var(--color-primary); /* Example background */
+        color: white;
+        font-weight: bold;
+        font-size: 1rem;
+    }
+
     .username {
         color: var(--color-text-primary);
         font-size: 0.9rem;
@@ -272,6 +297,21 @@
         background: var(--color-bg-hover);
         color: var(--color-text-primary);
     }
+
+    /* Optional: Style for Login button */
+    .login-button {
+        padding: 0.4rem 0.8rem;
+        background-color: var(--color-primary);
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: background-color 0.2s;
+    }
+    .login-button:hover {
+        background-color: var(--color-primary-dark); /* Define this color in theme.css */
+    }
+
 
     /* Layout structure */
     .layout {
