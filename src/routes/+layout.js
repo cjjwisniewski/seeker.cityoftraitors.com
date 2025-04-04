@@ -53,8 +53,10 @@ export const load = async ({ url }) => {
          throw redirect(302, '/');
     }
 
-    // Return empty object - component uses the store directly
-    return {};
+    // Return user data from the store so it's available in $page.data
+    return {
+        user: authState.user
+    };
 };
 
 // Ensure load runs only on the client for static sites
