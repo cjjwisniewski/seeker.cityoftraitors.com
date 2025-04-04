@@ -1,11 +1,10 @@
 <script>
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { PUBLIC_DISCORD_CLIENT_ID, PUBLIC_DISCORD_REDIRECT_URI } from '$env/static/public';
     import { page } from '$app/stores';
+    import { auth } from '$lib/stores/auth'; // Import the auth store
     
-    let redirectUrl = `https://discord.com/api/oauth2/authorize?client_id=${PUBLIC_DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(PUBLIC_DISCORD_REDIRECT_URI)}&response_type=code&scope=identify%20guilds%20guilds.members.read`;
-    let redirectTo = '/';
+    let redirectTo = '/'; // Still needed for state preservation if login fails server-side
     let errorMessage = '';
     
     onMount(() => {
@@ -33,7 +32,6 @@
         }
     });
 
-    $: finalRedirectUrl = `${redirectUrl}&state=${encodeURIComponent(redirectTo || '/')}`;
 </script>
 
 <div class="login-container">
@@ -47,10 +45,10 @@
             </div>
         {/if}
         
-        <a href={finalRedirectUrl} class="login-button">
+        <button on:click={() => auth.login()} class="login-button">
             <i class="fa-brands fa-discord"></i>
             Login with Discord
-        </a>
+        </button>
     </div>
 </div>
 
