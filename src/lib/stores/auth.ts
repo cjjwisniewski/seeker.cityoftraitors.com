@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store'; // Import get
 import { browser } from '$app/environment'; // Import browser check
 
 // Define the shape of the user object (adjust as needed based on your Azure Function response)
