@@ -44,10 +44,9 @@
         <CardSearchForm 
             on:search={handleSearch}
         />
-        <CardList 
-            {cards} 
+        <CardList
+            {cards}
             {hasSearched}
-            userId={$page.data.user?.id}
             on:addToSeeking={handleAddToSeeking}
         />
     </main>

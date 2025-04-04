@@ -1,48 +1,24 @@
 <script>
-    import { createEventDispatcher, onMount } from 'svelte'; // Added onMount
+    import { createEventDispatcher } from 'svelte';
     import { getLanguageName, getAvailableLanguages } from '$lib/utils/languageUtils';
     import { PUBLIC_ADD_TO_SEEKING_FUNCTION_URL } from '$env/static/public';
+    import { auth } from '$lib/stores/auth'; // Import the auth store
+    import { fetchWithAuth } from '$lib/utils/api'; // Import fetchWithAuth
 
     const dispatch = createEventDispatcher();
 
     export let cards = [];
     export let hasSearched = false;
-    export let userId; // User's ID (without 'user' prefix assumed)
+    // REMOVED: export let userId;
 
     let selectedFinishes = {};  // Track foil status for each card
-    let buttonErrors = {}; // Add error state tracking (original state tracking)
+    let buttonErrors = {}; // Add error state tracking (original state tracking) - Note: This seems unused, consider removing if buttonStates covers it.
     let buttonStates = {}; // Track button states (error, success, exists) (original state tracking)
-    let accessToken = null; // <<< ADDED: To store the auth token
+    // REMOVED: let accessToken = null;
+    // REMOVED: getCookie function
+    // REMOVED: onMount logic for accessToken and userId
 
-    // --- ADDED: Helper function to read a specific cookie ---
-    function getCookie(name) {
-        if (typeof document === 'undefined') return null;
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) {
-            try {
-                return decodeURIComponent(parts.pop().split(';').shift());
-            } catch(e) {
-                console.error("Error decoding cookie", e);
-                return null;
-            }
-        }
-        return null;
-    }
-
-    // --- ADDED: Lifecycle function to read token ---
-    onMount(() => {
-        accessToken = getCookie('discord_token'); // Read the token
-        if (!accessToken) {
-            console.warn("CardList Component: Authentication token not found. 'Add to Seeking' disabled.");
-        }
-        // Keep original warning for userId prop
-        if (!userId) {
-             console.warn('CardList component requires userId prop');
-        }
-    });
-
-    // --- Original Functions (handleSetChange, handleLanguageChange, etc. - UNCHANGED from message #19) ---
+    // --- Original Functions (handleSetChange, handleLanguageChange, etc.) ---
     async function handleSetChange(card, newPrint) {
         if (!card || !newPrint) return;
 
@@ -144,31 +120,19 @@
 
     // --- MODIFIED: Add Card to Seeking List ---
     async function handleAddToSeeking(card) {
-        // --- ADDED: Check for access token ---
-        if (!accessToken) {
-             console.error("Cannot add card: Access token not available.");
-             // Set error state using original structure
-             buttonStates[card.id] = { error: true, success: false, exists: false, message: "Login required" };
-             buttonStates = {...buttonStates};
-             // Reset state after timeout (original pattern)
-             setTimeout(() => {
-                 buttonStates[card.id] = { error: false, success: false, exists: false };
-                 buttonStates = {...buttonStates};
-             }, 3000);
-             return;
-        }
-         // --- Original check for userId ---
-         if (!userId) {
-             console.error("Cannot add card: userId prop missing.");
-             buttonStates[card.id] = { error: true, success: false, exists: false, message: "User context missing" };
-             buttonStates = {...buttonStates};
-             setTimeout(() => {
-                 buttonStates[card.id] = { error: false, success: false, exists: false };
-                 buttonStates = {...buttonStates};
-             }, 3000);
-             return;
-         }
+        // REMOVED: Checks for accessToken and userId
 
+        // Check authentication status directly from the store
+        if (!$auth.isAuthenticated) {
+            console.error("Cannot add card: User not authenticated.");
+            buttonStates[card.id] = { error: true, success: false, exists: false, message: "Login required" };
+            buttonStates = {...buttonStates};
+            setTimeout(() => {
+                buttonStates[card.id] = { error: false, success: false, exists: false };
+                buttonStates = {...buttonStates};
+            }, 3000);
+            return;
+        }
 
         try {
             // Reset button state (original logic)
@@ -187,18 +151,28 @@
                 finish: selectedFinishes[card.id] || 'nonfoil'
             };
 
-            // --- MODIFIED: Fetch call ---
-            const response = await fetch(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
+            // --- MODIFIED: Use fetchWithAuth ---
+            const response = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // REMOVED: 'x-ms-client-principal-id': `user${userId}`
-                    // ADDED: Authorization header
-                    'Authorization': `Bearer ${accessToken}`
+                    // Authorization header is added by fetchWithAuth
                 },
-                // REMOVED: credentials: 'include',
                 body: JSON.stringify(payload)
             });
+
+            // fetchWithAuth returns undefined if it triggered a redirect (e.g., on 401)
+            if (!response) {
+                 console.warn("Add to seeking aborted because fetchWithAuth triggered a redirect.");
+                 // Set error state
+                 buttonStates[card.id] = { error: true, success: false, exists: false, message: "Auth failed" };
+                 buttonStates = {...buttonStates};
+                 setTimeout(() => {
+                     buttonStates[card.id] = { error: false, success: false, exists: false };
+                     buttonStates = {...buttonStates};
+                 }, 3000);
+                 return; // Stop processing
+            }
 
             const result = await response.json();
 
@@ -263,27 +237,16 @@
         return [card.type_line, card.oracle_text].filter(Boolean).join('\n');
     }
 
-     // Keep original warning check
-     $: if (!userId) {
-         console.warn('CardList component requires userId prop');
-     }
+     // REMOVED: userId warning check
 
 </script>
 
-<script context="module">
-    export const props = {
-        userId: { type: String, required: true },
-        cards: { type: Array, default: [] },
-        hasSearched: { type: Boolean, default: false }
-    };
-</script>
+<!-- REMOVED: script context="module" block -->
 
-{#if !userId}
-    <div class="error-message">User ID is required to add cards to seeking list</div>
-{:else}
-    <div class="card-list">
-        {#if sortedCards?.length > 0}
-            <div class="cards-list">
+<!-- REMOVED: #if !userId block -->
+<div class="card-list">
+    {#if sortedCards?.length > 0}
+        <div class="cards-list">
                 {#each sortedCards as card (card.id)}
                    {@const currentPrint = card.all_prints?.find(p => p.set_code === card.set)} <div class="card-item">
                         <div class="card-image-section">
@@ -376,11 +339,11 @@
                                         {buttonStates[card.id]?.success ? 'success' : ''}
                                         {buttonStates[card.id]?.exists ? 'exists' : ''}"
                                     on:click={() => handleAddToSeeking(card)}
-                                    disabled={!card.set || !accessToken}
-                                    title={!accessToken ? "Login required" : (!card.set ? "Select a print first" : "Add to Seeking List")}
+                                    disabled={!card.set || !$auth.isAuthenticated}
+                                    title={!$auth.isAuthenticated ? "Login required" : (!card.set ? "Select a print first" : "Add to Seeking List")}
                                 >
                                      {#if buttonStates[card.id]?.error}
-                                        Error Adding Card {buttonStates[card.id]?.message ? `(${buttonStates[card.id].message})`:''}
+                                        Error {buttonStates[card.id]?.message ? `(${buttonStates[card.id].message})`:''}
                                     {:else if buttonStates[card.id]?.success}
                                         Added to Seeking
                                     {:else if buttonStates[card.id]?.exists}
@@ -398,7 +361,7 @@
             <p class="no-results">No cards found.</p>
         {/if}
     </div>
-{/if}
+<!-- REMOVED: closing {:else} -->
 
 <style>
     .card-list {
