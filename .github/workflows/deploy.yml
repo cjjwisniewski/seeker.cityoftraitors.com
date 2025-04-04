@@ -59,26 +59,24 @@ jobs:
           # Assuming AZURE_CREDENTIALS is a Repository Secret containing JSON output from `az ad sp create-for-rbac`
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Sync to Azure Blob Storage
+     - name: Sync to Azure Blob Storage
         uses: Azure/CLI@v1
         with:
           inlineScript: |
-            # Extract storage account name from credentials JSON - Ensure your secret format matches this expectation
-            # Or replace this with a direct variable/secret if preferred: vars.STORAGE_ACCOUNT_NAME
-            ACCOUNT_NAME=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r '.storageAccountName')
-            # Check if ACCOUNT_NAME was extracted successfully
-            if [ -z "$ACCOUNT_NAME" ] || [ "$ACCOUNT_NAME" == "null" ]; then
-              echo "Error: Could not extract storageAccountName from AZURE_CREDENTIALS secret."
-              # Fallback or direct variable usage:
-              # ACCOUNT_NAME="${{ vars.STORAGE_ACCOUNT_NAME }}" # Uncomment and set variable if using this
-              # if [ -z "$ACCOUNT_NAME" ]; then echo "Error: STORAGE_ACCOUNT_NAME is also missing."; exit 1; fi
-              # For now, we exit if extraction fails and no fallback is defined
-               exit 1
+            # Use direct variable/secret for Storage Account Name
+            ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}" # Prioritize secret if both exist
+            if [ -z "$ACCOUNT_NAME" ]; then
+              echo "Error: STORAGE_ACCOUNT_NAME secret or variable not set."
+              exit 1
             fi
-            echo "Syncing to Storage Account: $ACCOUNT_NAME"
-            # Sync build output to $web container for Static Website hosting
-            # Uses the logged-in identity from azure/login step (--auth-mode login)
-            az storage blob sync --account-name "$ACCOUNT_NAME" --auth-mode login -s build/ -d '$web' --delete-destination true
+            echo "Syncing to Storage Account: $ACCOUNT_NAME, Container: \$web"
+            # Corrected command: Use --container '$web' or -c '$web', remove -d '$web'
+            az storage blob sync \
+              --account-name "$ACCOUNT_NAME" \
+              --auth-mode login \
+              --container '$web' \
+              --source build/ \
+              --delete-destination true
 
       - name: Purge CDN endpoint
         uses: Azure/CLI@v1
