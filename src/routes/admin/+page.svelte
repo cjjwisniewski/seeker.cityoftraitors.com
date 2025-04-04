@@ -237,18 +237,20 @@
                                         on:click={() => {
                                             if (expandedTable === table.userId) {
                                                 expandedTable = null;
-                                                expandedTableData = null;
+                                                expandedTableData = []; // Reset data on collapse
                                             } else {
                                                 expandedTable = table.userId;
-                                                loadTableData(table.userId);
+                                                loadTableData(table.userId); // Fetch data on expand
                                             }
                                         }}
+                                        disabled={!token}
                                     >
                                         {expandedTable === table.userId ? 'Collapse' : 'Expand'}
                                     </button>
                                     <button 
                                         class="delete-btn"
                                         on:click={() => handleDeleteAccount(table.userId)}
+                                        disabled={!token}
                                     >
                                         Delete
                                     </button>
