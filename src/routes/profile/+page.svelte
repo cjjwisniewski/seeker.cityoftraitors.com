@@ -37,7 +37,6 @@
             deleteError = "Action failed: Authentication token is missing.";
             console.error("Delete attempt failed: token is null.");
             showConfirmDialog = false; // Close dialog
-            showConfirmDialog = false; // Close dialog
             return;
         }
 
