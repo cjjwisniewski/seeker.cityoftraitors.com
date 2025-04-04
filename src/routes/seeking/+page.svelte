@@ -68,6 +68,7 @@
             const requestBody = {
                 partitionKey: card.set_code,
                 rowKey: `${card.collector_number}_${card.language}_${card.finish}`
+            }; // <-- Added missing closing brace here
             // Use fetchWithAuth for the delete request
             const response = await fetchWithAuth(PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL, {
                 method: 'DELETE',

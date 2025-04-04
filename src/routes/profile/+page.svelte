@@ -100,7 +100,16 @@
             showConfirmDialog = false;
         }
     }
+    // --- Keyboard handler for modal ---
+    function handleKeydown(event) {
+        if (event.key === 'Escape') {
+            showConfirmDialog = false;
+        }
+    }
 </script>
+
+<!-- Listen for keydown events when the modal is shown -->
+<svelte:window on:keydown={showConfirmDialog ? handleKeydown : null}/>
 
 {#if isLoading}
     <div class="loading-container">
@@ -208,8 +217,15 @@
 </div>
 
 {#if showConfirmDialog}
-    <div class="modal-overlay" on:click={() => showConfirmDialog = false} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-        <div class="modal" on:click|stopPropagation>
+    <!-- Added keydown handler to the overlay -->
+    <div
+        class="modal-overlay"
+        on:click={() => showConfirmDialog = false}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dialog-title"
+    >
+        <div class="modal" on:click|stopPropagation role="document"> <!-- Added role="document" to inner modal -->
             <h3 id="dialog-title">Confirm Account Deletion</h3>
             <p>Are you sure you want to delete your account? This action cannot be undone.</p>
             <p>All your seeking list data within this application will be permanently deleted.</p>
