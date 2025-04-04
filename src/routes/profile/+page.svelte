@@ -13,20 +13,22 @@
     let deleteError = null;
 
     // Reactive declarations based on the auth store
-    // Ensure these run only in the browser where the store is populated
-    $: user = browser ? $auth.user : null;
-    $: token = browser ? $auth.token : null;
-    $: isLoading = browser ? $auth.isLoading : true;
+    // These will run client-side due to ssr=false in layout
+    $: user = $auth.user; // Directly access store value
+    $: token = $auth.token; // Directly access store value
+    $: isLoading = $auth.isLoading; // Directly access store value
 
     // Format the user ID with spaces for readability
-    $: formattedUserId = user?.id?.match(/.{1,4}/g)?.join(' ') || user?.id || 'N/A';
+    // Use $auth.user directly and add optional chaining for safety during initial render cycles
+    $: formattedUserId = $auth.user?.id?.match(/.{1,4}/g)?.join(' ') || $auth.user?.id || 'N/A';
 
     // Derive status from user roles (assuming roles are fetched by auth store)
+    // Use $auth.user directly here too for consistency
     // Note: 'guildMember' might be implicitly true if roles are present.
     // Adjust logic if your /api/userinfo provides explicit guild membership.
-    $: guildMember = !!user?.roles; // Assumes roles array exists only if they are a member
-    $: hasRole = user?.roles?.includes(REQUIRED_ROLE_ID) ?? false;
-    $: isAdmin = user?.roles?.includes(ADMIN_ROLE_ID) ?? false;
+    $: guildMember = !!$auth.user?.roles; // Assumes roles array exists only if they are a member
+    $: hasRole = $auth.user?.roles?.includes(REQUIRED_ROLE_ID) ?? false;
+    $: isAdmin = $auth.user?.roles?.includes(ADMIN_ROLE_ID) ?? false;
 
 
     // --- Delete Account Logic ---
