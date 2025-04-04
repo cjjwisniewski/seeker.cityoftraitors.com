@@ -17,10 +17,11 @@ interface AuthState {
     isLoading: boolean; // To track initial auth check
 }
 
-// Placeholder URLs - Replace with your actual Azure Function URLs (use import.meta.env.VITE_...)
-const LOGIN_URL = '/api/login'; // Your Azure Function that initiates Discord OAuth
-const LOGOUT_URL = '/api/logout'; // Your Azure Function that handles logout (optional)
-const USER_INFO_URL = '/api/userinfo'; // Your Azure Function that returns user details based on token
+// Use environment variables for Azure Function URLs - Fallbacks removed to enforce env var usage
+const LOGIN_URL = import.meta.env.VITE_LOGIN_URL;
+const LOGOUT_URL = import.meta.env.VITE_LOGOUT_URL;
+const USER_INFO_URL = import.meta.env.VITE_USER_INFO_URL;
+
 
 const createAuthStore = () => {
     const initialToken = browser ? localStorage.getItem('authToken') : null;
@@ -78,6 +79,14 @@ const createAuthStore = () => {
     // Initialize store on load (only in browser)
     async function initialize() {
         if (browser) {
+            // Check if essential URLs are configured
+            if (!LOGIN_URL || !USER_INFO_URL) {
+                console.error('AuthStore FATAL: VITE_LOGIN_URL and/or VITE_USER_INFO_URL environment variables are not set. Authentication cannot proceed.');
+                // Set loading to false but keep unauthenticated state
+                set({ isAuthenticated: false, token: null, user: null, isLoading: false });
+                return; // Stop initialization
+            }
+
             const token = localStorage.getItem('authToken');
             if (token) {
                 console.debug('AuthStore: Found token in localStorage, fetching user info...');
