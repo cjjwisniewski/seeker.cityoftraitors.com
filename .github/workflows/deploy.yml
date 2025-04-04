@@ -50,28 +50,37 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-  
-      - name: Sync to Azure Blob Storage
-        uses: Azure/CLI@v1
+
+      - name: Clean existing blobs
+        uses: azure/CLI@v1
         with:
           inlineScript: |
-            # Get Storage Account Name
             ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}"
-            if [ -z "$ACCOUNT_NAME" ]; then
-              echo "Error: STORAGE_ACCOUNT_NAME secret or variable not set."
-              exit 1
-            fi
-      
-            echo "Syncing to Storage Account: $ACCOUNT_NAME, Container: \$web"
-      
-            # Use az storage blob sync with the login credentials from azure/login action
-            az storage blob sync \
+            ACCOUNT_KEY=$(az storage account keys list --account-name "$ACCOUNT_NAME" --query '[0].value' -o tsv)
+            
+            echo "Cleaning existing files in $web container"
+            az storage blob delete-batch \
               --account-name "$ACCOUNT_NAME" \
-              --container '$web' \
-              --source build/ \
-              --delete-destination true
-      
-            echo "Sync command completed."
+              --account-key "$ACCOUNT_KEY" \
+              --source '$web'
+  
+      - name: Upload to blob storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            # Get storage account name
+            ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}"
+            
+            # Get the storage account key
+            ACCOUNT_KEY=$(az storage account keys list --account-name "$ACCOUNT_NAME" --query '[0].value' -o tsv)
+            
+            # Use az storage blob upload-batch with the storage key
+            az storage blob upload-batch \
+              --account-name "$ACCOUNT_NAME" \
+              --account-key "$ACCOUNT_KEY" \
+              --destination '$web' \
+              --source ./build \
+              --overwrite true
 
       - name: Purge CDN endpoint
         uses: Azure/CLI@v1
