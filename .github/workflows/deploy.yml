@@ -50,31 +50,50 @@ jobs:
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          
-      - name: Verify Azure Login Context # <-- Add this verification step
-        uses: Azure/CLI@v1
-        with:
-          inlineScript: |
-            echo "Attempting to show account details..."
-            az account show
-        continue-on-error: true
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+  
       - name: Sync to Azure Blob Storage
         uses: Azure/CLI@v1
         with:
           inlineScript: |
-            ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}" # Prioritize secret if both exist
+            # Parse credentials from the Azure Login secret JSON
+            # Requires jq (installed in the previous step)
+            AZURE_CREDENTIALS_JSON='${{ secrets.AZURE_CREDENTIALS }}'
+            AZCOPY_SPA_CLIENT_ID=$(echo "$AZURE_CREDENTIALS_JSON" | jq -r .clientId)
+            AZCOPY_SPA_CLIENT_SECRET=$(echo "$AZURE_CREDENTIALS_JSON" | jq -r .clientSecret)
+            AZCOPY_TENANT_ID=$(echo "$AZURE_CREDENTIALS_JSON" | jq -r .tenantId)
+  
+            if [ -z "$AZCOPY_SPA_CLIENT_ID" ] || [ -z "$AZCOPY_SPA_CLIENT_SECRET" ] || [ -z "$AZCOPY_TENANT_ID" ]; then
+              echo "Error: Failed to parse AZURE_CREDENTIALS for AzCopy environment variables."
+              exit 1
+            fi
+  
+            export AZCOPY_AUTO_LOGIN_TYPE="SPN"
+            export AZCOPY_SPA_CLIENT_ID
+            export AZCOPY_SPA_CLIENT_SECRET
+            export AZCOPY_TENANT_ID
+  
+            echo "AzCopy SPN environment variables set. AZCOPY_SPA_CLIENT_ID: $AZCOPY_SPA_CLIENT_ID" 
+  
+            # Get Storage Account Name
+            ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}"
             if [ -z "$ACCOUNT_NAME" ]; then
               echo "Error: STORAGE_ACCOUNT_NAME secret or variable not set."
               exit 1
             fi
+  
             echo "Syncing to Storage Account: $ACCOUNT_NAME, Container: \$web"
+  
             az storage blob sync \
               --account-name "$ACCOUNT_NAME" \
-              --container '$web' \
+              --container-name '$web' \
               --auth-mode login \
               --source build/ \
               --delete-destination true
+  
+            echo "Sync command completed."
 
       - name: Purge CDN endpoint
         uses: Azure/CLI@v1
