@@ -1,75 +1,80 @@
 <script>
-    import { onMount } from 'svelte'; // Import onMount
-    import { page } from '$app/stores';
+    import { auth } from '$lib/stores/auth'; // Import the auth store
+    import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
     import { PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL } from '$env/static/public';
+    import { browser } from '$app/environment'; // To ensure code runs client-side
 
-    export let data; // User data from load function (e.g., +page.server.js)
+    // Define Role IDs (ensure these match your Discord setup)
+    const REQUIRED_ROLE_ID = '1352632428342280212'; // Seeker Role
+    const ADMIN_ROLE_ID = '1352632325640294411'; // Admin Role
 
     // State variables
     let showConfirmDialog = false;
     let deleteError = null;
-    let accessToken = null; // To store the auth token
 
-    // Format the user ID with spaces for readability (using data passed from server)
-    $: formattedUserId = data.user?.id?.match(/.{1,4}/g)?.join(' ') || data.user?.id || 'N/A';
+    // Reactive declarations based on the auth store
+    // Ensure these run only in the browser where the store is populated
+    $: user = browser ? $auth.user : null;
+    $: token = browser ? $auth.token : null;
+    $: isLoading = browser ? $auth.isLoading : true;
 
-    // --- Helper function to read a specific cookie ---
-    function getCookie(name) {
-        if (typeof document === 'undefined') return null; // Check if running client-side
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) {
-            try {
-                // Decode the cookie value
-                return decodeURIComponent(parts.pop().split(';').shift());
-            } catch(e) {
-                console.error("Error decoding cookie", e);
-                return null;
-            }
-        }
-        return null;
-    }
+    // Format the user ID with spaces for readability
+    $: formattedUserId = user?.id?.match(/.{1,4}/g)?.join(' ') || user?.id || 'N/A';
 
-    // --- Lifecycle: Read token onMount ---
-    onMount(() => {
-        accessToken = getCookie('discord_token'); // Read the token
-        if (!accessToken) {
-            console.error("Profile Page: Authentication token not found in cookie.");
-            // Consider disabling the delete button or showing a persistent error
-             deleteError = "Cannot perform actions: Authentication token missing."; // Show error immediately if no token
-        }
-    });
+    // Derive status from user roles (assuming roles are fetched by auth store)
+    // Note: 'guildMember' might be implicitly true if roles are present.
+    // Adjust logic if your /api/userinfo provides explicit guild membership.
+    $: guildMember = !!user?.roles; // Assumes roles array exists only if they are a member
+    $: hasRole = user?.roles?.includes(REQUIRED_ROLE_ID) ?? false;
+    $: isAdmin = user?.roles?.includes(ADMIN_ROLE_ID) ?? false;
+
 
     // --- Delete Account Logic ---
     async function handleDeleteAccount() {
         deleteError = null; // Clear previous errors
 
-        if (!accessToken) {
+        if (!token) {
             deleteError = "Action failed: Authentication token is missing.";
-            console.error("Delete attempt failed: accessToken is null.");
+            console.error("Delete attempt failed: token is null.");
+            showConfirmDialog = false; // Close dialog
             showConfirmDialog = false; // Close dialog
             return;
         }
 
-        const userIdToDelete = data.user?.id;
-        console.log(`Attempting to delete account for user ID: ${userIdToDelete}`); // Log line 58
+        const userIdToDelete = user?.id;
+        if (!userIdToDelete) {
+             deleteError = "Action failed: User ID is missing.";
+             console.error("Delete attempt failed: user ID is null.");
+             showConfirmDialog = false; // Close dialog
+             return;
+        }
+
+        console.log(`Attempting to delete account for user ID: ${userIdToDelete}`);
 
         try {
-            // *** UPDATED FETCH CALL for Invalid JSON format error ***
-            const response = await fetch(PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, { // Log line 62 is the start of this fetch
+            // Use fetchWithAuth - it adds the Authorization header automatically
+            const response = await fetchWithAuth(PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, {
                 method: 'DELETE',
                 headers: {
-                    // ADD Content-Type back
+                    // Add Content-Type if required by your Azure Function
                     'Content-Type': 'application/json',
-                    // Keep the Authorization header
-                    'Authorization': `Bearer ${accessToken}`
                 },
-                // ADD an empty JSON object as the body
-                body: JSON.stringify({})
+                // Add body if required by your Azure Function
+                 body: JSON.stringify({}) // Sending empty JSON object as before
             });
 
+            // fetchWithAuth returns undefined if it redirects (e.g., on 401)
+            if (!response) {
+                // Error/redirect is handled by fetchWithAuth (logged to console, triggers login)
+                // We might want to set a local error state here too.
+                deleteError = "Authentication failed. Please log in again.";
+                console.error("Delete account fetch failed or was redirected by fetchWithAuth.");
+                showConfirmDialog = false;
+                return; // Stop execution
+            }
+
             if (!response.ok) {
-                 let errorText = await response.text();
+                let errorText = await response.text();
                 try {
                     // Attempt to parse as JSON for structured errors
                     const errorJson = JSON.parse(errorText);
@@ -82,11 +87,11 @@
             }
 
             console.log("Account deletion request successful.");
-            // Use the server-side logout endpoint for proper session/cookie cleanup
-            window.location.href = '/auth/logout';
+            // Call the auth store's logout method for proper cleanup and redirect
+            await auth.logout();
 
         } catch (e) {
-            // This catch block logs the error at line 96
+            // This catch block handles errors from fetchWithAuth or response processing
             deleteError = e.message;
             console.error('Error deleting account:', e);
         } finally {
@@ -96,12 +101,23 @@
     }
 </script>
 
+{#if isLoading}
+    <div class="loading-container">
+        <p>Loading profile...</p>
+        <!-- Add a spinner or other loading indicator here -->
+    </div>
+{:else if !user}
+     <div class="error-container">
+        <p>Could not load user profile. You may need to log in again.</p>
+         <button on:click={() => auth.login()}>Login</button>
+     </div>
+{:else}
 <div class="profile-container">
     <div class="profile-header">
-        {#if data.user?.id && data.user?.avatar}
+        {#if user.id && user.avatar}
             <img
-                src="https://cdn.discordapp.com/avatars/{data.user.id}/{data.user.avatar}.png?size=128"
-                alt="{data.user.username}'s avatar"
+                src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.png?size=128"
+                alt="{user.username}'s avatar"
                 class="profile-avatar"
                 loading="lazy"
             />
@@ -109,9 +125,13 @@
             <div class="profile-avatar placeholder-avatar">
                 <i class="fa-solid fa-user"></i>
             </div>
+        {:else}
+            <div class="profile-avatar placeholder-avatar">
+                <i class="fa-solid fa-user"></i>
+            </div>
         {/if}
         <div class="profile-title">
-            <h1>{data.user?.global_name || data.user?.username || 'User'}</h1>
+            <h1>{user.global_name || user.username || 'User'}</h1>
         </div>
     </div>
 
@@ -121,16 +141,16 @@
             <div class="info-grid">
                 <div class="info-item">
                     <span class="label">Username</span>
-                    <span class="value">{data.user?.username || 'N/A'}</span>
+                    <span class="value">{user.username || 'N/A'}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">User ID</span>
                     <span class="value user-id">{formattedUserId}</span>
                 </div>
-                {#if data.user?.global_name}
+                {#if user.global_name}
                     <div class="info-item">
                         <span class="label">Display Name</span>
-                        <span class="value">{data.user.global_name}</span>
+                        <span class="value">{user.global_name}</span>
                     </div>
                 {/if}
             </div>
@@ -139,24 +159,25 @@
         <section class="profile-section">
             <h2>City of Traitors Status</h2>
             <div class="status-grid">
+                 <!-- Display derived status -->
                 <div class="status-item">
                     <span class="label">Server Member</span>
-                    <span class="value status {data.guildMember ? 'active' : 'inactive'}">
-                        <i class="fa-solid {data.guildMember ? 'fa-check' : 'fa-xmark'}"></i>
-                        {data.guildMember ? 'Active Member' : 'Not a Member'}
+                     <span class="value status {guildMember ? 'active' : 'inactive'}">
+                        <i class="fa-solid {guildMember ? 'fa-check' : 'fa-xmark'}"></i>
+                        {guildMember ? 'Assumed Member (has roles)' : 'Not Detected'}
                     </span>
                 </div>
                 <div class="status-item">
                     <span class="label">Seeker Role</span>
-                    <span class="value status {data.hasRole ? 'active' : 'inactive'}">
-                        <i class="fa-solid {data.hasRole ? 'fa-check' : 'fa-xmark'}"></i>
-                        {data.hasRole ? 'Has Role' : 'No Role'}
+                    <span class="value status {hasRole ? 'active' : 'inactive'}">
+                        <i class="fa-solid {hasRole ? 'fa-check' : 'fa-xmark'}"></i>
+                        {hasRole ? 'Has Role' : 'No Role'}
                     </span>
                 </div>
-                {#if data.isAdmin !== undefined } <div class="status-item">
+                 <div class="status-item">
                         <span class="label">Admin Status</span>
-                        <span class="value status {data.isAdmin ? 'active' : 'inactive'}">
-                            <i class="fa-solid {data.isAdmin ? 'fa-shield' : 'fa-user'}"></i> {data.isAdmin ? 'Admin' : 'Not Admin'}
+                        <span class="value status {isAdmin ? 'active' : 'inactive'}">
+                            <i class="fa-solid {isAdmin ? 'fa-shield' : 'fa-user'}"></i> {isAdmin ? 'Admin' : 'Not Admin'}
                         </span>
                     </div>
                 {/if}
@@ -174,8 +195,8 @@
                     <button
                         class="delete-btn"
                         on:click={() => showConfirmDialog = true}
-                        disabled={!accessToken}
-                        title={!accessToken ? "Cannot delete account: Authentication token missing." : "Delete your account"}
+                        disabled={!token || !user}
+                        title={!token || !user ? "Cannot delete account: Authentication missing." : "Delete your account"}
                     >
                         Delete Account
                     </button>
@@ -207,9 +228,23 @@
             </div>
         </div>
     </div>
-{/if}
+{/if} <!-- Closing the main else block -->
 
 <style>
+     .loading-container, .error-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px; /* Ensure it takes some space */
+        text-align: center;
+        padding: 2rem;
+    }
+     .error-container button {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+    }
+
     .profile-container {
         max-width: 800px;
         margin: 2rem auto;
