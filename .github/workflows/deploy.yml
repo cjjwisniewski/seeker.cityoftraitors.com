@@ -44,6 +44,9 @@ jobs:
           PUBLIC_AUTH_ENDPOINT: ${{ vars.PUBLIC_AUTH_ENDPOINT }}
           PUBLIC_LOGIN_ENDPOINT: ${{ vars.PUBLIC_LOGIN_ENDPOINT }}
           PUBLIC_LOGOUT_ENDPOINT: ${{ vars.PUBLIC_LOGOUT_ENDPOINT }}
+          # --- Add missing VITE variables needed by auth.ts ---
+          VITE_LOGIN_URL: ${{ vars.VITE_LOGIN_URL }}
+          VITE_USER_INFO_URL: ${{ vars.VITE_USER_INFO_URL }}
         run: npm run build
 
       - name: Azure Login
