@@ -14,8 +14,10 @@
 
     // Fetch data when component mounts and user is authenticated
     onMount(() => {
+        // Declare unsubscribe variable first
+        let unsubscribe;
         // Wait for auth store to initialize if needed
-        const unsubscribe = auth.subscribe(state => {
+        unsubscribe = auth.subscribe(state => {
             if (!state.isLoading) {
                 if (state.isAuthenticated) {
                     fetchSeekingList();
