@@ -218,11 +218,12 @@
 {#if showConfirmDialog}
     <!-- Added keydown handler to the overlay -->
     <!-- Make overlay focusable and handle keydown for accessibility -->
+    <!-- Comments moved outside the tag definition -->
+    <!-- Removed role, tabindex, aria-label, aria-modal from overlay -->
+    <!-- Keyboard interaction (Escape) is handled by svelte:window -->
     <div
         class="modal-overlay"
         on:click={() => showConfirmDialog = false}
-        <!-- Removed role, tabindex, aria-label, aria-modal from overlay -->
-        <!-- Keyboard interaction (Escape) is handled by svelte:window -->
     >
         <!-- Added role="dialog", aria-modal, aria-labelledby to the modal content container -->
         <div
