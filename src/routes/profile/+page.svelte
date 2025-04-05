@@ -221,14 +221,17 @@
     <div
         class="modal-overlay"
         on:click={() => showConfirmDialog = false}
-        on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') showConfirmDialog = false; }}
-        role="button"
-        tabindex="0"
-        aria-label="Close dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-title"
+        <!-- Removed role, tabindex, aria-label, aria-modal from overlay -->
+        <!-- Keyboard interaction (Escape) is handled by svelte:window -->
     >
-        <div class="modal" on:click|stopPropagation role="document"> <!-- Clicks inside modal won't close it -->
+        <!-- Added role="dialog", aria-modal, aria-labelledby to the modal content container -->
+        <div
+            class="modal"
+            on:click|stopPropagation
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dialog-title"
+        > <!-- Clicks inside modal won't close it -->
             <h3 id="dialog-title">Confirm Account Deletion</h3>
             <p>Are you sure you want to delete your account? This action cannot be undone.</p>
             <p>All your seeking list data within this application will be permanently deleted.</p>
