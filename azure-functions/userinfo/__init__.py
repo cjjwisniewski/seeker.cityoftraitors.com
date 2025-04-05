@@ -18,16 +18,28 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     # 1. Extract token from Authorization header
     auth_header = req.headers.get('Authorization')
+    logging.info(f"Received Authorization header: {auth_header}") # Log the raw header
     access_token = None
 
     if auth_header and auth_header.startswith('Bearer '):
-        access_token = auth_header.split(' ')[1]
+        try:
+            access_token = auth_header.split(' ')[1]
+            # Log only a few characters for security
+            logging.info(f"Successfully extracted token (first 5 chars): {access_token[:5]}...")
+        except IndexError:
+            logging.warning(f"Authorization header present but malformed (no space after Bearer?): {auth_header}")
+            # access_token remains None
+    elif auth_header:
+        logging.warning(f"Authorization header present but does not start with 'Bearer ': {auth_header}")
+        # access_token remains None
 
     if not access_token:
-        logging.warning('No Bearer token found in Authorization header.')
+        # Log entry into this specific block before returning
+        logging.warning('Condition `not access_token` is true. Returning 401.')
         return func.HttpResponse("Unauthorized: Missing token.", status_code=401)
 
-    logging.info('Bearer token found, attempting to fetch user info.')
+    # This log should only appear if a token was successfully extracted
+    logging.info('Bearer token extracted successfully, proceeding to fetch user info.')
     auth_headers = {'Authorization': f'Bearer {access_token}'}
 
     try:
