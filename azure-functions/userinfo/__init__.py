@@ -50,14 +50,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         # Check specifically for 401 Unauthorized first
         if user_response.status_code == 401:
-             logging.warning(f"Discord API returned 401 for user info: {user_response.text}")
-             return func.HttpResponse("Unauthorized: Invalid or expired token.", status_code=401)
+             error_body = f"Unauthorized: Discord API returned 401. Response: {user_response.text}"
+             logging.warning(error_body)
+             return func.HttpResponse(error_body, status_code=401)
         # Check for other client/server errors from Discord
         elif not user_response.ok:
-             logging.error(f"Discord API error fetching user info (Status: {user_response.status_code}): {user_response.text}")
+             error_body = f"Discord API error fetching user info (Status: {user_response.status_code}). Response: {user_response.text}"
+             logging.error(error_body)
              # Forward a relevant status code if possible, otherwise 502
              error_status = 502 if user_response.status_code >= 500 else user_response.status_code
-             return func.HttpResponse(f"Failed to fetch user info from Discord (Status: {user_response.status_code}).", status_code=error_status)
+             return func.HttpResponse(error_body, status_code=error_status)
 
         # If response is OK (2xx)
         user_data = user_response.json()
@@ -85,8 +87,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             if member_response.status_code == 404: # Not Found - User likely not in guild
                  logging.info(f"User not found in required guild {required_guild_id} (Status: 404). Proceeding without roles.")
             elif member_response.status_code == 403: # Forbidden - Bot might lack permissions
+                 # Log warning but don't fail the request, just return without roles
                  logging.warning(f"Forbidden from fetching member info for guild {required_guild_id} (Status: 403): {member_response.text}. Check bot permissions.")
             else: # Other errors
+                 # Log warning but don't fail the request, just return without roles
                  logging.warning(f"Failed to fetch member info (Status: {member_response.status_code}): {member_response.text}")
 
         # 4. Construct and return the user object for the frontend
@@ -111,12 +115,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         # This block might be less likely to be hit now with explicit checks above, but keep as fallback
         logging.error(f"RequestException during Discord API call: {e}")
         # Try to get status code from response if available
-        status_code = e.response.status_code if e.response else 502
-        if status_code == 401:
-             return func.HttpResponse("Unauthorized: Invalid or expired token.", status_code=401)
-        else:
-             return func.HttpResponse(f"Failed to communicate with Discord (Status: {status_code}).", status_code=status_code if status_code < 500 else 502)
+        status_code = e.response.status_code if e.response else 502 # Default to 502 Bad Gateway
+        error_body = f"RequestException during Discord API call: {e}. Status: {status_code}. Response: {e.response.text if e.response else 'N/A'}"
+        logging.error(error_body)
+        # Return the detailed error in the response
+        return func.HttpResponse(error_body, status_code=status_code if status_code != 401 else 401) # Ensure 401 is preserved
+
     except Exception as e:
         # Log the full traceback for unexpected errors
-        logging.exception(f"Unexpected error in userinfo function.")
-        return func.HttpResponse("An internal server error occurred.", status_code=500)
+        error_body = f"Unexpected error in userinfo function: {type(e).__name__} - {e}"
+        logging.exception("Unexpected error details:") # Log traceback if possible
+        return func.HttpResponse(error_body, status_code=500)
