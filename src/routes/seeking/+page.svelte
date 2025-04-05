@@ -7,6 +7,7 @@
     let cards = [];
     let error = null;
     let loading = true; // Re-declare the loading variable
+    let unsubscribe; // Declare unsubscribe in the component scope
 
     // Reactive check for authentication status
     $: isAuthenticated = $auth.isAuthenticated;
@@ -14,10 +15,9 @@
 
     // Fetch data when component mounts and user is authenticated
     onMount(() => {
-        // Declare unsubscribe variable first
-        let unsubscribe;
+        // REMOVED: let unsubscribe; - Moved to component scope
         // Wait for auth store to initialize if needed
-        unsubscribe = auth.subscribe(state => {
+        unsubscribe = auth.subscribe(state => { // Assign to the component-scoped variable
             if (!state.isLoading) {
                 if (state.isAuthenticated) {
                     fetchSeekingList();
