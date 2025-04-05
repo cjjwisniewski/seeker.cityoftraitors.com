@@ -29,13 +29,14 @@
                 // REMOVED: unsubscribe(); // Do not unsubscribe immediately
             }
         });
+    });
 
-        // Unsubscribe when the component is destroyed
-        onDestroy(() => {
-            if (unsubscribe) {
-                unsubscribe();
-            }
-        });
+    // Unsubscribe when the component is destroyed
+    // Moved outside the subscribe callback, but still registered during onMount
+    onDestroy(() => {
+        if (unsubscribe) {
+            unsubscribe();
+        }
     });
 
     async function fetchSeekingList() {
