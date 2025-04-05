@@ -30,11 +30,6 @@
     $: hasRole = $auth.user?.roles?.includes(REQUIRED_ROLE_ID) ?? false;
     $: isAdmin = $auth.user?.roles?.includes(ADMIN_ROLE_ID) ?? false;
 
-    // --- DEBUG: Log the user object and roles ---
-    $: if ($auth.user) { console.log('Profile Page - User Object:', $auth.user); }
-    $: if ($auth.user?.roles) { console.log('Profile Page - User Roles:', $auth.user.roles); }
-    // --- END DEBUG ---
-
     // --- Delete Account Logic ---
     async function handleDeleteAccount() {
         deleteError = null; // Clear previous errors
