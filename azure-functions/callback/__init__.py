@@ -102,24 +102,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             return redirect_to_frontend('/login', {'error': 'server_required', 'message': 'You must be a member of the required Discord server.'})
         logging.info('User is in the required guild.')
 
-        # 3. Verify Role Membership
-        logging.info(f"Checking role membership for role: {required_role_id} in guild: {required_guild_id}")
-        member_url = get_guild_member_url(required_guild_id)
-        member_response = requests.get(member_url, headers=auth_headers)
-        member_response.raise_for_status() # Check if user is actually in the guild member list
-        member_data = member_response.json()
+        # REMOVED: Section 3 - Verify Role Membership (Handled by userinfo function later)
 
-        if not isinstance(member_data.get('roles'), list):
-            logging.error(f"Invalid member data format: {member_data}")
-            raise ValueError("Invalid role data received from Discord.")
-
-        has_required_role = required_role_id in member_data['roles']
-        if not has_required_role:
-            logging.warning(f"User does not have required role {required_role_id}.")
-            return redirect_to_frontend('/login', {'error': 'role_required', 'message': 'You do not have the required role in the Discord server.'})
-        logging.info('User has the required role.')
-
-        # 4. (Optional) Initialize User Table
+        # Renumbered: 3. (Optional) Initialize User Table
         if user_table_func_url:
             try:
                 logging.info(f"Calling user table function: {user_table_func_url}")
@@ -137,8 +122,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 logging.error(f"Error calling user table function: {table_error}")
                 # Decide if this is critical
 
-        # 5. Redirect back to frontend with token and state in hash
-        logging.info('All checks passed. Redirecting to frontend with token.')
+        # Renumbered: 4. Redirect back to frontend with token and state in hash
+        logging.info('Guild check passed. Redirecting to frontend with token.')
         return redirect_to_frontend_with_token(access_token, state)
 
     except requests.exceptions.RequestException as e:
