@@ -65,25 +65,29 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return add_cors_headers(response)
 
     try:
-        functions = get_function_list()
-        function_statuses = [check_function(func_name) for func_name in functions]
-        
-        # Calculate metrics
+        all_functions = get_function_list()
+        # Filter out 'callback' before checking statuses
+        functions_to_check = [f for f in all_functions if f.lower() != 'callback']
+        function_statuses = [check_function(func_name) for func_name in functions_to_check]
+
+        # Calculate metrics based ONLY on the checked functions (excluding callback)
         healthy_functions = [f for f in function_statuses if f["status"] == "running"]
         total_response_time = sum(f["elapsed"] for f in function_statuses)
-        avg_response_time = total_response_time / len(functions) if functions else 0
-        health_percentage = (len(healthy_functions) / len(functions) * 100) if functions else 0
+        num_checked_functions = len(functions_to_check)
+        avg_response_time = total_response_time / num_checked_functions if num_checked_functions > 0 else 0
+        health_percentage = (len(healthy_functions) / num_checked_functions * 100) if num_checked_functions > 0 else 0
 
         status = {
-            "state": "running" if len(healthy_functions) == len(functions) else "degraded",
-            "availability": "normal" if len(healthy_functions) == len(functions) else "limited",
+            # Base overall state/availability on the checked functions
+            "state": "running" if len(healthy_functions) == num_checked_functions else "degraded",
+            "availability": "normal" if len(healthy_functions) == num_checked_functions else "limited",
             "last_checked": datetime.utcnow().isoformat(),
             "host_names": ["seeker-functions.azurewebsites.net"],
-            "functions": function_statuses,
+            "functions": function_statuses, # Return status only for checked functions
             "metrics": [
                 {
-                    "name": "Total Functions",
-                    "value": len(functions)
+                    "name": "Total Functions Checked", # Clarify metric name
+                    "value": num_checked_functions # Report count of checked functions
                 },
                 {
                     "name": "Healthy Functions",
