@@ -189,11 +189,19 @@ const createAuthStore = () => {
             const user = await fetchUserInfo(token);
             if (user) {
                 setAuthData(token, user);
-                return true; // Indicate success
+                return { success: true }; // Indicate success
             } else {
-                console.error('AuthStore: Failed to fetch user info after callback.');
+                // Check if fetchUserInfo failed due to 403 (role missing)
+                // This requires fetchUserInfo to somehow signal the status code,
+                // or we make another check here, which is less ideal.
+                // Let's assume fetchUserInfo returns null on failure and we
+                // can't easily get the status code back here without refactoring fetchUserInfo.
+                // For now, we'll keep the generic callback_failed but log the possibility.
+                // A better approach would be for fetchUserInfo to throw specific errors.
+                console.error('AuthStore: Failed to fetch user info after callback (potentially due to missing role - 403).');
                 clearAuthData();
-                return false; // Indicate failure
+                // We will adjust the login page to interpret 'callback_failed' potentially as role issue for now.
+                return { success: false, error: 'callback_failed' }; // Indicate failure
             }
         }
         // Removed checkAuth as initialization handles this now

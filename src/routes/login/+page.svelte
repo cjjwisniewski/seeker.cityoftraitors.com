@@ -19,10 +19,34 @@
         // Error handling (keep this part)
         const error = $page.url.searchParams.get('error');
         const message = decodeURIComponent($page.url.searchParams.get('message') || '');
-        
+        const error = $page.url.searchParams.get('error');
+        const message = decodeURIComponent($page.url.searchParams.get('message') || '');
+
         if (error) {
             console.log('Login error detected:', { error, message });
-            errorMessage = message || 'Authentication failed. Please try again.';
+            switch (error) {
+                case 'server_required':
+                    errorMessage = 'Login failed: You must be a member of the required Discord server.';
+                    break;
+                case 'role_required':
+                    errorMessage = 'Login failed: You do not have the required "Seeker" role in the Discord server.';
+                    break;
+                case 'callback_failed':
+                    // This might now include role failures if fetchUserInfo returned 403
+                    errorMessage = message || 'Authentication failed after callback. This might be due to missing roles or an issue fetching user details. Please ensure you have the "Seeker" role.';
+                    break;
+                case 'discord_api_error':
+                    errorMessage = message || 'Communication error with Discord. Please try again later.';
+                    break;
+                case 'config_error':
+                    errorMessage = message || 'Server configuration error prevents login.';
+                    break;
+                case 'no_code':
+                    errorMessage = message || 'Authorization code missing from Discord callback.';
+                    break;
+                default:
+                    errorMessage = message || 'An unknown authentication error occurred.';
+            }
         }
     });
 

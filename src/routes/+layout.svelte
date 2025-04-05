@@ -31,9 +31,9 @@
             if (token) {
                 console.log('Layout onMount: Found token in URL fragment. Handling callback...');
 
-                const success = await auth.handleCallback(token);
+                const callbackResult = await auth.handleCallback(token);
 
-                if (success) {
+                if (callbackResult.success) {
                     console.log('Layout onMount: Callback successful, navigating to state:', state);
                     // Clear the hash fragment ONLY on success, right before navigating
                     replaceState(window.location.pathname + window.location.search, history.state);
@@ -42,7 +42,9 @@
                 } else {
                     console.error('Layout onMount: Callback token handling failed, redirecting to login with error.');
                     // Redirect to login page with error
-                    await goto('/login?error=callback_failed', { replaceState: true });
+                    // Use the specific error from the callback result if available
+                    const errorCode = callbackResult.error || 'callback_failed';
+                    await goto(`/login?error=${errorCode}`, { replaceState: true });
                 }
             }
         }
