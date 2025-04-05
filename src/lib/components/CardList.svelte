@@ -608,15 +608,6 @@
         color: #1f2937;
     }
 
-    .error-message {
-        color: var(--color-error);
-        padding: 1rem;
-        text-align: center;
-        border: 1px solid var(--color-error);
-        border-radius: 4px;
-        margin: 1rem 0;
-    }
-
      .no-results { /* Original style */
           text-align: center;
           color: var(--color-text-secondary);
