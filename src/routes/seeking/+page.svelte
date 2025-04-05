@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte'; // Import onDestroy
     import { auth } from '$lib/stores/auth'; // Import auth store
     import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
     import { PUBLIC_GET_SEEKING_LIST_FUNCTION_URL, PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL } from '$env/static/public';
@@ -26,7 +26,14 @@
                     error = "Please log in to view your seeking list.";
                     loading = false;
                 }
-                unsubscribe(); // Unsubscribe after first non-loading state
+                // REMOVED: unsubscribe(); // Do not unsubscribe immediately
+            }
+        });
+
+        // Unsubscribe when the component is destroyed
+        onDestroy(() => {
+            if (unsubscribe) {
+                unsubscribe();
             }
         });
     });
