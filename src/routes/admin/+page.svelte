@@ -347,6 +347,7 @@
                             <h3>Function Status</h3>
                             <div class="function-grid">
                                 {#each systemStatus.functions as func}
+                                    {#if func.name !== 'callback'} <!-- Add this condition -->
                                     <div class="function-status">
                                         <div class="function-header">
                                             <span class="function-name">{func.name}</span>
@@ -375,6 +376,7 @@
                                             {/if}
                                         </div>
                                     </div>
+                                    {/if} <!-- Close the condition -->
                                 {/each}
                             </div>
                         </div>
