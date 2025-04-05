@@ -79,7 +79,7 @@ jobs:
               --account-name "$ACCOUNT_NAME" \
               --account-key "$ACCOUNT_KEY" \
               --destination '$web' \
-              --source ./.svelte-kit/output/client \
+              --source ./build \
               --overwrite true
 
       - name: Purge CDN endpoint
