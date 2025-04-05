@@ -57,7 +57,7 @@
 
     const performSearch = async () => {
         try {
-            const response = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(searchTerm)}&include_extras=true`);
+            const response = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(searchTerm)}`);
             const data = await response.json();
             
             // Fetch prints for each card
