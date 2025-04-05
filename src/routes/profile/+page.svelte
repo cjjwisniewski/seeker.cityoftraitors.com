@@ -221,9 +221,14 @@
     <!-- Comments moved outside the tag definition -->
     <!-- Removed role, tabindex, aria-label, aria-modal from overlay -->
     <!-- Keyboard interaction (Escape) is handled by svelte:window -->
+    <!-- Added role, tabindex, aria-label, and keydown handler to overlay for accessibility -->
     <div
         class="modal-overlay"
         on:click={() => showConfirmDialog = false}
+        on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') showConfirmDialog = false; }}
+        role="button"
+        tabindex="0"
+        aria-label="Close dialog"
     >
         <!-- Added role="dialog", aria-modal, aria-labelledby to the modal content container -->
         <div
