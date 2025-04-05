@@ -24,6 +24,10 @@
                 <header>Authorization</header>
             </allowed-headers>
         </cors>
+        <!-- Explicitly forward the Authorization header to the backend -->
+        <set-header name="Authorization" exists-action="override">
+            <value>@(context.Request.Headers.GetValueOrDefault("Authorization", ""))</value>
+        </set-header>
     </inbound>
     <!-- Control if and how the requests are forwarded to services  -->
     <backend>
