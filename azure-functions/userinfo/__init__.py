@@ -13,8 +13,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Userinfo function processed a request.')
 
     required_guild_id = os.environ.get('REQUIRED_GUILD_ID')
-    if not required_guild_id:
-        logging.error('Missing REQUIRED_GUILD_ID environment variable.')
+    required_role_id = os.environ.get('REQUIRED_ROLE_ID') # Get required role ID
+    if not required_guild_id or not required_role_id: # Check both
+        logging.error('Missing REQUIRED_GUILD_ID or REQUIRED_ROLE_ID environment variable.')
         return func.HttpResponse("Server configuration error.", status_code=500)
 
     # 1. Extract token from Authorization header
@@ -94,7 +95,18 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                  # Log warning but don't fail the request, just return without roles
                  logging.warning(f"Failed to fetch member info (Status: {member_response.status_code}): {member_response.text}")
 
-        # 4. Construct and return the user object for the frontend
+        # 4. Verify Required Role (after attempting to fetch roles)
+        if required_role_id not in roles:
+             logging.warning(f"User {user_data.get('id')} lacks required role {required_role_id}. Roles found: {roles}")
+             # Return 403 Forbidden if the required role is missing
+             return func.HttpResponse(
+                 body=json.dumps({"error": "forbidden", "message": "User does not have the required role."}),
+                 status_code=403,
+                 mimetype="application/json"
+             )
+        logging.info(f"User has required role {required_role_id}.")
+
+        # 5. Construct and return the user object for the frontend
         user_info = {
             'id': user_data.get('id'),
             'username': user_data.get('username'),
