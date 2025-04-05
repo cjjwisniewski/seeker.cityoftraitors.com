@@ -1,3 +1,4 @@
+import json # Import the standard json library
 import logging
 import os
 import requests
@@ -103,7 +104,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         }
 
         return func.HttpResponse(
-            body=func.JsonEncoder().encode(user_info), # Use JsonEncoder for proper JSON serialization
+            body=json.dumps(user_info), # Use json.dumps for proper JSON serialization
             status_code=200,
             mimetype="application/json"
         )
