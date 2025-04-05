@@ -32,7 +32,7 @@
                     break;
                 case 'callback_failed':
                     // This might now include role failures if fetchUserInfo returned 403
-                    errorMessage = message || 'Authentication failed after callback. This might be due to missing roles or an issue fetching user details. Please ensure you have the "Seeker" role.';
+                    errorMessage = message || 'Authentication failed after callback. This might be due to missing roles or an issue fetching user details. Please ensure you have the "Seeker" role in Discord.';
                     break;
                 case 'discord_api_error':
                     errorMessage = message || 'Communication error with Discord. Please try again later.';
