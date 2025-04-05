@@ -39,6 +39,8 @@ const createAuthStore = () => {
         intendedPath: null, // Initialize intendedPath
     });
 
+    let isInitializing = false; // Flag to prevent concurrent initializations
+
     // Function to fetch user info using the token
     async function fetchUserInfo(token: string) {
         console.debug('AuthStore: fetchUserInfo called.'); // Log entry
@@ -101,6 +103,20 @@ const createAuthStore = () => {
     // Initialize store on load (only in browser)
     async function initialize() {
         if (browser) {
+            const currentState = get(auth); // Get current state non-reactively
+            // Skip if already initializing or if already authenticated with user data loaded
+            if (isInitializing || (currentState.isAuthenticated && currentState.user)) {
+                console.debug('AuthStore: Initialization skipped (already running or user loaded).');
+                // Ensure loading is false if we skip while it was true
+                if (currentState.isLoading) {
+                    update(state => ({ ...state, isLoading: false }));
+                }
+                return;
+            }
+
+            isInitializing = true;
+            update(state => ({ ...state, isLoading: true })); // Set loading true at the start
+
             // Check if essential URLs are configured
             if (!LOGIN_URL || !USER_INFO_URL) {
                 console.error('AuthStore FATAL: VITE_LOGIN_URL and/or VITE_USER_INFO_URL environment variables are not set. Authentication cannot proceed.');
@@ -122,8 +138,11 @@ const createAuthStore = () => {
                 }
             } else {
                 console.debug('AuthStore: No token found in localStorage.');
+                // Ensure loading is set to false when no token is found
                 update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
             }
+
+            isInitializing = false; // Reset flag when done
         }
     }
 
