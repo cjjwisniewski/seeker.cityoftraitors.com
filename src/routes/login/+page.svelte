@@ -19,8 +19,7 @@
         // Error handling (keep this part)
         const error = $page.url.searchParams.get('error');
         const message = decodeURIComponent($page.url.searchParams.get('message') || '');
-        const error = $page.url.searchParams.get('error');
-        const message = decodeURIComponent($page.url.searchParams.get('message') || '');
+        // Removed duplicate declarations below
 
         if (error) {
             console.log('Login error detected:', { error, message });
