@@ -7,6 +7,7 @@
         PUBLIC_GET_USER_TABLES_FUNCTION_URL,
         PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
         PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL,
+        PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL, // Add the missing import
     } from '$env/static/public';
 
     // Define Role ID
