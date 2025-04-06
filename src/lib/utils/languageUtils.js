@@ -22,7 +22,6 @@ export function getLanguageName(code) {
 }
 
 export async function getAvailableLanguages(cardId, setCode, collectorNumber) {
-    // Create an array of promises for all language checks
     const languageChecks = Object.keys(languageNames).map(async lang => {
         const url = `https://api.scryfall.com/cards/${setCode}/${collectorNumber}/${lang}`;
         try {
@@ -31,17 +30,15 @@ export async function getAvailableLanguages(cardId, setCode, collectorNumber) {
                 return lang;
             }
         } catch (error) {
-            // Optional: Log error if needed for debugging specific failures
-            // console.error(`Error checking language ${lang} for ${setCode}/${collectorNumber}:`, error);
+            // Ignore errors (card likely doesn't exist in this language)
         }
         return null;
     });
 
-    // Execute all checks in parallel
     const results = await Promise.all(languageChecks);
     
-    // Filter out null results and get available languages
     const availableLanguages = results.filter(lang => lang !== null);
     
+    // Default to English if no other languages are found or if the check fails
     return availableLanguages.length > 0 ? availableLanguages : ['en'];
 }
