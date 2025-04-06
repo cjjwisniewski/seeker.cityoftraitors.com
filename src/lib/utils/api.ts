@@ -14,28 +14,27 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     if (!browser) {
         // Should not be called server-side in static mode, but good practice
         console.error('fetchWithAuth called server-side');
-        return undefined; // Or throw an error
+        return undefined;
     }
 
-    let authState = get(auth); // Use let as it will be reassigned
+    let authState = get(auth);
 
     // If the store indicates loading, wait briefly for initialization
     // This is a simple mechanism; more robust solutions might use a promise in the store
     let retries = 0;
     while (authState.isLoading && retries < 5) {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
-        authState = get(auth); // Re-check state
+        await new Promise(resolve => setTimeout(resolve, 100));
+        authState = get(auth);
         retries++;
     }
 
     // If still loading or not authenticated after waiting, trigger login
     if (authState.isLoading || !authState.isAuthenticated || !authState.token) {
         console.warn('fetchWithAuth: Not authenticated or token missing. Redirecting to login.');
-        auth.login(); // Trigger the login flow
-        return undefined; // Indicate that the fetch did not proceed
+        auth.login();
+        return undefined;
     }
 
-    // Add the Authorization header
     const headers = new Headers(options.headers);
     headers.set('Authorization', `Bearer ${authState.token}`);
 
@@ -48,15 +47,15 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
         // If unauthorized, trigger login
         if (response.status === 401) {
             console.warn('fetchWithAuth: Received 401 Unauthorized. Redirecting to login.');
-            auth.login(); // Trigger the login flow
-            return undefined; // Indicate that the fetch did not proceed
+            auth.login();
+            return undefined;
         }
 
-        return response; // Return the response for the caller to handle
+        return response;
 
     } catch (error) {
         console.error('fetchWithAuth: Network or other error during fetch:', error);
         // You might want to handle network errors differently, e.g., show a message
-        throw error; // Re-throw the error for the caller
+        throw error;
     }
 }
