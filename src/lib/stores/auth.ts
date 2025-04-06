@@ -43,7 +43,6 @@ const createAuthStore = () => {
 
     // Function to fetch user info using the token
     async function fetchUserInfo(token: string) {
-        console.debug('AuthStore: fetchUserInfo called.'); // Log entry
         if (!token) {
             console.error('AuthStore: fetchUserInfo called with no token.');
             return null;
@@ -53,7 +52,6 @@ const createAuthStore = () => {
              return null;
         }
         // REMOVED: Check for APIM_KEY
-        console.debug(`AuthStore: Attempting to fetch user info from ${USER_INFO_URL} with provided token.`);
         try {
             // Perform direct fetch, manually adding Authorization header
             const response = await fetch(USER_INFO_URL, {

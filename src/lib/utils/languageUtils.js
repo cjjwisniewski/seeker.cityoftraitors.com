@@ -22,8 +22,6 @@ export function getLanguageName(code) {
 }
 
 export async function getAvailableLanguages(cardId, setCode, collectorNumber) {
-    console.group(`Checking languages for ${setCode}/${collectorNumber}`);
-    
     // Create an array of promises for all language checks
     const languageChecks = Object.keys(languageNames).map(async lang => {
         const url = `https://api.scryfall.com/cards/${setCode}/${collectorNumber}/${lang}`;

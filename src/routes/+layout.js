@@ -10,15 +10,13 @@ export const load = async ({ url }) => {
     // auth.initialize() handles preventing multiple initializations.
     // Await it here to ensure localStorage token is checked before proceeding.
     if (browser) {
-        console.log('Client layout load: Ensuring auth store is initialized...');
         await auth.initialize();
-
+ 
         // --- Check for callback token BEFORE running auth checks ---
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const tokenInHash = hashParams.get('token');
-
+ 
         if (tokenInHash) {
-            console.log('Client layout load: Token found in hash, deferring auth checks to onMount.');
             // Skip auth checks for this load execution, let onMount handle the token
             return {};
         }
@@ -49,10 +47,9 @@ export const load = async ({ url }) => {
 
     // If authenticated AND on the login page -> redirect to home
     if (authState.isAuthenticated && currentPath === '/login') {
-         console.log('Client layout load: Authenticated, redirecting from login to /');
          throw redirect(302, '/');
     }
-
+ 
     // Return user data from the store so it's available in $page.data
     return {
         user: authState.user
