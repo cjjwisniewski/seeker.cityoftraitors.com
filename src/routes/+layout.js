@@ -29,7 +29,6 @@ export const load = async ({ url }) => {
 
     // Log state AFTER initialization attempt
     if (browser) {
-        console.log('Client layout load: Auth state after init/check:', { isAuthenticated: authState.isAuthenticated, isLoading: authState.isLoading, currentPath });
     }
 
     // Authentication checks (run only if no token was found in hash during this execution)
@@ -38,7 +37,6 @@ export const load = async ({ url }) => {
     // If NOT authenticated AND NOT loading AND NOT on an auth path -> redirect to login
     if (!authState.isAuthenticated && !authState.isLoading && !isAuthPath) {
         const intendedPath = currentPath + url.search;
-        console.log('Client layout load: Not authenticated, storing intended path and redirecting to login from:', intendedPath);
         if (browser) { // Only store intended path on client
             auth.setIntendedPath(intendedPath);
         }

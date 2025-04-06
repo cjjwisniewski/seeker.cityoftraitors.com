@@ -64,7 +64,6 @@ const createAuthStore = () => {
             // Manually handle response status
             if (response.ok) {
                 const userData: User = await response.json();
-                console.debug('AuthStore: fetchUserInfo successful.', userData);
                 return userData;
             } else {
                 console.error('Failed to fetch user info:', response.status);
@@ -104,7 +103,6 @@ const createAuthStore = () => {
             const currentState = get(auth); // Get current state non-reactively
             // Skip if already initializing or if already authenticated with user data loaded
             if (isInitializing || (currentState.isAuthenticated && currentState.user)) {
-                console.debug('AuthStore: Initialization skipped (already running or user loaded).');
                 // Ensure loading is false if we skip while it was true
                 if (currentState.isLoading) {
                     update(state => ({ ...state, isLoading: false }));
@@ -125,17 +123,14 @@ const createAuthStore = () => {
 
             const token = localStorage.getItem('authToken');
             if (token) {
-                console.debug('AuthStore: Found token in localStorage, fetching user info...');
                 const user = await fetchUserInfo(token);
                 if (user) {
                     setAuthData(token, user);
                 } else {
                     // Token might be invalid/expired
-                    console.debug('AuthStore: Token invalid or user fetch failed, clearing auth data.');
                     clearAuthData();
                 }
             } else {
-                console.debug('AuthStore: No token found in localStorage.');
                 // Ensure loading is set to false when no token is found
                 update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
             }
@@ -155,7 +150,6 @@ const createAuthStore = () => {
             // Redirect to your Azure Function endpoint that starts the Discord OAuth flow
             // Use the stored intendedPath as state, default to '/'
             const stateToUse = get(auth).intendedPath || '/';
-            console.debug(`AuthStore: Initiating login, state=${stateToUse}`);
             window.location.href = `${LOGIN_URL}?state=${encodeURIComponent(stateToUse)}`;
         },
         logout: async () => {
@@ -183,7 +177,6 @@ const createAuthStore = () => {
                 console.error('AuthStore: handleCallback called with no token.');
                 return false;
             }
-            console.debug('AuthStore: Calling fetchUserInfo from handleCallback...');
             const user = await fetchUserInfo(token);
             if (user) {
                 setAuthData(token, user);

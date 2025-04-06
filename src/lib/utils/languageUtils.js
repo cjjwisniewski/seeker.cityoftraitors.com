@@ -28,11 +28,11 @@ export async function getAvailableLanguages(cardId, setCode, collectorNumber) {
         try {
             const response = await fetch(url);
             if (response.ok) {
-                console.log(`Found ${languageNames[lang]} version`);
                 return lang;
             }
         } catch (error) {
-            console.debug(`No ${languageNames[lang]} version available`);
+            // Optional: Log error if needed for debugging specific failures
+            // console.error(`Error checking language ${lang} for ${setCode}/${collectorNumber}:`, error);
         }
         return null;
     });
@@ -42,9 +42,6 @@ export async function getAvailableLanguages(cardId, setCode, collectorNumber) {
     
     // Filter out null results and get available languages
     const availableLanguages = results.filter(lang => lang !== null);
-    
-    console.log('Available languages:', availableLanguages);
-    console.groupEnd();
     
     return availableLanguages.length > 0 ? availableLanguages : ['en'];
 }
