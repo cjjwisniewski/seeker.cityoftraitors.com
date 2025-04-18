@@ -159,6 +159,16 @@
         };
         return codeMap[originalCode.toLowerCase()] || originalCode;
     }
+
+    // Helper function to format price from cents to dollars
+    function formatPrice(cents) {
+        if (cents === null || cents === undefined) {
+            return ''; // Or handle as needed, e.g., return 'N/A'
+        }
+        const dollars = cents / 100;
+        // Format to 2 decimal places and prepend '$'
+        return `$${dollars.toFixed(2)}`;
+    }
 </script>
 
 {#if authLoading || loading}
@@ -207,32 +217,32 @@
                         <td class="vendor-stock-cell">
                             <div class="stock-indicator">
                                 <i class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(getStockStatus(card.cardtrader_stock))}"></i>
-                                {#if card.cardtrader_low_price}
-                                    <span class="price-text">{card.cardtrader_low_price}</span>
+                                {#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
+                                    <span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
                                 {/if}
                             </div>
                         </td>
                         <td class="vendor-stock-cell disabled-column">
                              <div class="stock-indicator">
                                 <i class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(getStockStatus(card.tcgplayer_stock))}"></i>
-                                {#if card.tcgplayer_low_price}
-                                    <span class="price-text">{card.tcgplayer_low_price}</span>
+                                {#if card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined}
+                                    <span class="price-text">{formatPrice(card.tcgplayer_low_price)}</span>
                                 {/if}
                             </div>
                         </td>
                         <td class="vendor-stock-cell disabled-column display-none">
                              <div class="stock-indicator">
                                 <i class="{getStockIcon(getStockStatus(card.cardmarket_stock))} {getStockColor(getStockStatus(card.cardmarket_stock))}"></i>
-                                {#if card.cardmarket_low_price}
-                                    <span class="price-text">{card.cardmarket_low_price}</span>
+                                {#if card.cardmarket_low_price !== null && card.cardmarket_low_price !== undefined}
+                                    <span class="price-text">{formatPrice(card.cardmarket_low_price)}</span>
                                 {/if}
                             </div>
                         </td>
                         <td class="vendor-stock-cell disabled-column">
                              <div class="stock-indicator">
                                 <i class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(getStockStatus(card.ebay_stock))}"></i>
-                                {#if card.ebay_low_price}
-                                    <span class="price-text">{card.ebay_low_price}</span>
+                                {#if card.ebay_low_price !== null && card.ebay_low_price !== undefined}
+                                    <span class="price-text">{formatPrice(card.ebay_low_price)}</span>
                                 {/if}
                             </div>
                         </td>
@@ -299,8 +309,8 @@
 
     .vendor-stock-cell {
         text-align: center;
-        vertical-align: top; /* Align content to the top */
-        padding-top: 1rem; /* Restore padding if needed */
+        vertical-align: middle; /* Vertically center content in the cell */
+        padding-top: 1rem;
         padding-bottom: 1rem;
     }
 
