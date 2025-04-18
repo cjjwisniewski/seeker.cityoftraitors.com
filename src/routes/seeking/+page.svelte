@@ -166,8 +166,8 @@
             <thead>
                 <tr>
                     <th>Card</th>
-                    <th>Set</th>
-                    <th>Language</th>
+                    <th class="set-column">Set</th>
+                    <th class="language-column">Language</th>
                     <th>Finish</th>
                     <th>CardTrader</th>
                     <th class="disabled-column" title="TCGPlayer stock check coming soon">TCGPlayer</th>
@@ -262,7 +262,14 @@
         font-size: 1rem;
     }
 
-    /* Style for visually disabled columns */
+    .set-column {
+        text-transform: uppercase;
+    }
+
+    .language-column {
+        text-transform: uppercase;
+    }
+
     .disabled-column {
         opacity: 0.5;
         cursor: not-allowed;
