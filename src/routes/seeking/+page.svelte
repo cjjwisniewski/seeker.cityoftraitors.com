@@ -166,8 +166,8 @@
             <thead>
                 <tr>
                     <th>Card</th>
-                    <th class="set-column">Set</th>
-                    <th class="language-column">Language</th>
+                    <th>Set</th>
+                    <th>Language</th>
                     <th>Finish</th>
                     <th>CardTrader</th>
                     <th class="disabled-column" title="TCGPlayer stock check coming soon">TCGPlayer</th>
@@ -185,8 +185,8 @@
                                 <span>{card.name}</span>
                             </div>
                         </td>
-                        <td>{card.set_code}</td>
-                        <td>{card.language}</td>
+                        <td class="set-column">{card.set_code}</td>
+                        <td class="language-column">{card.language}</td>
                         <td>{card.finish}</td>
                         <td class="stock-icon">
                             <i class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(getStockStatus(card.cardtrader_stock))}"></i>
