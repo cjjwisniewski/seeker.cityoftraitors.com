@@ -190,15 +190,27 @@
                         <td>{card.finish}</td>
                         <td class="stock-icon">
                             <i class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(getStockStatus(card.cardtrader_stock))}"></i>
+                            {#if card.cardtrader_low_price}
+                                <span class="price-text">{card.cardtrader_low_price}</span>
+                            {/if}
                         </td>
                         <td class="stock-icon disabled-column">
                             <i class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(getStockStatus(card.tcgplayer_stock))}"></i>
+                            {#if card.tcgplayer_low_price}
+                                <span class="price-text">{card.tcgplayer_low_price}</span>
+                            {/if}
                         </td>
                         <td class="stock-icon disabled-column display-none">
                             <i class="{getStockIcon(getStockStatus(card.cardmarket_stock))} {getStockColor(getStockStatus(card.cardmarket_stock))}"></i>
+                            {#if card.cardmarket_low_price}
+                                <span class="price-text">{card.cardmarket_low_price}</span>
+                            {/if}
                         </td>
                         <td class="stock-icon disabled-column">
                             <i class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(getStockStatus(card.ebay_stock))}"></i>
+                            {#if card.ebay_low_price}
+                                <span class="price-text">{card.ebay_low_price}</span>
+                            {/if}
                         </td>
                         <td class="delete-btn-column">
                             <button
@@ -263,7 +275,20 @@
 
     .stock-icon {
         text-align: center;
-        font-size: 1rem;
+        font-size: 1rem; /* Icon size */
+        /* Make space for price below icon */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem; /* Space between icon and price */
+        min-height: 40px; /* Ensure consistent height */
+    }
+
+    .price-text {
+        font-size: 0.7rem; /* Smaller font size for price */
+        color: var(--color-text-muted); /* Muted color */
+        line-height: 1;
     }
 
     .set-column {
