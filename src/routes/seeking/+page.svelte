@@ -185,7 +185,14 @@
                                 <span>{card.name}</span>
                             </div>
                         </td>
-                        <td class="set-column">{card.set_code}</td>
+                        <td class="set-column">
+                            <img
+                                src="https://svgs.scryfall.io/sets/{card.set_code}.svg"
+                                alt="{card.set_code} set icon"
+                                title="{card.set_code.toUpperCase()}"
+                                class="set-icon"
+                            />
+                        </td>
                         <td class="language-column">{card.language}</td>
                         <td>{card.finish}</td>
                         <td class="stock-icon">
@@ -292,8 +299,21 @@
     }
 
     .set-column {
-        text-transform: uppercase;
+        /* text-transform: uppercase; */ /* No longer needed for text */
+        text-align: center; /* Center the icon */
     }
+
+    .set-icon {
+        height: 1.5em; /* Adjust size as needed */
+        width: 1.5em;  /* Adjust size as needed */
+        vertical-align: middle; /* Align icon nicely in the cell */
+        filter: invert(var(--set-icon-invert, 0)); /* Optional: Invert for dark mode if needed */
+    }
+
+    /* Example dark mode adjustment (add this if your theme needs it) */
+    /* html[data-theme='dark'] .set-icon {
+        --set-icon-invert: 1;
+    } */
 
     .language-column {
         text-transform: uppercase;
