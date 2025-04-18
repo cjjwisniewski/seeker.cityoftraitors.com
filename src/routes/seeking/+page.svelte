@@ -215,12 +215,23 @@
                         <td class="language-column">{card.language}</td>
                         <td>{card.finish}</td>
                         <td class="vendor-stock-cell">
-                            <div class="stock-indicator">
-                                <i class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(getStockStatus(card.cardtrader_stock))}"></i>
-                                {#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
-                                    <span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
-                                {/if}
-                            </div>
+                            {#if card.cardtrader_id}
+                                <a href="https://www.cardtrader.com/cards/{card.cardtrader_id}" target="_blank" rel="noopener noreferrer" class="vendor-link">
+                                    <div class="stock-indicator">
+                                        <i class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(getStockStatus(card.cardtrader_stock))}"></i>
+                                        {#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
+                                            <span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
+                                        {/if}
+                                    </div>
+                                </a>
+                            {:else}
+                                <div class="stock-indicator">
+                                    <i class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(getStockStatus(card.cardtrader_stock))}"></i>
+                                    {#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
+                                        <span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
+                                    {/if}
+                                </div>
+                            {/if}
                         </td>
                         <td class="vendor-stock-cell disabled-column">
                              <div class="stock-indicator">
@@ -392,5 +403,11 @@
 
     .error {
         color: var(--color-error);
+    }
+
+    .vendor-link {
+        text-decoration: none; /* Remove underline from link */
+        color: inherit; /* Inherit color from parent */
+        display: inline-block; /* Ensure it behaves like the div it replaces */
     }
 </style>
