@@ -150,6 +150,15 @@
             return 'unknown';
         }
     }
+
+    // Helper function to map specific set codes for icons
+    function getSetIconCode(originalCode) {
+        const codeMap = {
+            '4bb': '4ed', // Fourth Edition Foreign Black Border -> Fourth Edition
+            'fbb': '3ed'  // Foreign Black Border (Revised) -> Revised Edition (3ED)
+        };
+        return codeMap[originalCode.toLowerCase()] || originalCode;
+    }
 </script>
 
 {#if authLoading || loading}
@@ -187,7 +196,7 @@
                         </td>
                         <td class="set-column">
                             <img
-                                src="https://svgs.scryfall.io/sets/{card.set_code}.svg"
+                                src="https://svgs.scryfall.io/sets/{getSetIconCode(card.set_code)}.svg"
                                 alt="{card.set_code} set icon"
                                 title="{card.set_code.toUpperCase()}"
                                 class="set-icon"
