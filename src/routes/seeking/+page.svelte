@@ -171,7 +171,7 @@
                     <th>Finish</th>
                     <th>CardTrader</th>
                     <th class="disabled-column" title="TCGPlayer stock check coming soon">TCGPlayer</th>
-                    <th class="disabled-column" title="CardMarket stock check coming soon">CardMarket</th>
+                    <th class="disabled-column display-none" title="CardMarket stock check coming soon">CardMarket</th>
                     <th class="disabled-column" title="Ebay stock check coming soon">EBay</th>
                     <th>Actions</th>
                 </tr>
@@ -194,7 +194,7 @@
                         <td class="stock-icon disabled-column">
                             <i class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(getStockStatus(card.tcgplayer_stock))}"></i>
                         </td>
-                        <td class="stock-icon disabled-column">
+                        <td class="stock-icon disabled-column display-none">
                             <i class="{getStockIcon(getStockStatus(card.cardmarket_stock))} {getStockColor(getStockStatus(card.cardmarket_stock))}"></i>
                         </td>
                         <td class="stock-icon disabled-column">
@@ -243,6 +243,10 @@
         font-weight: 600;
         color: var(--color-text-primary);
         text-align: center;
+    }
+
+    .display-none {
+        display: none;
     }
 
     .card-info {
