@@ -155,7 +155,8 @@
     function getSetIconCode(originalCode) {
         const codeMap = {
             '4bb': '4ed', // Fourth Edition Foreign Black Border -> Fourth Edition
-            'fbb': '3ed'  // Foreign Black Border (Revised) -> Revised Edition (3ED)
+            'fbb': '3ed',  // Foreign Black Border (Revised) -> Revised Edition (3ED)
+            'sld': 'pmei' // Secret Lair Drop -> Media Promos
         };
         return codeMap[originalCode.toLowerCase()] || originalCode;
     }
