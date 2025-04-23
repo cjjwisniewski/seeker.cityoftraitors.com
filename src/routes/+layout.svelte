@@ -5,6 +5,7 @@
     import { page } from '$app/stores'; // Import the page store
     import { auth } from '$lib/stores/auth'; // Import the auth store
     import { browser } from '$app/environment'; // Import browser check
+    import ThemeToggle from '$lib/components/ThemeToggle.svelte'; // Import the theme toggle
 
     // Remove export let data; - Data now comes from the auth store
 
@@ -132,6 +133,11 @@
                                         <i class="fa-solid fa-right-from-bracket"></i>
                                         Logout
                                     </button>
+                                    <!-- Add Theme Toggle Here -->
+                                    <div class="dropdown-divider"></div>
+                                    <div class="theme-toggle-container">
+                                        <ThemeToggle />
+                                    </div>
                                 </div>
                             {/if}
                         </div>
@@ -294,6 +300,20 @@
         min-width: 150px;
         padding: 0.25rem 0;
         z-index: 1001; /* Ensure it's above main content */
+        /* Add padding for the theme toggle */
+        padding-bottom: 0.5rem; 
+    }
+
+    /* Styling for the divider and container */
+    .dropdown-divider {
+        height: 1px;
+        background-color: var(--color-border);
+        margin: 0.5rem 0; /* Add some spacing */
+    }
+
+    .theme-toggle-container {
+        padding: 0 0.75rem; /* Align with dropdown item padding */
+        margin-top: 0.25rem;
     }
 
     /* Invisible area to prevent menu from closing when moving mouse to it */
