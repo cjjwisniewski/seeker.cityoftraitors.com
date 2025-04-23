@@ -227,11 +227,10 @@
                                     </div>
                                 </a>
                             {:else}
+                                <!-- Show only question mark if CardTrader ID is missing -->
                                 <div class="stock-indicator">
-                                    <i class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(getStockStatus(card.cardtrader_stock))}"></i>
-                                    {#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
-                                        <span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
-                                    {/if}
+                                     <i class="fa-solid fa-circle-question text-muted" title="Card not found on CardTrader"></i>
+                                     <!-- No price shown when ID is missing -->
                                 </div>
                             {/if}
                         </td>
