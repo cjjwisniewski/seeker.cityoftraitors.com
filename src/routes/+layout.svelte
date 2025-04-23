@@ -278,7 +278,7 @@
         height: 32px;
         border-radius: 50%;
         background-color: var(--color-primary); /* Example background */
-        color: white;
+        color: var(--color-text-on-primary, white); /* Use variable */
         font-weight: bold;
         font-size: 1rem;
     }
@@ -358,7 +358,7 @@
     .login-button {
         padding: 0.4rem 0.8rem;
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-text-on-primary, white); /* Use variable */
         border-radius: 4px;
         text-decoration: none;
         font-size: 0.9rem;
@@ -378,9 +378,11 @@
 
     main {
         padding-top: var(--nav-height); /* Use variable for padding */
-        background: linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%);
+        /* background: linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%); /* Remove hardcoded gradient */
+        background: var(--color-bg-primary); /* Use theme background */
         flex: 1; /* Ensure main takes remaining space */
         /* overflow: auto; /* Handle potential overflow inside main */
+        transition: background 0.3s ease; /* Add transition */
     }
 
     /* Class to remove padding when navbar is hidden */

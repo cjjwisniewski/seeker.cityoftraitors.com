@@ -37,6 +37,9 @@
     --color-error: #dc2626;
     --color-success: #22c55e;
     --color-warning: #f59e0b;
+
+    /* Add Text on Primary Color */
+    --color-text-on-primary: #ffffff;
 }
 
 [data-theme='light'] {
@@ -61,6 +64,9 @@
     --color-error: #dc2626;
     --color-success: #22c55e;
     --color-warning: #f59e0b;
+
+    /* Add Text on Primary Color */
+    --color-text-on-primary: #ffffff;
 }
 
 [data-theme='dark'] {
@@ -90,6 +96,14 @@
     --color-error: #f87171; /* Lighter error */
     --color-success: #4ade80; /* Lighter success */
     --color-warning: #fbbf24; /* Lighter warning */
+
+    /* Add Text on Primary Color */
+    --color-text-on-primary: #ffffff;
+
+    /* Invert set icons in dark mode */
+    .set-icon {
+        filter: invert(1) /* Adjust if needed, e.g., invert(0.9) */
+    }
 }
 
 * {
