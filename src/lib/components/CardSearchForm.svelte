@@ -255,38 +255,58 @@
 <style>
     .search-form {
         margin-bottom: 20px;
+        /* Allow form to take available width */
+        width: 100%; 
+        max-width: 500px; /* Optional: Limit max width on larger screens */
+        margin-left: auto; /* Center the form */
+        margin-right: auto;
     }
 
     .search-container {
         position: relative;
-        display: inline-block;
+        /* display: inline-block; Remove this */
+        display: block; /* Make it block to use width: 100% */
+        width: 100%; /* Take full width of parent (.search-form) */
     }
 
     .input-group {
         display: flex;
         gap: 0.5rem;
-        align-items: center;
+        align-items: stretch; /* Make items same height */
+        width: 100%; /* Ensure group takes full width */
     }
 
     input {
-        padding: 8px;
-        border: 1px solid #ccc;
+        flex: 1; /* Allow input to grow */
+        min-width: 150px; /* Prevent input becoming too small */
+        padding: 0.5rem; /* Consistent padding */
+        border: 1px solid var(--color-border, #ccc);
         border-radius: 4px;
-        width: 300px;
+        /* width: 300px; Remove fixed width */
+        background-color: var(--color-bg-secondary, white);
+        color: var(--color-text-primary, #111);
+        font-size: 1rem;
+    }
+    input:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px var(--color-primary-alpha);
     }
 
     button {
-        padding: 8px 16px;
-        border: 1px solid #ccc;
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--color-border, #ccc);
         border-radius: 4px;
-        background: white;
+        background: var(--color-bg-secondary, white);
+        color: var(--color-text-primary);
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: background-color 0.2s, border-color 0.2s;
         white-space: nowrap;
     }
 
     button:hover {
-        background-color: #f0f0f0;
+        background-color: var(--color-bg-hover, #f0f0f0);
+        border-color: var(--color-border-hover, #bbb);
     }
 
     .dropdown-container {
@@ -294,13 +314,14 @@
         top: 100%;
         left: 0;
         right: 0;
-        background: white;
-        border: 1px solid #ccc;
+        background: var(--color-bg-elevated, white);
+        border: 1px solid var(--color-border, #ccc);
         border-top: none;
         border-radius: 0 0 4px 4px;
         max-height: 300px;
         overflow-y: auto;
         z-index: 1000;
+        box-shadow: var(--shadow-md);
     }
 
     .suggestions-list {
@@ -312,17 +333,35 @@
     .suggestion-button {
         width: 100%;
         text-align: left;
-        padding: 8px;
+        padding: 0.5rem 1rem;
         border: none;
         background: none;
         cursor: pointer;
+        color: var(--color-text-secondary);
+        font-size: 0.9rem;
     }
 
     .suggestion-button:hover {
-        background-color: #f0f0f0;
+        background-color: var(--color-bg-hover, #f0f0f0);
+        color: var(--color-text-primary);
     }
 
     .suggestions-list li {
         padding: 0;
+        border-bottom: 1px solid var(--color-border-light, #eee);
     }
+    .suggestions-list li:last-child {
+        border-bottom: none;
+    }
+
+    /* Optional: Media query for very small screens if needed */
+    /* @media (max-width: 400px) {
+        .input-group {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        button {
+            width: 100%;
+        }
+    } */
 </style>

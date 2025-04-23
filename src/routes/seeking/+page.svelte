@@ -410,4 +410,79 @@
         color: inherit; /* Inherit color from parent */
         display: inline-block; /* Ensure it behaves like the div it replaces */
     }
+
+    /* Add Responsive Styles */
+    @media (max-width: 768px) {
+        table {
+            display: block;
+            overflow-x: auto; /* Fallback: allow horizontal scroll if needed */
+            white-space: nowrap; /* Prevent line breaks within cells initially */
+        }
+
+        thead {
+            display: none; /* Hide table header on small screens */
+        }
+
+        tbody tr {
+            display: block; /* Stack rows like cards */
+            margin-bottom: 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 0.5rem;
+            background-color: var(--color-bg-secondary); /* Give card-like background */
+            box-shadow: var(--shadow-sm);
+            white-space: normal; /* Allow wrapping within the card */
+        }
+
+        tbody td {
+            display: grid; /* Use grid for label-value alignment */
+            grid-template-columns: minmax(100px, auto) 1fr; /* Label column, Value column */
+            gap: 0.5rem;
+            text-align: left;
+            padding: 0.5rem 0; /* Adjust padding */
+            border: none; /* Remove default table cell borders */
+            white-space: normal; /* Allow text wrapping */
+        }
+
+         tbody td::before {
+            content: attr(data-label); /* Use data-label for pseudo-header */
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            padding-right: 0.5rem; /* Space between label and value */
+        }
+
+        /* Specific adjustments for columns */
+        .card-info {
+             /* Adjust alignment if needed */
+             grid-column: 1 / -1; /* Make card info span both columns */
+             justify-content: center; /* Center card name/image */
+             padding-bottom: 0.5rem;
+        }
+         .card-info::before { display: none; } /* Hide label for this */
+
+        .set-column,
+        .language-column,
+        .vendor-stock-cell,
+        .delete-btn-column {
+             /* Adjust text alignment if needed */
+        }
+        
+         .delete-btn-column {
+             grid-column: 1 / -1; /* Span full width */
+             text-align: right; /* Align delete button to the right */
+             padding-top: 0.5rem;
+         }
+         .delete-btn-column::before { display: none; } /* Hide label */
+         
+         .disabled-column {
+             /* Maybe hide some less important disabled columns on mobile? */
+             /* Example: */
+             /* &.display-none { display: none; } */
+             /* Or adjust grid layout */
+         }
+          .display-none { 
+              display: none; /* Ensure this still works if used */
+          }
+          
+    }
 </style>
