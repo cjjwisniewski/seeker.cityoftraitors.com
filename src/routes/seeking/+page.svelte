@@ -199,13 +199,13 @@
             <tbody>
                 {#each cards as card (card.id)}
                     <tr>
-                        <td>
+                        <td data-label="Card">
                             <div class="card-info">
                                 <img src={card.image_uri} alt={card.name} />
                                 <span>{card.name}</span>
                             </div>
                         </td>
-                        <td class="set-column">
+                        <td data-label="Set" class="set-column">
                             <img
                                 src="https://svgs.scryfall.io/sets/{getSetIconCode(card.set_code)}.svg"
                                 alt="{card.set_code} set icon"
@@ -213,9 +213,9 @@
                                 class="set-icon"
                             />
                         </td>
-                        <td class="language-column">{card.language}</td>
-                        <td>{card.finish}</td>
-                        <td class="vendor-stock-cell">
+                        <td data-label="Language" class="language-column">{card.language}</td>
+                        <td data-label="Finish">{card.finish}</td>
+                        <td data-label="CardTrader" class="vendor-stock-cell">
                             {#if card.cardtrader_id}
                                 <a href="https://www.cardtrader.com/cards/{card.cardtrader_id}" target="_blank" rel="noopener noreferrer" class="vendor-link">
                                     <div class="stock-indicator">
@@ -234,7 +234,7 @@
                                 </div>
                             {/if}
                         </td>
-                        <td class="vendor-stock-cell disabled-column">
+                        <td data-label="TCGPlayer" class="vendor-stock-cell disabled-column">
                              <div class="stock-indicator">
                                 <i class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(getStockStatus(card.tcgplayer_stock))}"></i>
                                 {#if card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined}
@@ -242,7 +242,7 @@
                                 {/if}
                             </div>
                         </td>
-                        <td class="vendor-stock-cell disabled-column display-none">
+                        <td data-label="CardMarket" class="vendor-stock-cell disabled-column display-none">
                              <div class="stock-indicator">
                                 <i class="{getStockIcon(getStockStatus(card.cardmarket_stock))} {getStockColor(getStockStatus(card.cardmarket_stock))}"></i>
                                 {#if card.cardmarket_low_price !== null && card.cardmarket_low_price !== undefined}
@@ -250,7 +250,7 @@
                                 {/if}
                             </div>
                         </td>
-                        <td class="vendor-stock-cell disabled-column">
+                        <td data-label="EBay" class="vendor-stock-cell disabled-column">
                              <div class="stock-indicator">
                                 <i class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(getStockStatus(card.ebay_stock))}"></i>
                                 {#if card.ebay_low_price !== null && card.ebay_low_price !== undefined}
@@ -258,7 +258,7 @@
                                 {/if}
                             </div>
                         </td>
-                        <td class="delete-btn-column">
+                        <td data-label="Actions" class="delete-btn-column">
                             <button
                                 class="delete-btn"
                                 aria-label="Delete card"
@@ -416,7 +416,9 @@
         table {
             display: block;
             overflow-x: auto; /* Fallback: allow horizontal scroll if needed */
-            white-space: nowrap; /* Prevent line breaks within cells initially */
+            /* white-space: nowrap; Remove this */
+            border: none; /* Remove table border */
+            background: none; /* Remove table background */
         }
 
         thead {
@@ -428,18 +430,21 @@
             margin-bottom: 1rem;
             border: 1px solid var(--color-border);
             border-radius: 6px;
-            padding: 0.5rem;
-            background-color: var(--color-bg-secondary); /* Give card-like background */
+            padding: 1rem; /* Increase padding */
+            background-color: var(--color-bg-elevated); /* Use elevated background */
             box-shadow: var(--shadow-sm);
             white-space: normal; /* Allow wrapping within the card */
+            width: 100%; /* Ensure card takes full width */
+            box-sizing: border-box; /* Include padding/border in width */
         }
 
         tbody td {
             display: grid; /* Use grid for label-value alignment */
-            grid-template-columns: minmax(100px, auto) 1fr; /* Label column, Value column */
-            gap: 0.5rem;
+            grid-template-columns: 100px 1fr; /* Fixed label width, flexible value */
+            gap: 0.5rem 1rem; /* Row gap, Column gap */
+            align-items: center; /* Vertically align items in the grid row */
             text-align: left;
-            padding: 0.5rem 0; /* Adjust padding */
+            padding: 0.5rem 0; /* Adjust vertical padding */
             border: none; /* Remove default table cell borders */
             white-space: normal; /* Allow text wrapping */
         }
@@ -449,40 +454,60 @@
             font-weight: 600;
             color: var(--color-text-secondary);
             padding-right: 0.5rem; /* Space between label and value */
+            white-space: nowrap; /* Prevent label wrapping */
         }
 
         /* Specific adjustments for columns */
         .card-info {
-             /* Adjust alignment if needed */
              grid-column: 1 / -1; /* Make card info span both columns */
-             justify-content: center; /* Center card name/image */
+             /* justify-content: center; Removed - default left alignment is fine */
              padding-bottom: 0.5rem;
+             border-bottom: 1px dashed var(--color-border-light); /* Add separator */
+             margin-bottom: 0.5rem; /* Space below card info */
+             display: flex; /* Ensure flex alignment applies */
+             align-items: center;
+             gap: 1rem;
         }
          .card-info::before { display: none; } /* Hide label for this */
 
         .set-column,
-        .language-column,
-        .vendor-stock-cell,
-        .delete-btn-column {
-             /* Adjust text alignment if needed */
+        .language-column {
+            /* Minor adjustments if needed, grid handles basic alignment */
         }
-        
-         .delete-btn-column {
-             grid-column: 1 / -1; /* Span full width */
-             text-align: right; /* Align delete button to the right */
+
+        .vendor-stock-cell {
+             /* Icons should align better with grid */
+        }
+        .stock-indicator {
+            /* Adjust indicator layout if needed */
+            text-align: left; /* Align icon/price left within value column */
+            display: flex; /* Use flex for icon/price alignment */
+            align-items: center;
+            gap: 0.5rem; /* Space between icon and price */
+        }
+        .stock-indicator i {
+            display: inline-block; /* Keep icon inline */
+            margin-bottom: 0; /* Remove bottom margin */
+            width: 1em; /* Give icon fixed width */
+            text-align: center;
+        }
+        .price-text {
+            display: inline; /* Keep price inline */
+        }
+
+        .delete-btn-column {
+             grid-column: 2 / 3; /* Place button in the value column */
+             justify-self: end; /* Align button to the right */
              padding-top: 0.5rem;
          }
          .delete-btn-column::before { display: none; } /* Hide label */
          
          .disabled-column {
-             /* Maybe hide some less important disabled columns on mobile? */
-             /* Example: */
-             /* &.display-none { display: none; } */
-             /* Or adjust grid layout */
+             /* Styles for disabled columns if needed */
+             opacity: 0.6;
          }
           .display-none { 
               display: none; /* Ensure this still works if used */
           }
-          
     }
 </style>
