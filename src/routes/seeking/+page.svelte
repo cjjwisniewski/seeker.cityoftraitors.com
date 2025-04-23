@@ -439,75 +439,87 @@
         }
 
         tbody td {
-            display: grid; /* Use grid for label-value alignment */
-            grid-template-columns: 100px 1fr; /* Fixed label width, flexible value */
-            gap: 0.5rem 1rem; /* Row gap, Column gap */
-            align-items: center; /* Vertically align items in the grid row */
+            display: grid; 
+            grid-template-columns: auto 1fr; /* Auto label width, flexible value */
+            gap: 0.25rem 1rem; /* Reduced row gap, keep column gap */
+            align-items: center; 
             text-align: left;
-            padding: 0.5rem 0; /* Adjust vertical padding */
-            border: none; /* Remove default table cell borders */
-            white-space: normal; /* Allow text wrapping */
+            padding: 0.4rem 0; /* Adjusted vertical padding */
+            border: none; 
+            white-space: normal; 
+            border-bottom: 1px solid var(--color-border-light); /* Add separator between rows */
+        }
+        tbody tr td:last-child {
+             border-bottom: none; /* Remove border from last item in card */
         }
 
          tbody td::before {
-            content: attr(data-label); /* Use data-label for pseudo-header */
+            content: attr(data-label);
             font-weight: 600;
             color: var(--color-text-secondary);
-            padding-right: 0.5rem; /* Space between label and value */
-            white-space: nowrap; /* Prevent label wrapping */
+            padding-right: 1rem; /* Ensure consistent space */
+            white-space: nowrap; 
+            text-align: left; /* Ensure label is left aligned */
         }
 
         /* Specific adjustments for columns */
         .card-info {
-             grid-column: 1 / -1; /* Make card info span both columns */
-             /* justify-content: center; Removed - default left alignment is fine */
+             grid-column: 1 / -1; 
              padding-bottom: 0.5rem;
-             border-bottom: 1px dashed var(--color-border-light); /* Add separator */
-             margin-bottom: 0.5rem; /* Space below card info */
-             display: flex; /* Ensure flex alignment applies */
+             border-bottom: 1px dashed var(--color-border); /* Make separator more distinct */
+             margin-bottom: 0.5rem; 
+             display: flex; 
              align-items: center;
              gap: 1rem;
         }
-         .card-info::before { display: none; } /* Hide label for this */
+         .card-info::before { display: none; } 
 
-        .set-column,
+        .set-column {
+             /* Ensure icon aligns with label */
+        }
+         .set-icon {
+             height: 1.5em;
+             width: 1.5em;
+             /* Vertical align handled by grid align-items */
+         }
+
         .language-column {
-            /* Minor adjustments if needed, grid handles basic alignment */
+             text-transform: none; /* Override base style */
         }
 
         .vendor-stock-cell {
-             /* Icons should align better with grid */
+            /* Grid handles alignment */
         }
         .stock-indicator {
-            /* Adjust indicator layout if needed */
-            text-align: left; /* Align icon/price left within value column */
-            display: flex; /* Use flex for icon/price alignment */
+            text-align: left; 
+            display: flex; 
             align-items: center;
-            gap: 0.5rem; /* Space between icon and price */
+            gap: 0.5rem; 
         }
         .stock-indicator i {
-            display: inline-block; /* Keep icon inline */
-            margin-bottom: 0; /* Remove bottom margin */
-            width: 1em; /* Give icon fixed width */
+            display: inline-block; 
+            margin-bottom: 0; 
+            width: 1.2em; /* Slightly larger icon width for alignment */
             text-align: center;
         }
         .price-text {
-            display: inline; /* Keep price inline */
+            display: inline; 
+            font-size: 0.8rem; /* Slightly larger price */
         }
 
         .delete-btn-column {
-             grid-column: 2 / 3; /* Place button in the value column */
-             justify-self: end; /* Align button to the right */
-             padding-top: 0.5rem;
+             grid-column: 2 / 3; 
+             justify-self: end; 
+             padding-top: 0;
+             border-bottom: none; /* Remove extra border */
          }
-         .delete-btn-column::before { display: none; } /* Hide label */
+         /* .delete-btn-column::before { display: none; } REMOVE THIS to show label */
          
          .disabled-column {
-             /* Styles for disabled columns if needed */
              opacity: 0.6;
          }
           .display-none { 
-              display: none; /* Ensure this still works if used */
+              display: none; 
           }
     }
 </style>
