@@ -15,6 +15,7 @@
     const SCRYFALL_API = 'https://api.scryfall.com';
     const AUTOCOMPLETE_URL = `${SCRYFALL_API}/cards/autocomplete`;
     const SEARCH_URL = `${SCRYFALL_API}/cards/search`;
+    const NAMED_URL = `${SCRYFALL_API}/cards/named`;
 
     onMount(() => {
         // Close dropdown when clicking outside
@@ -52,29 +53,129 @@
     const selectSuggestion = async (suggestion) => {
         searchTerm = suggestion;
         showDropdown = false;
-        await performSearch();
+        await fetchExactCard(suggestion);
     };
 
-    const performSearch = async () => {
+    const fetchExactCard = async (name) => {
         try {
-            const response = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(searchTerm)}`);
-            const data = await response.json();
-            
-            // Fetch prints for each card
-            const cardsWithPrints = await Promise.all(data.data.map(async (card) => {
-                if (!card.prints_search_uri) return card;
-                
+            const exactUrl = `${NAMED_URL}?exact=${encodeURIComponent(name)}`;
+            const response = await fetch(exactUrl);
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    console.warn(`Card not found by exact name: ${name}. Falling back to general search.`);
+                    await performSearch();
+                    return;
+                }
+                throw new Error(`Failed to fetch exact card: ${response.statusText}`);
+            }
+
+            const card = await response.json();
+
+            let cardWithPrints = card;
+            if (card.prints_search_uri) {
                 try {
                     const printsResponse = await fetch(card.prints_search_uri);
                     const printsData = await printsResponse.json();
-                    
-                    // Map prints and add debug logging
                     const prints = printsData.data.map(print => ({
                         set: print.set_name,
                         set_code: print.set,
                         collector_number: print.collector_number,
                         image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
-                        languages: null, // Will be populated on demand
+                        languages: null,
+                        language_uris: {},
+                        flavor_text: print.flavor_text,
+                        oracle_text: print.oracle_text,
+                        type_line: print.type_line,
+                        mana_cost: print.mana_cost
+                    }));
+                     cardWithPrints = {
+                        ...card,
+                        all_prints: prints,
+                        available_languages: prints[0]?.languages || ['en'],
+                        selected_language: 'en'
+                    };
+                } catch (error) {
+                    console.error(`Error fetching prints for ${card.name}:`, error);
+                }
+            } else {
+                cardWithPrints = {
+                    ...card,
+                    all_prints: [{
+                        set: card.set_name,
+                        set_code: card.set,
+                        collector_number: card.collector_number,
+                        image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
+                        languages: null,
+                        language_uris: {},
+                        flavor_text: card.flavor_text,
+                        oracle_text: card.oracle_text,
+                        type_line: card.type_line,
+                        mana_cost: card.mana_cost
+                    }],
+                    available_languages: [card.lang || 'en'],
+                    selected_language: card.lang || 'en'
+                }
+            }
+
+            dispatch('search', [cardWithPrints]);
+
+        } catch (error) {
+            console.error(`Error fetching exact card "${name}":`, error);
+            dispatch('search', []);
+        }
+    };
+
+    const performSearch = async () => {
+        try {
+            const response = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(searchTerm)}`);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    console.log(`No cards found for search term: "${searchTerm}"`);
+                    dispatch('search', []);
+                    return;
+                }
+                 throw new Error(`Search failed: ${response.statusText}`);
+            }
+            const data = await response.json();
+
+            if (!data.data || data.data.length === 0) {
+                 console.log(`No cards found for search term: "${searchTerm}"`);
+                 dispatch('search', []);
+                 return;
+            }
+
+            const cardsWithPrints = await Promise.all(data.data.map(async (card) => {
+                if (!card.prints_search_uri) {
+                    return {
+                        ...card,
+                        all_prints: [{
+                             set: card.set_name,
+                             set_code: card.set,
+                             collector_number: card.collector_number,
+                             image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
+                             languages: null,
+                             language_uris: {},
+                             flavor_text: card.flavor_text,
+                             oracle_text: card.oracle_text,
+                             type_line: card.type_line,
+                             mana_cost: card.mana_cost
+                        }],
+                        available_languages: [card.lang || 'en'],
+                        selected_language: card.lang || 'en'
+                    };
+                }
+
+                try {
+                    const printsResponse = await fetch(card.prints_search_uri);
+                    const printsData = await printsResponse.json();
+
+                    const prints = printsData.data.map(print => ({
+                        set: print.set_name,
+                        set_code: print.set,
+                        collector_number: print.collector_number,
+                        image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
+                        languages: null,
                         language_uris: {},
                         flavor_text: print.flavor_text,
                         oracle_text: print.oracle_text,
@@ -90,13 +191,19 @@
                     };
                 } catch (error) {
                     console.error(`Error fetching prints for ${card.name}:`, error);
-                    return card;
+                    return {
+                         ...card,
+                         all_prints: [],
+                         available_languages: [card.lang || 'en'],
+                         selected_language: card.lang || 'en'
+                     };
                 }
             }));
 
             dispatch('search', cardsWithPrints);
         } catch (error) {
             console.error('Error performing search:', error);
+             dispatch('search', []);
         }
     };
 

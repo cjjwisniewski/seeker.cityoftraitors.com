@@ -93,6 +93,7 @@
 
      async function handleLanguageDropdownOpen(card, print) {
         // Original Logic
+        let languagesChanged = false; // Flag to track if languages were fetched
         if (!print.languages) {
             const languages = await getAvailableLanguages(
                 card.oracle_id,
@@ -105,15 +106,22 @@
 
             // Update available languages for the current card state
             card.available_languages = languages;
+            languagesChanged = true; // Mark that languages were updated
 
             // Update language URIs
             print.language_uris = languages.reduce((acc, lang) => {
                 acc[lang] = `https://api.scryfall.com/cards/${print.set_code}/${print.collector_number}/${lang}`;
                 return acc;
             }, {});
-        } else {
-            // Use cached languages
+        } else if (card.available_languages !== print.languages) {
+            // If cached languages exist but aren't reflected on the card object yet
             card.available_languages = print.languages;
+            languagesChanged = true; // Mark that languages were updated from cache
+        }
+
+        // If languages were fetched or updated from cache, trigger reactivity
+        if (languagesChanged) {
+            sortedCards = [...sortedCards]; // Reassign to trigger Svelte update
         }
     }
 
