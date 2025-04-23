@@ -157,7 +157,7 @@
             '4bb': '4ed',  // Fourth Edition Foreign Black Border -> Fourth Edition
             'fbb': '3ed',  // Foreign Black Border (Revised) -> Revised Edition (3ED)
             'sld': 'pmei', // Secret Lair Drop -> Media Promos
-            'tsb': 'tsp'   // Time Spiral Timeshifted -> Time Spiral
+            'tsb': 'tsp',   // Time Spiral Timeshifted -> Time Spiral
         };
         return codeMap[originalCode.toLowerCase()] || originalCode;
     }
