@@ -154,9 +154,10 @@
     // Helper function to map specific set codes for icons
     function getSetIconCode(originalCode) {
         const codeMap = {
-            '4bb': '4ed', // Fourth Edition Foreign Black Border -> Fourth Edition
+            '4bb': '4ed',  // Fourth Edition Foreign Black Border -> Fourth Edition
             'fbb': '3ed',  // Foreign Black Border (Revised) -> Revised Edition (3ED)
-            'sld': 'pmei' // Secret Lair Drop -> Media Promos
+            'sld': 'pmei', // Secret Lair Drop -> Media Promos
+            'tsb': 'tsp'   // Time Spiral Timeshifted -> Time Spiral
         };
         return codeMap[originalCode.toLowerCase()] || originalCode;
     }
