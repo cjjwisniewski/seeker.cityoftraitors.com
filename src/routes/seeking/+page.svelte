@@ -353,7 +353,6 @@
         height: 1.5em; /* Adjust size as needed */
         width: 1.5em;  /* Adjust size as needed */
         vertical-align: middle; /* Align icon nicely in the cell */
-        filter: invert(var(--set-icon-invert, 0)); /* Optional: Invert for dark mode if needed */
     }
 
     /* Example dark mode adjustment (add this if your theme needs it) */
