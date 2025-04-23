@@ -193,7 +193,7 @@
     }
 
     .nav-left {
-        flex: 1;
+        /* flex: 1; Remove this line */
     }
 
     .nav-left a {
