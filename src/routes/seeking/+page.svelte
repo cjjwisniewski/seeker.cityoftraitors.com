@@ -413,113 +413,129 @@
 
     /* Add Responsive Styles */
     @media (max-width: 768px) {
-        table {
-            display: block;
-            overflow-x: auto; /* Fallback: allow horizontal scroll if needed */
-            /* white-space: nowrap; Remove this */
-            border: none; /* Remove table border */
-            background: none; /* Remove table background */
+        thead {
+            display: none; /* Hide original header */
         }
 
-        thead {
-            display: none; /* Hide table header on small screens */
+        tbody,
+        tbody tr,
+        tbody td {
+            display: block; /* Reset to block for basic stacking */
+            width: 100%;
+            box-sizing: border-box;
         }
 
         tbody tr {
-            display: block; /* Stack rows like cards */
+            display: grid; /* Make the row the grid container */
+            grid-template-columns: repeat(3, 1fr); /* Three equal columns */
+            grid-template-areas:
+                "cardinfo cardinfo cardinfo"
+                "set      language finish"  
+                "vendor1  vendor2  vendor3" 
+                "actions  actions  actions";
+            gap: 0.5rem 1rem; /* Row gap, Column gap */
             margin-bottom: 1rem;
             border: 1px solid var(--color-border);
             border-radius: 6px;
-            padding: 1rem; /* Increase padding */
-            background-color: var(--color-bg-elevated); /* Use elevated background */
+            padding: 1rem;
+            background-color: var(--color-bg-elevated);
             box-shadow: var(--shadow-sm);
-            white-space: normal; /* Allow wrapping within the card */
-            width: 100%; /* Ensure card takes full width */
-            box-sizing: border-box; /* Include padding/border in width */
         }
 
         tbody td {
-            display: grid; 
-            grid-template-columns: auto 1fr; /* Auto label width, flexible value */
-            gap: 0.25rem 1rem; /* Reduced row gap, keep column gap */
-            align-items: center; 
-            text-align: left;
-            padding: 0.4rem 0; /* Adjusted vertical padding */
-            border: none; 
-            white-space: normal; 
-            border-bottom: 1px solid var(--color-border-light); /* Add separator between rows */
-        }
-        tbody tr td:last-child {
-             border-bottom: none; /* Remove border from last item in card */
-        }
-
-         tbody td::before {
-            content: attr(data-label);
-            font-weight: 600;
-            color: var(--color-text-secondary);
-            padding-right: 1rem; /* Ensure consistent space */
-            white-space: nowrap; 
-            text-align: left; /* Ensure label is left aligned */
-        }
-
-        /* Specific adjustments for columns */
-        .card-info {
-             grid-column: 1 / -1; 
-             padding-bottom: 0.5rem;
-             border-bottom: 1px dashed var(--color-border); /* Make separator more distinct */
-             margin-bottom: 0.5rem; 
-             display: flex; 
-             align-items: center;
-             gap: 1rem;
-        }
-         .card-info::before { display: none; } 
-
-        .set-column {
-             /* Ensure icon aligns with label */
-        }
-         .set-icon {
-             height: 1.5em;
-             width: 1.5em;
-             /* Vertical align handled by grid align-items */
-         }
-
-        .language-column {
-             text-transform: none; /* Override base style */
-        }
-
-        .vendor-stock-cell {
-            /* Grid handles alignment */
-        }
-        .stock-indicator {
-            text-align: left; 
-            display: flex; 
+            grid-area: initial; /* Reset area first */
+            padding: 0; /* Reset padding */
+            border: none; /* Remove default borders */
+            text-align: center; /* Center content */
+            display: flex; /* Use flex for internal alignment */
+            flex-direction: column;
             align-items: center;
-            gap: 0.5rem; 
+            justify-content: center;
+            gap: 0.25rem;
+            min-height: 3.5em; /* Ensure cells have height */
         }
-        .stock-indicator i {
-            display: inline-block; 
-            margin-bottom: 0; 
-            width: 1.2em; /* Slightly larger icon width for alignment */
-            text-align: center;
+        
+        /* Add headers using ::before */
+        tbody td::before {
+            content: attr(data-label);
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
         }
-        .price-text {
-            display: inline; 
-            font-size: 0.8rem; /* Slightly larger price */
-        }
+        
+        /* --- Assign Grid Areas --- */
+        td[data-label="Card"]       { grid-area: cardinfo; }
+        td[data-label="Set"]        { grid-area: set; }
+        td[data-label="Language"]   { grid-area: language; }
+        td[data-label="Finish"]     { grid-area: finish; }
+        td[data-label="CardTrader"] { grid-area: vendor1; }
+        td[data-label="TCGPlayer"]  { grid-area: vendor2; }
+        td[data-label="EBay"]       { grid-area: vendor3; }
+        td[data-label="Actions"]    { grid-area: actions; }
+        
+         /* Hide CardMarket by default if needed */
+        td[data-label="CardMarket"] { display: none; }
 
-        .delete-btn-column {
-             grid-column: 2 / 3; 
-             justify-self: end; 
-             padding-top: 0;
-             border-bottom: none; /* Remove extra border */
-         }
-         /* .delete-btn-column::before { display: none; } REMOVE THIS to show label */
-         
+        /* --- Style Specific Cells --- */
+        
+        /* Card Info */
+        td[data-label="Card"] {
+             border-bottom: 1px solid var(--color-border-light); /* Separator */
+             margin-bottom: 0.5rem; /* Space below */
+             padding-bottom: 0.5rem; /* Space below */
+             flex-direction: row; /* Keep image and name side-by-side */
+             justify-content: center; /* Center them */
+        }
+        td[data-label="Card"]::before { display: none; } /* Hide "Card" header */
+        .card-info {
+            gap: 0.5rem; /* Reduce gap for mobile */
+        }
+         .card-info img {
+            width: 35px; /* Adjust size */
+        }
+        
+        /* Language Value */
+        td[data-label="Language"] .language-column { /* Target the value if needed */
+            text-transform: uppercase;
+        }
+        
+        /* Set Value */
+        td[data-label="Set"] .set-icon {
+             height: 1.8em;
+             width: 1.8em;
+        }
+        
+        /* Vendor Cells */
+        .vendor-stock-cell .stock-indicator {
+            /* Styles already handle stacking */
+        }
+        .vendor-stock-cell .stock-indicator i {
+             font-size: 1.1rem;
+        }
+         .vendor-stock-cell .price-text {
+            font-size: 0.75rem;
+        }
+        
+        /* Actions Cell */
+        td[data-label="Actions"] {
+            justify-content: flex-end; /* Align button right */
+             border-top: 1px solid var(--color-border-light); /* Separator */
+             margin-top: 0.5rem; /* Space above */
+             padding-top: 0.5rem; /* Space above */
+        }
+         td[data-label="Actions"]::before { display: none; } /* Hide "Actions" header */
+
+        .delete-btn {
+             padding: 0.25rem 0.5rem; /* Adjust padding */
+        }
+        
+         /* Disabled Styling */
          .disabled-column {
-             opacity: 0.6;
+            opacity: 0.6;
+        }
+         .display-none { 
+              display: none !important; /* Ensure it hides */
          }
-          .display-none { 
-              display: none; 
-          }
     }
 </style>
