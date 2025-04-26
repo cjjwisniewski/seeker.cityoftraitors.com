@@ -8,6 +8,11 @@
     let error = null;
     let loading = true; // Re-declare the loading variable
     let unsubscribe; // Declare unsubscribe in the component scope
+    let isCondensed = false; // State for condensed view
+
+    // Sorting state
+    let sortKey = 'name'; // Default sort key
+    let sortDirection = 'asc'; // Default sort direction ('asc' or 'desc')
 
     // Reactive check for authentication status
     $: isAuthenticated = $auth.isAuthenticated;
@@ -171,6 +176,49 @@
         // Format to 2 decimal places and prepend '$'
         return `$${dollars.toFixed(2)}`;
     }
+
+    // Function to handle sorting
+    function sortBy(key) {
+        if (sortKey === key) {
+            // If clicking the same key, reverse direction
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // If clicking a new key, set it and default to ascending
+            sortKey = key;
+            sortDirection = 'asc';
+        }
+    }
+
+    // Reactive sorted list
+    $: sortedCards = [...cards].sort((a, b) => {
+        // Handle potentially missing values (treat null/undefined as lowest)
+        let aValue = a[sortKey];
+        let bValue = b[sortKey];
+
+        // Specific handling for price/stock if needed, e.g., nulls last
+        if (sortKey.includes('_price')) {
+            aValue = aValue ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+            bValue = bValue ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+        } else if (sortKey.includes('_stock')) {
+            // Define a sort order for stock: true (available) > null (unknown) > false (unavailable)
+            const stockOrder = { true: 1, null: 0, false: -1 };
+            aValue = stockOrder[getStockStatus(aValue)];
+            bValue = stockOrder[getStockStatus(bValue)];
+        } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+            // Case-insensitive sort for strings
+            aValue = aValue.toLowerCase();
+            bValue = bValue.toLowerCase();
+        }
+
+        let comparison = 0;
+        if (aValue > bValue) {
+            comparison = 1;
+        } else if (aValue < bValue) {
+            comparison = -1;
+        }
+
+        return sortDirection === 'asc' ? comparison : comparison * -1;
+    });
 </script>
 
 {#if authLoading || loading}
@@ -182,27 +230,70 @@
 {:else if cards.length === 0}
     <div class="empty">No cards in seeking list</div>
 {:else}
+    <div class="view-controls">
+        <button on:click={() => isCondensed = !isCondensed} class="toggle-view-btn">
+            <i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
+            {isCondensed ? 'Expand View' : 'Condense View'}
+        </button>
+    </div>
     <div class="seeking-list">
         <table>
             <thead>
                 <tr>
-                    <th>Card</th>
-                    <th>Set</th>
-                    <th>Language</th>
-                    <th>Finish</th>
-                    <th>CardTrader</th>
-                    <th class="disabled-column" title="TCGPlayer stock check coming soon">TCGPlayer</th>
-                    <th class="disabled-column display-none" title="CardMarket stock check coming soon">CardMarket</th>
-                    <th class="disabled-column" title="Ebay stock check coming soon">EBay</th>
-                    <th>Actions</th>
+                    <th on:click={() => sortBy('name')} class:active={sortKey === 'name'}>
+                        Card
+                        {#if sortKey === 'name'}
+                            <i class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"></i>
+                        {/if}
+                    </th>
+                    <th on:click={() => sortBy('set_code')} class:active={sortKey === 'set_code'}>
+                        Set
+                        {#if sortKey === 'set_code'}
+                            <i class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"></i>
+                        {/if}
+                    </th>
+                    <th on:click={() => sortBy('language')} class:active={sortKey === 'language'}>
+                        Language
+                        {#if sortKey === 'language'}
+                            <i class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"></i>
+                        {/if}
+                    </th>
+                    <th on:click={() => sortBy('finish')} class:active={sortKey === 'finish'}>
+                        Finish
+                        {#if sortKey === 'finish'}
+                             <i class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"></i>
+                        {/if}
+                    </th>
+                    <th on:click={() => sortBy('cardtrader_low_price')} class:active={sortKey === 'cardtrader_low_price'}>
+                        CardTrader
+                        {#if sortKey === 'cardtrader_low_price'}
+                             <i class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"></i>
+                        {/if}
+                    </th>
+                    <th class="disabled-column" title="TCGPlayer stock check coming soon">
+                        TCGPlayer
+                        <!-- Add sorting later if needed -->
+                        <!-- <i class="sort-icon fa-solid ..."></i> -->
+                    </th>
+                    <th class="disabled-column display-none" title="CardMarket stock check coming soon">
+                         CardMarket
+                         <!-- Add sorting later if needed -->
+                    </th>
+                    <th class="disabled-column" title="Ebay stock check coming soon">
+                        EBay
+                        <!-- Add sorting later if needed -->
+                    </th>
+                    <th>Actions</th> <!-- Not sortable -->
                 </tr>
             </thead>
             <tbody>
-                {#each cards as card (card.id)}
-                    <tr>
+                {#each sortedCards as card (card.id)}
+                    <tr class:condensed={isCondensed}>
                         <td data-label="Card">
                             <div class="card-info">
-                                <img src={card.image_uri} alt={card.name} />
+                                {#if !isCondensed}
+                                    <img src={card.image_uri} alt={card.name} class="card-thumbnail" />
+                                {/if}
                                 <span>{card.name}</span>
                             </div>
                         </td>
@@ -288,6 +379,7 @@
         background: var(--color-bg-elevated);
         border-radius: 8px;
         overflow: hidden;
+        margin-top: 1rem; /* Add space below the toggle button */
     }
 
     th, td {
@@ -301,6 +393,37 @@
         font-weight: 600;
         color: var(--color-text-primary);
         text-align: center;
+        cursor: pointer; /* Indicate clickable headers */
+        position: relative; /* For positioning the sort icon */
+        user-select: none; /* Prevent text selection on click */
+        padding-right: 1.5em; /* Make space for the sort icon */
+        white-space: nowrap; /* Prevent header text wrapping */
+    }
+
+    th.active {
+        color: var(--color-accent); /* Highlight active sort column */
+    }
+
+    th:not([class*="disabled-column"]):hover {
+        background-color: var(--color-bg-hover); /* Hover effect */
+    }
+
+    .sort-icon {
+        position: absolute;
+        right: 0.5em; /* Position icon to the right */
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.8em;
+    }
+
+    /* Disable pointer events and hover on disabled columns */
+    th.disabled-column {
+        cursor: not-allowed;
+        pointer-events: none;
+        padding-right: 1rem; /* Reset padding if no icon */
+    }
+    th.disabled-column:hover {
+        background-color: var(--color-bg-secondary); /* No hover effect */
     }
 
     .display-none {
@@ -317,6 +440,19 @@
         width: 40px;
         height: auto;
         border-radius: 4px;
+        /* Add transition for smoother appearance/disappearance */
+        transition: width 0.3s ease, opacity 0.3s ease, margin-right 0.3s ease;
+        opacity: 1;
+        margin-right: 1rem; /* Ensure space is maintained */
+    }
+
+    /* When condensed, hide the image smoothly */
+    tr.condensed .card-info img {
+        width: 0;
+        opacity: 0;
+        margin-right: 0;
+        /* Optional: hide completely if transition isn't enough */
+        /* display: none; */
     }
 
     .vendor-stock-cell {
@@ -380,7 +516,7 @@
         border: none;
         color: var(--color-error);
         cursor: pointer;
-        padding: 0.5rem;
+        padding: 0.25rem 0.5rem; /* Adjust padding */
         border-radius: 4px;
         transition: background-color 0.2s;
         text-align: center;
@@ -537,5 +673,38 @@
          .display-none { 
               display: none !important; /* Ensure it hides */
          }
+    }
+
+    /* Style for the toggle button */
+    .view-controls {
+        display: flex;
+        justify-content: flex-end; /* Position button to the right */
+        margin: 1rem auto;
+        max-width: 1200px;
+        padding: 0 1rem;
+    }
+
+    .toggle-view-btn {
+        background-color: var(--color-bg-secondary);
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-border);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background-color 0.2s, border-color 0.2s;
+        display: inline-flex; /* Align icon and text */
+        align-items: center;
+        gap: 0.5rem; /* Space between icon and text */
+    }
+
+    .toggle-view-btn:hover {
+        background-color: var(--color-bg-elevated);
+        border-color: var(--color-border-hover);
+    }
+
+    /* Adjust card info alignment in condensed mobile view */
+    tr.condensed .card-info {
+        justify-content: center; /* Center the name when image is hidden */
     }
 </style>
