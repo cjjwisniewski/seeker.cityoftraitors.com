@@ -221,6 +221,10 @@
     });
 </script>
 
+<div class="page-title">
+    <h1>Seeking List</h1>
+</div>
+
 {#if authLoading || loading}
     <div class="loading">Loading seeking list...</div>
 {:else if error}
@@ -451,8 +455,7 @@
         width: 0;
         opacity: 0;
         margin-right: 0;
-        /* Optional: hide completely if transition isn't enough */
-        /* display: none; */
+        display: none; 
     }
 
     .vendor-stock-cell {
