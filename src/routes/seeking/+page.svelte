@@ -223,6 +223,12 @@
 
 <div class="page-title">
     <h1>Seeking List</h1>
+    <div class="view-controls">
+        <button on:click={() => isCondensed = !isCondensed} class="toggle-view-btn">
+            <i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
+            {isCondensed ? 'Expand View' : 'Condense View'}
+        </button>
+    </div>
 </div>
 
 {#if authLoading || loading}
@@ -234,12 +240,6 @@
 {:else if cards.length === 0}
     <div class="empty">No cards in seeking list</div>
 {:else}
-    <div class="view-controls">
-        <button on:click={() => isCondensed = !isCondensed} class="toggle-view-btn">
-            <i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
-            {isCondensed ? 'Expand View' : 'Condense View'}
-        </button>
-    </div>
     <div class="seeking-list">
         <table>
             <thead>
@@ -375,6 +375,19 @@
         margin: 2rem auto;
         max-width: 1200px;
         padding: 0 1rem;
+    }
+
+    .page-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 2rem auto; /* Keep original margin */
+        max-width: 1200px; /* Match seeking-list width */
+        padding: 0 1rem; /* Match seeking-list padding */
+    }
+
+    .page-title h1 {
+        margin: 0; /* Remove default h1 margin */
     }
 
     table {
@@ -680,11 +693,12 @@
 
     /* Style for the toggle button */
     .view-controls {
-        display: flex;
-        justify-content: flex-end; /* Position button to the right */
-        margin: 1rem auto;
-        max-width: 1200px;
-        padding: 0 1rem;
+        /* REMOVED positioning styles - handled by page-title flex */
+        /* display: flex; */
+        /* justify-content: flex-end; */
+        /* margin: 1rem auto; */
+        /* max-width: 1200px; */
+        /* padding: 0 1rem; */
     }
 
     .toggle-view-btn {
