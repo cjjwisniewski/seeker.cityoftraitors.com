@@ -379,15 +379,18 @@
 
     .page-title {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
-        margin: 2rem auto; /* Keep original margin */
-        max-width: 1200px; /* Match seeking-list width */
-        padding: 0 1rem; /* Match seeking-list padding */
+        position: relative;
+        margin: 2rem auto;
+        max-width: 1200px;
+        padding: 0 1rem;
     }
 
     .page-title h1 {
-        margin: 0; /* Remove default h1 margin */
+        margin: 0;
+        text-align: center;
+        flex-grow: 1;
     }
 
     table {
@@ -396,7 +399,7 @@
         background: var(--color-bg-elevated);
         border-radius: 8px;
         overflow: hidden;
-        margin-top: 1rem; /* Add space below the toggle button */
+        margin-top: 1rem;
     }
 
     th, td {
@@ -410,37 +413,36 @@
         font-weight: 600;
         color: var(--color-text-primary);
         text-align: center;
-        cursor: pointer; /* Indicate clickable headers */
-        position: relative; /* For positioning the sort icon */
-        user-select: none; /* Prevent text selection on click */
-        padding-right: 1.5em; /* Make space for the sort icon */
-        white-space: nowrap; /* Prevent header text wrapping */
+        cursor: pointer;
+        position: relative;
+        user-select: none;
+        padding-right: 1.5em;
+        white-space: nowrap;
     }
 
     th.active {
-        color: var(--color-accent); /* Highlight active sort column */
+        color: var(--color-accent);
     }
 
     th:not([class*="disabled-column"]):hover {
-        background-color: var(--color-bg-hover); /* Hover effect */
+        background-color: var(--color-bg-hover);
     }
 
     .sort-icon {
         position: absolute;
-        right: 0.5em; /* Position icon to the right */
+        right: 0.5em;
         top: 50%;
         transform: translateY(-50%);
         font-size: 0.8em;
     }
 
-    /* Disable pointer events and hover on disabled columns */
     th.disabled-column {
         cursor: not-allowed;
         pointer-events: none;
-        padding-right: 1rem; /* Reset padding if no icon */
+        padding-right: 1rem;
     }
     th.disabled-column:hover {
-        background-color: var(--color-bg-secondary); /* No hover effect */
+        background-color: var(--color-bg-secondary);
     }
 
     .display-none {
@@ -457,13 +459,11 @@
         width: 40px;
         height: auto;
         border-radius: 4px;
-        /* Add transition for smoother appearance/disappearance */
         transition: width 0.3s ease, opacity 0.3s ease, margin-right 0.3s ease;
         opacity: 1;
-        margin-right: 1rem; /* Ensure space is maintained */
+        margin-right: 1rem;
     }
 
-    /* When condensed, hide the image smoothly */
     tr.condensed .card-info img {
         width: 0;
         opacity: 0;
@@ -473,44 +473,38 @@
 
     .vendor-stock-cell {
         text-align: center;
-        vertical-align: middle; /* Vertically center content in the cell */
+        vertical-align: middle;
         padding-top: 1rem;
         padding-bottom: 1rem;
     }
 
     .stock-indicator {
-        display: inline-block; /* Allows text-align:center on parent td to work */
+        display: inline-block;
         text-align: center;
     }
 
     .stock-indicator i {
-        display: block; /* Icon takes its own line */
-        font-size: 1rem; /* Icon size */
-        margin-bottom: 0.25rem; /* Space below icon */
+        display: block;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
     }
 
     .price-text {
-        display: block; /* Price takes its own line */
-        font-size: 0.7rem; /* Smaller font size for price */
-        color: var(--color-text-muted); /* Muted color */
+        display: block;
+        font-size: 0.7rem;
+        color: var(--color-text-muted);
         line-height: 1;
     }
 
     .set-column {
-        /* text-transform: uppercase; */ /* No longer needed for text */
-        text-align: center; /* Center the icon */
+        text-align: center;
     }
 
     .set-icon {
-        height: 1.5em; /* Adjust size as needed */
-        width: 1.5em;  /* Adjust size as needed */
-        vertical-align: middle; /* Align icon nicely in the cell */
+        height: 1.5em;
+        width: 1.5em;
+        vertical-align: middle;
     }
-
-    /* Example dark mode adjustment (add this if your theme needs it) */
-    /* html[data-theme='dark'] .set-icon {
-        --set-icon-invert: 1;
-    } */
 
     .language-column {
         text-transform: uppercase;
@@ -532,7 +526,7 @@
         border: none;
         color: var(--color-error);
         cursor: pointer;
-        padding: 0.25rem 0.5rem; /* Adjust padding */
+        padding: 0.25rem 0.5rem;
         border-radius: 4px;
         transition: background-color 0.2s;
         text-align: center;
@@ -558,34 +552,33 @@
     }
 
     .vendor-link {
-        text-decoration: none; /* Remove underline from link */
-        color: inherit; /* Inherit color from parent */
-        display: inline-block; /* Ensure it behaves like the div it replaces */
+        text-decoration: none;
+        color: inherit;
+        display: inline-block;
     }
 
-    /* Add Responsive Styles */
     @media (max-width: 768px) {
         thead {
-            display: none; /* Hide original header */
+            display: none;
         }
 
         tbody,
         tbody tr,
         tbody td {
-            display: block; /* Reset to block for basic stacking */
+            display: block;
             width: 100%;
             box-sizing: border-box;
         }
 
         tbody tr {
-            display: grid; /* Make the row the grid container */
-            grid-template-columns: repeat(3, 1fr); /* Three equal columns */
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             grid-template-areas:
                 "cardinfo cardinfo cardinfo"
                 "set      language finish"  
                 "vendor1  vendor2  vendor3" 
                 "actions  actions  actions";
-            gap: 0.5rem 1rem; /* Row gap, Column gap */
+            gap: 0.5rem 1rem;
             margin-bottom: 1rem;
             border: 1px solid var(--color-border);
             border-radius: 6px;
@@ -595,19 +588,18 @@
         }
 
         tbody td {
-            grid-area: initial; /* Reset area first */
-            padding: 0; /* Reset padding */
-            border: none; /* Remove default borders */
-            text-align: center; /* Center content */
-            display: flex; /* Use flex for internal alignment */
+            grid-area: initial;
+            padding: 0;
+            border: none;
+            text-align: center;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 0.25rem;
-            min-height: 3.5em; /* Ensure cells have height */
+            min-height: 3.5em;
         }
         
-        /* Add headers using ::before */
         tbody td::before {
             content: attr(data-label);
             font-size: 0.75rem;
@@ -616,7 +608,6 @@
             text-transform: uppercase;
         }
         
-        /* --- Assign Grid Areas --- */
         td[data-label="Card"]       { grid-area: cardinfo; }
         td[data-label="Set"]        { grid-area: set; }
         td[data-label="Language"]   { grid-area: language; }
@@ -626,41 +617,33 @@
         td[data-label="EBay"]       { grid-area: vendor3; }
         td[data-label="Actions"]    { grid-area: actions; }
         
-         /* Hide CardMarket by default if needed */
         td[data-label="CardMarket"] { display: none; }
 
-        /* --- Style Specific Cells --- */
-        
-        /* Card Info */
         td[data-label="Card"] {
-             border-bottom: 1px solid var(--color-border-light); /* Separator */
-             margin-bottom: 0.5rem; /* Space below */
-             padding-bottom: 0.5rem; /* Space below */
-             flex-direction: row; /* Keep image and name side-by-side */
-             justify-content: center; /* Center them */
+             border-bottom: 1px solid var(--color-border-light);
+             margin-bottom: 0.5rem;
+             padding-bottom: 0.5rem;
+             flex-direction: row;
+             justify-content: center;
         }
-        td[data-label="Card"]::before { display: none; } /* Hide "Card" header */
+        td[data-label="Card"]::before { display: none; }
         .card-info {
-            gap: 0.5rem; /* Reduce gap for mobile */
+            gap: 0.5rem;
         }
          .card-info img {
-            width: 35px; /* Adjust size */
+            width: 35px;
         }
         
-        /* Language Value */
-        td[data-label="Language"] .language-column { /* Target the value if needed */
+        td[data-label="Language"] .language-column {
             text-transform: uppercase;
         }
         
-        /* Set Value */
         td[data-label="Set"] .set-icon {
              height: 1.8em;
              width: 1.8em;
         }
         
-        /* Vendor Cells */
         .vendor-stock-cell .stock-indicator {
-            /* Styles already handle stacking */
         }
         .vendor-stock-cell .stock-indicator i {
              font-size: 1.1rem;
@@ -669,36 +652,31 @@
             font-size: 0.75rem;
         }
         
-        /* Actions Cell */
         td[data-label="Actions"] {
-            justify-content: flex-end; /* Align button right */
-             border-top: 1px solid var(--color-border-light); /* Separator */
-             margin-top: 0.5rem; /* Space above */
-             padding-top: 0.5rem; /* Space above */
+            justify-content: flex-end;
+             border-top: 1px solid var(--color-border-light);
+             margin-top: 0.5rem;
+             padding-top: 0.5rem;
         }
-         td[data-label="Actions"]::before { display: none; } /* Hide "Actions" header */
+         td[data-label="Actions"]::before { display: none; }
 
         .delete-btn {
-             padding: 0.25rem 0.5rem; /* Adjust padding */
+             padding: 0.25rem 0.5rem;
         }
         
-         /* Disabled Styling */
          .disabled-column {
             opacity: 0.6;
         }
          .display-none { 
-              display: none !important; /* Ensure it hides */
+              display: none !important;
          }
     }
 
-    /* Style for the toggle button */
     .view-controls {
-        /* REMOVED positioning styles - handled by page-title flex */
-        /* display: flex; */
-        /* justify-content: flex-end; */
-        /* margin: 1rem auto; */
-        /* max-width: 1200px; */
-        /* padding: 0 1rem; */
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
     }
 
     .toggle-view-btn {
@@ -710,9 +688,9 @@
         cursor: pointer;
         font-size: 0.9rem;
         transition: background-color 0.2s, border-color 0.2s;
-        display: inline-flex; /* Align icon and text */
+        display: inline-flex;
         align-items: center;
-        gap: 0.5rem; /* Space between icon and text */
+        gap: 0.5rem;
     }
 
     .toggle-view-btn:hover {
@@ -720,8 +698,7 @@
         border-color: var(--color-border-hover);
     }
 
-    /* Adjust card info alignment in condensed mobile view */
     tr.condensed .card-info {
-        justify-content: center; /* Center the name when image is hidden */
+        justify-content: center;
     }
 </style>
