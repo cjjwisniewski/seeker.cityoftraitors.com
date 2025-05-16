@@ -690,6 +690,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        display: none;
     }
 
     .toggle-view-btn:hover {
