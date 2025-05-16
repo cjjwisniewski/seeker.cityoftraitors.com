@@ -226,7 +226,6 @@
     <div class="view-controls">
         <button on:click={() => isCondensed = !isCondensed} class="toggle-view-btn">
             <i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
-            {isCondensed ? 'Expand View' : 'Condense View'}
         </button>
     </div>
 </div>
