@@ -87,7 +87,9 @@
                         flavor_text: print.flavor_text,
                         oracle_text: print.oracle_text,
                         type_line: print.type_line,
-                        mana_cost: print.mana_cost
+                        mana_cost: print.mana_cost,
+                        tcgplayer_id: print.tcgplayer_id || null,
+                        cardmarket_id: print.cardmarket_id || null
                     }));
                      cardWithPrints = {
                         ...card,
@@ -180,7 +182,9 @@
                         flavor_text: print.flavor_text,
                         oracle_text: print.oracle_text,
                         type_line: print.type_line,
-                        mana_cost: print.mana_cost
+                        mana_cost: print.mana_cost,
+                        tcgplayer_id: print.tcgplayer_id || null,
+                        cardmarket_id: print.cardmarket_id || null
                     }));
 
                     return {

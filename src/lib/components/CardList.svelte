@@ -171,7 +171,9 @@
                 oracle_id: card.oracle_id,
                 image_uri: card.image_uris.normal, // Use current image URI
                 timestamp: new Date().toISOString(),
-                finish: selectedFinishes[card.id] || 'nonfoil'
+                finish: selectedFinishes[card.id] || 'nonfoil',
+                tcgplayer_id: card.tcgplayer_id || null,
+                cardmarket_id: card.cardmarket_id || null
             };
 
             // --- Use fetchWithAuth ---
