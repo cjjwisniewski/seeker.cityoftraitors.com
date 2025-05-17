@@ -556,6 +556,36 @@
         display: inline-block;
     }
 
+    .view-controls {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .toggle-view-btn {
+        background-color: var(--color-bg-secondary);
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-border);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background-color 0.2s, border-color 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .toggle-view-btn:hover {
+        background-color: var(--color-bg-elevated);
+        border-color: var(--color-border-hover);
+    }
+
+    tr.condensed .card-info {
+        justify-content: center;
+    }
+
     @media (max-width: 768px) {
         thead {
             display: none;
@@ -669,36 +699,9 @@
          .display-none { 
               display: none !important;
          }
-    }
 
-    .view-controls {
-        position: absolute;
-        right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    .toggle-view-btn {
-        background-color: var(--color-bg-secondary);
-        color: var(--color-text-primary);
-        border: 1px solid var(--color-border);
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: background-color 0.2s, border-color 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        display: none;
-    }
-
-    .toggle-view-btn:hover {
-        background-color: var(--color-bg-elevated);
-        border-color: var(--color-border-hover);
-    }
-
-    tr.condensed .card-info {
-        justify-content: center;
+         .toggle-view-btn {
+            display: none;
+         }
     }
 </style>
