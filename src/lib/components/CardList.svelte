@@ -176,6 +176,8 @@
                 cardmarket_id: card.cardmarket_id || null
             };
 
+            console.log('Adding card to seeking list with payload:', payload);
+
             // --- Use fetchWithAuth ---
             const response = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
                 method: 'POST',
