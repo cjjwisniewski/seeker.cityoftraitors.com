@@ -162,6 +162,19 @@
             buttonStates[card.id] = { error: false, success: false, exists: false };
             buttonStates = {...buttonStates}; // Force Svelte reactivity
 
+            // Find the currently selected print based on card.set and card.collector_number
+            const currentPrint = card.all_prints?.find(p => p.set_code === card.set && p.collector_number === card.collector_number);
+            if (!currentPrint) {
+                console.error("Could not find current print for adding to seeking:", card.set, card.collector_number);
+                buttonStates[card.id] = { error: true, success: false, exists: false, message: "Invalid print" };
+                buttonStates = {...buttonStates};
+                setTimeout(() => {
+                    buttonStates[card.id] = { error: false, success: false, exists: false };
+                    buttonStates = {...buttonStates};
+                }, 3000);
+                return;
+            }
+
             const payload = { // Use the current card state
                 id: crypto.randomUUID(),
                 name: card.name,
@@ -172,8 +185,8 @@
                 image_uri: card.image_uris.normal, // Use current image URI
                 timestamp: new Date().toISOString(),
                 finish: selectedFinishes[card.id] || 'nonfoil',
-                tcgplayer_id: card.tcgplayer_id || null,
-                cardmarket_id: card.cardmarket_id || null
+                tcgplayer_id: currentPrint.tcgplayer_id || null,
+                cardmarket_id: currentPrint.cardmarket_id || null
             };
 
             console.log('Adding card to seeking list with payload:', payload);

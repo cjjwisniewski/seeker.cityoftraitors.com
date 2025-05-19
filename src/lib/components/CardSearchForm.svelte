@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import { onMount } from 'svelte';
     import { getAvailableLanguages } from '$lib/utils/languageUtils';
@@ -6,22 +6,34 @@
     const dispatch = createEventDispatcher();
     
     let searchTerm = '';
-    let suggestions = [];
+    let suggestions: string[] = [];
     let showDropdown = false;
-    let searchInput;
-    let dropdownContainer;
-    let debounceTimer;
+    let searchInput: HTMLInputElement;
+    let dropdownContainer: HTMLDivElement;
+    let debounceTimer: number;
 
     const SCRYFALL_API = 'https://api.scryfall.com';
     const AUTOCOMPLETE_URL = `${SCRYFALL_API}/cards/autocomplete`;
     const SEARCH_URL = `${SCRYFALL_API}/cards/search`;
     const NAMED_URL = `${SCRYFALL_API}/cards/named`;
 
+    // Sanitize input to prevent XSS
+    const sanitizeInput = (input: string): string => {
+        // Remove any HTML tags
+        return input.replace(/<[^>]*>/g, '');
+    };
+
+    // Validate search term
+    const validateSearchTerm = (term: string): boolean => {
+        // Only allow alphanumeric characters, spaces, and common card name characters
+        return /^[a-zA-Z0-9\s\-'.,]+$/.test(term);
+    };
+
     onMount(() => {
         // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!dropdownContainer?.contains(e.target) && 
-                !searchInput?.contains(e.target)) {
+        document.addEventListener('click', (e: MouseEvent) => {
+            if (!dropdownContainer?.contains(e.target as Node) && 
+                !searchInput?.contains(e.target as Node)) {
                 showDropdown = false;
             }
         });
@@ -32,7 +44,19 @@
             clearTimeout(debounceTimer);
         }
 
+        // Sanitize and validate input
+        const sanitizedTerm = sanitizeInput(searchTerm);
+        if (sanitizedTerm !== searchTerm) {
+            searchTerm = sanitizedTerm;
+        }
+
         if (searchTerm.length < 2) {
+            suggestions = [];
+            showDropdown = false;
+            return;
+        }
+
+        if (!validateSearchTerm(searchTerm)) {
             suggestions = [];
             showDropdown = false;
             return;
@@ -50,13 +74,13 @@
         }, 300);
     };
 
-    const selectSuggestion = async (suggestion) => {
-        searchTerm = suggestion;
+    const selectSuggestion = async (suggestion: string) => {
+        searchTerm = sanitizeInput(suggestion);
         showDropdown = false;
         await fetchExactCard(suggestion);
     };
 
-    const fetchExactCard = async (name) => {
+    const fetchExactCard = async (name: string) => {
         try {
             const exactUrl = `${NAMED_URL}?exact=${encodeURIComponent(name)}`;
             const response = await fetch(exactUrl);
@@ -77,7 +101,7 @@
                 try {
                     const printsResponse = await fetch(card.prints_search_uri);
                     const printsData = await printsResponse.json();
-                    const prints = printsData.data.map(print => ({
+                    const prints = printsData.data.map((print: any) => ({
                         set: print.set_name,
                         set_code: print.set,
                         collector_number: print.collector_number,
@@ -147,7 +171,7 @@
                  return;
             }
 
-            const cardsWithPrints = await Promise.all(data.data.map(async (card) => {
+            const cardsWithPrints = await Promise.all(data.data.map(async (card: any) => {
                 if (!card.prints_search_uri) {
                     return {
                         ...card,
@@ -172,7 +196,7 @@
                     const printsResponse = await fetch(card.prints_search_uri);
                     const printsData = await printsResponse.json();
 
-                    const prints = printsData.data.map(print => ({
+                    const prints = printsData.data.map((print: any) => ({
                         set: print.set_name,
                         set_code: print.set,
                         collector_number: print.collector_number,
@@ -211,7 +235,7 @@
         }
     };
 
-    const handleKeyPress = async (event) => {
+    const handleKeyPress = async (event: KeyboardEvent) => {
         if (event.key === 'Enter') {
             showDropdown = false;
             await performSearch();
