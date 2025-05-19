@@ -330,12 +330,22 @@
                             {/if}
                         </td>
                         <td data-label="TCGPlayer" class="vendor-stock-cell">
-                             <div class="stock-indicator">
-                                <i class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(getStockStatus(card.tcgplayer_stock))}"></i>
-                                {#if card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined}
-                                    <span class="price-text">{formatPrice(card.tcgplayer_low_price)}</span>
-                                {/if}
-                            </div>
+                            {#if card.tcgplayer_id}
+                                <a href="https://www.tcgplayer.com/product/{card.tcgplayer_id}" target="_blank" rel="noopener noreferrer" class="vendor-link">
+                                    <div class="stock-indicator">
+                                        <i class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(getStockStatus(card.tcgplayer_stock))}"></i>
+                                        {#if card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined}
+                                            <span class="price-text">{formatPrice(card.tcgplayer_low_price)}</span>
+                                        {/if}
+                                    </div>
+                                </a>
+                            {:else}
+                                <!-- Show only question mark if TCGPlayer ID is missing -->
+                                <div class="stock-indicator">
+                                    <i class="fa-solid fa-circle-question text-muted" title="Card not found on TCGPlayer"></i>
+                                    <!-- No price shown when ID is missing -->
+                                </div>
+                            {/if}
                         </td>
                         <td data-label="CardMarket" class="vendor-stock-cell disabled-column display-none">
                              <div class="stock-indicator">
