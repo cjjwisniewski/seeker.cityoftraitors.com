@@ -273,10 +273,11 @@
                              <i class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"></i>
                         {/if}
                     </th>
-                    <th class="disabled-column" title="TCGPlayer stock check coming soon">
+                    <th on:click={() => sortBy('tcgplayer_low_price')} class:active={sortKey === 'tcgplayer_low_price'}>
                         TCGPlayer
-                        <!-- Add sorting later if needed -->
-                        <!-- <i class="sort-icon fa-solid ..."></i> -->
+                        {#if sortKey === 'tcgplayer_low_price'}
+                             <i class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"></i>
+                        {/if}
                     </th>
                     <th class="disabled-column display-none" title="CardMarket stock check coming soon">
                          CardMarket
@@ -328,7 +329,7 @@
                                 </div>
                             {/if}
                         </td>
-                        <td data-label="TCGPlayer" class="vendor-stock-cell disabled-column">
+                        <td data-label="TCGPlayer" class="vendor-stock-cell">
                              <div class="stock-indicator">
                                 <i class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(getStockStatus(card.tcgplayer_stock))}"></i>
                                 {#if card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined}
