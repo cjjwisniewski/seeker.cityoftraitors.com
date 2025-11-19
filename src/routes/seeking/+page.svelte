@@ -263,7 +263,10 @@
 <div class="page-title">
 	<h1>Seeking List</h1>
 	<div class="view-controls">
-		<button on:click={() => (isCondensed = !isCondensed)} class="toggle-view-btn">
+		<button class="header-btn" on:click={downloadCSV} title="Export CSV">
+			<i class="fa-solid fa-file-csv"></i>
+		</button>
+		<button on:click={() => (isCondensed = !isCondensed)} class="header-btn toggle-view-btn">
 			<i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
 		</button>
 	</div>
@@ -279,11 +282,6 @@
 	<div class="empty">No cards in seeking list</div>
 {:else}
 	<div class="seeking-list">
-		<div class="actions-bar">
-			<button class="export-btn" on:click={downloadCSV}>
-				<i class="fa-solid fa-file-csv"></i> Export CSV
-			</button>
-		</div>
 		<table>
 			<thead>
 				<tr>
@@ -345,7 +343,7 @@
 						CardMarket
 						<!-- Add sorting later if needed -->
 					</th>
-					<th class="disabled-column" title="Ebay stock check coming soon">
+					<th class="disabled-column display-none" title="Ebay stock check coming soon">
 						EBay
 						<!-- Add sorting later if needed -->
 					</th>
@@ -446,7 +444,7 @@
 								{/if}
 							</div>
 						</td>
-						<td data-label="EBay" class="vendor-stock-cell disabled-column">
+						<td data-label="EBay" class="vendor-stock-cell disabled-column display-none">
 							<div class="stock-indicator">
 								<i
 									class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(
@@ -498,28 +496,34 @@
 		flex-grow: 1;
 	}
 
-	.actions-bar {
+	.view-controls {
+		position: absolute;
+		right: 1rem;
+		top: 50%;
+		transform: translateY(-50%);
 		display: flex;
-		justify-content: flex-end;
-		margin-bottom: 1rem;
+		gap: 0.5rem;
 	}
 
-	.export-btn {
+	.header-btn {
 		background-color: var(--color-bg-secondary);
 		color: var(--color-text-primary);
 		border: 1px solid var(--color-border);
 		padding: 0.5rem 1rem;
 		border-radius: 4px;
 		cursor: pointer;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
 		font-size: 0.9rem;
-		transition: background-color 0.2s;
+		transition:
+			background-color 0.2s,
+			border-color 0.2s;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
-	.export-btn:hover {
+	.header-btn:hover {
 		background-color: var(--color-bg-elevated);
+		border-color: var(--color-border-hover);
 	}
 
 	table {
@@ -696,34 +700,6 @@
 		text-decoration: none;
 		color: inherit;
 		display: inline-block;
-	}
-
-	.view-controls {
-		position: absolute;
-		right: 1rem;
-		top: 50%;
-		transform: translateY(-50%);
-	}
-
-	.toggle-view-btn {
-		background-color: var(--color-bg-secondary);
-		color: var(--color-text-primary);
-		border: 1px solid var(--color-border);
-		padding: 0.5rem 1rem;
-		border-radius: 4px;
-		cursor: pointer;
-		font-size: 0.9rem;
-		transition:
-			background-color 0.2s,
-			border-color 0.2s;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.toggle-view-btn:hover {
-		background-color: var(--color-bg-elevated);
-		border-color: var(--color-border-hover);
 	}
 
 	tr.condensed .card-info {
