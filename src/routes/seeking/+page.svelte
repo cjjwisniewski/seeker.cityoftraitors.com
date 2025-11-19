@@ -170,6 +170,35 @@
         // Format to 2 decimal places and prepend '$'
         return `$${dollars.toFixed(2)}`;
     }
+
+    function downloadCSV() {
+        if (!cards || cards.length === 0) return;
+
+        const headers = ['Name', 'Set Code', 'Collector Number', 'Language', 'Finish'];
+        const csvRows = [headers.join(',')];
+
+        for (const card of cards) {
+            const row = [
+                `"${card.name.replace(/"/g, '""')}"`, // Escape quotes
+                card.set_code,
+                card.collector_number,
+                card.language,
+                card.finish
+            ];
+            csvRows.push(row.join(','));
+        }
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'seeking_list.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 </script>
 
 {#if authLoading || loading}
@@ -182,6 +211,11 @@
     <div class="empty">No cards in seeking list</div>
 {:else}
     <div class="seeking-list">
+        <div class="actions-bar">
+            <button class="export-btn" on:click={downloadCSV}>
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
+        </div>
         <table>
             <thead>
                 <tr>
@@ -280,6 +314,30 @@
         margin: 2rem auto;
         max-width: 1200px;
         padding: 0 1rem;
+    }
+
+    .actions-bar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1rem;
+    }
+
+    .export-btn {
+        background-color: var(--color-bg-secondary);
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-border);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        transition: background-color 0.2s;
+    }
+
+    .export-btn:hover {
+        background-color: var(--color-bg-elevated);
     }
 
     table {
