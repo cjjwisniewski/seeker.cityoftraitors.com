@@ -374,7 +374,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each sortedCards as card (card.id)}
+				{#each sortedCards as card (`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`)}
 					<tr class:condensed={isCondensed}>
 						<td data-label="Card">
 							<div class="card-info">
