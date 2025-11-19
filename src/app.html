@@ -7,9 +7,29 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script src="https://kit.fontawesome.com/257f475bba.js" crossorigin="anonymous"></script>
 		<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+		<script>
+			// Apply theme before Svelte mounts to prevent FOUC
+			(function() {
+				const themeKey = 'color-theme';
+				const storedTheme = localStorage.getItem(themeKey);
+				let themeToApply;
+
+				if (storedTheme && ['light', 'dark'].includes(storedTheme)) {
+					// Apply stored preference if light or dark
+					themeToApply = storedTheme;
+				} else {
+					// Apply system preference if 'system' or nothing stored
+					const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+					themeToApply = prefersDark ? 'dark' : 'light';
+				}
+
+				document.documentElement.setAttribute('data-theme', themeToApply);
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<div>%sveltekit.body%</div>
+		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

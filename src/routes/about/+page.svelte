@@ -16,44 +16,63 @@
                 Seeker is a tool designed to help Magic: The Gathering collectors efficiently find the specific cards they need to complete their collections.  Whether you're searching for a rare foil, a specific language version, or just that one missing card from a set, Seeker streamlines the process by searching across multiple online marketplaces.
             </p>
 
-            <h2>Features</h2>
+            <h2>Next Steps</h2>
             <ul>
                 <li>
-                    <strong>Multi-Marketplace Search:</strong> Seeker aggregates listings from popular MTG marketplaces like CardTrader (others coming soon), allowing you to compare prices and availability in one place.
+                    <strong>Authentication:</strong> All functions are set up to use APIM with working authentication. Next, investigate adding a server/role check to the APIM auth process.
                 </li>
                 <li>
-                    <strong>Precise Filtering:</strong> Find exactly what you're looking for with advanced filtering options, including set, language, and finish (foil/non-foil).
+                    <strong>Marketplace Integrations:</strong>
+                    <ul>
+                        <li>Add eBay support.</li>
+                        <li>Add TCGPlayer support.</li>
+                        <li>Investigate <code>infinite-api.tcgplayer.com</code> as a potential alternative API.</li>
+                    </ul>
                 </li>
                 <li>
-                    <strong>Personalized Seeking List:</strong> Create and manage a personalized "Seeking List" to track the cards you need.
+                    <strong>TCGPlayer Processing Logic:</strong>
+                    <ul>
+                        <li>Schedule a task to run every 6 hours that adds all cards from each user's list to a message queue as individual items.</li>
+                        <li>Develop a process to handle each card individually from the queue.</li>
+                        <li>This needs to run locally on my server to bypass timeout issues with Azure Functions.</li>
+                    </ul>
                 </li>
                 <li>
-                    <strong>Real-Time Stock Indicators:</strong> See at a glance whether a card is currently available or unavailable on each marketplace.
+                    <strong>Notifications:</strong> Implement notifications via Discord PMs rather than channel pings.
+                </li>
+                <li>
+                    <strong>Refactor Callback Function:</strong> Remove table creation from callback. Instead, have the callback add a message to a queue for processing whether a user table should be created.
+                </li>
+                <li>
+                    <strong>Secure Functions:</strong> Protect seeker-functions with AAD authentication. This may require application changes since the callback function currently uses the <code>Authorization</code> header instead of a custom one like <code>X-Client-Authorization</code>.
                 </li>
             </ul>
-
-            <h2>How It Works</h2>
-            <p>
-                Seeker simplifies the card-hunting process. Simply add the cards you're looking for to your Seeking List. Seeker will then check the connected marketplaces and display the availability and links to the cards.
-            </p>
-
-            <h2>Future Development (To-Do)</h2>
+        
+            <h2>Future Features</h2>
             <ul>
                 <li>
-                    <strong>Expanded Marketplace Support:</strong> Add support for more MTG marketplaces.
+                    <strong>Inventory Browser:</strong> Explore the viability of creating an inventory browsing feature.
                 </li>
                 <li>
-                    <strong>Mobile Optimization:</strong> Improve the mobile experience.
-                </li>
-                <li>
-                    <strong>Direct Links:</strong> Quickly jump to the card's listing on each marketplace with direct links. Your cards are just one click away!
+                    <strong>Export Functionality:</strong> Allow users to export their lists to a CSV file.
                 </li>
             </ul>
-
-            <h2>Community</h2>
-            <p>
-                Seeker is a community-driven project, created for and by MTG collectors. It is part of the City of Traitors community.
-            </p>
+        
+            <h2>Bugs</h2>
+            <ul>
+                <li>
+                    <strong>Data Source Limitation:</strong> The application's card knowledge is limited to what is available in the Scryfall database.
+                </li>
+                <li>
+                    <strong>UI Glitch:</strong> The page sometimes shows a blank white screen upon refresh.
+                </li>
+                <li>
+                    <strong>Authentication Status:</strong> There is no clear indicator to the user when their session has expired; features simply stop working.
+                </li>
+                <li>
+                    <strong>Display Issue:</strong> The "collapsed view" feature does not consistently collapse all images as intended.
+                </li>
+            </ul>
 
             <h2>Contact</h2>
             <p>

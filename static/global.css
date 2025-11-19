@@ -1,21 +1,25 @@
 body {
-  font-family: sans-serif;
+  font-family: var(--font-family, sans-serif);
   margin: 0;
-  padding: 20px;
-  background: linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%);
-  color: #333;
+  background: var(--color-bg-primary, linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%));
+  color: var(--color-text-primary, #333);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 h1 {
   text-align: center;
   margin-bottom: 20px;
+  color: var(--color-text-primary);
 }
 
 .container {
   max-width: 800px;
   margin: 0 auto;
-  background-color: #fff;
+  background-color: var(--color-bg-secondary, #fff);
+  color: var(--color-text-primary);
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm, 0 2px 5px rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--color-border, transparent);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }

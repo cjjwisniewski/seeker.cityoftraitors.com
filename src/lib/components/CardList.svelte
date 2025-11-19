@@ -22,8 +22,9 @@
     async function handleSetChange(card, newPrint) {
         if (!card || !newPrint) return;
 
-        // Update all card information for the selected printing
+        // Update card information for the selected printing
         card.set = newPrint.set_code;
+        card.collector_number = newPrint.collector_number; // Ensure collector number is also updated
         card.image_uris = {
             normal: newPrint.image_uri
         };
@@ -32,31 +33,36 @@
         card.available_languages = await getAvailableLanguages(
             card.oracle_id,
             newPrint.set_code,
-            newPrint.collector_number
+            newPrint.collector_number // Use the correct collector number here
         );
-        card.selected_language = 'en'; // Default or check availability
+        // Reset language or check if current language is available for the new print
+        const currentLang = card.selected_language || 'en';
+        card.selected_language = card.available_languages.includes(currentLang) ? currentLang : 'en';
 
-        // Update other card information
+        // Update other card information based on the selected print
         card.flavor_text = newPrint.flavor_text;
         card.oracle_text = newPrint.oracle_text;
         card.type_line = newPrint.type_line;
         card.mana_cost = newPrint.mana_cost;
-        card.collector_number = newPrint.collector_number;
+        // card.collector_number = newPrint.collector_number; // Already updated above
 
-        // Force a UI update using original method
+        // Force a UI update
         sortedCards = sortedCards.map(c =>
-            c.id === card.id ? {...c} : c
+            c.id === card.id ? {...card} : c // Spread the updated card object
         );
     }
 
     async function handleLanguageChange(card, language) {
         if (!card || !language) return;
 
-        // Keep track of current print
-        const currentPrint = card.all_prints.find(p => p.set_code === card.set);
-        if (!currentPrint) return;
+        // Find the currently selected print based on card.set and card.collector_number
+        const currentPrint = card.all_prints.find(p => p.set_code === card.set && p.collector_number === card.collector_number);
+        if (!currentPrint) {
+             console.error("Could not find current print for language change:", card.set, card.collector_number);
+             return; // Cannot proceed without the correct print context
+        }
 
-        // Construct the API URI for the language-specific card data
+        // Construct the API URI for the language-specific card data using the correct collector_number
         const cardUri = `https://api.scryfall.com/cards/${currentPrint.set_code}/${currentPrint.collector_number}/${language}`;
 
         try {
@@ -69,19 +75,21 @@
             const imageUri = cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal;
             if (!imageUri) throw new Error('No image URI found');
 
-            // Update card image and language while maintaining other print information (Original Logic)
+            // Update card image and language while maintaining other print information
              sortedCards = sortedCards.map(c => {
                 if (c.id === card.id) {
                     return {
                         ...c,
                         image_uris: { normal: imageUri },
                         selected_language: language,
-                        set: currentPrint.set_code, // Ensure set remains consistent with selected print
-                        flavor_text: cardData.flavor_text || currentPrint.flavor_text, // Use language specific if available
+                        // Ensure set and collector number remain consistent with the selected print
+                        set: currentPrint.set_code,
+                        collector_number: currentPrint.collector_number,
+                        // Update text fields from the language-specific data
+                        flavor_text: cardData.flavor_text || currentPrint.flavor_text,
                         oracle_text: cardData.oracle_text || currentPrint.oracle_text,
                         type_line: cardData.type_line || currentPrint.type_line,
                         mana_cost: currentPrint.mana_cost, // Keep from selected print
-                        collector_number: currentPrint.collector_number // Keep from selected print
                     };
                 }
                 return c;
@@ -91,29 +99,44 @@
         }
     }
 
-     async function handleLanguageDropdownOpen(card, print) {
-        // Original Logic
+     async function handleLanguageDropdownOpen(card) {
+         // Find the currently selected print based on card.set and card.collector_number
+         const print = card.all_prints?.find(p => p.set_code === card.set && p.collector_number === card.collector_number);
+         if (!print) {
+             console.error("Could not find current print for language dropdown:", card.set, card.collector_number);
+             return; // Cannot proceed without the correct print
+         }
+
+        let languagesChanged = false; // Flag to track if languages were fetched
         if (!print.languages) {
+            // Fetch languages using the specific print's collector number
             const languages = await getAvailableLanguages(
                 card.oracle_id,
                 print.set_code,
                 print.collector_number
             );
 
-            // Update the print's languages
+            // Update the specific print's languages cache
             print.languages = languages;
 
             // Update available languages for the current card state
             card.available_languages = languages;
+            languagesChanged = true; // Mark that languages were updated
 
-            // Update language URIs
+            // Update language URIs on the specific print object
             print.language_uris = languages.reduce((acc, lang) => {
                 acc[lang] = `https://api.scryfall.com/cards/${print.set_code}/${print.collector_number}/${lang}`;
                 return acc;
             }, {});
-        } else {
-            // Use cached languages
+        } else if (card.available_languages !== print.languages) {
+            // If cached languages exist but aren't reflected on the card object yet
             card.available_languages = print.languages;
+            languagesChanged = true; // Mark that languages were updated from cache
+        }
+
+        // If languages were fetched or updated from cache, trigger reactivity
+        if (languagesChanged) {
+            sortedCards = [...sortedCards]; // Reassign to trigger Svelte update
         }
     }
 
@@ -139,19 +162,36 @@
             buttonStates[card.id] = { error: false, success: false, exists: false };
             buttonStates = {...buttonStates}; // Force Svelte reactivity
 
-            const payload = { // Original payload structure
+            // Find the currently selected print based on card.set and card.collector_number
+            const currentPrint = card.all_prints?.find(p => p.set_code === card.set && p.collector_number === card.collector_number);
+            if (!currentPrint) {
+                console.error("Could not find current print for adding to seeking:", card.set, card.collector_number);
+                buttonStates[card.id] = { error: true, success: false, exists: false, message: "Invalid print" };
+                buttonStates = {...buttonStates};
+                setTimeout(() => {
+                    buttonStates[card.id] = { error: false, success: false, exists: false };
+                    buttonStates = {...buttonStates};
+                }, 3000);
+                return;
+            }
+
+            const payload = { // Use the current card state
                 id: crypto.randomUUID(),
                 name: card.name,
-                set_code: card.set,
-                collector_number: card.collector_number,
+                set_code: card.set, // Use card.set (updated by handleSetChange)
+                collector_number: card.collector_number, // Use card.collector_number (updated by handleSetChange)
                 language: card.selected_language || 'en',
                 oracle_id: card.oracle_id,
-                image_uri: card.image_uris.normal,
+                image_uri: card.image_uris.normal, // Use current image URI
                 timestamp: new Date().toISOString(),
-                finish: selectedFinishes[card.id] || 'nonfoil'
+                finish: selectedFinishes[card.id] || 'nonfoil',
+                tcgplayer_id: currentPrint.tcgplayer_id || null,
+                cardmarket_id: currentPrint.cardmarket_id || null
             };
 
-            // --- MODIFIED: Use fetchWithAuth ---
+            console.log('Adding card to seeking list with payload:', payload);
+
+            // --- Use fetchWithAuth ---
             const response = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
                 method: 'POST',
                 headers: {
@@ -205,7 +245,7 @@
         } catch (error) {
             console.error('Error adding card to seeking list:', error);
              // Original error handling for button state
-            buttonStates[card.id] = { error: true, success: false, exists: false };
+            buttonStates[card.id] = { error: true, success: false, exists: false, message: "Add failed" }; // Added generic message
             buttonStates = {...buttonStates};
 
             setTimeout(() => {
@@ -248,7 +288,8 @@
     {#if sortedCards?.length > 0}
         <div class="cards-list">
                 {#each sortedCards as card (card.id)}
-                   {@const currentPrint = card.all_prints?.find(p => p.set_code === card.set)} <div class="card-item">
+                   <!-- MODIFIED: Get current print based on card's set AND collector_number -->
+                   {@const currentPrint = card.all_prints?.find(p => p.set_code === card.set && p.collector_number === card.collector_number)} <div class="card-item">
                         <div class="card-image-section">
                             <div class="card-image-container">
                                 {#if card.image_uris?.normal}
@@ -260,19 +301,23 @@
                                 {/if}
                             </div>
                              {#if card.all_prints} <div class="set-selector">
+                                    <!-- MODIFIED: Select binds to a combined value representing the current print -->
                                     <select
-                                        value={card.set}
+                                        value="{card.set}|{card.collector_number}"
                                         on:change={(e) => {
-                                            const newPrint = card.all_prints.find(p => p.set_code === e.target.value);
-                                            if (newPrint) handleSetChange(card, newPrint);
+                                            const [set_code, collector_number] = e.target.value.split('|');
+                                            // Find the specific print object based on both parts
+                                            const newPrint = card.all_prints.find(p => p.set_code === set_code && p.collector_number === collector_number);
+                                            if (newPrint) handleSetChange(card, newPrint); // Pass the found print object
                                         }}
-                                        aria-label="Select card set"
+                                        aria-label="Select card set and printing"
                                     >
-                                        <option value="">Select a set...</option>
+                                        <option value="">Select a print...</option>
+                                        <!-- MODIFIED: Option value includes both set_code and collector_number -->
                                         {#each card.all_prints as print}
-                                            {#if print?.set_code && print?.set}
-                                                <option value={print.set_code}>
-                                                    {print.set} ({print.collector_number || '#???'})
+                                            {#if print?.set_code && print?.set && print?.collector_number}
+                                                <option value="{print.set_code}|{print.collector_number}">
+                                                    {print.set} ({print.collector_number})
                                                 </option>
                                             {/if}
                                         {/each}
@@ -294,12 +339,13 @@
                                     <p class="flavor-text">"{card.flavor_text}"</p>
                                 {/if}
                             </div>
+                             <!-- MODIFIED: Pass card directly, handleLanguageDropdownOpen finds print inside -->
                              {#if card.available_languages?.length > 0} <div class="language-selector">
                                     <label for="language-{card.id}">Language:</label>
                                     <select
                                         id="language-{card.id}"
                                         value={card.selected_language || 'en'}
-                                        on:focus={() => handleLanguageDropdownOpen(card, currentPrint)}
+                                        on:focus={() => handleLanguageDropdownOpen(card)}
                                         on:change={(e) => handleLanguageChange(card, e.target.value)}
                                     >
                                         {#each card.available_languages as lang}
@@ -339,8 +385,8 @@
                                         {buttonStates[card.id]?.success ? 'success' : ''}
                                         {buttonStates[card.id]?.exists ? 'exists' : ''}"
                                     on:click={() => handleAddToSeeking(card)}
-                                    disabled={!card.set || !$auth.isAuthenticated}
-                                    title={!$auth.isAuthenticated ? "Login required" : (!card.set ? "Select a print first" : "Add to Seeking List")}
+                                    disabled={!card.set || !card.collector_number || !$auth.isAuthenticated}
+                                    title={!$auth.isAuthenticated ? "Login required" : (!card.set || !card.collector_number ? "Select a print first" : "Add to Seeking List")}
                                 >
                                      {#if buttonStates[card.id]?.error}
                                         Error {buttonStates[card.id]?.message ? `(${buttonStates[card.id].message})`:''}

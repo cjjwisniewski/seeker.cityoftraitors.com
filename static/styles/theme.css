@@ -1,4 +1,5 @@
 :root {
+    /* Fallback/System Default Theme (matches current light theme) */
     /* Base colors */
     --color-bg-primary: #f8f9fa;
     --color-bg-secondary: #ffffff;
@@ -17,7 +18,7 @@
 
     /* Shadow */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                      0 2px 4px -1px rgba(0, 0, 0, 0.06);
 
     /* Layout */
@@ -32,29 +33,76 @@
     /* Typography */
     --font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
 
-    /* Border color */
-    --color-border: rgba(0, 0, 0, 0.1);
-    --color-border-hover: rgba(0, 0, 0, 0.2);
-
     /* Button State Colors */
     --color-error: #dc2626;
     --color-success: #22c55e;
     --color-warning: #f59e0b;
+
+    /* Add Text on Primary Color */
+    --color-text-on-primary: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --color-primary: #3b82f6;
-        --color-primary-dark: #2563eb;
-        --color-primary-alpha: rgba(59, 130, 246, 0.2);
-        --color-disabled: #6b7280;
-        --color-bg-elevated: #1f2937;
-        --color-text-primary: #f3f4f6;
-        --color-text-secondary: #9ca3af;
-        --color-border: #374151;
-        --color-border-hover: #4b5563;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
-        --color-warning: #d97706;
+[data-theme='light'] {
+    /* Explicit Light Theme (same as :root defaults for now) */
+    --color-bg-primary: #f8f9fa;
+    --color-bg-secondary: #ffffff;
+    --color-bg-elevated: #ffffff;
+    --color-bg-hover: #f1f3f5;
+    --color-text-primary: #111827;
+    --color-text-secondary: #4b5563;
+    --color-text-muted: #868e96;
+    --color-border: #e5e7eb;
+    --color-border-light: #e9ecef;
+    --color-border-hover: #d1d5db;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                     0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --color-primary: #2563eb;
+    --color-primary-dark: #1d4ed8;
+    --color-primary-alpha: rgba(37, 99, 235, 0.2);
+    --color-disabled: #9ca3af;
+    --color-error: #dc2626;
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+
+    /* Add Text on Primary Color */
+    --color-text-on-primary: #ffffff;
+}
+
+[data-theme='dark'] {
+    /* Dark Theme Variables */
+    --color-bg-primary: #111827; /* Darker background */
+    --color-bg-secondary: #1f2937; /* Slightly lighter dark */
+    --color-bg-elevated: #1f2937; /* From original dark media query */
+    --color-bg-hover: #374151;   /* Darker hover */
+
+    --color-text-primary: #f3f4f6; /* From original */
+    --color-text-secondary: #9ca3af; /* From original */
+    --color-text-muted: #6b7280;   /* Lighter muted */
+
+    --color-border: #374151; /* From original */
+    --color-border-light: #4b5563; /* Darker light border */
+    --color-border-hover: #4b5563; /* From original */
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2); /* Slightly stronger shadow */
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
+                     0 2px 4px -1px rgba(0, 0, 0, 0.2);
+
+    --color-primary: #3b82f6; /* From original */
+    --color-primary-dark: #2563eb; /* From original */
+    --color-primary-alpha: rgba(59, 130, 246, 0.2); /* From original */
+    --color-disabled: #6b7280; /* From original */
+
+    --color-error: #f87171; /* Lighter error */
+    --color-success: #4ade80; /* Lighter success */
+    --color-warning: #fbbf24; /* Lighter warning */
+
+    /* Add Text on Primary Color */
+    --color-text-on-primary: #ffffff;
+
+    /* Invert set icons in dark mode */
+    .set-icon {
+        filter: invert(1) /* Adjust if needed, e.g., invert(0.9) */
     }
 }
 

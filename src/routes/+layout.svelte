@@ -5,6 +5,7 @@
     import { page } from '$app/stores'; // Import the page store
     import { auth } from '$lib/stores/auth'; // Import the auth store
     import { browser } from '$app/environment'; // Import browser check
+    import ThemeToggle from '$lib/components/ThemeToggle.svelte'; // Import the theme toggle
 
     // Remove export let data; - Data now comes from the auth store
 
@@ -132,6 +133,11 @@
                                         <i class="fa-solid fa-right-from-bracket"></i>
                                         Logout
                                     </button>
+                                    <!-- Add Theme Toggle Here -->
+                                    <div class="dropdown-divider"></div>
+                                    <div class="theme-toggle-container">
+                                        <ThemeToggle />
+                                    </div>
                                 </div>
                             {/if}
                         </div>
@@ -187,7 +193,7 @@
     }
 
     .nav-left {
-        flex: 1;
+        /* flex: 1; Remove this line */
     }
 
     .nav-left a {
@@ -272,7 +278,7 @@
         height: 32px;
         border-radius: 50%;
         background-color: var(--color-primary); /* Example background */
-        color: white;
+        color: var(--color-text-on-primary, white); /* Use variable */
         font-weight: bold;
         font-size: 1rem;
     }
@@ -294,6 +300,20 @@
         min-width: 150px;
         padding: 0.25rem 0;
         z-index: 1001; /* Ensure it's above main content */
+        /* Add padding for the theme toggle */
+        padding-bottom: 0.5rem; 
+    }
+
+    /* Styling for the divider and container */
+    .dropdown-divider {
+        height: 1px;
+        background-color: var(--color-border);
+        margin: 0.5rem 0; /* Add some spacing */
+    }
+
+    .theme-toggle-container {
+        padding: 0 0.75rem; /* Align with dropdown item padding */
+        margin-top: 0.25rem;
     }
 
     /* Invisible area to prevent menu from closing when moving mouse to it */
@@ -338,7 +358,7 @@
     .login-button {
         padding: 0.4rem 0.8rem;
         background-color: var(--color-primary);
-        color: white;
+        color: var(--color-text-on-primary, white); /* Use variable */
         border-radius: 4px;
         text-decoration: none;
         font-size: 0.9rem;
@@ -358,9 +378,11 @@
 
     main {
         padding-top: var(--nav-height); /* Use variable for padding */
-        background: linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%);
+        /* background: linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%); /* Remove hardcoded gradient */
+        background: var(--color-bg-primary); /* Use theme background */
         flex: 1; /* Ensure main takes remaining space */
         /* overflow: auto; /* Handle potential overflow inside main */
+        transition: background 0.3s ease; /* Add transition */
     }
 
     /* Class to remove padding when navbar is hidden */
