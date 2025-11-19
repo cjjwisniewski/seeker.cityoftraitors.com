@@ -261,10 +261,10 @@
 				card.cardtrader_low_price ? (card.cardtrader_low_price / 100).toFixed(2) : '',
 				getStockStatus(card.tcgplayer_stock),
 				card.tcgplayer_low_price ? (card.tcgplayer_low_price / 100).toFixed(2) : ''
-				//getStockStatus(card.cardmarket_stock),
-				//card.cardmarket_low_price ? (card.cardmarket_low_price / 100).toFixed(2) : '',
-				//getStockStatus(card.ebay_stock),
-				//card.ebay_low_price ? (card.ebay_low_price / 100).toFixed(2) : ''
+				// getStockStatus(card.cardmarket_stock),
+				// card.cardmarket_low_price ? (card.cardmarket_low_price / 100).toFixed(2) : '',
+				// getStockStatus(card.ebay_stock),
+				// card.ebay_low_price ? (card.ebay_low_price / 100).toFixed(2) : ''
 			];
 			csvRows.push(row.join(','));
 		}
