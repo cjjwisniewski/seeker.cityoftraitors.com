@@ -53,10 +53,6 @@
 					pings.
 				</li>
 				<li>
-					<strong>Refactor Callback Function:</strong> Remove table creation from callback. Instead,
-					have the callback add a message to a queue for processing whether a user table should be created.
-				</li>
-				<li>
 					<strong>Secure Functions:</strong> Protect seeker-functions with AAD authentication. This
 					may require application changes since the callback function currently uses the
 					<code>Authorization</code>
@@ -66,20 +62,15 @@
 
 			<h2>Future Features</h2>
 			<ul>
-				<li>
-					<strong>Inventory Browser:</strong> Explore the viability of creating an inventory browsing
-					feature.
-				</li>
-				<li>
-					<strong>Export Functionality:</strong> Allow users to export their lists to a CSV file.
-				</li>
+				<li>???</li>
 			</ul>
 
 			<h2>Bugs</h2>
 			<ul>
 				<li>
 					<strong>Data Source Limitation:</strong> The application's card knowledge is limited to what
-					is available in the Scryfall database.
+					is available in the Scryfall database. This is sometimes a limitation when Scryfall does not
+					have a given language listed for a card.
 				</li>
 				<li>
 					<strong>Authentication Status:</strong> There is no clear indicator to the user when their
