@@ -18,13 +18,8 @@
 				foil, a specific language version, or just that one missing card from a set, Seeker
 				streamlines the process by searching across multiple online marketplaces.
 			</p>
-
 			<h2>Next Steps</h2>
 			<ul>
-				<li>
-					<strong>Authentication:</strong> All functions are set up to use APIM with working authentication.
-					Next, investigate adding a server/role check to the APIM auth process.
-				</li>
 				<li>
 					<strong>Marketplace Integrations:</strong>
 					<ul>
@@ -57,6 +52,10 @@
 					may require application changes since the callback function currently uses the
 					<code>Authorization</code>
 					header instead of a custom one like <code>X-Client-Authorization</code>.
+				</li>
+				<li>
+					<strong>Authentication:</strong> All functions are set up to use APIM with working authentication.
+					Next, investigate adding a server/role check to the APIM auth process.
 				</li>
 			</ul>
 
