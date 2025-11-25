@@ -187,6 +187,50 @@
 		return `$${dollars.toFixed(2)}`;
 	}
 
+	// Helper function to format price from dollars (no conversion needed)
+	function formatDollarPrice(dollars) {
+		if (dollars === null || dollars === undefined) {
+			return '';
+		}
+		// Format to 2 decimal places and prepend '$'
+		return `$${Number(dollars).toFixed(2)}`;
+	}
+
+	const languageMap = {
+		en: 'English',
+		jp: 'Japanese',
+		de: 'German',
+		fr: 'French',
+		it: 'Italian',
+		es: 'Spanish',
+		pt: 'Portuguese',
+		ru: 'Russian',
+		kr: 'Korean',
+		zht: 'Chinese (T)',
+		zhs: 'Chinese (S)'
+	};
+
+	function getTCGPlayerUrl(card) {
+		let url = `https://www.tcgplayer.com/product/${card.tcgplayer_id}`;
+		const params = [];
+
+		if (card.language && languageMap[card.language]) {
+			params.push(`Language=${encodeURIComponent(languageMap[card.language])}`);
+		}
+
+		if (card.finish) {
+			// Default to Normal for nonfoil and others, Foil for foil
+			const printing = card.finish === 'foil' ? 'Foil' : 'Normal';
+			params.push(`Printing=${printing}`);
+		}
+
+		if (params.length > 0) {
+			url += `?${params.join('&')}`;
+		}
+
+		return url;
+	}
+
 	// Function to handle sorting
 	function sortBy(key) {
 		if (sortKey === key) {
@@ -427,7 +471,7 @@
 						<td data-label="TCGPlayer" class="vendor-stock-cell">
 							{#if card.tcgplayer_id}
 								<a
-									href="https://www.tcgplayer.com/product/{card.tcgplayer_id}"
+									href={getTCGPlayerUrl(card)}
 									target="_blank"
 									rel="noopener noreferrer"
 									class="vendor-link"
@@ -439,7 +483,7 @@
 											)}"
 										></i>
 										{#if card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined}
-											<span class="price-text">{formatPrice(card.tcgplayer_low_price)}</span>
+											<span class="price-text">{formatDollarPrice(card.tcgplayer_low_price)}</span>
 										{/if}
 									</div>
 								</a>
