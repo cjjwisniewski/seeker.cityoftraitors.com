@@ -260,7 +260,7 @@
 				getStockStatus(card.cardtrader_stock),
 				card.cardtrader_low_price ? (card.cardtrader_low_price / 100).toFixed(2) : '',
 				getStockStatus(card.tcgplayer_stock),
-				card.tcgplayer_low_price ? (card.tcgplayer_low_price / 100).toFixed(2) : ''
+				card.tcgplayer_low_price ? card.tcgplayer_low_price : ''
 				// getStockStatus(card.cardmarket_stock),
 				// card.cardmarket_low_price ? (card.cardmarket_low_price / 100).toFixed(2) : '',
 				// getStockStatus(card.ebay_stock),
