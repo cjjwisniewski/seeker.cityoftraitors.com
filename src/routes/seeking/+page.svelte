@@ -482,7 +482,7 @@
 												getStockStatus(card.tcgplayer_stock)
 											)}"
 										></i>
-										{#if card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined}
+										{#if card.tcgplayer_low_price > 0 && getStockStatus(card.tcgplayer_stock) === 'available'}
 											<span class="price-text">{formatDollarPrice(card.tcgplayer_low_price)}</span>
 										{/if}
 									</div>
