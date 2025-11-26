@@ -44,15 +44,20 @@ const createAuthStore = () => {
             return null;
         }
         if (!USER_INFO_URL) {
-             console.error('AuthStore: fetchUserInfo cannot proceed, USER_INFO_URL is not defined.');
-             return null;
+            console.error('AuthStore: fetchUserInfo cannot proceed, USER_INFO_URL is not defined.');
+            return null;
         }
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
             const response = await fetch(USER_INFO_URL, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
 
             if (response.ok) {
                 const userData: User = await response.json();
@@ -151,7 +156,7 @@ const createAuthStore = () => {
                     console.error('Error calling logout endpoint:', error);
                 }
             }
-             window.location.href = '/login'; // Redirect after logout
+            window.location.href = '/login'; // Redirect after logout
         },
         handleCallback: async (token: string) => {
             if (!token) {
