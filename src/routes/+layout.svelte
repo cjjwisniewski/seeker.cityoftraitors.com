@@ -161,12 +161,11 @@
 	</main>
 	<Footer />
 </div>
-```
 
 <style>
 	/* Define nav height as variable (adjust value as needed) */
 	:root {
-		--nav-height: 57px; /* Example: Adjust based on your actual navbar height */
+		--nav-height: 64px; /* Updated height */
 	}
 
 	nav {
@@ -174,19 +173,23 @@
 		top: 0;
 		left: 0;
 		right: 0;
-		height: var(--nav-height); /* Use the variable */
-		padding: 0.5rem; /* Keep original padding */
-		background: var(--color-bg-elevated);
+		height: var(--nav-height);
+		padding: 0 1rem;
+		background: var(--glass-bg);
+		backdrop-filter: blur(var(--backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur));
 		z-index: 1000;
-		border-bottom: 1px solid var(--color-border);
+		border-bottom: 1px solid var(--glass-border);
 		box-shadow: var(--shadow-sm);
-		/* Ensure content vertical alignment if needed */
 		display: flex;
 		align-items: center;
+		transition:
+			background var(--transition-normal),
+			border-color var(--transition-normal);
 	}
 
 	.nav-content {
-		width: 100%; /* Take full width */
+		width: 100%;
 		max-width: 1200px;
 		margin: 0 auto;
 		display: flex;
@@ -204,13 +207,17 @@
 
 	h3 {
 		margin: 0;
-		font-size: 1.1rem;
-		color: var(--color-text-primary);
+		font-size: 1.25rem;
+		font-weight: 700;
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		letter-spacing: -0.02em;
 	}
 
 	.nav-right {
 		display: flex;
-		gap: 1rem;
+		gap: 1.25rem;
 		align-items: center;
 	}
 
@@ -220,16 +227,22 @@
 	.seeking-link {
 		color: var(--color-text-secondary);
 		text-decoration: none;
-		padding: 0.35rem;
-		transition: color 0.2s ease;
-		display: inline-flex; /* Align icon */
+		padding: 0.5rem;
+		border-radius: 50%;
+		transition: all var(--transition-fast);
+		display: inline-flex;
 		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
 	}
 
 	.search-link:hover,
 	.about-link:hover,
 	.seeking-link:hover {
-		color: var(--color-text-primary);
+		color: var(--color-primary);
+		background: var(--color-bg-hover);
+		transform: translateY(-1px);
 	}
 
 	/* User Dropdown */
@@ -241,24 +254,26 @@
 	.user-button {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.25rem;
-		border: none;
-		background: none;
+		gap: 0.75rem;
+		padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+		border: 1px solid transparent;
+		background: transparent;
 		cursor: pointer;
-		border-radius: 4px;
-		transition: background-color 0.2s; /* Added transition */
+		border-radius: 9999px; /* Pill shape */
+		transition: all var(--transition-fast);
 	}
 
-	.user-button:hover {
+	.user-button:hover,
+	.user-button[aria-expanded='true'] {
 		background: var(--color-bg-hover);
+		border-color: var(--color-border);
 	}
 
 	.user-button i.fa-chevron-down {
-		/* Style chevron */
 		font-size: 0.7em;
 		margin-left: 0.25rem;
-		transition: transform 0.2s ease-in-out;
+		transition: transform var(--transition-normal);
+		color: var(--color-text-muted);
 	}
 	.user-button[aria-expanded='true'] i.fa-chevron-down {
 		transform: rotate(180deg);
@@ -268,7 +283,8 @@
 		width: 32px;
 		height: 32px;
 		border-radius: 50%;
-		object-fit: cover; /* Ensure avatar covers area */
+		object-fit: cover;
+		box-shadow: 0 0 0 2px var(--color-bg-primary);
 	}
 
 	/* Style for default avatar placeholder */
@@ -279,95 +295,121 @@
 		width: 32px;
 		height: 32px;
 		border-radius: 50%;
-		background-color: var(--color-primary); /* Example background */
-		color: var(--color-text-on-primary, white); /* Use variable */
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+		color: white;
 		font-weight: bold;
 		font-size: 1rem;
+		box-shadow: 0 0 0 2px var(--color-bg-primary);
 	}
 
 	.username {
 		color: var(--color-text-primary);
 		font-size: 0.9rem;
-		font-weight: 500; /* Slightly bolder */
+		font-weight: 600;
 	}
 
 	.dropdown-menu {
 		position: absolute;
-		top: calc(100% + 0.25rem);
+		top: calc(100% + 0.5rem);
 		right: 0;
-		background: var(--color-bg-elevated);
-		border: 1px solid var(--color-border);
-		border-radius: 4px;
-		box-shadow: var(--shadow-md);
-		min-width: 150px;
-		padding: 0.25rem 0;
-		z-index: 1001; /* Ensure it's above main content */
-		/* Add padding for the theme toggle */
-		padding-bottom: 0.5rem;
+		background: var(--glass-bg);
+		backdrop-filter: blur(var(--backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur));
+		border: 1px solid var(--glass-border);
+		border-radius: 12px;
+		box-shadow: var(--glass-shadow);
+		min-width: 180px;
+		padding: 0.5rem;
+		z-index: 1001;
+		transform-origin: top right;
+		animation: scaleIn 0.2s ease-out forwards;
+	}
+
+	@keyframes scaleIn {
+		from {
+			opacity: 0;
+			transform: scale(0.95);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
 	}
 
 	/* Styling for the divider and container */
 	.dropdown-divider {
 		height: 1px;
 		background-color: var(--color-border);
-		margin: 0.5rem 0; /* Add some spacing */
+		margin: 0.5rem 0;
 	}
 
 	.theme-toggle-container {
-		padding: 0 0.75rem; /* Align with dropdown item padding */
+		padding: 0 0.5rem;
 		margin-top: 0.25rem;
+		display: flex;
+		justify-content: center;
 	}
 
 	/* Invisible area to prevent menu from closing when moving mouse to it */
 	.dropdown-menu::before {
 		content: '';
 		position: absolute;
-		top: -0.25rem;
+		top: -0.5rem;
 		left: 0;
 		right: 0;
-		height: 0.25rem;
+		height: 0.5rem;
 	}
 
 	.dropdown-item {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem; /* Increased gap slightly */
+		gap: 0.75rem;
 		width: 100%;
-		padding: 0.5rem 1rem;
+		padding: 0.6rem 1rem;
 		border: none;
 		background: none;
 		cursor: pointer;
 		color: var(--color-text-secondary);
 		text-align: left;
 		text-decoration: none;
-		font-size: 0.9rem; /* Match username size */
-		white-space: nowrap; /* Prevent wrapping */
+		font-size: 0.9rem;
+		white-space: nowrap;
+		border-radius: 8px;
+		transition: all var(--transition-fast);
+		font-weight: 500;
 	}
 
 	.dropdown-item i {
-		/* Style icons in dropdown */
-		width: 1em; /* Align icons */
-		margin-right: 0.25rem;
+		width: 1.25em;
 		text-align: center;
+		color: var(--color-text-muted);
+		transition: color var(--transition-fast);
 	}
 
 	.dropdown-item:hover {
-		background: var(--color-bg-hover);
-		color: var(--color-text-primary);
+		background: var(--color-primary-alpha);
+		color: var(--color-primary);
+	}
+
+	.dropdown-item:hover i {
+		color: var(--color-primary);
 	}
 
 	/* Optional: Style for Login button */
 	.login-button {
-		padding: 0.4rem 0.8rem;
-		background-color: var(--color-primary);
-		color: var(--color-text-on-primary, white); /* Use variable */
-		border-radius: 4px;
+		padding: 0.5rem 1.25rem;
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+		color: white;
+		border-radius: 9999px;
 		text-decoration: none;
 		font-size: 0.9rem;
-		transition: background-color 0.2s;
+		font-weight: 600;
+		transition: all var(--transition-fast);
+		box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 	}
 	.login-button:hover {
-		background-color: var(--color-primary-dark); /* Define this color in theme.css */
+		transform: translateY(-1px);
+		box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
 	}
 
 	/* Layout structure */
@@ -378,12 +420,11 @@
 	}
 
 	main {
-		padding-top: var(--nav-height); /* Use variable for padding */
-		/* background: linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%); /* Remove hardcoded gradient */
-		background: var(--color-bg-primary); /* Use theme background */
-		flex: 1; /* Ensure main takes remaining space */
-		/* overflow: auto; /* Handle potential overflow inside main */
-		transition: background 0.3s ease; /* Add transition */
+		padding-top: var(--nav-height);
+		background: var(--color-bg-primary);
+		flex: 1;
+		transition: background var(--transition-normal);
+		animation: fadeIn 0.5s ease-out;
 	}
 
 	/* Class to remove padding when navbar is hidden */

@@ -1,9 +1,11 @@
 body {
   font-family: var(--font-family, sans-serif);
   margin: 0;
-  background: var(--color-bg-primary, linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%));
-  color: var(--color-text-primary, #333);
-  transition: background 0.3s ease, color 0.3s ease;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: background var(--transition-normal), color var(--transition-normal);
+  overflow-y: scroll;
+  /* Prevent layout shift */
 }
 
 h1 {
@@ -15,11 +17,46 @@ h1 {
 .container {
   max-width: 800px;
   margin: 0 auto;
-  background-color: var(--color-bg-secondary, #fff);
+  background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
   padding: 20px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+/* Global Fade In */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-hover);
   border-radius: 5px;
-  box-shadow: var(--shadow-sm, 0 2px 5px rgba(0, 0, 0, 0.1));
-  border: 1px solid var(--color-border, transparent);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }

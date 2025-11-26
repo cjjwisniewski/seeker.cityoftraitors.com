@@ -544,6 +544,7 @@
 		margin: 2rem auto;
 		max-width: 1200px;
 		padding: 0 1rem;
+		animation: fadeIn 0.5s ease-out;
 	}
 
 	.page-title {
@@ -560,6 +561,10 @@
 		margin: 0;
 		text-align: center;
 		flex-grow: 1;
+		font-weight: 700;
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
 	}
 
 	.view-controls {
@@ -576,29 +581,35 @@
 		color: var(--color-text-primary);
 		border: 1px solid var(--color-border);
 		padding: 0.5rem 1rem;
-		border-radius: 4px;
+		border-radius: 8px;
 		cursor: pointer;
 		font-size: 0.9rem;
-		transition:
-			background-color 0.2s,
-			border-color 0.2s;
+		transition: all var(--transition-fast);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.header-btn:hover {
-		background-color: var(--color-bg-elevated);
+		background-color: var(--color-bg-hover);
 		border-color: var(--color-border-hover);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-md);
 	}
 
 	table {
 		width: 100%;
-		border-collapse: collapse;
-		background: var(--color-bg-elevated);
-		border-radius: 8px;
+		border-collapse: separate; /* Changed to separate for border-radius */
+		border-spacing: 0;
+		background: var(--glass-bg);
+		backdrop-filter: blur(var(--backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur));
+		border-radius: 12px;
 		overflow: hidden;
 		margin-top: 1rem;
+		box-shadow: var(--glass-shadow);
+		border: 1px solid var(--glass-border);
 	}
 
 	th,
@@ -606,6 +617,7 @@
 		padding: 1rem;
 		text-align: center;
 		border-bottom: 1px solid var(--color-border);
+		transition: background-color var(--transition-fast);
 	}
 
 	th {
@@ -618,13 +630,22 @@
 		user-select: none;
 		padding-right: 1.5em;
 		white-space: nowrap;
+		text-transform: uppercase;
+		font-size: 0.85rem;
+		letter-spacing: 0.05em;
 	}
 
 	th.active {
-		color: var(--color-accent);
+		color: var(--color-primary);
+		background-color: var(--color-bg-hover);
 	}
 
 	th:not([class*='disabled-column']):hover {
+		background-color: var(--color-bg-hover);
+	}
+
+	/* Hover effect for rows */
+	tbody tr:hover td {
 		background-color: var(--color-bg-hover);
 	}
 
@@ -653,18 +674,23 @@
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+		text-align: left;
 	}
 
 	.card-info img {
 		width: 40px;
 		height: auto;
 		border-radius: 4px;
-		transition:
-			width 0.3s ease,
-			opacity 0.3s ease,
-			margin-right 0.3s ease;
+		transition: all var(--transition-normal);
 		opacity: 1;
 		margin-right: 1rem;
+		box-shadow: var(--shadow-sm);
+	}
+
+	.card-info img:hover {
+		transform: scale(1.5);
+		z-index: 10;
+		box-shadow: var(--shadow-md);
 	}
 
 	tr.condensed .card-info img {
@@ -688,15 +714,21 @@
 
 	.stock-indicator i {
 		display: block;
-		font-size: 1rem;
+		font-size: 1.1rem;
 		margin-bottom: 0.25rem;
+		transition: transform var(--transition-fast);
+	}
+	
+	.vendor-link:hover .stock-indicator i {
+		transform: scale(1.1);
 	}
 
 	.price-text {
 		display: block;
-		font-size: 0.7rem;
+		font-size: 0.75rem;
 		color: var(--color-text-muted);
 		line-height: 1;
+		font-weight: 500;
 	}
 
 	.set-column {
@@ -707,10 +739,13 @@
 		height: 1.5em;
 		width: 1.5em;
 		vertical-align: middle;
+		filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
 	}
 
 	.language-column {
 		text-transform: uppercase;
+		font-weight: 500;
+		font-size: 0.9rem;
 	}
 
 	.disabled-column {
@@ -727,17 +762,23 @@
 	.delete-btn {
 		background: none;
 		border: none;
-		color: var(--color-error);
+		color: var(--color-text-muted);
 		cursor: pointer;
-		padding: 0.25rem 0.5rem;
-		border-radius: 4px;
-		transition: background-color 0.2s;
+		padding: 0.5rem;
+		border-radius: 50%;
+		transition: all var(--transition-fast);
 		text-align: center;
+		width: 32px;
+		height: 32px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.delete-btn:hover {
 		background: var(--color-error);
 		color: white;
+		transform: rotate(15deg);
 	}
 
 	.text-success {
@@ -754,12 +795,19 @@
 	.error,
 	.empty {
 		text-align: center;
-		padding: 2rem;
+		padding: 3rem;
 		color: var(--color-text-secondary);
+		background: var(--glass-bg);
+		backdrop-filter: blur(var(--backdrop-blur));
+		border-radius: 12px;
+		border: 1px solid var(--glass-border);
+		margin: 2rem auto;
+		max-width: 600px;
 	}
 
 	.error {
 		color: var(--color-error);
+		border-color: var(--color-error);
 	}
 
 	.vendor-link {
@@ -776,19 +824,19 @@
 		table {
 			background: transparent;
 			box-shadow: none;
+			border: none;
 			border-radius: 0;
+			display: block;
 		}
 
 		thead {
 			display: none;
 		}
 
-		tbody,
-		tbody tr,
-		tbody td {
-			display: block;
-			width: 100%;
-			box-sizing: border-box;
+		tbody {
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
 		}
 
 		tbody tr {
@@ -797,7 +845,83 @@
 			grid-template-areas:
 				'cardinfo cardinfo cardinfo'
 				'set      language finish'
-				'vendor1  vendor2  vendor3'
+				'vendor1  vendor2  vendor3';
+			background: var(--glass-bg);
+			backdrop-filter: blur(var(--backdrop-blur));
+			border: 1px solid var(--glass-border);
+			border-radius: 12px;
+			padding: 1rem;
+			box-shadow: var(--shadow-sm);
+			margin-bottom: 0; /* Handled by gap */
+			position: relative;
+		}
+		
+		tbody tr:hover td {
+			background-color: transparent; /* Disable hover effect on mobile cards */
+		}
+
+		td {
+			border: none;
+			padding: 0.5rem;
+			text-align: center;
+		}
+
+		td[data-label='Card'] {
+			grid-area: cardinfo;
+			border-bottom: 1px solid var(--color-border);
+			margin-bottom: 0.5rem;
+			padding-bottom: 0.75rem;
+		}
+		
+		td[data-label='Card'] .card-info {
+			justify-content: center;
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+		
+		td[data-label='Card'] .card-info img {
+			margin-right: 0;
+			width: 60px;
+		}
+		
+		td[data-label='Card'] .card-info span {
+			font-weight: 600;
+			font-size: 1.1rem;
+		}
+
+		td[data-label='Set'] {
+			grid-area: set;
+		}
+
+		td[data-label='Language'] {
+			grid-area: language;
+		}
+
+		td[data-label='Finish'] {
+			grid-area: finish;
+		}
+
+		td[data-label='CardTrader'] {
+			grid-area: vendor1;
+		}
+
+		td[data-label='TCGPlayer'] {
+			grid-area: vendor2;
+		}
+		
+		/* Hide unused vendor columns on mobile if they are empty/disabled */
+		td[data-label='CardMarket'], td[data-label='EBay'] {
+			display: none;
+		}
+
+		td[data-label='Actions'] {
+			position: absolute;
+			top: 0.5rem;
+			right: 0.5rem;
+			padding: 0;
+		}
+	}
+</style>
 				'actions  actions  actions';
 			gap: 0.25rem 0.5rem;
 			margin-bottom: 0.75rem;
