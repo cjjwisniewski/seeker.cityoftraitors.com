@@ -772,7 +772,12 @@
 		justify-content: center;
 	}
 
-	@media (max-width: 768px) {
+		table {
+			background: transparent;
+			box-shadow: none;
+			border-radius: 0;
+		}
+
 		thead {
 			display: none;
 		}
@@ -793,11 +798,11 @@
 				'set      language finish'
 				'vendor1  vendor2  vendor3'
 				'actions  actions  actions';
-			gap: 0.5rem 1rem;
-			margin-bottom: 1rem;
+			gap: 0.25rem 0.5rem;
+			margin-bottom: 0.75rem;
 			border: 1px solid var(--color-border);
 			border-radius: 6px;
-			padding: 1rem;
+			padding: 0.75rem;
 			background-color: var(--color-bg-elevated);
 			box-shadow: var(--shadow-sm);
 		}
@@ -811,8 +816,8 @@
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
-			gap: 0.25rem;
-			min-height: 3.5em;
+			gap: 0.1rem;
+			min-height: 2.5em;
 		}
 
 		tbody td::before {
