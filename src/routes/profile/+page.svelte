@@ -273,7 +273,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		min-height: 200px; /* Ensure it takes some space */
+		min-height: 200px;
 		text-align: center;
 		padding: 2rem;
 	}
@@ -286,23 +286,24 @@
 		max-width: 800px;
 		margin: 2rem auto;
 		padding: 0 1rem;
+		animation: fadeIn 0.5s ease-out;
 	}
 
 	.profile-header {
 		display: flex;
 		align-items: center;
-		gap: 1rem; /* Reduced gap slightly */
+		gap: 1rem;
 		margin-bottom: 2rem;
-		flex-wrap: wrap; /* Allow wrapping on smaller screens */
+		flex-wrap: wrap;
 	}
 
 	.profile-avatar {
-		width: 80px; /* Reduced size */
+		width: 80px;
 		height: 80px;
 		border-radius: 50%;
 		border: 3px solid var(--color-bg-elevated);
 		box-shadow: var(--shadow-md);
-		object-fit: cover; /* Ensure image covers the area */
+		object-fit: cover;
 	}
 	.placeholder-avatar {
 		display: flex;
@@ -311,20 +312,21 @@
 		background-color: var(--color-bg-secondary);
 		color: var(--color-text-secondary);
 		font-size: 2rem;
-		width: 80px; /* Match size */
-		height: 80px; /* Match size */
+		width: 80px;
+		height: 80px;
 	}
 
 	.profile-title {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem; /* Reduced gap */
+		gap: 0.25rem;
 	}
 
-	h1 {
+	.profile-title h1 {
 		margin: 0;
 		color: var(--color-text-primary);
-		font-size: 1.75rem; /* Adjusted size */
+		font-size: 1.75rem;
+		font-weight: 700;
 	}
 
 	.user-id {
@@ -341,21 +343,25 @@
 
 	.profile-section {
 		background: var(--color-bg-elevated);
-		border-radius: 8px;
+		border-radius: 12px;
 		padding: 1.5rem;
 		box-shadow: var(--shadow-sm);
+		border: 1px solid var(--color-border);
 	}
 
-	h2 {
+	.profile-section h2 {
 		margin: 0 0 1.5rem 0;
 		color: var(--color-text-primary);
 		font-size: 1.25rem;
+		font-weight: 600;
+		border-bottom: 1px solid var(--color-border);
+		padding-bottom: 0.5rem;
 	}
 
 	.info-grid,
 	.status-grid {
 		display: grid;
-		gap: 1rem 1.5rem; /* Row gap, Column gap */
+		gap: 1rem 1.5rem;
 	}
 
 	.info-item,
@@ -367,15 +373,16 @@
 
 	.label {
 		color: var(--color-text-secondary);
-		font-size: 0.875rem; /* Slightly smaller */
-		text-transform: uppercase; /* Added for distinction */
-		font-weight: 500;
+		font-size: 0.875rem;
+		text-transform: uppercase;
+		font-weight: 600;
+		letter-spacing: 0.05em;
 	}
 
 	.value {
 		color: var(--color-text-primary);
 		font-weight: 500;
-		word-break: break-word; /* Prevent long values overflowing */
+		word-break: break-word;
 	}
 
 	.status {
@@ -385,16 +392,16 @@
 	}
 
 	.status .fa-solid {
-		width: 1em; /* Ensure icons align well */
+		width: 1em;
 		text-align: center;
 	}
 
 	.status.active {
-		color: #10b981; /* Use a success color variable if available */
+		color: var(--color-success);
 	}
 
 	.status.inactive {
-		color: #ef4444; /* Use an error color variable if available */
+		color: var(--color-error);
 	}
 
 	@media (min-width: 640px) {
@@ -405,12 +412,13 @@
 	}
 
 	.danger-zone {
-		border: 1px solid var(--color-error, #ef4444);
-		background: var(--color-bg-error-light, #fef2f2); /* Light background for contrast */
+		border: 1px solid var(--color-error);
+		background: var(--color-bg-elevated);
 	}
 
 	.danger-zone h2 {
-		color: var(--color-error, #b91c1c); /* Darker error color for heading */
+		color: var(--color-error);
+		border-bottom-color: var(--color-error);
 	}
 
 	.danger-content {
@@ -421,21 +429,21 @@
 
 	.danger-item {
 		display: flex;
-		flex-wrap: wrap; /* Allow wrapping */
+		flex-wrap: wrap;
 		justify-content: space-between;
 		align-items: center;
-		gap: 1rem; /* Gap between text and button */
+		gap: 1rem;
 	}
 
 	.danger-info {
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
-		flex-grow: 1; /* Allow text block to grow */
+		flex-grow: 1;
 	}
 
 	.danger-info .label {
-		color: var(--color-error, #b91c1c); /* Match heading color */
+		color: var(--color-error);
 		font-size: 1rem;
 		text-transform: none;
 	}
@@ -446,18 +454,22 @@
 	}
 
 	.delete-btn {
-		background-color: var(--color-error, #ef4444);
+		background-color: var(--color-error);
 		color: white;
 		border: none;
-		padding: 0.6rem 1.2rem; /* Slightly larger */
-		border-radius: 4px;
+		padding: 0.6rem 1.2rem;
+		border-radius: 8px;
 		cursor: pointer;
-		transition: background-color 0.2s ease-in-out;
-		white-space: nowrap; /* Prevent button text wrapping */
+		transition: all var(--transition-fast);
+		white-space: nowrap;
+		font-weight: 600;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.delete-btn:hover:not(:disabled) {
-		background-color: #b91c1c; /* Darker shade */
+		background-color: #b91c1c;
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-md);
 	}
 
 	.delete-btn:disabled {
@@ -467,40 +479,47 @@
 
 	.modal-overlay {
 		position: fixed;
-		z-index: 50; /* Ensure it's on top */
+		z-index: 2000; /* Increased z-index to be above nav */
 		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: rgba(0, 0, 0, 0.6); /* Darker overlay */
+		background: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(4px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		animation: fadeIn 0.2s ease-out;
 	}
 
 	.modal {
 		background: var(--color-bg-elevated);
 		padding: 2rem;
-		border-radius: 8px;
+		border-radius: 12px;
 		box-shadow: var(--shadow-lg);
-		max-width: 450px; /* Slightly wider */
+		max-width: 450px;
 		width: 90%;
+		border: 1px solid var(--color-border);
+		animation: scaleIn 0.2s ease-out;
 	}
 
 	.modal h3 {
 		margin: 0 0 1rem 0;
 		color: var(--color-text-primary);
+		font-size: 1.25rem;
+		font-weight: 600;
 	}
 	.modal p {
 		margin: 0.5rem 0;
 		color: var(--color-text-secondary);
+		line-height: 1.5;
 	}
 
 	.modal-buttons {
 		display: flex;
 		gap: 1rem;
-		margin-top: 1.5rem;
-		justify-content: flex-end; /* Align buttons to the right */
+		margin-top: 2rem;
+		justify-content: flex-end;
 	}
 
 	.cancel-btn {
@@ -508,12 +527,14 @@
 		color: var(--color-text-primary);
 		border: 1px solid var(--color-border);
 		padding: 0.5rem 1rem;
-		border-radius: 4px;
+		border-radius: 8px;
 		cursor: pointer;
-		transition: background-color 0.2s;
+		transition: all var(--transition-fast);
+		font-weight: 500;
 	}
 	.cancel-btn:hover {
-		background-color: var(--color-border);
+		background-color: var(--color-bg-hover);
+		border-color: var(--color-border-hover);
 	}
 
 	.confirm-btn {
@@ -521,21 +542,25 @@
 		color: white;
 		border: none;
 		padding: 0.5rem 1rem;
-		border-radius: 4px;
+		border-radius: 8px;
 		cursor: pointer;
-		transition: background-color 0.2s;
+		transition: all var(--transition-fast);
+		font-weight: 500;
+		box-shadow: var(--shadow-sm);
 	}
 	.confirm-btn:hover {
 		background-color: #b91c1c;
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-md);
 	}
 
 	.error-message {
-		color: var(--color-error, #b91c1c);
+		color: var(--color-error);
 		background-color: var(--color-bg-error-light, #fef2f2);
-		margin-top: 1rem; /* Ensure spacing if error appears */
+		margin-top: 1rem;
 		padding: 1rem;
-		border: 1px solid var(--color-error, #ef4444);
-		border-radius: 4px;
-		word-break: break-word; /* Break long error messages */
+		border: 1px solid var(--color-error);
+		border-radius: 8px;
+		word-break: break-word;
 	}
 </style>

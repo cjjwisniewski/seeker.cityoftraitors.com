@@ -71,31 +71,35 @@
 		justify-content: center;
 		min-height: calc(100vh - 4rem); /* Adjust for footer height */
 		padding: 2rem;
-		background: linear-gradient(to bottom, #f3f4f6 0%, #e5e7eb 100%);
+		background: linear-gradient(
+			to bottom,
+			var(--color-bg-secondary) 0%,
+			var(--color-bg-primary) 100%
+		);
+		animation: fadeIn 0.5s ease-out;
 	}
 
 	.login-box {
-		background-color: white;
+		background-color: var(--color-bg-elevated);
 		padding: 2rem;
-		border-radius: 8px;
-		box-shadow:
-			0 4px 6px -1px rgba(0, 0, 0, 0.1),
-			0 2px 4px -1px rgba(0, 0, 0, 0.06);
+		border-radius: 12px;
+		box-shadow: var(--shadow-lg);
 		text-align: center;
 		max-width: 400px;
 		width: 100%;
 		margin-bottom: 2rem; /* Add space above footer */
+		border: 1px solid var(--color-border);
 	}
 
-	h2 {
+	.login-box h2 {
 		margin: 0;
-		color: #1f2937;
+		color: var(--color-text-primary);
 		font-size: 1.875rem;
-		font-weight: 600;
+		font-weight: 700;
 	}
 
 	.subtitle {
-		color: #6b7280;
+		color: var(--color-text-secondary);
 		margin: 0.5rem 0 1.5rem 0;
 	}
 
@@ -105,20 +109,23 @@
 		justify-content: center;
 		gap: 0.75rem;
 		padding: 0.875rem 2rem;
-		background-color: #7289da;
+		background-color: #5865f2; /* Discord Blurple */
 		color: white;
 		text-decoration: none;
-		border-radius: 4px;
-		font-weight: 500;
-		transition: all 0.2s ease;
+		border-radius: 8px;
+		font-weight: 600;
+		transition: all var(--transition-fast);
 		width: 100%;
 		max-width: 250px;
+		border: none;
+		cursor: pointer;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.login-button:hover {
-		background-color: #5b6eae;
+		background-color: #4752c4;
 		transform: translateY(-1px);
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-md);
 	}
 
 	.login-button i {
@@ -126,11 +133,11 @@
 	}
 
 	.error {
-		background-color: #fee2e2;
-		border: 1px solid #ef4444;
-		color: #991b1b;
+		background-color: var(--color-bg-error-light, #fee2e2);
+		border: 1px solid var(--color-error, #ef4444);
+		color: var(--color-error, #991b1b);
 		padding: 1rem;
-		border-radius: 0.375rem;
+		border-radius: 8px;
 		margin: 1rem 0;
 		text-align: center;
 	}

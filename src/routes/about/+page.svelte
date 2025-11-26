@@ -9,7 +9,7 @@
 </script>
 
 {#if mounted}
-	<main class="container">
+	<div class="about-container">
 		<h1>About Seeker</h1>
 		<div class="about-content">
 			<p>
@@ -86,32 +86,66 @@
 				> on the City of Traitors Discord.
 			</p>
 		</div>
-	</main>
+	</div>
 {/if}
 
 <style>
-	main {
+	.about-container {
 		text-align: center;
 		padding: 2em;
 		max-width: 800px;
 		margin: 0 auto;
 		margin-top: 2em;
+		animation: fadeIn 0.5s ease-out;
 	}
 
 	.about-content {
 		text-align: left;
 		margin-top: 2em;
+		background: var(--color-bg-elevated);
+		padding: 2rem;
+		border-radius: 12px;
+		box-shadow: var(--shadow-sm);
+		border: 1px solid var(--color-border);
 	}
 
-	ul {
+	.about-content ul {
 		list-style-position: inside;
 		padding-left: 1em;
+		color: var(--color-text-secondary);
 	}
 
-	h2 {
-		margin-top: 1.5em;
+	.about-content li {
+		margin-bottom: 0.5rem;
 	}
+
+	.about-content h2 {
+		margin-top: 1.5em;
+		margin-bottom: 1rem;
+		color: var(--color-text-primary);
+		font-size: 1.5rem;
+		font-weight: 600;
+		border-bottom: 1px solid var(--color-border);
+		padding-bottom: 0.5rem;
+	}
+
+	h1 {
+		color: var(--color-text-primary);
+		margin-bottom: 1rem;
+	}
+
+	p {
+		color: var(--color-text-secondary);
+		line-height: 1.6;
+	}
+
 	a {
 		color: var(--color-primary);
+		text-decoration: none;
+		font-weight: 500;
+	}
+
+	a:hover {
+		text-decoration: underline;
 	}
 </style>
