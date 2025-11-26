@@ -164,9 +164,6 @@
 
 <style>
 	/* Define nav height as variable (adjust value as needed) */
-	:root {
-		--nav-height: 64px; /* Updated height */
-	}
 
 	nav {
 		position: fixed;
