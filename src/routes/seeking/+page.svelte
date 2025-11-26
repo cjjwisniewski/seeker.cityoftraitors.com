@@ -772,6 +772,7 @@
 		justify-content: center;
 	}
 
+	@media (max-width: 768px) {
 		table {
 			background: transparent;
 			box-shadow: none;
