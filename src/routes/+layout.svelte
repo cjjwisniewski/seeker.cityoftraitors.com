@@ -61,10 +61,6 @@
 	});
 </script>
 
-<link rel="stylesheet" href="/global.css" />
-<link rel="stylesheet" href="/styles/theme.css" />
-<link rel="stylesheet" href="/styles/components.css" />
-
 <div class="layout">
 	{#if $page.url.pathname !== '/login'}
 		<nav>
