@@ -600,7 +600,7 @@
 
 	table {
 		width: 100%;
-		border-collapse: separate; /* Changed to separate for border-radius */
+		border-collapse: separate;
 		border-spacing: 0;
 		background: var(--glass-bg);
 		backdrop-filter: blur(var(--backdrop-blur));
@@ -644,7 +644,6 @@
 		background-color: var(--color-bg-hover);
 	}
 
-	/* Hover effect for rows */
 	tbody tr:hover td {
 		background-color: var(--color-bg-hover);
 	}
@@ -718,7 +717,7 @@
 		margin-bottom: 0.25rem;
 		transition: transform var(--transition-fast);
 	}
-	
+
 	.vendor-link:hover .stock-indicator i {
 		transform: scale(1.1);
 	}
@@ -739,7 +738,7 @@
 		height: 1.5em;
 		width: 1.5em;
 		vertical-align: middle;
-		filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 	}
 
 	.language-column {
@@ -845,19 +844,21 @@
 			grid-template-areas:
 				'cardinfo cardinfo cardinfo'
 				'set      language finish'
-				'vendor1  vendor2  vendor3';
+				'vendor1  vendor2  vendor3'
+				'actions  actions  actions';
 			background: var(--glass-bg);
 			backdrop-filter: blur(var(--backdrop-blur));
 			border: 1px solid var(--glass-border);
 			border-radius: 12px;
 			padding: 1rem;
 			box-shadow: var(--shadow-sm);
-			margin-bottom: 0; /* Handled by gap */
+			margin-bottom: 0;
 			position: relative;
+			gap: 0.5rem;
 		}
-		
+
 		tbody tr:hover td {
-			background-color: transparent; /* Disable hover effect on mobile cards */
+			background-color: transparent;
 		}
 
 		td {
@@ -872,18 +873,18 @@
 			margin-bottom: 0.5rem;
 			padding-bottom: 0.75rem;
 		}
-		
+
 		td[data-label='Card'] .card-info {
 			justify-content: center;
 			flex-direction: column;
 			gap: 0.5rem;
 		}
-		
+
 		td[data-label='Card'] .card-info img {
 			margin-right: 0;
 			width: 60px;
 		}
-		
+
 		td[data-label='Card'] .card-info span {
 			font-weight: 600;
 			font-size: 1.1rem;
@@ -908,138 +909,20 @@
 		td[data-label='TCGPlayer'] {
 			grid-area: vendor2;
 		}
-		
-		/* Hide unused vendor columns on mobile if they are empty/disabled */
-		td[data-label='CardMarket'], td[data-label='EBay'] {
+
+		td[data-label='CardMarket'],
+		td[data-label='EBay'] {
 			display: none;
 		}
 
-		td[data-label='Actions'] {
-			position: absolute;
-			top: 0.5rem;
-			right: 0.5rem;
-			padding: 0;
-		}
-	}
-</style>
-				'actions  actions  actions';
-			gap: 0.25rem 0.5rem;
-			margin-bottom: 0.75rem;
-			border: 1px solid var(--color-border);
-			border-radius: 6px;
-			padding: 0.75rem;
-			background-color: var(--color-bg-elevated);
-			box-shadow: var(--shadow-sm);
-		}
-
-		tbody td {
-			grid-area: initial;
-			padding: 0;
-			border: none;
-			text-align: center;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			gap: 0.1rem;
-			min-height: 2.5em;
-		}
-
-		tbody td::before {
-			content: attr(data-label);
-			font-size: 0.75rem;
-			color: var(--color-text-muted);
-			font-weight: 600;
-			text-transform: uppercase;
-		}
-
-		td[data-label='Card'] {
-			grid-area: cardinfo;
-		}
-		td[data-label='Set'] {
-			grid-area: set;
-		}
-		td[data-label='Language'] {
-			grid-area: language;
-		}
-		td[data-label='Finish'] {
-			grid-area: finish;
-		}
-		td[data-label='CardTrader'] {
-			grid-area: vendor1;
-		}
-		td[data-label='TCGPlayer'] {
-			grid-area: vendor2;
-		}
-		td[data-label='EBay'] {
-			grid-area: vendor3;
-		}
 		td[data-label='Actions'] {
 			grid-area: actions;
-		}
-
-		td[data-label='CardMarket'] {
-			display: none;
-		}
-
-		td[data-label='Card'] {
-			border-bottom: 1px solid var(--color-border-light);
-			margin-bottom: 0.5rem;
-			padding-bottom: 0.5rem;
-			flex-direction: row;
+			position: static;
+			display: flex;
 			justify-content: center;
-		}
-		td[data-label='Card']::before {
-			display: none;
-		}
-		.card-info {
-			gap: 0.5rem;
-		}
-		.card-info img {
-			width: 35px;
-		}
-
-		td[data-label='Language'] .language-column {
-			text-transform: uppercase;
-		}
-
-		td[data-label='Set'] .set-icon {
-			height: 1.8em;
-			width: 1.8em;
-		}
-
-		.vendor-stock-cell .stock-indicator {
-		}
-		.vendor-stock-cell .stock-indicator i {
-			font-size: 1.1rem;
-		}
-		.vendor-stock-cell .price-text {
-			font-size: 0.75rem;
-		}
-
-		td[data-label='Actions'] {
-			justify-content: flex-end;
-			border-top: 1px solid var(--color-border-light);
-			margin-top: 0.5rem;
+			border-top: 1px solid var(--color-border);
 			padding-top: 0.5rem;
-		}
-		td[data-label='Actions']::before {
-			display: none;
-		}
-
-		.delete-btn {
-			padding: 0.25rem 0.5rem;
-		}
-
-		.disabled-column {
-			opacity: 0.6;
-		}
-		.display-none {
-			display: none !important;
-		}
-
-		.toggle-view-btn {
-			display: none;
+			margin-top: 0.5rem;
 		}
 	}
 </style>
