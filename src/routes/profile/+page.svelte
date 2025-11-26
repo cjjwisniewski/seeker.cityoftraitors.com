@@ -324,9 +324,11 @@
 
 	.profile-title h1 {
 		margin: 0;
-		color: var(--color-text-primary);
 		font-size: 1.75rem;
 		font-weight: 700;
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
 	}
 
 	.user-id {
