@@ -305,12 +305,10 @@
 		position: absolute;
 		top: calc(100% + 0.5rem);
 		right: 0;
-		background: var(--glass-bg);
-		backdrop-filter: blur(var(--backdrop-blur));
-		-webkit-backdrop-filter: blur(var(--backdrop-blur));
-		border: 1px solid var(--glass-border);
+		background: var(--color-bg-elevated); /* Use solid elevated background instead of glass */
+		border: 1px solid var(--color-border);
 		border-radius: 12px;
-		box-shadow: var(--glass-shadow);
+		box-shadow: var(--shadow-lg);
 		min-width: 180px;
 		padding: 0.5rem;
 		z-index: 1001;
@@ -432,5 +430,23 @@
 		height: 100%;
 		font-size: 1.2rem;
 		color: var(--color-text-secondary);
+	}
+
+	@media (max-width: 768px) {
+		.nav-right {
+			gap: 0.75rem;
+		}
+
+		.username {
+			display: none;
+		}
+
+		.search-link,
+		.about-link,
+		.seeking-link {
+			width: 32px;
+			height: 32px;
+			padding: 0.4rem;
+		}
 	}
 </style>

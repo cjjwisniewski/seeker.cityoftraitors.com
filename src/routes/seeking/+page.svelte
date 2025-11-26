@@ -928,5 +928,21 @@
 			padding-top: 0.5rem;
 			margin-top: 0.5rem;
 		}
+		td[data-label='CardTrader']::before,
+		td[data-label='TCGPlayer']::before {
+			content: attr(data-label);
+			font-weight: 600;
+			color: var(--color-text-secondary);
+			display: block;
+			margin-bottom: 0.25rem;
+		}
+
+		td[data-label='CardTrader'],
+		td[data-label='TCGPlayer'] {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
 	}
 </style>
