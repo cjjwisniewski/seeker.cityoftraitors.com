@@ -16,31 +16,15 @@
 				Seeker is a tool designed to help Magic: The Gathering collectors efficiently find the
 				specific cards they need to complete their collections. Whether you're searching for a rare
 				foil, a specific language version, or just that one missing card from a set, Seeker
-				streamlines the process by searching across multiple online marketplaces.
+				streamlines the process by automatically searching across multiple online marketplaces and
+				notifying you when the card you're Seeking is found.
 			</p>
 			<h2>Next Steps</h2>
 			<ul>
 				<li>
 					<strong>Marketplace Integrations:</strong>
 					<ul>
-						<li>Add TCGPlayer support.</li>
-						<li>
-							Investigate <code>infinite-api.tcgplayer.com</code> as a potential alternative API.
-						</li>
 						<li>Add eBay support.</li>
-					</ul>
-				</li>
-				<li>
-					<strong>TCGPlayer Processing Logic:</strong>
-					<ul>
-						<li>
-							Schedule a task to run every 6 hours that adds all cards from each user's list to a
-							message queue as individual items.
-						</li>
-						<li>Develop a process to handle each card individually from the queue.</li>
-						<li>
-							This needs to run locally on my server to bypass timeout issues with Azure Functions.
-						</li>
 					</ul>
 				</li>
 				<li>
@@ -48,20 +32,13 @@
 					pings.
 				</li>
 				<li>
-					<strong>Secure Functions:</strong> Protect seeker-functions with AAD authentication. This
-					may require application changes since the callback function currently uses the
-					<code>Authorization</code>
-					header instead of a custom one like <code>X-Client-Authorization</code>.
-				</li>
-				<li>
-					<strong>Authentication:</strong> All functions are set up to use APIM with working authentication.
-					Next, investigate adding a server/role check to the APIM auth process.
+					<strong>Security Improvements:</strong> Improve the overall security of the app.
 				</li>
 			</ul>
 
 			<h2>Future Features</h2>
 			<ul>
-				<li>???</li>
+				<li>Nothing major in my backlog currently, but I'm always open to suggestions.</li>
 			</ul>
 
 			<h2>Bugs</h2>
