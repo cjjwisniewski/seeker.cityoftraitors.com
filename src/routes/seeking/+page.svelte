@@ -598,6 +598,21 @@
 		box-shadow: var(--shadow-md);
 	}
 
+	@media (max-width: 768px) {
+		.page-title {
+			flex-direction: column;
+			gap: 1rem;
+			margin: 1.5rem auto;
+		}
+
+		.view-controls {
+			position: static;
+			transform: none;
+			width: 100%;
+			justify-content: center;
+		}
+	}
+
 	table {
 		width: 100%;
 		border-collapse: separate;
