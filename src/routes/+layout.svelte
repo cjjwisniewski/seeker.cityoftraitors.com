@@ -6,6 +6,7 @@
 	import { auth } from '$lib/stores/auth'; // Import the auth store
 	import { browser } from '$app/environment'; // Import browser check
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte'; // Import the theme toggle
+	import Logo from '$lib/components/Logo.svelte'; // Import Logo component
 
 	// Remove export let data; - Data now comes from the auth store
 
@@ -66,7 +67,8 @@
 		<nav>
 			<div class="nav-content">
 				<div class="nav-left">
-					<a href="/">
+					<a href="/" class="brand-link">
+						<Logo size="1.75rem" className="nav-logo" />
 						<h3>Seeker</h3>
 					</a>
 				</div>
@@ -190,12 +192,12 @@
 		align-items: center;
 	}
 
-	.nav-left {
-		/* flex: 1; Remove this line */
-	}
-
-	.nav-left a {
+	.brand-link {
 		text-decoration: none;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--color-primary); /* Ensure logo inherits this if currentcolor is used */
 	}
 
 	h3 {
@@ -204,6 +206,7 @@
 		font-weight: 700;
 		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
 		-webkit-background-clip: text;
+		background-clip: text;
 		-webkit-text-fill-color: transparent;
 		letter-spacing: -0.02em;
 	}

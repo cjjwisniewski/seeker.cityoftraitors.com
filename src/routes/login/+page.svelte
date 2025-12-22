@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth'; // Import the auth store
+	import Logo from '$lib/components/Logo.svelte'; // Import Logo component
 
 	// Remove redirectTo logic - it's handled by auth store now
 	let errorMessage = '';
@@ -47,6 +48,9 @@
 
 <div class="login-container">
 	<div class="login-box">
+		<div class="login-logo">
+			<Logo size="4rem" />
+		</div>
 		<h2>Welcome to Seeker</h2>
 		<p class="subtitle">Track down your missing pieces.</p>
 
@@ -91,12 +95,20 @@
 		border: 1px solid var(--color-border);
 	}
 
+	.login-logo {
+		margin-bottom: 1.5rem;
+		color: var(--color-primary);
+		display: flex;
+		justify-content: center;
+	}
+
 	.login-box h2 {
 		margin: 0;
 		font-size: 1.875rem;
 		font-weight: 700;
 		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
 		-webkit-background-clip: text;
+		background-clip: text;
 		-webkit-text-fill-color: transparent;
 		display: inline-block;
 	}
