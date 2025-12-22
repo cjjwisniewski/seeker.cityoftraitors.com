@@ -12,7 +12,7 @@
 	y="0px"
 	width={size}
 	height={size}
-	viewBox="0 0 1024 1024"
+	viewBox="0 0 400 400"
 	fill="currentColor"
 	class={className}
 	xml:space="preserve"
