@@ -14,6 +14,7 @@
 	height={size}
 	viewBox="290 235 440 440"
 	fill="currentColor"
+	shape-rendering="geometricPrecision"
 	class={className}
 	xml:space="preserve"
 >
