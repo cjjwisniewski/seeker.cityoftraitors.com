@@ -13,6 +13,8 @@
 	let unsubscribe; // Declare unsubscribe in the component scope
 	let isCondensed = false; // State for condensed view
 	let enlargedCardImage = null; // State for enlarged card image overlay
+	let showFilter = false; // State for filter search bar visibility
+	let searchQuery = ''; // State for search query input
 
 	// Sorting state
 	let sortKey = 'name'; // Default sort key
@@ -245,7 +247,18 @@
 	}
 
 	// Reactive sorted list
-	$: sortedCards = [...cards].sort((a, b) => {
+	$: filteredCards = cards.filter((card) => {
+		if (!searchQuery) return true;
+		const query = searchQuery.toLowerCase();
+		return (
+			card.name.toLowerCase().includes(query) ||
+			card.set_code.toLowerCase().includes(query) ||
+			card.language.toLowerCase().includes(query) ||
+			card.finish.toLowerCase().includes(query)
+		);
+	});
+
+	$: sortedCards = [...filteredCards].sort((a, b) => {
 		// Handle potentially missing values (treat null/undefined as lowest)
 		let aValue = a[sortKey];
 		let bValue = b[sortKey];
@@ -330,6 +343,27 @@
 <div class="page-title">
 	<h1>Seeking List</h1>
 	<div class="view-controls">
+		{#if showFilter}
+			<div class="search-container">
+				<input
+					type="text"
+					bind:value={searchQuery}
+					placeholder="Filter cards..."
+					class="search-input"
+				/>
+				<button class="clear-search-btn" on:click={() => (searchQuery = '')} title="Clear search">
+					<i class="fa-solid fa-times"></i>
+				</button>
+			</div>
+		{/if}
+		<button
+			class="header-btn"
+			on:click={() => (showFilter = !showFilter)}
+			title="Toggle Filter"
+			class:active={showFilter}
+		>
+			<i class="fa-solid fa-filter"></i>
+		</button>
 		<button class="header-btn" on:click={downloadCSV} title="Export CSV">
 			<i class="fa-solid fa-file-csv"></i>
 		</button>
@@ -1021,5 +1055,54 @@
 			transform: scale(1);
 			opacity: 1;
 		}
+	}
+
+	.search-container {
+		display: flex;
+		align-items: center;
+		background-color: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		padding: 0 0.5rem;
+		margin-right: 0.5rem;
+		height: 38px; /* Match button height if possible */
+		animation: fadeIn 0.3s ease;
+	}
+
+	.search-input {
+		background: transparent;
+		border: none;
+		color: var(--color-text-primary);
+		padding: 0.5rem;
+		font-size: 0.9rem;
+		outline: none;
+		width: 150px;
+		transition: width var(--transition-normal);
+	}
+
+	.search-input:focus {
+		width: 200px;
+	}
+
+	.clear-search-btn {
+		background: none;
+		border: none;
+		color: var(--color-text-muted);
+		cursor: pointer;
+		padding: 0.25rem;
+		font-size: 0.8rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.clear-search-btn:hover {
+		color: var(--color-text-primary);
+	}
+
+	.header-btn.active {
+		background-color: var(--color-primary);
+		color: var(--color-bg-primary);
+		border-color: var(--color-primary);
 	}
 </style>
