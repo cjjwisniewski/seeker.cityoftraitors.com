@@ -19,7 +19,7 @@
 				streamlines the process by automatically searching across multiple online marketplaces and
 				notifying you when the card you're Seeking is found.
 			</p>
-			<h2>Next Steps</h2>
+			<h2>Future Features:</h2>
 			<ul>
 				<li>
 					<strong>Marketplace Integrations:</strong>
@@ -34,19 +34,17 @@
 				<li>
 					<strong>Security Improvements:</strong> Improve the overall security of the app.
 				</li>
+				<li>
+					<strong>Persistent user settings:</strong> Theming, expanded/collapsed view, digest timing,
+					notification enablement, etc.
+				</li>
 			</ul>
-
-			<h2>Future Features</h2>
-			<ul>
-				<li>Nothing major in my backlog currently, but I'm always open to suggestions.</li>
-			</ul>
-
 			<h2>Bugs</h2>
 			<ul>
 				<li>
-					<strong>Data Source Limitation:</strong> The application's card knowledge is limited to what
-					is available in the Scryfall database. This is sometimes a limitation when Scryfall does not
-					have a given language listed for a card.
+					<strong>Scryfall limitations:</strong> Seeker is limited to what is available in the Scryfall
+					database. This is sometimes a limitation when Scryfall does not have a given language listed
+					for a card.
 				</li>
 				<li>
 					<strong>Authentication Status:</strong> There is no clear indicator to the user when their
