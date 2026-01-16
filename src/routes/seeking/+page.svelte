@@ -12,6 +12,7 @@
 	let loading = true; // Re-declare the loading variable
 	let unsubscribe; // Declare unsubscribe in the component scope
 	let isCondensed = false; // State for condensed view
+	let enlargedCardImage = null; // State for enlarged card image overlay
 
 	// Sorting state
 	let sortKey = 'name'; // Default sort key
@@ -338,6 +339,19 @@
 	</div>
 </div>
 
+{#if enlargedCardImage}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="overlay-backdrop" on:click={() => (enlargedCardImage = null)}>
+		<img
+			src={enlargedCardImage}
+			alt="Enlarged card"
+			class="enlarged-card"
+			on:click|stopPropagation
+		/>
+	</div>
+{/if}
+
 {#if authLoading || loading}
 	<div class="loading">Loading seeking list...</div>
 {:else if error}
@@ -423,7 +437,14 @@
 						<td data-label="Card">
 							<div class="card-info">
 								{#if !isCondensed}
-									<img src={card.image_uri} alt={card.name} class="card-thumbnail" />
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
+									<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+									<img
+										src={card.image_uri}
+										alt={card.name}
+										class="card-thumbnail"
+										on:click={() => (enlargedCardImage = card.image_uri)}
+									/>
 								{/if}
 								<span>{card.name}</span>
 							</div>
@@ -958,6 +979,47 @@
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
+		}
+	}
+
+	.overlay-backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.85);
+		z-index: 1000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: zoom-out;
+		animation: fadeIn 0.3s ease;
+	}
+
+	.enlarged-card {
+		max-width: 90vw;
+		max-height: 90vh;
+		object-fit: contain;
+		border-radius: 4.5% / 3.5%; /* Approximate MTG card corner radius ratio */
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+		z-index: 1001;
+		cursor: default;
+		animation: scaleIn 0.3s ease;
+	}
+
+	.card-thumbnail {
+		cursor: zoom-in;
+	}
+
+	@keyframes scaleIn {
+		from {
+			transform: scale(0.9);
+			opacity: 0;
+		}
+		to {
+			transform: scale(1);
+			opacity: 1;
 		}
 	}
 </style>
