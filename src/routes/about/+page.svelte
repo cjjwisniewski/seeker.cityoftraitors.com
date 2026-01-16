@@ -22,14 +22,8 @@
 			<h2>Future Features:</h2>
 			<ul>
 				<li>
-					<strong>Marketplace Integrations:</strong>
-					<ul>
-						<li>Add eBay support.</li>
-					</ul>
-				</li>
-				<li>
-					<strong>Notifications:</strong> Implement notifications via Discord PMs rather than channel
-					pings.
+					<strong>Marketplace Integrations:</strong> Add eBay support, eventually look at CardMarket
+					once their API is more widely available.
 				</li>
 				<li>
 					<strong>Security Improvements:</strong> Improve the overall security of the app.
