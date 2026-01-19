@@ -42,6 +42,18 @@
 	<div class="home-container">
 		<h1>Add to Seeking</h1>
 		<CardSearchForm on:search={handleSearch} />
+
+		{#if !hasSearched}
+			<div class="instructions">
+				<h2>How to use Seeker:</h2>
+				<ol>
+					<li>Search for the cards that you need to finish your collection.</li>
+					<li>Seeker automatically searches for the cards on your wishlist on a regular basis.</li>
+					<li>When Seeker finds your card, it DMs you on Discord to let you know!</li>
+				</ol>
+			</div>
+		{/if}
+
 		<CardList {cards} {hasSearched} on:addToSeeking={handleAddToSeeking} />
 	</div>
 {/if}
@@ -60,7 +72,40 @@
 		margin-bottom: 1.5rem;
 		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
 		-webkit-background-clip: text;
+		background-clip: text;
 		-webkit-text-fill-color: transparent;
 		display: inline-block;
+	}
+
+	.instructions {
+		margin-top: 3rem;
+		text-align: left;
+		background: var(--color-surface, rgba(255, 255, 255, 0.05));
+		padding: 2rem;
+		border-radius: 12px;
+		display: inline-block;
+		max-width: 600px;
+		border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+	}
+
+	.instructions h2 {
+		font-size: 1.5rem;
+		margin-bottom: 1rem;
+		color: var(--color-text-primary, inherit);
+	}
+
+	.instructions ol {
+		padding-left: 1.5rem;
+		margin: 0;
+	}
+
+	.instructions li {
+		margin-bottom: 0.75rem;
+		line-height: 1.5;
+		color: var(--color-text-secondary, inherit);
+	}
+
+	.instructions li:last-child {
+		margin-bottom: 0;
 	}
 </style>
