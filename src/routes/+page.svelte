@@ -47,9 +47,14 @@
 			<div class="instructions">
 				<h2>How to use Seeker:</h2>
 				<ol>
-					<li>Search for the cards that you need to finish your collection.</li>
-					<li>Seeker automatically searches for the cards on your wishlist on a regular basis.</li>
-					<li>When Seeker finds your card, it DMs you on Discord to let you know!</li>
+					<li>
+						Search for the cards that you need to finish your collection and add them to your
+						Seeking list.
+					</li>
+					<li>
+						Seeker will automatically search for the cards on your wishlist on a regular basis.
+					</li>
+					<li>When Seeker finds your card, it will DM you on Discord to let you know!</li>
 				</ol>
 			</div>
 		{/if}
