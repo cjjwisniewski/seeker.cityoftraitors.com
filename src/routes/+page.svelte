@@ -45,7 +45,7 @@
 
 		{#if !hasSearched}
 			<div class="instructions">
-				<h2>How to use Seeker:</h2>
+				<h2>How to use Seeker</h2>
 				<ol>
 					<li>
 						Search for the cards that you need to finish your collection and add them to your
@@ -97,6 +97,7 @@
 		font-size: 1.5rem;
 		margin-bottom: 1rem;
 		color: var(--color-text-primary, inherit);
+		text-align: center;
 	}
 
 	.instructions ol {
