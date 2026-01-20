@@ -8,6 +8,11 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte'; // Import the theme toggle
 	import Logo from '$lib/components/Logo.svelte'; // Import Logo component
 
+	// Import global styles
+	import '$lib/styles/theme.css';
+	import '$lib/styles/global.css';
+	import '$lib/styles/components.css';
+
 	// Remove export let data; - Data now comes from the auth store
 
 	let showDropdown = false;
