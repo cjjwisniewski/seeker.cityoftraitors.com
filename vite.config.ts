@@ -5,11 +5,15 @@ export default defineConfig({
     plugins: [sveltekit()],
     server: {
         port: 5173,
-		host: '0.0.0.0',
+        host: '0.0.0.0',
         strictPort: false,
     },
     preview: {
         port: 5173,
         strictPort: false,
+    },
+    esbuild: {
+        legalComments: 'none',
+        drop: ['console', 'debugger'],
     }
 });

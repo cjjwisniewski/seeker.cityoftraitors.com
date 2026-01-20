@@ -168,7 +168,7 @@
 						<span class="label">Server Member</span>
 						<span class="value status {guildMember ? 'active' : 'inactive'}">
 							<i class="fa-solid {guildMember ? 'fa-check' : 'fa-xmark'}"></i>
-							{guildMember ? 'Assumed Member (has roles)' : 'Not Detected'}
+							{guildMember ? 'Member' : 'Not Detected'}
 						</span>
 					</div>
 					<div class="status-item">
