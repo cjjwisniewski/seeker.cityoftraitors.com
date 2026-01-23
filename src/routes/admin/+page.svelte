@@ -194,6 +194,28 @@
 		}
 	}
 
+	// --- Statistics Logic ---
+	$: totalUsers = userTables.length;
+	$: totalItems = userTables.reduce((sum, table) => sum + (table.itemCount || 0), 0);
+
+	// Estimates: CT = 2s/item, TCG = 20s/item
+	$: estimatedCTTimeSeconds = totalItems * 2;
+	$: estimatedTCGTimeSeconds = totalItems * 20;
+
+	function formatDuration(seconds) {
+		if (!seconds) return '0s';
+		const h = Math.floor(seconds / 3600);
+		const m = Math.floor((seconds % 3600) / 60);
+		const s = Math.floor(seconds % 60);
+
+		const parts = [];
+		if (h > 0) parts.push(`${h}h`);
+		if (m > 0) parts.push(`${m}m`);
+		if (s > 0 || parts.length === 0) parts.push(`${s}s`);
+
+		return parts.join(' ');
+	}
+
 	// --- Lifecycle ---
 	// Load data only when authorization status is confirmed
 	$: if (!authLoading && isAuthorized) {
@@ -231,6 +253,35 @@
 		</div>
 
 		<div class="admin-content">
+			<!-- Statistics Section -->
+			<section class="admin-section">
+				<h2>Overview Statistics</h2>
+				{#if loading}
+					<p>Calculating stats...</p>
+				{:else}
+					<div class="stats-grid">
+						<div class="stat-card">
+							<h3>Total Users</h3>
+							<div class="stat-value">{totalUsers}</div>
+						</div>
+						<div class="stat-card">
+							<h3>Total Items</h3>
+							<div class="stat-value">{totalItems}</div>
+						</div>
+						<div class="stat-card">
+							<h3>Avg. CT Time</h3>
+							<div class="stat-value">{formatDuration(estimatedCTTimeSeconds)}</div>
+							<div class="stat-sub">@ 2s/item</div>
+						</div>
+						<div class="stat-card">
+							<h3>Avg. TCG Time</h3>
+							<div class="stat-value">{formatDuration(estimatedTCGTimeSeconds)}</div>
+							<div class="stat-sub">@ 20s/item</div>
+						</div>
+					</div>
+				{/if}
+			</section>
+
 			<section class="admin-section">
 				<h2>User Management</h2>
 				{#if loading}
@@ -598,6 +649,40 @@
 		text-transform: uppercase;
 		color: var(--color-text-secondary);
 		font-weight: 600;
+	}
+
+	.stats-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 1rem;
+	}
+
+	.stat-card {
+		padding: 1rem;
+		background: var(--color-bg-secondary);
+		border-radius: 8px;
+		border: 1px solid var(--color-border);
+		text-align: center;
+	}
+
+	.stat-card h3 {
+		margin: 0 0 0.5rem 0;
+		font-size: 0.875rem;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		font-weight: 600;
+	}
+
+	.stat-value {
+		font-size: 1.5rem;
+		font-weight: 700;
+		color: var(--color-primary);
+	}
+
+	.stat-sub {
+		margin-top: 0.25rem;
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
 	}
 
 	.status-badge {
