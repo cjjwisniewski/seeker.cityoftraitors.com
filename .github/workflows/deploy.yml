@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch: 
   
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -52,38 +56,34 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Clean existing blobs
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
+          azcliversion: latest
           inlineScript: |
             ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}"
-            ACCOUNT_KEY=$(az storage account keys list --account-name "$ACCOUNT_NAME" --query '[0].value' -o tsv)
-            
             echo "Cleaning existing files in $web container"
             az storage blob delete-batch \
               --account-name "$ACCOUNT_NAME" \
-              --account-key "$ACCOUNT_KEY" \
-              --source '$web'
-  
+              --source '$web' \
+              --auth-mode login
+
       - name: Upload to blob storage
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
+          azcliversion: latest
           inlineScript: |
-            # Get storage account name
             ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}"
-            
-            # Get the storage account key
-            ACCOUNT_KEY=$(az storage account keys list --account-name "$ACCOUNT_NAME" --query '[0].value' -o tsv)
-            
-            # Use az storage blob upload-batch with the storage key
             az storage blob upload-batch \
               --account-name "$ACCOUNT_NAME" \
-              --account-key "$ACCOUNT_KEY" \
               --destination '$web' \
               --source ./build \
-              --overwrite true
+              --auth-mode login \
+              --overwrite
 
 
       - name: Azure Logout
