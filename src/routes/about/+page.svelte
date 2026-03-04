@@ -26,11 +26,7 @@
 					once their API is more widely available.
 				</li>
 				<li>
-					<strong>Security Improvements:</strong> Improve the overall security of the app.
-				</li>
-				<li>
-					<strong>Persistent user settings:</strong> Theming, expanded/collapsed view, digest timing,
-					notification enablement, etc.
+					<strong>Persistent user settings:</strong> Digest timing, notification enablement, etc.
 				</li>
 			</ul>
 			<h2>Bugs</h2>
@@ -39,10 +35,6 @@
 					<strong>Scryfall limitations:</strong> Seeker is limited to what is available in the Scryfall
 					database. This is sometimes a limitation when Scryfall does not have a given language listed
 					for a card.
-				</li>
-				<li>
-					<strong>Authentication Status:</strong> There is no clear indicator to the user when their
-					session has expired; features simply stop working.
 				</li>
 			</ul>
 
