@@ -23,9 +23,8 @@
 	$: token = $auth.token; // Directly access store value
 	$: isLoading = $auth.isLoading; // Directly access store value
 
-	// Format the user ID with spaces for readability
-	// Use $auth.user directly and add optional chaining for safety during initial render cycles
-	$: formattedUserId = $auth.user?.id?.match(/.{1,4}/g)?.join(' ') || $auth.user?.id || 'N/A';
+	// Split the user ID into chunks for readability without adding real spaces (facilitates copying)
+	$: userIdChunks = $auth.user?.id?.match(/.{1,4}/g) || [];
 
 	// Derive status from user roles (assuming roles are fetched by auth store)
 	// Use $auth.user directly here too for consistency
@@ -199,7 +198,14 @@
 					</div>
 					<div class="info-item">
 						<span class="label">User ID</span>
-						<span class="value user-id">{formattedUserId}</span>
+						<span class="value user-id">
+							{#each userIdChunks as chunk}
+								<span>{chunk}</span>
+							{/each}
+							{#if userIdChunks.length === 0}
+								{$auth.user?.id || 'N/A'}
+							{/if}
+						</span>
 					</div>
 					{#if user.global_name}
 						<div class="info-item">
@@ -433,6 +439,12 @@
 		font-family: monospace;
 		font-size: 0.9rem;
 		font-weight: normal;
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.user-id span:not(:last-child) {
+		margin-right: 0.5rem;
 	}
 
 	.profile-content {
