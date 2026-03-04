@@ -190,12 +190,19 @@
 
 		<div class="profile-content">
 			<section class="profile-section">
-				<h2>Profile Information</h2>
+				<h2>Account & Status</h2>
 				<div class="info-grid">
+					<!-- Profile Information -->
 					<div class="info-item">
 						<span class="label">Username</span>
 						<span class="value">{user.username || 'N/A'}</span>
 					</div>
+					{#if user.global_name}
+						<div class="info-item">
+							<span class="label">Display Name</span>
+							<span class="value">{user.global_name}</span>
+						</div>
+					{/if}
 					<div class="info-item">
 						<span class="label">User ID</span>
 						<span class="value user-id">
@@ -207,34 +214,23 @@
 							{/if}
 						</span>
 					</div>
-					{#if user.global_name}
-						<div class="info-item">
-							<span class="label">Display Name</span>
-							<span class="value">{user.global_name}</span>
-						</div>
-					{/if}
-				</div>
-			</section>
 
-			<section class="profile-section">
-				<h2>City of Traitors Status</h2>
-				<div class="status-grid">
-					<!-- Display derived status -->
-					<div class="status-item">
+					<!-- Status Information -->
+					<div class="info-item">
 						<span class="label">Server Member</span>
 						<span class="value status {guildMember ? 'active' : 'inactive'}">
 							<i class="fa-solid {guildMember ? 'fa-check' : 'fa-xmark'}"></i>
 							{guildMember ? 'Member' : 'Not Detected'}
 						</span>
 					</div>
-					<div class="status-item">
+					<div class="info-item">
 						<span class="label">Seeker Role</span>
 						<span class="value status {hasRole ? 'active' : 'inactive'}">
 							<i class="fa-solid {hasRole ? 'fa-check' : 'fa-xmark'}"></i>
 							{hasRole ? 'Has Role' : 'No Role'}
 						</span>
 					</div>
-					<div class="status-item">
+					<div class="info-item">
 						<span class="label">Admin Status</span>
 						<span class="value status {isAdmin ? 'active' : 'inactive'}">
 							<i class="fa-solid {isAdmin ? 'fa-shield' : 'fa-user'}"></i>
