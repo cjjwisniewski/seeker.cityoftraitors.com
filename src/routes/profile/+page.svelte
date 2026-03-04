@@ -1,7 +1,10 @@
 <script>
 	import { auth } from '$lib/stores/auth'; // Import the auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
-	import { PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL } from '$env/static/public';
+	import {
+		PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL,
+		PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL
+	} from '$env/static/public';
 	import { browser } from '$app/environment'; // To ensure code runs client-side
 
 	// Define Role IDs (ensure these match your Discord setup)
@@ -11,8 +14,8 @@
 	// State variables
 	let showConfirmDialog = false;
 	let deleteError = null;
-    let settingsError = null;
-    let isUpdatingSetting = false;
+	let settingsError = null;
+	let isUpdatingSetting = false;
 
 	// Reactive declarations based on the auth store
 	// These will run client-side due to ssr=false in layout
@@ -31,51 +34,51 @@
 	$: guildMember = !!$auth.user?.roles; // Assumes roles array exists only if they are a member
 	$: hasRole = $auth.user?.roles?.includes(REQUIRED_ROLE_ID) ?? false;
 	$: isAdmin = $auth.user?.roles?.includes(ADMIN_ROLE_ID) ?? false;
-    
-    // Default settings derived from user payload
-    $: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
-    $: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
-    
-    // --- Update Setting Logic ---
-    async function toggleSetting(settingName, currentValue) {
-        if (!token) return;
-        
-        isUpdatingSetting = true;
-        settingsError = null;
-        const newValue = !currentValue;
-        
-        // Optimistic UI update
-        if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
-        if (settingName === 'stockDigestEnabled') stockDigestEnabled = newValue;
-        
-        try {
-            const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    settingName: settingName,
-                    settingValue: newValue
-                })
-            });
-            
-            if (!response || !response.ok) {
-                // Revert UI on failure
-                if (settingName === 'stockAlertEnabled') stockAlertEnabled = currentValue;
-                if (settingName === 'stockDigestEnabled') stockDigestEnabled = currentValue;
-                throw new Error('Failed to update setting');
-            }
-            
-            // Sync store with true value
-            if ($auth.user && $auth.user.settings) {
-                $auth.user.settings[settingName] = newValue;
-            }
-        } catch (error) {
-            console.error('Error updating setting:', error);
-            settingsError = 'Error updating setting. Please try again.';
-        } finally {
-            isUpdatingSetting = false;
-        }
-    }
+
+	// Default settings derived from user payload
+	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
+	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
+
+	// --- Update Setting Logic ---
+	async function toggleSetting(settingName, currentValue) {
+		if (!token) return;
+
+		isUpdatingSetting = true;
+		settingsError = null;
+		const newValue = !currentValue;
+
+		// Optimistic UI update
+		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
+		if (settingName === 'stockDigestEnabled') stockDigestEnabled = newValue;
+
+		try {
+			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					settingName: settingName,
+					settingValue: newValue
+				})
+			});
+
+			if (!response || !response.ok) {
+				// Revert UI on failure
+				if (settingName === 'stockAlertEnabled') stockAlertEnabled = currentValue;
+				if (settingName === 'stockDigestEnabled') stockDigestEnabled = currentValue;
+				throw new Error('Failed to update setting');
+			}
+
+			// Sync store with true value
+			if ($auth.user && $auth.user.settings) {
+				$auth.user.settings[settingName] = newValue;
+			}
+		} catch (error) {
+			console.error('Error updating setting:', error);
+			settingsError = 'Error updating setting. Please try again.';
+		} finally {
+			isUpdatingSetting = false;
+		}
+	}
 
 	// --- Delete Account Logic ---
 	async function handleDeleteAccount() {
@@ -238,37 +241,42 @@
 			<section class="profile-section">
 				<h2>Notification Settings</h2>
 				<div class="settings-content">
-                    {#if settingsError}
-                        <div class="error-message mini" role="alert">{settingsError}</div>
-                    {/if}
+					{#if settingsError}
+						<div class="error-message mini" role="alert">{settingsError}</div>
+					{/if}
 					<div class="setting-item">
 						<div class="setting-info">
 							<span class="label">Stock Alerts</span>
-							<span class="description">Receive immediate Direct Messages when a card on your list is found in stock at a new low price.</span>
+							<span class="description"
+								>Receive immediate Direct Messages when a card on your list is found in stock at a
+								new low price.</span
+							>
 						</div>
 						<label class="toggle-switch">
-							<input 
-                                type="checkbox" 
-                                checked={stockAlertEnabled}
-                                on:change={() => toggleSetting('stockAlertEnabled', stockAlertEnabled)}
-                                disabled={isUpdatingSetting}
-                            >
+							<input
+								type="checkbox"
+								checked={stockAlertEnabled}
+								on:change={() => toggleSetting('stockAlertEnabled', stockAlertEnabled)}
+								disabled={isUpdatingSetting}
+							/>
 							<span class="slider round"></span>
 						</label>
 					</div>
-                    
+
 					<div class="setting-item">
 						<div class="setting-info">
 							<span class="label">Stock Digest</span>
-							<span class="description">Receive a periodic summary of all cards on your list that currently have stock.</span>
+							<span class="description"
+								>Receive a periodic summary of all cards on your list that currently have stock.</span
+							>
 						</div>
 						<label class="toggle-switch">
-							<input 
-                                type="checkbox" 
-                                checked={stockDigestEnabled}
-                                on:change={() => toggleSetting('stockDigestEnabled', stockDigestEnabled)}
-                                disabled={isUpdatingSetting}
-                            >
+							<input
+								type="checkbox"
+								checked={stockDigestEnabled}
+								on:change={() => toggleSetting('stockDigestEnabled', stockDigestEnabled)}
+								disabled={isUpdatingSetting}
+							/>
 							<span class="slider round"></span>
 						</label>
 					</div>
@@ -314,6 +322,7 @@
 		<!-- Removed role, tabindex, aria-label, aria-modal from overlay -->
 		<!-- Keyboard interaction (Escape) is handled by svelte:window -->
 		<!-- Added role, tabindex, aria-label, and keydown handler to overlay for accessibility -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div
 			class="modal-overlay"
 			on:click={() => (showConfirmDialog = false)}
@@ -325,6 +334,7 @@
 			aria-label="Close dialog"
 		>
 			<!-- Added role="dialog", aria-modal, aria-labelledby to the modal content container -->
+			<!-- svelte-ignore a11y-no-static-element-interactions -->
 			<div
 				class="modal"
 				on:click|stopPropagation
@@ -566,112 +576,112 @@
 		cursor: not-allowed;
 	}
 
-    /* Settings Styles */
-    .settings-content {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
+	/* Settings Styles */
+	.settings-content {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
 
-    .setting-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--color-border);
-    }
-    
-    .setting-item:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-    }
+	.setting-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid var(--color-border);
+	}
 
-    .setting-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        flex-grow: 1;
-    }
+	.setting-item:last-child {
+		border-bottom: none;
+		padding-bottom: 0;
+	}
 
-    .setting-info .label {
-        color: var(--color-text-primary);
-        font-size: 1rem;
-        font-weight: 600;
-        text-transform: none;
-        letter-spacing: normal;
-    }
+	.setting-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		flex-grow: 1;
+	}
 
-    .setting-info .description {
-        color: var(--color-text-secondary);
-        font-size: 0.9rem;
-        line-height: 1.4;
-    }
+	.setting-info .label {
+		color: var(--color-text-primary);
+		font-size: 1rem;
+		font-weight: 600;
+		text-transform: none;
+		letter-spacing: normal;
+	}
 
-    /* Toggle Switch Styles */
-    .toggle-switch {
-        position: relative;
-        display: inline-block;
-        width: 50px;
-        height: 28px;
-        flex-shrink: 0;
-    }
+	.setting-info .description {
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+		line-height: 1.4;
+	}
 
-    .toggle-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
+	/* Toggle Switch Styles */
+	.toggle-switch {
+		position: relative;
+		display: inline-block;
+		width: 50px;
+		height: 28px;
+		flex-shrink: 0;
+	}
 
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: var(--color-bg-secondary);
-        transition: .3s;
-        border: 1px solid var(--color-border);
-    }
+	.toggle-switch input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
 
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 20px;
-        width: 20px;
-        left: 3px;
-        bottom: 3px;
-        background-color: #fff;
-        transition: .3s;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
+	.slider {
+		position: absolute;
+		cursor: pointer;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: var(--color-bg-secondary);
+		transition: 0.3s;
+		border: 1px solid var(--color-border);
+	}
 
-    input:checked + .slider {
-        background-color: var(--color-success);
-        border-color: var(--color-success);
-    }
-    
-    input:disabled + .slider {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
+	.slider:before {
+		position: absolute;
+		content: '';
+		height: 20px;
+		width: 20px;
+		left: 3px;
+		bottom: 3px;
+		background-color: #fff;
+		transition: 0.3s;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
 
-    input:focus + .slider {
-        box-shadow: 0 0 1px var(--color-success);
-    }
+	input:checked + .slider {
+		background-color: var(--color-success);
+		border-color: var(--color-success);
+	}
 
-    input:checked + .slider:before {
-        transform: translateX(22px);
-    }
+	input:disabled + .slider {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
 
-    .slider.round {
-        border-radius: 34px;
-    }
+	input:focus + .slider {
+		box-shadow: 0 0 1px var(--color-success);
+	}
 
-    .slider.round:before {
-        border-radius: 50%;
-    }
+	input:checked + .slider:before {
+		transform: translateX(22px);
+	}
+
+	.slider.round {
+		border-radius: 34px;
+	}
+
+	.slider.round:before {
+		border-radius: 50%;
+	}
 
 	.modal-overlay {
 		position: fixed;
@@ -759,11 +769,11 @@
 		border-radius: 8px;
 		word-break: break-word;
 	}
-    
-    .error-message.mini {
-        padding: 0.5rem 1rem;
-        margin-top: 0;
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-    }
+
+	.error-message.mini {
+		padding: 0.5rem 1rem;
+		margin-top: 0;
+		margin-bottom: 0.5rem;
+		font-size: 0.9rem;
+	}
 </style>
