@@ -21,7 +21,6 @@ interface AuthState {
 // Use environment variables for Azure Function URLs
 const LOGIN_URL = import.meta.env.VITE_LOGIN_URL;
 const LOGOUT_URL = import.meta.env.VITE_LOGOUT_URL;
-const USER_INFO_URL = import.meta.env.VITE_USER_INFO_URL;
 
 
 const createAuthStore = () => {
@@ -37,41 +36,31 @@ const createAuthStore = () => {
 
     let isInitializing = false; // Prevent concurrent initializations
 
-    // Function to fetch user info using the token
-    async function fetchUserInfo(token: string) {
-        if (!token) {
-            console.error('AuthStore: fetchUserInfo called with no token.');
-            return null;
-        }
-        if (!USER_INFO_URL) {
-            console.error('AuthStore: fetchUserInfo cannot proceed, USER_INFO_URL is not defined.');
-            return null;
-        }
+    // Function to parse user info from JWT payload
+    function parseJwt(token: string): User | null {
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(c =>
+                '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+            ).join(''));
 
-            const response = await fetch(USER_INFO_URL, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
+            const payload = JSON.parse(jsonPayload);
 
-            if (response.ok) {
-                const userData: User = await response.json();
-                return userData;
-            } else {
-                console.error('Failed to fetch user info:', response.status);
-                // Clear token if invalid (Unauthorized or Forbidden)
-                if (response.status === 401 || response.status === 403) {
-                    clearAuthData();
-                }
+            // Check expiration
+            if (payload.exp && Date.now() >= payload.exp * 1000) {
+                console.warn('JWT has expired.');
                 return null;
             }
-        } catch (error) {
-            console.error('Error fetching user info:', error);
+
+            return {
+                id: payload.id,
+                username: payload.username,
+                avatar: payload.avatar,
+                roles: payload.roles
+            };
+        } catch (e) {
+            console.error('Invalid token format:', e);
             return null;
         }
     }
@@ -95,7 +84,7 @@ const createAuthStore = () => {
     async function initialize() {
         if (browser) {
             const currentState = get(auth);
-            // Skip if already initializing or if already authenticated with user data loaded
+            // Skip if already initializing
             if (isInitializing || (currentState.isAuthenticated && currentState.user)) {
                 // Ensure loading is false if we skip while it was true
                 if (currentState.isLoading) {
@@ -108,15 +97,15 @@ const createAuthStore = () => {
             update(state => ({ ...state, isLoading: true }));
 
             // Check if essential URLs are configured
-            if (!LOGIN_URL || !USER_INFO_URL) {
-                console.error('AuthStore FATAL: VITE_LOGIN_URL and/or VITE_USER_INFO_URL environment variables are not set. Authentication cannot proceed.');
+            if (!LOGIN_URL) {
+                console.error('AuthStore FATAL: VITE_LOGIN_URL environment variable is not set. Authentication cannot proceed.');
                 update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
                 return; // Stop initialization
             }
 
             const token = localStorage.getItem('authToken');
             if (token) {
-                const user = await fetchUserInfo(token);
+                const user = parseJwt(token);
                 if (user) {
                     setAuthData(token, user);
                 } else {
@@ -161,17 +150,18 @@ const createAuthStore = () => {
         handleCallback: async (token: string) => {
             if (!token) {
                 console.error('AuthStore: handleCallback called with no token.');
-                return false;
+                return { success: false, error: 'no_token' };
             }
-            const user = await fetchUserInfo(token);
+
+            const user = parseJwt(token);
             if (user) {
                 setAuthData(token, user);
+                // The URL hash is cleared gracefully by SvelteKit layout logic (or parent)
                 return { success: true };
             } else {
-                // Failure likely means token was invalid or user info fetch failed (e.g., 403 due to missing role)
-                console.error('AuthStore: Failed to fetch user info after callback.');
+                console.error('AuthStore: Failed to decode user info from JWT after callback.');
                 clearAuthData();
-                return { success: false, error: 'callback_failed' };
+                return { success: false, error: 'invalid_token' };
             }
         }
     };

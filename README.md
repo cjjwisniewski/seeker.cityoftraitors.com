@@ -19,7 +19,7 @@ A web application built with SvelteKit for searching and managing card informati
 *   **Language:** TypeScript, JavaScript
 *   **Styling:** CSS (potentially with Prettier for formatting)
 *   **API Interaction:** Fetch API, Scryfall API, Azure Functions
-*   **Authentication:** Discord OAuth 2.0
+*   **Authentication:** Custom JWT via Discord OAuth 2.0
 *   **Linting:** ESLint
 *   **Package Manager:** npm
 *   **Deployment:** Azure Blob Storage & Azure CDN via GitHub Actions
@@ -65,7 +65,6 @@ VITE_PUBLIC_AUTH_ENDPOINT=your_azure_function_url # Likely handles the start of 
 VITE_PUBLIC_LOGIN_ENDPOINT=your_azure_function_url # Might be the same as AUTH_ENDPOINT
 VITE_PUBLIC_LOGOUT_ENDPOINT=your_azure_function_url # Endpoint to call for logout
 VITE_LOGIN_URL=your_login_initiation_url # URL the user is redirected to for login (likely Discord)
-VITE_USER_INFO_URL=your_user_info_api_endpoint # Endpoint to fetch user details after login
 
 # Add any other VITE_ prefixed variables needed by your specific setup
 ```

@@ -12,6 +12,13 @@
 	let loading = true; // Re-declare the loading variable
 	let unsubscribe; // Declare unsubscribe in the component scope
 	let isCondensed = false; // State for condensed view
+
+	function toggleCondensed() {
+		isCondensed = !isCondensed;
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem('seeking-list-condensed', isCondensed.toString());
+		}
+	}
 	let enlargedCardImage = null; // State for enlarged card image overlay
 	let showFilter = false; // State for filter search bar visibility
 	let searchQuery = ''; // State for search query input
@@ -26,7 +33,12 @@
 
 	// Fetch data when component mounts and user is authenticated
 	onMount(() => {
-		// REMOVED: let unsubscribe; - Moved to component scope
+		// Load condensed state from localStorage
+		const storedCondensed = localStorage.getItem('seeking-list-condensed');
+		if (storedCondensed !== null) {
+			isCondensed = storedCondensed === 'true';
+		}
+
 		// Wait for auth store to initialize if needed
 		unsubscribe = auth.subscribe((state) => {
 			// Assign to the component-scoped variable
@@ -367,7 +379,7 @@
 		<button class="header-btn" on:click={downloadCSV} title="Export CSV">
 			<i class="fa-solid fa-file-csv"></i>
 		</button>
-		<button on:click={() => (isCondensed = !isCondensed)} class="header-btn toggle-view-btn">
+		<button on:click={toggleCondensed} class="header-btn toggle-view-btn">
 			<i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
 		</button>
 	</div>
