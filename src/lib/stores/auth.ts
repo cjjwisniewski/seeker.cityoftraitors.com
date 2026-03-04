@@ -21,6 +21,7 @@ interface AuthState {
 // Use environment variables for Azure Function URLs
 const LOGIN_URL = import.meta.env.VITE_LOGIN_URL;
 const LOGOUT_URL = import.meta.env.VITE_LOGOUT_URL;
+const USER_INFO_URL = import.meta.env.VITE_USER_INFO_URL;
 
 
 const createAuthStore = () => {
@@ -65,6 +66,34 @@ const createAuthStore = () => {
         }
     }
 
+    // Function to fetch the full user profile including settings from the API
+    async function fetchUserInfo(token: string): Promise<User | null> {
+        if (!USER_INFO_URL) {
+            console.warn('AuthStore: VITE_USER_INFO_URL not set, falling back to JWT payload.');
+            return parseJwt(token);
+        }
+
+        try {
+            const response = await fetch(USER_INFO_URL, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data;
+            } else if (response.status === 401) {
+                console.warn('AuthStore: Token invalid according to API.');
+                return null;
+            } else {
+                console.error(`AuthStore: API error fetching user info (Status: ${response.status}). Falling back to JWT.`);
+                return parseJwt(token);
+            }
+        } catch (error) {
+            console.error('AuthStore: Network error fetching user info. Falling back to JWT:', error);
+            return parseJwt(token);
+        }
+    }
+
     // Function to clear auth state and localStorage
     function clearAuthData() {
         if (browser) {
@@ -105,7 +134,7 @@ const createAuthStore = () => {
 
             const token = localStorage.getItem('authToken');
             if (token) {
-                const user = parseJwt(token);
+                const user = await fetchUserInfo(token);
                 if (user) {
                     setAuthData(token, user);
                 } else {
@@ -153,13 +182,13 @@ const createAuthStore = () => {
                 return { success: false, error: 'no_token' };
             }
 
-            const user = parseJwt(token);
+            const user = await fetchUserInfo(token);
             if (user) {
                 setAuthData(token, user);
                 // The URL hash is cleared gracefully by SvelteKit layout logic (or parent)
                 return { success: true };
             } else {
-                console.error('AuthStore: Failed to decode user info from JWT after callback.');
+                console.error('AuthStore: Failed to fetch user info after callback.');
                 clearAuthData();
                 return { success: false, error: 'invalid_token' };
             }
