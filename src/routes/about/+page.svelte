@@ -19,16 +19,10 @@
 				streamlines the process by automatically searching across multiple online marketplaces and
 				notifying you when the card you're Seeking is found.
 			</p>
-			<h2>Future Features:</h2>
-			<ul>
-				<li>
-					<strong>Marketplace Integrations:</strong> Add eBay support, eventually look at CardMarket
-					once their API is more widely available.
-				</li>
-				<li>
-					<strong>Persistent user settings:</strong> Digest timing, notification enablement, etc.
-				</li>
-			</ul>
+			<li>
+				<strong>Marketplace Integrations:</strong> Add eBay support, eventually look at CardMarket once
+				their API is more widely available.
+			</li>
 			<h2>Bugs</h2>
 			<ul>
 				<li>
