@@ -1,4 +1,4 @@
-name: Deploy to Azure Blob Storage and Purge CDN
+name: Deploy to Azure Blob Storage
 
 on:
   push:
@@ -85,15 +85,6 @@ jobs:
               --source ./build \
               --overwrite true
 
-      - name: Purge CDN endpoint
-        uses: Azure/CLI@v1
-        with:
-          inlineScript: |
-            CDN_PROFILE="${{ vars.CDN_PROFILE_NAME || 'seeker-cityoftraitors-com-cdn-1' }}"
-            CDN_ENDPOINT="${{ vars.CDN_ENDPOINT_NAME || 'seeker-cityoftraitors-com-cdn-1' }}"
-            RESOURCE_GROUP="${{ vars.RESOURCE_GROUP_NAME || 'seeker-rg' }}"
-            echo "Purging CDN Endpoint: $CDN_ENDPOINT in profile $CDN_PROFILE"
-            az cdn endpoint purge --content-paths "/*" --profile-name "$CDN_PROFILE" --name "$CDN_ENDPOINT" --resource-group "$RESOURCE_GROUP"
 
       - name: Azure Logout
         if: always()
