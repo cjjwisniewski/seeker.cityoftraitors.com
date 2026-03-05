@@ -107,9 +107,9 @@
 					const prints = printsData.data.map((print: any) => ({
 						set: print.set_name,
 						set_code: print.set,
+						lang: print.lang,
 						collector_number: print.collector_number,
 						image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
-						languages: null,
 						language_uris: {},
 						flavor_text: print.flavor_text,
 						oracle_text: print.oracle_text,
@@ -118,11 +118,21 @@
 						tcgplayer_id: print.tcgplayer_id || null,
 						cardmarket_id: print.cardmarket_id || null
 					}));
+
+					// Collect unique languages from all prints
+					const availableLanguages = [...new Set(prints.map((p: any) => p.lang).filter(Boolean))];
+					if (!availableLanguages.includes('en')) availableLanguages.push('en');
+
+					const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
+					const selectedLanguage = availableLanguages.includes(preferredLanguage)
+						? preferredLanguage
+						: 'en';
+
 					cardWithPrints = {
 						...card,
 						all_prints: prints,
-						available_languages: prints[0]?.languages || ['en'],
-						selected_language: 'en'
+						available_languages: availableLanguages,
+						selected_language: selectedLanguage
 					};
 				} catch (error) {
 					console.error(`Error fetching prints for ${card.name}:`, error);
@@ -154,17 +164,7 @@
 				};
 			}
 
-			// Post-process the fetched card to set the preferred language from prints if missing earlier
-			if (cardWithPrints.available_languages) {
-				const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
-				if (cardWithPrints.available_languages.includes(preferredLanguage)) {
-					cardWithPrints.selected_language = preferredLanguage;
-				} else {
-					cardWithPrints.selected_language = cardWithPrints.available_languages.includes('en')
-						? 'en'
-						: cardWithPrints.available_languages[0];
-				}
-			}
+			// (selected_language is already set correctly above for both paths)
 
 			dispatch('search', [cardWithPrints]);
 		} catch (error) {
@@ -232,9 +232,9 @@
 						const prints = printsData.data.map((print: any) => ({
 							set: print.set_name,
 							set_code: print.set,
+							lang: print.lang,
 							collector_number: print.collector_number,
 							image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
-							languages: null,
 							language_uris: {},
 							flavor_text: print.flavor_text,
 							oracle_text: print.oracle_text,
@@ -244,12 +244,13 @@
 							cardmarket_id: print.cardmarket_id || null
 						}));
 
-						const availableLanguages = prints[0]?.languages || ['en'];
-						let selectedLanguage = availableLanguages.includes(preferredLanguage)
+						// Collect unique languages from all prints
+						const availableLanguages = [...new Set(prints.map((p: any) => p.lang).filter(Boolean))];
+						if (!availableLanguages.includes('en')) availableLanguages.push('en');
+
+						const selectedLanguage = availableLanguages.includes(preferredLanguage)
 							? preferredLanguage
 							: 'en';
-						if (!availableLanguages.includes(selectedLanguage))
-							selectedLanguage = availableLanguages[0];
 
 						return {
 							...card,
@@ -260,11 +261,9 @@
 					} catch (error) {
 						console.error(`Error fetching prints for ${card.name}:`, error);
 						const availableLanguages = [card.lang || 'en'];
-						let selectedLanguage = availableLanguages.includes(preferredLanguage)
+						const selectedLanguage = availableLanguages.includes(preferredLanguage)
 							? preferredLanguage
 							: 'en';
-						if (!availableLanguages.includes(selectedLanguage))
-							selectedLanguage = availableLanguages[0];
 
 						return {
 							...card,
