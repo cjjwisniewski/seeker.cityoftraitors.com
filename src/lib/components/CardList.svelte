@@ -29,9 +29,14 @@
 			normal: newPrint.image_uri
 		};
 
-		// Derive available languages from the prints data already fetched
-		// (each print has a `lang` field populated by CardSearchForm)
-		const availableLanguages = [...new Set(card.all_prints.map((p) => p.lang).filter(Boolean))];
+		// Derive available languages only from prints that match this specific printing
+		// (same set + collector_number — different lang variants of the same edition)
+		const printsForThisEdition = card.all_prints.filter(
+			(p) => p.set_code === newPrint.set_code && p.collector_number === newPrint.collector_number
+		);
+		const availableLanguages = [
+			...new Set(printsForThisEdition.map((p) => p.lang).filter(Boolean))
+		];
 		if (!availableLanguages.includes('en')) availableLanguages.push('en');
 		card.available_languages = availableLanguages;
 
@@ -318,12 +323,12 @@
 								>
 									<option value="">Select a print...</option>
 									<!-- MODIFIED: Option value includes both set_code and collector_number -->
-									{#each card.all_prints as print}
-										{#if print?.set_code && print?.set && print?.collector_number}
-											<option value="{print.set_code}|{print.collector_number}">
-												{print.set} ({print.collector_number})
-											</option>
-										{/if}
+									{#each [...new Map(card.all_prints
+												.filter((p) => p?.set_code && p?.set && p?.collector_number)
+												.map((p) => [`${p.set_code}|${p.collector_number}`, p])).values()] as print}
+										<option value="{print.set_code}|{print.collector_number}">
+											{print.set} ({print.collector_number})
+										</option>
 									{/each}
 								</select>
 							</div>
