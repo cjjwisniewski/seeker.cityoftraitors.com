@@ -59,6 +59,7 @@
 		if (settingName === 'preferredLanguage') preferredLanguage = newValue;
 
 		try {
+			console.log(`Updating setting ${settingName} to ${newValue}...`);
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -69,6 +70,10 @@
 			});
 
 			if (!response || !response.ok) {
+				const status = response?.status;
+				const text = await response?.text();
+				console.error(`Failed to update setting. Status: ${status}, Body: ${text}`);
+
 				// Revert UI on failure
 				if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
 				if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
@@ -76,12 +81,13 @@
 				throw new Error('Failed to update setting');
 			}
 
+			console.log(`Setting ${settingName} updated successfully.`);
 			// Sync store with true value
 			if ($auth.user && $auth.user.settings) {
 				$auth.user.settings[settingName] = newValue;
 			}
 		} catch (error) {
-			console.error('Error updating setting:', error);
+			console.error('Error in updateSetting:', error);
 			settingsError = 'Error updating setting. Please try again.';
 		} finally {
 			isUpdatingSetting = false;
@@ -250,7 +256,7 @@
 			</section>
 
 			<section class="profile-section">
-				<h2>Notification Settings</h2>
+				<h2>Settings</h2>
 				<div class="settings-content">
 					{#if settingsError}
 						<div class="error-message mini" role="alert">{settingsError}</div>
