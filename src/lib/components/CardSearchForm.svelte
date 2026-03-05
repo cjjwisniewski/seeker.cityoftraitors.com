@@ -1,276 +1,295 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-    import { createEventDispatcher } from 'svelte';
-    import { onMount } from 'svelte';
-    import { getAvailableLanguages } from '$lib/utils/languageUtils';
-    import { auth } from '$lib/stores/auth'; // Import auth store
-    
-    const dispatch = createEventDispatcher();
-    
-    let searchTerm = '';
-    let suggestions: string[] = [];
-    let showDropdown = false;
-    let searchInput: HTMLInputElement;
-    let dropdownContainer: HTMLDivElement;
-    let debounceTimer: number;
+	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
+	import { getAvailableLanguages } from '$lib/utils/languageUtils';
+	import { auth } from '$lib/stores/auth'; // Import auth store
 
-    const SCRYFALL_API = 'https://api.scryfall.com';
-    const AUTOCOMPLETE_URL = `${SCRYFALL_API}/cards/autocomplete`;
-    const SEARCH_URL = `${SCRYFALL_API}/cards/search`;
-    const NAMED_URL = `${SCRYFALL_API}/cards/named`;
+	const dispatch = createEventDispatcher();
 
-    // Sanitize input to prevent XSS
-    const sanitizeInput = (input: string): string => {
-        // Remove any HTML tags
-        return input.replace(/<[^>]*>/g, '');
-    };
+	let searchTerm = '';
+	let suggestions: string[] = [];
+	let showDropdown = false;
+	let searchInput: HTMLInputElement;
+	let dropdownContainer: HTMLDivElement;
+	let debounceTimer: number;
 
-    // Validate search term
-    const validateSearchTerm = (term: string): boolean => {
-        // Only allow alphanumeric characters, spaces, and common card name characters
-        return /^[a-zA-Z0-9\s\-'.,]+$/.test(term);
-    };
+	const SCRYFALL_API = 'https://api.scryfall.com';
+	const AUTOCOMPLETE_URL = `${SCRYFALL_API}/cards/autocomplete`;
+	const SEARCH_URL = `${SCRYFALL_API}/cards/search`;
+	const NAMED_URL = `${SCRYFALL_API}/cards/named`;
 
-    onMount(() => {
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e: MouseEvent) => {
-            if (!dropdownContainer?.contains(e.target as Node) && 
-                !searchInput?.contains(e.target as Node)) {
-                showDropdown = false;
-            }
-        });
-    });
+	// Sanitize input to prevent XSS
+	const sanitizeInput = (input: string): string => {
+		// Remove any HTML tags
+		return input.replace(/<[^>]*>/g, '');
+	};
 
-    const handleInput = async () => {
-        if (debounceTimer) {
-            clearTimeout(debounceTimer);
-        }
+	// Validate search term
+	const validateSearchTerm = (term: string): boolean => {
+		// Only allow alphanumeric characters, spaces, and common card name characters
+		return /^[a-zA-Z0-9\s\-'.,]+$/.test(term);
+	};
 
-        // Sanitize and validate input
-        const sanitizedTerm = sanitizeInput(searchTerm);
-        if (sanitizedTerm !== searchTerm) {
-            searchTerm = sanitizedTerm;
-        }
+	onMount(() => {
+		// Close dropdown when clicking outside
+		document.addEventListener('click', (e: MouseEvent) => {
+			if (
+				!dropdownContainer?.contains(e.target as Node) &&
+				!searchInput?.contains(e.target as Node)
+			) {
+				showDropdown = false;
+			}
+		});
+	});
 
-        if (searchTerm.length < 2) {
-            suggestions = [];
-            showDropdown = false;
-            return;
-        }
+	const handleInput = async () => {
+		if (debounceTimer) {
+			clearTimeout(debounceTimer);
+		}
 
-        if (!validateSearchTerm(searchTerm)) {
-            suggestions = [];
-            showDropdown = false;
-            return;
-        }
+		// Sanitize and validate input
+		const sanitizedTerm = sanitizeInput(searchTerm);
+		if (sanitizedTerm !== searchTerm) {
+			searchTerm = sanitizedTerm;
+		}
 
-        debounceTimer = setTimeout(async () => {
-            try {
-                const response = await fetch(`${AUTOCOMPLETE_URL}?q=${encodeURIComponent(searchTerm)}`);
-                const data = await response.json();
-                suggestions = data.data;
-                showDropdown = suggestions.length > 0;
-            } catch (error) {
-                console.error('Error fetching suggestions:', error);
-            }
-        }, 300);
-    };
+		if (searchTerm.length < 2) {
+			suggestions = [];
+			showDropdown = false;
+			return;
+		}
 
-    const selectSuggestion = async (suggestion: string) => {
-        searchTerm = sanitizeInput(suggestion);
-        showDropdown = false;
-        await fetchExactCard(suggestion);
-    };
+		if (!validateSearchTerm(searchTerm)) {
+			suggestions = [];
+			showDropdown = false;
+			return;
+		}
 
-    const fetchExactCard = async (name: string) => {
-        try {
-            const exactUrl = `${NAMED_URL}?exact=${encodeURIComponent(name)}`;
-            const response = await fetch(exactUrl);
+		debounceTimer = setTimeout(async () => {
+			try {
+				const response = await fetch(`${AUTOCOMPLETE_URL}?q=${encodeURIComponent(searchTerm)}`);
+				const data = await response.json();
+				suggestions = data.data;
+				showDropdown = suggestions.length > 0;
+			} catch (error) {
+				console.error('Error fetching suggestions:', error);
+			}
+		}, 300);
+	};
 
-            if (!response.ok) {
-                if (response.status === 404) {
-                    console.warn(`Card not found by exact name: ${name}. Falling back to general search.`);
-                    await performSearch();
-                    return;
-                }
-                throw new Error(`Failed to fetch exact card: ${response.statusText}`);
-            }
+	const selectSuggestion = async (suggestion: string) => {
+		searchTerm = sanitizeInput(suggestion);
+		showDropdown = false;
+		await fetchExactCard(suggestion);
+	};
 
-            const card = await response.json();
+	const fetchExactCard = async (name: string) => {
+		try {
+			const exactUrl = `${NAMED_URL}?exact=${encodeURIComponent(name)}`;
+			const response = await fetch(exactUrl);
 
-            let cardWithPrints = card;
-            if (card.prints_search_uri) {
-                try {
-                    const printsResponse = await fetch(card.prints_search_uri);
-                    const printsData = await printsResponse.json();
-                    const prints = printsData.data.map((print: any) => ({
-                        set: print.set_name,
-                        set_code: print.set,
-                        collector_number: print.collector_number,
-                        image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
-                        languages: null,
-                        language_uris: {},
-                        flavor_text: print.flavor_text,
-                        oracle_text: print.oracle_text,
-                        type_line: print.type_line,
-                        mana_cost: print.mana_cost,
-                        tcgplayer_id: print.tcgplayer_id || null,
-                        cardmarket_id: print.cardmarket_id || null
-                    }));
-                     cardWithPrints = {
-                        ...card,
-                        all_prints: prints,
-                        available_languages: prints[0]?.languages || ['en'],
-                        selected_language: 'en'
-                    };
-                    };
-                } catch (error) {
-                    console.error(`Error fetching prints for ${card.name}:`, error);
-                }
-            } else {
-                const availableLanguages = [card.lang || 'en'];
-                const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
-                const selectedLanguage = availableLanguages.includes(preferredLanguage) ? preferredLanguage : 'en';
-                cardWithPrints = {
-                    ...card,
-                    all_prints: [{
-                        set: card.set_name,
-                        set_code: card.set,
-                        collector_number: card.collector_number,
-                        image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
-                        languages: null,
-                        language_uris: {},
-                        flavor_text: card.flavor_text,
-                        oracle_text: card.oracle_text,
-                        type_line: card.type_line,
-                        mana_cost: card.mana_cost
-                    }],
-                    available_languages: availableLanguages,
-                    selected_language: selectedLanguage
-                }
-            }
+			if (!response.ok) {
+				if (response.status === 404) {
+					console.warn(`Card not found by exact name: ${name}. Falling back to general search.`);
+					await performSearch();
+					return;
+				}
+				throw new Error(`Failed to fetch exact card: ${response.statusText}`);
+			}
 
-            // Post-process the fetched card to set the preferred language from prints if missing earlier
-            if (cardWithPrints.available_languages) {
-                 const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
-                 if (cardWithPrints.available_languages.includes(preferredLanguage)) {
-                     cardWithPrints.selected_language = preferredLanguage;
-                 } else {
-                     cardWithPrints.selected_language = cardWithPrints.available_languages.includes('en') ? 'en' : cardWithPrints.available_languages[0];
-                 }
-            }
+			const card = await response.json();
 
-            dispatch('search', [cardWithPrints]);
+			let cardWithPrints = card;
+			if (card.prints_search_uri) {
+				try {
+					const printsResponse = await fetch(card.prints_search_uri);
+					const printsData = await printsResponse.json();
+					const prints = printsData.data.map((print: any) => ({
+						set: print.set_name,
+						set_code: print.set,
+						collector_number: print.collector_number,
+						image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
+						languages: null,
+						language_uris: {},
+						flavor_text: print.flavor_text,
+						oracle_text: print.oracle_text,
+						type_line: print.type_line,
+						mana_cost: print.mana_cost,
+						tcgplayer_id: print.tcgplayer_id || null,
+						cardmarket_id: print.cardmarket_id || null
+					}));
+					cardWithPrints = {
+						...card,
+						all_prints: prints,
+						available_languages: prints[0]?.languages || ['en'],
+						selected_language: 'en'
+					};
+				} catch (error) {
+					console.error(`Error fetching prints for ${card.name}:`, error);
+				}
+			} else {
+				const availableLanguages = [card.lang || 'en'];
+				const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
+				const selectedLanguage = availableLanguages.includes(preferredLanguage)
+					? preferredLanguage
+					: 'en';
+				cardWithPrints = {
+					...card,
+					all_prints: [
+						{
+							set: card.set_name,
+							set_code: card.set,
+							collector_number: card.collector_number,
+							image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
+							languages: null,
+							language_uris: {},
+							flavor_text: card.flavor_text,
+							oracle_text: card.oracle_text,
+							type_line: card.type_line,
+							mana_cost: card.mana_cost
+						}
+					],
+					available_languages: availableLanguages,
+					selected_language: selectedLanguage
+				};
+			}
 
-        } catch (error) {
-            console.error(`Error fetching exact card "${name}":`, error);
-            dispatch('search', []);
-        }
-    };
+			// Post-process the fetched card to set the preferred language from prints if missing earlier
+			if (cardWithPrints.available_languages) {
+				const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
+				if (cardWithPrints.available_languages.includes(preferredLanguage)) {
+					cardWithPrints.selected_language = preferredLanguage;
+				} else {
+					cardWithPrints.selected_language = cardWithPrints.available_languages.includes('en')
+						? 'en'
+						: cardWithPrints.available_languages[0];
+				}
+			}
 
-    const performSearch = async () => {
-        try {
-            const response = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(searchTerm)}`);
-            if (!response.ok) {
-                if (response.status === 404) {
-                    console.log(`No cards found for search term: "${searchTerm}"`);
-                    dispatch('search', []);
-                    return;
-                }
-                 throw new Error(`Search failed: ${response.statusText}`);
-            }
-            const data = await response.json();
+			dispatch('search', [cardWithPrints]);
+		} catch (error) {
+			console.error(`Error fetching exact card "${name}":`, error);
+			dispatch('search', []);
+		}
+	};
 
-            if (!data.data || data.data.length === 0) {
-                 console.log(`No cards found for search term: "${searchTerm}"`);
-                 dispatch('search', []);
-                 return;
-            }
+	const performSearch = async () => {
+		try {
+			const response = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(searchTerm)}`);
+			if (!response.ok) {
+				if (response.status === 404) {
+					console.log(`No cards found for search term: "${searchTerm}"`);
+					dispatch('search', []);
+					return;
+				}
+				throw new Error(`Search failed: ${response.statusText}`);
+			}
+			const data = await response.json();
 
-            const cardsWithPrints = await Promise.all(data.data.map(async (card: any) => {
-                const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
+			if (!data.data || data.data.length === 0) {
+				console.log(`No cards found for search term: "${searchTerm}"`);
+				dispatch('search', []);
+				return;
+			}
 
-                if (!card.prints_search_uri) {
-                    const availableLanguages = [card.lang || 'en'];
-                    let selectedLanguage = availableLanguages.includes(preferredLanguage) ? preferredLanguage : 'en';
-                    if (!availableLanguages.includes(selectedLanguage)) selectedLanguage = availableLanguages[0];
+			const cardsWithPrints = await Promise.all(
+				data.data.map(async (card: any) => {
+					const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
 
-                    return {
-                        ...card,
-                        all_prints: [{
-                             set: card.set_name,
-                             set_code: card.set,
-                             collector_number: card.collector_number,
-                             image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
-                             languages: null,
-                             language_uris: {},
-                             flavor_text: card.flavor_text,
-                             oracle_text: card.oracle_text,
-                             type_line: card.type_line,
-                             mana_cost: card.mana_cost
-                        }],
-                        available_languages: availableLanguages,
-                        selected_language: selectedLanguage
-                    };
-                }
+					if (!card.prints_search_uri) {
+						const availableLanguages = [card.lang || 'en'];
+						let selectedLanguage = availableLanguages.includes(preferredLanguage)
+							? preferredLanguage
+							: 'en';
+						if (!availableLanguages.includes(selectedLanguage))
+							selectedLanguage = availableLanguages[0];
 
-                try {
-                    const printsResponse = await fetch(card.prints_search_uri);
-                    const printsData = await printsResponse.json();
+						return {
+							...card,
+							all_prints: [
+								{
+									set: card.set_name,
+									set_code: card.set,
+									collector_number: card.collector_number,
+									image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
+									languages: null,
+									language_uris: {},
+									flavor_text: card.flavor_text,
+									oracle_text: card.oracle_text,
+									type_line: card.type_line,
+									mana_cost: card.mana_cost
+								}
+							],
+							available_languages: availableLanguages,
+							selected_language: selectedLanguage
+						};
+					}
 
-                    const prints = printsData.data.map((print: any) => ({
-                        set: print.set_name,
-                        set_code: print.set,
-                        collector_number: print.collector_number,
-                        image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
-                        languages: null,
-                        language_uris: {},
-                        flavor_text: print.flavor_text,
-                        oracle_text: print.oracle_text,
-                        type_line: print.type_line,
-                        mana_cost: print.mana_cost,
-                        tcgplayer_id: print.tcgplayer_id || null,
-                        cardmarket_id: print.cardmarket_id || null
-                    }));
+					try {
+						const printsResponse = await fetch(card.prints_search_uri);
+						const printsData = await printsResponse.json();
 
-                    const availableLanguages = prints[0]?.languages || ['en'];
-                    let selectedLanguage = availableLanguages.includes(preferredLanguage) ? preferredLanguage : 'en';
-                    if (!availableLanguages.includes(selectedLanguage)) selectedLanguage = availableLanguages[0];
+						const prints = printsData.data.map((print: any) => ({
+							set: print.set_name,
+							set_code: print.set,
+							collector_number: print.collector_number,
+							image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
+							languages: null,
+							language_uris: {},
+							flavor_text: print.flavor_text,
+							oracle_text: print.oracle_text,
+							type_line: print.type_line,
+							mana_cost: print.mana_cost,
+							tcgplayer_id: print.tcgplayer_id || null,
+							cardmarket_id: print.cardmarket_id || null
+						}));
 
-                    return {
-                        ...card,
-                        all_prints: prints,
-                        available_languages: availableLanguages,
-                        selected_language: selectedLanguage
-                    };
-                } catch (error) {
-                    console.error(`Error fetching prints for ${card.name}:`, error);
-                    const availableLanguages = [card.lang || 'en'];
-                    let selectedLanguage = availableLanguages.includes(preferredLanguage) ? preferredLanguage : 'en';
-                    if (!availableLanguages.includes(selectedLanguage)) selectedLanguage = availableLanguages[0];
+						const availableLanguages = prints[0]?.languages || ['en'];
+						let selectedLanguage = availableLanguages.includes(preferredLanguage)
+							? preferredLanguage
+							: 'en';
+						if (!availableLanguages.includes(selectedLanguage))
+							selectedLanguage = availableLanguages[0];
 
-                    return {
-                         ...card,
-                         all_prints: [],
-                         available_languages: availableLanguages,
-                         selected_language: selectedLanguage
-                     };
-                }
-            }));
+						return {
+							...card,
+							all_prints: prints,
+							available_languages: availableLanguages,
+							selected_language: selectedLanguage
+						};
+					} catch (error) {
+						console.error(`Error fetching prints for ${card.name}:`, error);
+						const availableLanguages = [card.lang || 'en'];
+						let selectedLanguage = availableLanguages.includes(preferredLanguage)
+							? preferredLanguage
+							: 'en';
+						if (!availableLanguages.includes(selectedLanguage))
+							selectedLanguage = availableLanguages[0];
 
-            dispatch('search', cardsWithPrints);
-        } catch (error) {
-            console.error('Error performing search:', error);
-             dispatch('search', []);
-        }
-    };
+						return {
+							...card,
+							all_prints: [],
+							available_languages: availableLanguages,
+							selected_language: selectedLanguage
+						};
+					}
+				})
+			);
 
-    const handleKeyPress = async (event: KeyboardEvent) => {
-        if (event.key === 'Enter') {
-            showDropdown = false;
-            await performSearch();
-        }
-    };
+			dispatch('search', cardsWithPrints);
+		} catch (error) {
+			console.error('Error performing search:', error);
+			dispatch('search', []);
+		}
+	};
+
+	const handleKeyPress = async (event: KeyboardEvent) => {
+		if (event.key === 'Enter') {
+			showDropdown = false;
+			await performSearch();
+		}
+	};
 </script>
 
 <div class="search-form">
