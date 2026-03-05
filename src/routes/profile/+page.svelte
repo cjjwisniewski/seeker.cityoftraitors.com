@@ -71,23 +71,24 @@
 
 			if (!response || !response.ok) {
 				const status = response?.status;
-				const text = await response?.text();
+				const text = await response?.text().catch(() => '(unreadable)');
 				console.error(`Failed to update setting. Status: ${status}, Body: ${text}`);
 
-				// Revert UI on failure
+				// Revert optimistic UI update on failure
 				if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
 				if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
 				if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
-				throw new Error('Failed to update setting');
+				settingsError = 'Error updating setting. Please try again.';
+				return;
 			}
 
 			console.log(`Setting ${settingName} updated successfully.`);
-			// Sync store with true value
-			if ($auth.user && $auth.user.settings) {
-				$auth.user.settings[settingName] = newValue;
-			}
 		} catch (error) {
 			console.error('Error in updateSetting:', error);
+			// Revert on error
+			if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
+			if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
+			if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
 			settingsError = 'Error updating setting. Please try again.';
 		} finally {
 			isUpdatingSetting = false;
