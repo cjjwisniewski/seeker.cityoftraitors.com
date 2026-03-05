@@ -38,7 +38,7 @@
 	// Default settings derived from user payload
 	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
 	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
-	$: preferredLanguage = $auth.user?.settings?.preferredLanguage ?? 'en';
+	$: preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
 
 	// --- Update Setting Logic ---
 	async function updateSetting(settingName, newValue) {
@@ -206,7 +206,7 @@
 
 		<div class="profile-content">
 			<section class="profile-section">
-				<h2>Account & Status</h2>
+				<h2>Account Information</h2>
 				<div class="info-grid">
 					<!-- Profile Information -->
 					<div class="info-item">
@@ -257,7 +257,7 @@
 			</section>
 
 			<section class="profile-section">
-				<h2>Settings</h2>
+				<h2>User Settings</h2>
 				<div class="settings-content">
 					{#if settingsError}
 						<div class="error-message mini" role="alert">{settingsError}</div>
@@ -311,7 +311,7 @@
 						<div class="language-select-wrapper">
 							<select
 								class="language-select"
-								bind:value={preferredLanguage}
+								value={preferredLanguage}
 								on:change={(e) => updateSetting('preferredLanguage', e.target.value)}
 								disabled={isUpdatingSetting}
 							>
