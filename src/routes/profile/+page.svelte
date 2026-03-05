@@ -4,6 +4,7 @@
 	import {
 		PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL,
 		PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL
+	} from '$env/static/public';
 	import { browser } from '$app/environment'; // To ensure code runs client-side
 	import { languageNames } from '$lib/utils/languageUtils'; // Import language support
 
