@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { onMount } from 'svelte';
-	import { getAvailableLanguages } from '$lib/utils/languageUtils';
+	import { getLanguageName } from '$lib/utils/languageUtils';
 	import { auth } from '$lib/stores/auth'; // Import auth store
 
 	const dispatch = createEventDispatcher();
@@ -110,7 +110,6 @@
 						lang: print.lang,
 						collector_number: print.collector_number,
 						image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
-						language_uris: {},
 						flavor_text: print.flavor_text,
 						oracle_text: print.oracle_text,
 						type_line: print.type_line,
@@ -152,7 +151,6 @@
 							collector_number: card.collector_number,
 							image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
 							languages: null,
-							language_uris: {},
 							flavor_text: card.flavor_text,
 							oracle_text: card.oracle_text,
 							type_line: card.type_line,
@@ -213,7 +211,6 @@
 									collector_number: card.collector_number,
 									image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
 									languages: null,
-									language_uris: {},
 									flavor_text: card.flavor_text,
 									oracle_text: card.oracle_text,
 									type_line: card.type_line,
@@ -235,7 +232,6 @@
 							lang: print.lang,
 							collector_number: print.collector_number,
 							image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
-							language_uris: {},
 							flavor_text: print.flavor_text,
 							oracle_text: print.oracle_text,
 							type_line: print.type_line,
