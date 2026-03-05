@@ -493,14 +493,12 @@
 		padding-bottom: 0.5rem;
 	}
 
-	.info-grid,
-	.status-grid {
+	.info-grid {
 		display: grid;
 		gap: 1rem 1.5rem;
 	}
 
-	.info-item,
-	.status-item {
+	.info-item {
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
@@ -540,8 +538,7 @@
 	}
 
 	@media (min-width: 640px) {
-		.info-grid,
-		.status-grid {
+		.info-grid {
 			grid-template-columns: repeat(2, 1fr);
 		}
 	}
