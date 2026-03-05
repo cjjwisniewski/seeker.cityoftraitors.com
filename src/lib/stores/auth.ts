@@ -7,7 +7,11 @@ interface User {
     username: string;
     avatar?: string;
     roles?: string[]; // Add roles if your user info endpoint returns them
-    // Add other relevant user properties
+    settings?: {
+        stockAlertEnabled?: boolean;
+        stockDigestEnabled?: boolean;
+        preferredLanguage?: string;
+    };
 }
 
 interface AuthState {
