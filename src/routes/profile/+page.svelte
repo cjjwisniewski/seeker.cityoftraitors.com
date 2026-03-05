@@ -41,12 +41,17 @@
 	$: preferredLanguage = $auth.user?.settings?.preferredLanguage ?? 'en';
 
 	// --- Update Setting Logic ---
-	async function toggleSetting(settingName, currentValue) {
+	async function updateSetting(settingName, newValue) {
 		if (!token) return;
 
 		isUpdatingSetting = true;
 		settingsError = null;
-		const newValue = !currentValue;
+
+		// Store old value for rollback
+		let oldValue;
+		if (settingName === 'stockAlertEnabled') oldValue = stockAlertEnabled;
+		if (settingName === 'stockDigestEnabled') oldValue = stockDigestEnabled;
+		if (settingName === 'preferredLanguage') oldValue = preferredLanguage;
 
 		// Optimistic UI update
 		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
@@ -65,9 +70,9 @@
 
 			if (!response || !response.ok) {
 				// Revert UI on failure
-				if (settingName === 'stockAlertEnabled') stockAlertEnabled = currentValue;
-				if (settingName === 'stockDigestEnabled') stockDigestEnabled = currentValue;
-				if (settingName === 'preferredLanguage') preferredLanguage = currentValue;
+				if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
+				if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
+				if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
 				throw new Error('Failed to update setting');
 			}
 
@@ -262,7 +267,7 @@
 							<input
 								type="checkbox"
 								checked={stockAlertEnabled}
-								on:change={() => toggleSetting('stockAlertEnabled', stockAlertEnabled)}
+								on:change={() => updateSetting('stockAlertEnabled', !stockAlertEnabled)}
 								disabled={isUpdatingSetting}
 							/>
 							<span class="slider round"></span>
@@ -280,7 +285,7 @@
 							<input
 								type="checkbox"
 								checked={stockDigestEnabled}
-								on:change={() => toggleSetting('stockDigestEnabled', stockDigestEnabled)}
+								on:change={() => updateSetting('stockDigestEnabled', !stockDigestEnabled)}
 								disabled={isUpdatingSetting}
 							/>
 							<span class="slider round"></span>
@@ -300,7 +305,7 @@
 							<select
 								class="language-select"
 								bind:value={preferredLanguage}
-								on:change={() => toggleSetting('preferredLanguage', preferredLanguage)}
+								on:change={(e) => updateSetting('preferredLanguage', e.target.value)}
 								disabled={isUpdatingSetting}
 							>
 								{#each Object.entries(languageNames) as [code, name]}
