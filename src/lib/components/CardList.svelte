@@ -1,6 +1,6 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { getLanguageName } from '$lib/utils/languageUtils';
+	import { getLanguageName, getAvailableLanguages } from '$lib/utils/languageUtils';
 	import { PUBLIC_ADD_TO_SEEKING_FUNCTION_URL } from '$env/static/public';
 	import { auth } from '$lib/stores/auth'; // Import the auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import fetchWithAuth
@@ -29,16 +29,14 @@
 			normal: newPrint.image_uri
 		};
 
-		// Derive available languages only from prints that match this specific printing
-		// (same set + collector_number — different lang variants of the same edition)
-		const printsForThisEdition = card.all_prints.filter(
-			(p) => p.set_code === newPrint.set_code && p.collector_number === newPrint.collector_number
-		);
-		const availableLanguages = [
-			...new Set(printsForThisEdition.map((p) => p.lang).filter(Boolean))
-		];
-		if (!availableLanguages.includes('en')) availableLanguages.push('en');
-		card.available_languages = availableLanguages;
+		// Fetch available languages for this specific printing (cached on newPrint to avoid repeat requests)
+		if (!newPrint.languages) {
+			newPrint.languages = await getAvailableLanguages(
+				newPrint.set_code,
+				newPrint.collector_number
+			);
+		}
+		card.available_languages = newPrint.languages;
 
 		// Keep current language selection if available, otherwise default to English
 		const currentLang = card.selected_language || 'en';
@@ -111,20 +109,15 @@
 		const print = card.all_prints?.find(
 			(p) => p.set_code === card.set && p.collector_number === card.collector_number
 		);
-		if (!print) {
-			console.error(
-				'Could not find current print for language dropdown:',
-				card.set,
-				card.collector_number
-			);
-			return;
-		}
+		if (!print) return;
 
-		// Languages are already available from the prints data — no HTTP requests needed
-		if (!card.available_languages || card.available_languages.length === 0) {
-			const availableLanguages = [...new Set(card.all_prints.map((p) => p.lang).filter(Boolean))];
-			if (!availableLanguages.includes('en')) availableLanguages.push('en');
-			card.available_languages = availableLanguages;
+		// Use cached languages if already fetched, otherwise fetch and cache
+		if (!print.languages) {
+			print.languages = await getAvailableLanguages(print.set_code, print.collector_number);
+			card.available_languages = print.languages;
+			sortedCards = [...sortedCards];
+		} else if (card.available_languages !== print.languages) {
+			card.available_languages = print.languages;
 			sortedCards = [...sortedCards];
 		}
 	}
