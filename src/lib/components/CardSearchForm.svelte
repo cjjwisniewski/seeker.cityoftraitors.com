@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { onMount } from 'svelte';
-	import { getLanguageName } from '$lib/utils/languageUtils';
+	import { getLanguageName, getAvailableLanguages } from '$lib/utils/languageUtils';
 	import { auth } from '$lib/stores/auth'; // Import auth store
 
 	const dispatch = createEventDispatcher();
@@ -151,16 +151,25 @@
 					// Collect unique languages from all prints
 					const availableLanguages = [...new Set(prints.map((p: any) => p.lang).filter(Boolean))];
 					if (!availableLanguages.includes('en')) availableLanguages.push('en');
-
+					// Get the correct available languages for the initially displayed printing
+					const initialLanguages = await getAvailableLanguages(card.set, card.collector_number);
 					const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
-					const selectedLanguage = availableLanguages.includes(preferredLanguage)
+					const selectedLanguage = initialLanguages.includes(preferredLanguage)
 						? preferredLanguage
-						: 'en';
+						: initialLanguages.includes('en')
+							? 'en'
+							: initialLanguages[0];
+
+					// Cache languages on the matching print to avoid re-fetching later
+					const initialPrint = prints.find(
+						(p: any) => p.set_code === card.set && p.collector_number === card.collector_number
+					);
+					if (initialPrint) initialPrint.languages = initialLanguages;
 
 					cardWithPrints = {
 						...card,
 						all_prints: prints,
-						available_languages: availableLanguages,
+						available_languages: initialLanguages,
 						selected_language: selectedLanguage
 					};
 
@@ -280,18 +289,24 @@
 							cardmarket_id: print.cardmarket_id || null
 						}));
 
-						// Collect unique languages from all prints
-						const availableLanguages = [...new Set(prints.map((p: any) => p.lang).filter(Boolean))];
-						if (!availableLanguages.includes('en')) availableLanguages.push('en');
-
-						const selectedLanguage = availableLanguages.includes(preferredLanguage)
+						// Get correct per-printing languages and selected language
+						const initialLanguages = await getAvailableLanguages(card.set, card.collector_number);
+						const selectedLanguage = initialLanguages.includes(preferredLanguage)
 							? preferredLanguage
-							: 'en';
+							: initialLanguages.includes('en')
+								? 'en'
+								: initialLanguages[0];
+
+						// Cache on the matching print
+						const initialPrint = prints.find(
+							(p: any) => p.set_code === card.set && p.collector_number === card.collector_number
+						);
+						if (initialPrint) initialPrint.languages = initialLanguages;
 
 						const result = {
 							...card,
 							all_prints: prints,
-							available_languages: availableLanguages,
+							available_languages: initialLanguages,
 							selected_language: selectedLanguage
 						};
 
