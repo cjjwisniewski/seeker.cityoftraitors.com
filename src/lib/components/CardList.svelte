@@ -54,8 +54,13 @@
 		card.type_line = newPrint.type_line;
 		card.mana_cost = newPrint.mana_cost;
 
-		// Force a UI update
-		sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...card } : c));
+		// If the selected language matches the print's native language, just update the UI.
+		// Otherwise fetch the localized image and card text via handleLanguageChange.
+		if (card.selected_language === (newPrint.lang || 'en')) {
+			sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...card } : c));
+		} else {
+			await handleLanguageChange(card, card.selected_language);
+		}
 	}
 
 	async function handleLanguageChange(card, language) {
