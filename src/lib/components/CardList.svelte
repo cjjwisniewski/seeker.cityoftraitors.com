@@ -38,9 +38,15 @@
 		}
 		card.available_languages = newPrint.languages;
 
-		// Keep current language selection if available, otherwise default to English
-		const currentLang = card.selected_language || 'en';
-		card.selected_language = card.available_languages.includes(currentLang) ? currentLang : 'en';
+		// Select language in order: preferred → en → first available
+		const preferredLang = $auth.user?.settings?.preferredLanguage || 'en';
+		if (card.available_languages.includes(preferredLang)) {
+			card.selected_language = preferredLang;
+		} else if (card.available_languages.includes('en')) {
+			card.selected_language = 'en';
+		} else {
+			card.selected_language = card.available_languages[0] || 'en';
+		}
 
 		// Update other card information based on the selected print
 		card.flavor_text = newPrint.flavor_text;
