@@ -18,6 +18,36 @@
 	const SEARCH_URL = `${SCRYFALL_API}/cards/search`;
 	const NAMED_URL = `${SCRYFALL_API}/cards/named`;
 
+	// Fetches the localized image/text for a card if the selected language differs from its native lang.
+	// Returns an object with the fields to override, or null if no override is needed.
+	const fetchLocalizedData = async (
+		setCode: string,
+		collectorNumber: string,
+		lang: string
+	): Promise<{
+		image_uris: { normal: string };
+		flavor_text?: string;
+		oracle_text?: string;
+		type_line?: string;
+	} | null> => {
+		try {
+			const url = `${SCRYFALL_API}/cards/${encodeURIComponent(setCode)}/${encodeURIComponent(collectorNumber)}/${encodeURIComponent(lang)}`;
+			const res = await fetch(url);
+			if (!res.ok) return null;
+			const data = await res.json();
+			const imageUri = data.image_uris?.normal || data.card_faces?.[0]?.image_uris?.normal;
+			if (!imageUri) return null;
+			return {
+				image_uris: { normal: imageUri },
+				flavor_text: data.flavor_text,
+				oracle_text: data.oracle_text,
+				type_line: data.type_line
+			};
+		} catch {
+			return null;
+		}
+	};
+
 	// Sanitize input to prevent XSS
 	const sanitizeInput = (input: string): string => {
 		// Remove any HTML tags
@@ -133,6 +163,16 @@
 						available_languages: availableLanguages,
 						selected_language: selectedLanguage
 					};
+
+					// Fetch localized image/text if selected language differs from the card's native lang
+					if (selectedLanguage !== (card.lang || 'en')) {
+						const localized = await fetchLocalizedData(
+							card.set,
+							card.collector_number,
+							selectedLanguage
+						);
+						if (localized) Object.assign(cardWithPrints, localized);
+					}
 				} catch (error) {
 					console.error(`Error fetching prints for ${card.name}:`, error);
 				}
@@ -248,12 +288,24 @@
 							? preferredLanguage
 							: 'en';
 
-						return {
+						const result = {
 							...card,
 							all_prints: prints,
 							available_languages: availableLanguages,
 							selected_language: selectedLanguage
 						};
+
+						// Fetch localized image/text if selected language differs from the card's native lang
+						if (selectedLanguage !== (card.lang || 'en')) {
+							const localized = await fetchLocalizedData(
+								card.set,
+								card.collector_number,
+								selectedLanguage
+							);
+							if (localized) Object.assign(result, localized);
+						}
+
+						return result;
 					} catch (error) {
 						console.error(`Error fetching prints for ${card.name}:`, error);
 						const availableLanguages = [card.lang || 'en'];
