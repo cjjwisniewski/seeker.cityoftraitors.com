@@ -283,84 +283,6 @@
 			</section>
 
 			<section class="admin-section">
-				<h2>User Management</h2>
-				{#if loading}
-					<p>Loading user data...</p>
-				{:else if error}
-					<p class="error">{error}</p>
-				{:else}
-					<div class="user-tables">
-						{#each userTables as table}
-							<div class="user-table">
-								<div class="table-header">
-									<h3>{table.userId}</h3>
-									<span class="item-count">{table.itemCount} items</span>
-									<div class="table-actions">
-										<button
-											class="expand-btn"
-											on:click={() => {
-												if (expandedTable === table.userId) {
-													expandedTable = null;
-													expandedTableData = []; // Reset data on collapse
-												} else {
-													expandedTable = table.userId;
-													loadTableData(table.userId); // Fetch data on expand
-												}
-											}}
-											disabled={!token}
-										>
-											{expandedTable === table.userId ? 'Collapse' : 'Expand'}
-										</button>
-										<button
-											class="delete-btn"
-											on:click={() => handleDeleteAccount(table.userId)}
-											disabled={!token}
-										>
-											Delete
-										</button>
-									</div>
-								</div>
-								{#if expandedTable === table.userId}
-									<div class="table-content">
-										{#if tableDataLoading}
-											<p>Loading table data...</p>
-										{:else if error && expandedTable === table.userId}
-											<p class="error">{error}</p>
-										{:else if expandedTableData.length === 0}
-											<p>No cards found in seeking list.</p>
-										{:else}
-											<table>
-												<thead>
-													<tr>
-														<th>Name</th>
-														<th>Set</th>
-														<th>Number</th>
-														<th>Language</th>
-														<th>Finish</th>
-													</tr>
-												</thead>
-												<tbody>
-													{#each expandedTableData as card}
-														<tr>
-															<td data-label="Name">{card.name}</td>
-															<td data-label="Set">{card.set_code}</td>
-															<td data-label="Number">{card.collector_number}</td>
-															<td data-label="Language">{card.language}</td>
-															<td data-label="Finish">{card.finish}</td>
-														</tr>
-													{/each}
-												</tbody>
-											</table>
-										{/if}
-									</div>
-								{/if}
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</section>
-
-			<section class="admin-section">
 				<div class="section-header">
 					<h2>System Status</h2>
 					<button class="refresh-btn" on:click={loadSystemStatus} disabled={statusLoading}>
@@ -445,6 +367,84 @@
 					</div>
 				{/if}
 			</section>
+
+			<section class="admin-section">
+				<h2>User Management</h2>
+				{#if loading}
+					<p>Loading user data...</p>
+				{:else if error}
+					<p class="error">{error}</p>
+				{:else}
+					<div class="user-tables">
+						{#each userTables as table}
+							<div class="user-table">
+								<div class="table-header">
+									<h3>{table.userId}</h3>
+									<span class="item-count">{table.itemCount} items</span>
+									<div class="table-actions">
+										<button
+											class="expand-btn"
+											on:click={() => {
+												if (expandedTable === table.userId) {
+													expandedTable = null;
+													expandedTableData = []; // Reset data on collapse
+												} else {
+													expandedTable = table.userId;
+													loadTableData(table.userId); // Fetch data on expand
+												}
+											}}
+											disabled={!token}
+										>
+											{expandedTable === table.userId ? 'Collapse' : 'Expand'}
+										</button>
+										<button
+											class="delete-btn"
+											on:click={() => handleDeleteAccount(table.userId)}
+											disabled={!token}
+										>
+											Delete
+										</button>
+									</div>
+								</div>
+								{#if expandedTable === table.userId}
+									<div class="table-content">
+										{#if tableDataLoading}
+											<p>Loading table data...</p>
+										{:else if error && expandedTable === table.userId}
+											<p class="error">{error}</p>
+										{:else if expandedTableData.length === 0}
+											<p>No cards found in seeking list.</p>
+										{:else}
+											<table>
+												<thead>
+													<tr>
+														<th>Name</th>
+														<th>Set</th>
+														<th>Number</th>
+														<th>Language</th>
+														<th>Finish</th>
+													</tr>
+												</thead>
+												<tbody>
+													{#each expandedTableData as card}
+														<tr>
+															<td data-label="Name">{card.name}</td>
+															<td data-label="Set">{card.set_code}</td>
+															<td data-label="Number">{card.collector_number}</td>
+															<td data-label="Language">{card.language}</td>
+															<td data-label="Finish">{card.finish}</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										{/if}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</section>
 		</div>
 	</div>
 {/if}
@@ -502,9 +502,9 @@
 	}
 
 	.admin-content {
-		display: grid;
+		display: flex;
+		flex-direction: column;
 		gap: 2rem;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 	}
 
 	.admin-section {
