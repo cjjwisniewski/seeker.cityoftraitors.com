@@ -102,6 +102,7 @@ const createAuthStore = () => {
     function clearAuthData() {
         if (browser) {
             localStorage.removeItem('authToken');
+            localStorage.removeItem('cachedUserInfo');
         }
         set({ isAuthenticated: false, token: null, user: null, isLoading: false, intendedPath: null });
     }
@@ -109,9 +110,27 @@ const createAuthStore = () => {
     function setAuthData(token: string, user: User | null) {
         if (browser) {
             localStorage.setItem('authToken', token);
+            if (user) {
+                localStorage.setItem('cachedUserInfo', JSON.stringify(user));
+            }
         }
         // Keep existing intendedPath when setting auth data
         update(state => ({ ...state, isAuthenticated: true, token: token, user: user, isLoading: false }));
+    }
+
+    // Function to handle background refresh of user info
+    async function refreshUserInfo(token: string) {
+        try {
+            const user = await fetchUserInfo(token);
+            if (user) {
+                setAuthData(token, user);
+            } else {
+                console.warn('AuthStore: Background refresh failed to get user. Token likely expired.');
+                clearAuthData(); // Token is invalid, clear state
+            }
+        } catch (error) {
+            console.error('AuthStore: Background refresh error:', error);
+        }
     }
 
     async function initialize() {
@@ -133,16 +152,38 @@ const createAuthStore = () => {
             if (!LOGIN_URL) {
                 console.error('AuthStore FATAL: VITE_LOGIN_URL environment variable is not set. Authentication cannot proceed.');
                 update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
+                isInitializing = false;
                 return; // Stop initialization
             }
 
             const token = localStorage.getItem('authToken');
             if (token) {
-                const user = await fetchUserInfo(token);
-                if (user) {
-                    setAuthData(token, user);
+                // Try to get cached user info for instant load
+                let initialUser: User | null = null;
+                const cachedUserStr = localStorage.getItem('cachedUserInfo');
+
+                if (cachedUserStr) {
+                    try {
+                        initialUser = JSON.parse(cachedUserStr);
+                    } catch (e) {
+                        console.warn('AuthStore: Error parsing cachedUserInfo:', e);
+                    }
+                }
+
+                // If no cache, fall back to parsing the JWT directly (fast)
+                if (!initialUser) {
+                    initialUser = parseJwt(token);
+                }
+
+                if (initialUser) {
+                    // We have some user data! Set it immediately so the UI can render.
+                    setAuthData(token, initialUser);
+
+                    // Trigger a background refresh to get the latest settings/profile
+                    refreshUserInfo(token);
                 } else {
-                    clearAuthData(); // Token might be invalid/expired
+                    // No valid user data from token or cache
+                    clearAuthData();
                 }
             } else {
                 update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
