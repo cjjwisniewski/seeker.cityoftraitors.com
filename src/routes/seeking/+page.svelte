@@ -12,6 +12,16 @@
 	let loading = true; // Re-declare the loading variable
 	let unsubscribe; // Declare unsubscribe in the component scope
 	let isCondensed = false; // State for condensed view
+	let activeMenuId = null; // State for identifying which kebab menu is open
+
+	function toggleMenu(id, event) {
+		event.stopPropagation();
+		activeMenuId = activeMenuId === id ? null : id;
+	}
+
+	function closeMenu() {
+		activeMenuId = null;
+	}
 
 	function toggleCondensed() {
 		isCondensed = !isCondensed;
@@ -352,6 +362,8 @@
 	}
 </script>
 
+<svelte:window on:click={closeMenu} />
+
 <div class="page-title">
 	<h1>Seeking List</h1>
 	<div class="view-controls">
@@ -473,7 +485,7 @@
 						EBay
 						<!-- Add sorting later if needed -->
 					</th>
-					<th>Actions</th>
+					<th class="actions-header"></th>
 					<!-- Not sortable -->
 				</tr>
 			</thead>
@@ -589,15 +601,39 @@
 								{/if}
 							</div>
 						</td>
-						<td data-label="Actions" class="delete-btn-column">
-							<button
-								class="delete-btn"
-								aria-label="Delete card"
-								on:click={() => handleDelete(card)}
-								disabled={!isAuthenticated}
-							>
-								<i class="fa-solid fa-trash"></i>
-							</button>
+						<td data-label="Actions" class="actions-column">
+							<div class="kebab-menu-container">
+								<button
+									class="kebab-button"
+									aria-label="Actions menu"
+									on:click={(e) =>
+										toggleMenu(
+											`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`,
+											e
+										)}
+								>
+									<i class="fa-solid fa-ellipsis-vertical"></i>
+								</button>
+								{#if activeMenuId === `${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`}
+									<!-- svelte-ignore a11y-click-events-have-key-events -->
+									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<div class="kebab-dropdown" on:click|stopPropagation>
+										<button class="dropdown-item" disabled title="Settings coming soon">
+											<i class="fa-solid fa-gear"></i> Settings
+										</button>
+										<button
+											class="dropdown-item text-error"
+											on:click={() => {
+												handleDelete(card);
+												closeMenu();
+											}}
+											disabled={!isAuthenticated}
+										>
+											<i class="fa-solid fa-trash"></i> Delete
+										</button>
+									</div>
+								{/if}
+							</div>
 						</td>
 					</tr>
 				{/each}
@@ -840,11 +876,21 @@
 		filter: grayscale(1);
 	}
 
-	.delete-btn-column {
-		text-align: center;
+	.actions-header {
+		width: 50px;
 	}
 
-	.delete-btn {
+	.actions-column {
+		text-align: center;
+		position: relative;
+	}
+
+	.kebab-menu-container {
+		position: relative;
+		display: inline-block;
+	}
+
+	.kebab-button {
 		background: none;
 		border: none;
 		color: var(--color-text-muted);
@@ -860,10 +906,64 @@
 		justify-content: center;
 	}
 
-	.delete-btn:hover {
-		background: var(--color-error);
+	.kebab-button:hover {
+		background-color: var(--color-bg-hover);
+		color: var(--color-text-primary);
+	}
+
+	.kebab-dropdown {
+		position: absolute;
+		right: 0;
+		top: 100%;
+		background: var(--color-bg-primary);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		box-shadow: var(--shadow-md);
+		min-width: 140px;
+		z-index: 50;
+		display: flex;
+		flex-direction: column;
+		padding: 0.5rem 0;
+		margin-top: 0.25rem;
+		animation: fadeIn 0.2s ease-out;
+	}
+
+	.dropdown-item {
+		background: none;
+		border: none;
+		padding: 0.75rem 1rem;
+		text-align: left;
+		cursor: pointer;
+		color: var(--color-text-primary);
+		font-size: 0.9rem;
+		transition: background-color var(--transition-fast);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		width: 100%;
+	}
+
+	.dropdown-item i {
+		width: 16px;
+		text-align: center;
+	}
+
+	.dropdown-item:hover:not(:disabled) {
+		background-color: var(--color-bg-hover);
+	}
+
+	.dropdown-item:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.dropdown-item.text-error {
+		color: var(--color-error);
+	}
+
+	.dropdown-item.text-error:hover:not(:disabled) {
+		background-color: var(--color-error);
 		color: white;
-		transform: rotate(15deg);
 	}
 
 	.text-success {
