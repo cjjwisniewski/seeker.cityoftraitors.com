@@ -43,6 +43,16 @@
 					rel="noopener noreferrer">@undomian</a
 				> on the City of Traitors Discord.
 			</p>
+
+			<h2>Support the Developer</h2>
+			<p>
+				Want to support the developer? Contributions help keep Seeker running and fund future
+				improvements. You can send a tip via <a
+					href="https://paypal.me/cameronwisniewski"
+					target="_blank"
+					rel="noopener noreferrer">PayPal</a
+				>.
+			</p>
 		</div>
 	</div>
 {/if}
