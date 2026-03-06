@@ -27,6 +27,37 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Increment PUBLIC_VERSION
+        id: increment_version
+        env:
+          GH_TOKEN: ${{ secrets.REPO_PAT }}
+          OLD_VERSION: ${{ vars.PUBLIC_VERSION }}
+        run: |
+          if [[ $OLD_VERSION =~ ^([0-9]+\.[0-9]+\.)([0-9]+)$ ]]; then
+            PREFIX="${BASH_REMATCH[1]}"
+            PATCH="${BASH_REMATCH[2]}"
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="${PREFIX}${NEW_PATCH}"
+            echo "Incrementing version from $OLD_VERSION to $NEW_VERSION"
+            
+            if [ -n "$GH_TOKEN" ]; then
+              gh api \
+                --method PATCH \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                /repos/${{ github.repository }}/actions/variables/PUBLIC_VERSION \
+                -f name='PUBLIC_VERSION' \
+                -f value="$NEW_VERSION" || echo "Failed to update variable. Is REPO_PAT correct?"
+            else
+              echo "Warning: REPO_PAT secret is not set. Cannot update repository variable."
+            fi
+            
+            echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
+          else
+            echo "Format not recognized: $OLD_VERSION. Expected x.y.z"
+            echo "NEW_VERSION=$OLD_VERSION" >> "$GITHUB_ENV"
+          fi
+
       - name: Build
         env:
           # --- Secrets ---
@@ -35,7 +66,7 @@ jobs:
           # --- Variables ---
           DISCORD_CLIENT_ID: ${{ vars.DISCORD_CLIENT_ID }}
           DISCORD_REDIRECT_URI: ${{ vars.DISCORD_REDIRECT_URI }}
-          PUBLIC_VERSION: ${{ vars.PUBLIC_VERSION }}
+          PUBLIC_VERSION: ${{ env.NEW_VERSION }}
           PUBLIC_DISCORD_CLIENT_ID: ${{ vars.PUBLIC_DISCORD_CLIENT_ID }}
           PUBLIC_DISCORD_REDIRECT_URI: ${{ vars.PUBLIC_DISCORD_REDIRECT_URI }}
           PUBLIC_USER_TABLE_FUNCTION_URL: ${{ vars.PUBLIC_USER_TABLE_FUNCTION_URL }}
