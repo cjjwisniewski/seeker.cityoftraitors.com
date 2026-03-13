@@ -61,6 +61,22 @@
 		} else {
 			await handleLanguageChange(card, card.selected_language);
 		}
+
+		// Update available finishes and ensure a valid finish is selected
+		const preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
+		const availableFinishes = newPrint.finishes || [];
+		card.available_finishes = availableFinishes;
+
+		if (availableFinishes.includes(preferredFinish)) {
+			// Apply preference if available
+			selectedFinishes[card.id] = preferredFinish;
+		} else if (
+			availableFinishes.length > 0 &&
+			!availableFinishes.includes(selectedFinishes[card.id])
+		) {
+			// If current selection is invalid, grab the first valid finish
+			selectedFinishes[card.id] = availableFinishes[0];
+		}
 	}
 
 	async function handleLanguageChange(card, language) {
@@ -275,6 +291,28 @@
 
 	$: sortedCards = cards.map((card) => {
 		if (!card.all_prints) return card;
+
+		// Map the initial preferred finish based on the first initially selected print
+		const preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
+		const currentPrint = card.all_prints.find(
+			(p) => p.set_code === card.set && p.collector_number === card.collector_number
+		);
+
+		if (currentPrint) {
+			const availableFinishes = currentPrint.finishes || [];
+			card.available_finishes = availableFinishes;
+
+			if (!selectedFinishes[card.id]) {
+				if (availableFinishes.includes(preferredFinish)) {
+					selectedFinishes[card.id] = preferredFinish;
+				} else if (availableFinishes.length > 0) {
+					selectedFinishes[card.id] = availableFinishes[0];
+				} else {
+					selectedFinishes[card.id] = 'nonfoil'; // fallback
+				}
+			}
+		}
+
 		return {
 			...card,
 			all_prints: [...card.all_prints].sort((a, b) => (a.set || '').localeCompare(b.set || ''))
@@ -376,10 +414,16 @@
 									type="radio"
 									name="finish-{card.id}"
 									value="nonfoil"
-									checked={!selectedFinishes[card.id] || selectedFinishes[card.id] === 'nonfoil'}
+									checked={selectedFinishes[card.id] === 'nonfoil'}
 									on:change={() => handleFinishChange(card.id, 'nonfoil')}
+									disabled={card.available_finishes && !card.available_finishes.includes('nonfoil')}
 								/>
-								<span class="finish-text">Nonfoil</span>
+								<span
+									class="finish-text {card.available_finishes &&
+									!card.available_finishes.includes('nonfoil')
+										? 'disabled'
+										: ''}">Nonfoil</span
+								>
 							</label>
 							<label class="finish-label">
 								<input
@@ -388,8 +432,14 @@
 									value="foil"
 									checked={selectedFinishes[card.id] === 'foil'}
 									on:change={() => handleFinishChange(card.id, 'foil')}
+									disabled={card.available_finishes && !card.available_finishes.includes('foil')}
 								/>
-								<span class="finish-text">Foil</span>
+								<span
+									class="finish-text {card.available_finishes &&
+									!card.available_finishes.includes('foil')
+										? 'disabled'
+										: ''}">Foil</span
+								>
 							</label>
 						</div>
 						<div class="card-actions">
@@ -681,6 +731,11 @@
 	input[type='radio']:checked + .finish-text {
 		font-weight: 500;
 		color: #1f2937;
+	}
+
+	.finish-text.disabled {
+		opacity: 0.5;
+		text-decoration: line-through;
 	}
 
 	.no-results {

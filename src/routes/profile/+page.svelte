@@ -39,6 +39,7 @@
 	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
 	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
 	$: preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
+	$: preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
 
 	// --- Update Setting Logic ---
 	async function updateSetting(settingName, newValue) {
@@ -52,11 +53,13 @@
 		if (settingName === 'stockAlertEnabled') oldValue = stockAlertEnabled;
 		if (settingName === 'stockDigestEnabled') oldValue = stockDigestEnabled;
 		if (settingName === 'preferredLanguage') oldValue = preferredLanguage;
+		if (settingName === 'preferredFinish') oldValue = preferredFinish;
 
 		// Optimistic UI update
 		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
 		if (settingName === 'stockDigestEnabled') stockDigestEnabled = newValue;
 		if (settingName === 'preferredLanguage') preferredLanguage = newValue;
+		if (settingName === 'preferredFinish') preferredFinish = newValue;
 
 		try {
 			console.log(`Updating setting ${settingName} to ${newValue}...`);
@@ -78,6 +81,7 @@
 				if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
 				if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
 				if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
+				if (settingName === 'preferredFinish') preferredFinish = oldValue;
 				settingsError = 'Error updating setting. Please try again.';
 				return;
 			}
@@ -89,6 +93,7 @@
 			if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
 			if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
 			if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
+			if (settingName === 'preferredFinish') preferredFinish = oldValue;
 			settingsError = 'Error updating setting. Please try again.';
 		} finally {
 			isUpdatingSetting = false;
@@ -318,6 +323,28 @@
 								{#each Object.entries(languageNames) as [code, name]}
 									<option value={code}>{name}</option>
 								{/each}
+							</select>
+						</div>
+					</div>
+
+					<!-- Finish Setting -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<span class="label">Preferred Finish</span>
+							<span class="description"
+								>Select your preferred card finish (foil vs nonfoil) to default to on card searches.
+								Falls back to available finishes.</span
+							>
+						</div>
+						<div class="language-select-wrapper">
+							<select
+								class="language-select"
+								value={preferredFinish}
+								on:change={(e) => updateSetting('preferredFinish', e.target.value)}
+								disabled={isUpdatingSetting}
+							>
+								<option value="nonfoil">Nonfoil</option>
+								<option value="foil">Foil</option>
 							</select>
 						</div>
 					</div>

@@ -144,6 +144,7 @@
 						oracle_text: print.oracle_text,
 						type_line: print.type_line,
 						mana_cost: print.mana_cost,
+						finishes: print.finishes || [],
 						tcgplayer_id: print.tcgplayer_id || null,
 						cardmarket_id: print.cardmarket_id || null
 					}));
@@ -203,7 +204,8 @@
 							flavor_text: card.flavor_text,
 							oracle_text: card.oracle_text,
 							type_line: card.type_line,
-							mana_cost: card.mana_cost
+							mana_cost: card.mana_cost,
+							finishes: card.finishes || []
 						}
 					],
 					available_languages: availableLanguages,
@@ -263,7 +265,8 @@
 									flavor_text: card.flavor_text,
 									oracle_text: card.oracle_text,
 									type_line: card.type_line,
-									mana_cost: card.mana_cost
+									mana_cost: card.mana_cost,
+									finishes: card.finishes || []
 								}
 							],
 							available_languages: availableLanguages,
@@ -285,6 +288,7 @@
 							oracle_text: print.oracle_text,
 							type_line: print.type_line,
 							mana_cost: print.mana_cost,
+							finishes: print.finishes || [],
 							tcgplayer_id: print.tcgplayer_id || null,
 							cardmarket_id: print.cardmarket_id || null
 						}));
