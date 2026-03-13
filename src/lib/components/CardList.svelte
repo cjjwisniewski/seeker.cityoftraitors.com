@@ -77,6 +77,7 @@
 			// If current selection is invalid, grab the first valid finish
 			selectedFinishes[card.id] = availableFinishes[0];
 		}
+		selectedFinishes = { ...selectedFinishes };
 	}
 
 	async function handleLanguageChange(card, language) {
@@ -287,6 +288,7 @@
 	// --- Original Functions (handleFinishChange, sortedCards, getManaCost, getTypeLine - UNCHANGED from message #19) ---
 	function handleFinishChange(cardId, finish) {
 		selectedFinishes[cardId] = finish;
+		selectedFinishes = { ...selectedFinishes };
 	}
 
 	$: sortedCards = cards.map((card) => {
@@ -301,16 +303,6 @@
 		if (currentPrint) {
 			const availableFinishes = currentPrint.finishes || [];
 			card.available_finishes = availableFinishes;
-
-			if (!selectedFinishes[card.id]) {
-				if (availableFinishes.includes(preferredFinish)) {
-					selectedFinishes[card.id] = preferredFinish;
-				} else if (availableFinishes.length > 0) {
-					selectedFinishes[card.id] = availableFinishes[0];
-				} else {
-					selectedFinishes[card.id] = 'nonfoil'; // fallback
-				}
-			}
 		}
 
 		return {
@@ -318,6 +310,29 @@
 			all_prints: [...card.all_prints].sort((a, b) => (a.set || '').localeCompare(b.set || ''))
 		};
 	});
+
+	$: {
+		const preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
+		let finishesUpdated = false;
+		if (sortedCards) {
+			for (const card of sortedCards) {
+				if (!selectedFinishes[card.id] && card.available_finishes) {
+					const availableFinishes = card.available_finishes;
+					if (availableFinishes.includes(preferredFinish)) {
+						selectedFinishes[card.id] = preferredFinish;
+					} else if (availableFinishes.length > 0) {
+						selectedFinishes[card.id] = availableFinishes[0];
+					} else {
+						selectedFinishes[card.id] = 'nonfoil'; // fallback
+					}
+					finishesUpdated = true;
+				}
+			}
+		}
+		if (finishesUpdated) {
+			selectedFinishes = { ...selectedFinishes };
+		}
+	}
 
 	function getManaCost(card) {
 		return card.mana_cost || '';
