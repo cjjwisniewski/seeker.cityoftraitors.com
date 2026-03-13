@@ -54,15 +54,7 @@
 		card.type_line = newPrint.type_line;
 		card.mana_cost = newPrint.mana_cost;
 
-		// If the selected language matches the print's native language, just update the UI.
-		// Otherwise fetch the localized image and card text via handleLanguageChange.
-		if (card.selected_language === (newPrint.lang || 'en')) {
-			sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...card } : c));
-		} else {
-			await handleLanguageChange(card, card.selected_language);
-		}
-
-		// Update available finishes and ensure a valid finish is selected
+		// Update available finishes and ensure a valid finish is selected BEFORE remapping for Svelte
 		const preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
 		const availableFinishes = newPrint.finishes || [];
 		card.available_finishes = availableFinishes;
@@ -78,6 +70,14 @@
 			selectedFinishes[card.id] = availableFinishes[0];
 		}
 		selectedFinishes = { ...selectedFinishes };
+
+		// If the selected language matches the print's native language, just update the UI.
+		// Otherwise fetch the localized image and card text via handleLanguageChange.
+		if (card.selected_language === (newPrint.lang || 'en')) {
+			sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...card } : c));
+		} else {
+			await handleLanguageChange(card, card.selected_language);
+		}
 	}
 
 	async function handleLanguageChange(card, language) {
