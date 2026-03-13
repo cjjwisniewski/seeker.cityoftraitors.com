@@ -57,7 +57,6 @@
 		// Update available finishes and ensure a valid finish is selected BEFORE remapping for Svelte
 		const preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
 		const availableFinishes = newPrint.finishes || [];
-		card.available_finishes = availableFinishes;
 
 		if (availableFinishes.includes(preferredFinish)) {
 			// Apply preference if available
@@ -300,11 +299,6 @@
 			(p) => p.set_code === card.set && p.collector_number === card.collector_number
 		);
 
-		if (currentPrint) {
-			const availableFinishes = currentPrint.finishes || [];
-			card.available_finishes = availableFinishes;
-		}
-
 		return {
 			...card,
 			all_prints: [...card.all_prints].sort((a, b) => (a.set || '').localeCompare(b.set || ''))
@@ -316,8 +310,11 @@
 		let finishesUpdated = false;
 		if (sortedCards) {
 			for (const card of sortedCards) {
-				if (!selectedFinishes[card.id] && card.available_finishes) {
-					const availableFinishes = card.available_finishes;
+				const currentPrint = card.all_prints?.find(
+					(p) => p.set_code === card.set && p.collector_number === card.collector_number
+				);
+				if (!selectedFinishes[card.id] && currentPrint?.finishes) {
+					const availableFinishes = currentPrint.finishes;
 					if (availableFinishes.includes(preferredFinish)) {
 						selectedFinishes[card.id] = preferredFinish;
 					} else if (availableFinishes.length > 0) {
@@ -431,11 +428,11 @@
 									value="nonfoil"
 									checked={selectedFinishes[card.id] === 'nonfoil'}
 									on:change={() => handleFinishChange(card.id, 'nonfoil')}
-									disabled={card.available_finishes && !card.available_finishes.includes('nonfoil')}
+									disabled={currentPrint?.finishes && !currentPrint.finishes.includes('nonfoil')}
 								/>
 								<span
-									class="finish-text {card.available_finishes &&
-									!card.available_finishes.includes('nonfoil')
+									class="finish-text {currentPrint?.finishes &&
+									!currentPrint.finishes.includes('nonfoil')
 										? 'disabled'
 										: ''}">Nonfoil</span
 								>
@@ -447,11 +444,11 @@
 									value="foil"
 									checked={selectedFinishes[card.id] === 'foil'}
 									on:change={() => handleFinishChange(card.id, 'foil')}
-									disabled={card.available_finishes && !card.available_finishes.includes('foil')}
+									disabled={currentPrint?.finishes && !currentPrint.finishes.includes('foil')}
 								/>
 								<span
-									class="finish-text {card.available_finishes &&
-									!card.available_finishes.includes('foil')
+									class="finish-text {currentPrint?.finishes &&
+									!currentPrint.finishes.includes('foil')
 										? 'disabled'
 										: ''}">Foil</span
 								>
