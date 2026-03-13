@@ -491,7 +491,7 @@
 			</thead>
 			<tbody>
 				{#each sortedCards as card (`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`)}
-					<tr class:condensed={isCondensed}>
+					<tr class:condensed={isCondensed} style={activeMenuId === `${card.set_code}-${card.collector_number}-${card.language}-${card.finish}` ? "z-index: 50; position: relative;" : ""}>
 						<td data-label="Card">
 							<div class="card-info">
 								{#if !isCondensed}
@@ -1030,8 +1030,7 @@
 			grid-template-areas:
 				'cardinfo cardinfo cardinfo'
 				'set      language finish'
-				'vendor1  vendor2  vendor3'
-				'actions  actions  actions';
+				'vendor1  vendor2  vendor3';
 			background: var(--glass-bg);
 			backdrop-filter: blur(var(--backdrop-blur));
 			border: 1px solid var(--glass-border);
@@ -1074,6 +1073,7 @@
 		td[data-label='Card'] .card-info span {
 			font-weight: 600;
 			font-size: 1.1rem;
+			padding-right: 2rem; /* Add padding so name doesn't hit button */
 		}
 
 		td[data-label='Set'] {
@@ -1102,13 +1102,13 @@
 		}
 
 		td[data-label='Actions'] {
-			grid-area: actions;
-			position: static;
-			display: flex;
-			justify-content: center;
-			border-top: 1px solid var(--color-border);
-			padding-top: 0.5rem;
-			margin-top: 0.5rem;
+			position: absolute;
+			top: 0.5rem;
+			right: 0.5rem;
+			border-top: none;
+			padding-top: 0;
+			margin-top: 0;
+			background: none;
 		}
 		td[data-label='CardTrader']::before,
 		td[data-label='TCGPlayer']::before {
