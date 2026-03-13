@@ -379,7 +379,12 @@
 						{#each userTables as table}
 							<div class="user-table">
 								<div class="table-header">
-									<h3>{table.userId}</h3>
+									<h3>
+										{table.username}
+										<span class="text-muted" style="font-size: 0.85rem; font-weight: 500;"
+											>({table.userId})</span
+										>
+									</h3>
 									<span class="item-count">{table.itemCount} items</span>
 									<div class="table-actions">
 										<button
