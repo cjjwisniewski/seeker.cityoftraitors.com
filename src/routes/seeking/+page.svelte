@@ -491,7 +491,13 @@
 			</thead>
 			<tbody>
 				{#each sortedCards as card (`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`)}
-					<tr class:condensed={isCondensed} style={activeMenuId === `${card.set_code}-${card.collector_number}-${card.language}-${card.finish}` ? "z-index: 50; position: relative;" : ""}>
+					<tr
+						class:condensed={isCondensed}
+						style={activeMenuId ===
+						`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`
+							? 'z-index: 50; position: relative;'
+							: ''}
+					>
 						<td data-label="Card">
 							<div class="card-info">
 								{#if !isCondensed}
@@ -1073,7 +1079,7 @@
 		td[data-label='Card'] .card-info span {
 			font-weight: 600;
 			font-size: 1.1rem;
-			padding-right: 2rem; /* Add padding so name doesn't hit button */
+			padding: 0 2rem; /* Symmetric padding keeps name centered and prevents overlap with top-right menu */
 		}
 
 		td[data-label='Set'] {
