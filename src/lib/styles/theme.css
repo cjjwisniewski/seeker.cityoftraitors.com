@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
-
 :root {
     /* Base colors */
     --color-bg-primary: #f8f9fa;
@@ -39,7 +37,7 @@
     --color-warning: #f59e0b;
 
     /* Typography */
-    --font-family: 'Creepster', system-ui, sans-serif;
+    --font-family: Papyrus, fantasy, "Comic Sans MS", cursive;
 
     /* Glassmorphism */
     --glass-bg: rgba(255, 255, 255, 0.7);
