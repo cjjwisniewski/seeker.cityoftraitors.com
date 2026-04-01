@@ -4,7 +4,8 @@
 	import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
 	import {
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
-		PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL
+		PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL,
+		PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL
 	} from '$env/static/public';
 
 	let cards = [];
@@ -13,6 +14,11 @@
 	let unsubscribe; // Declare unsubscribe in the component scope
 	let isCondensed = false; // State for condensed view
 	let activeMenuId = null; // State for identifying which kebab menu is open
+
+	let showSettingsModal = false;
+	let selectedCardForSettings = null;
+	let maxPriceInput = '';
+	let isSavingSettings = false;
 
 	function toggleMenu(id, event) {
 		event.stopPropagation();
@@ -110,15 +116,12 @@
 	}
 
 	async function handleDelete(card) {
-		// Consider adding a specific loading state for the delete button if desired
-		error = null; // Clear previous errors
-
+		error = null;
 		try {
 			const requestBody = {
 				partitionKey: card.set_code,
 				rowKey: `${card.collector_number}_${card.language}_${card.finish}`
-			}; // <-- Added missing closing brace here
-			// Use fetchWithAuth for the delete request
+			};
 			const response = await fetchWithAuth(PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL, {
 				method: 'DELETE',
 				headers: {
@@ -127,22 +130,16 @@
 				body: JSON.stringify(requestBody)
 			});
 
-			// fetchWithAuth returns undefined if it redirects (e.g., on 401)
 			if (!response) {
 				error = `Authentication failed while attempting to delete card.`;
-				console.error(error);
-				return; // Stop execution
+				return;
 			}
-
-			console.log('Delete Response status:', response.status);
-			const responseText = await response.text();
-			console.log('Delete Response body:', responseText);
 
 			if (!response.ok) {
-				throw new Error(`Failed to delete card (Status: ${response.status}): ${responseText}`);
+				const text = await response.text();
+				throw new Error(`Failed to delete card (Status: ${response.status}): ${text}`);
 			}
 
-			// Remove card from local state on success
 			cards = cards.filter(
 				(c) =>
 					!(
@@ -152,11 +149,80 @@
 						c.finish === card.finish
 					)
 			);
-			console.log('Card removed from local state');
 		} catch (e) {
-			error = `Delete failed: ${e.message}`; // Update error state
+			error = `Delete failed: ${e.message}`;
 			console.error('Error deleting card:', e);
 		}
+	}
+
+	async function handleUpdateSettings() {
+		if (!selectedCardForSettings) return;
+		isSavingSettings = true;
+		error = null;
+
+		try {
+			// Convert input to cents. If empty, send null to clear.
+			let max_price_cap = null;
+			if (maxPriceInput.trim() !== '') {
+				max_price_cap = Math.round(parseFloat(maxPriceInput) * 100);
+				if (isNaN(max_price_cap)) throw new Error('Invalid price format');
+			}
+
+			const requestBody = {
+				partitionKey: selectedCardForSettings.set_code,
+				rowKey: `${selectedCardForSettings.collector_number}_${selectedCardForSettings.language}_${selectedCardForSettings.finish}`,
+				max_price_cap: max_price_cap
+			};
+
+			const response = await fetchWithAuth(PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(requestBody)
+			});
+
+			if (!response) {
+				error = `Authentication failed while updating card settings.`;
+				return;
+			}
+
+			if (!response.ok) {
+				const text = await response.text();
+				throw new Error(`Failed to update settings: ${text}`);
+			}
+
+			// Update local state
+			cards = cards.map((c) => {
+				if (
+					c.set_code === selectedCardForSettings.set_code &&
+					c.collector_number === selectedCardForSettings.collector_number &&
+					c.language === selectedCardForSettings.language &&
+					c.finish === selectedCardForSettings.finish
+				) {
+					return { ...c, max_price_cap: max_price_cap };
+				}
+				return c;
+			});
+
+			showSettingsModal = false;
+		} catch (e) {
+			error = `Update failed: ${e.message}`;
+			console.error('Error updating settings:', e);
+		} finally {
+			isSavingSettings = false;
+		}
+	}
+
+	function openSettings(card) {
+		selectedCardForSettings = card;
+		// Initialize input with current value (convert cents to dollars)
+		maxPriceInput =
+			card.max_price_cap !== null && card.max_price_cap !== undefined
+				? (card.max_price_cap / 100).toFixed(2)
+				: '';
+		showSettingsModal = true;
+		closeMenu();
 	}
 
 	function getStockIcon(status) {
@@ -540,6 +606,11 @@
 										{#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
 											<span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
 										{/if}
+										{#if card.max_price_cap !== null && card.max_price_cap !== undefined}
+											<span class="cap-badge" title="Max Price Cap">
+												MAX {formatPrice(card.max_price_cap)}
+											</span>
+										{/if}
 									</div>
 								</a>
 							{:else}
@@ -624,7 +695,7 @@
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<!-- svelte-ignore a11y-no-static-element-interactions -->
 									<div class="kebab-dropdown" on:click|stopPropagation>
-										<button class="dropdown-item" disabled title="Settings coming soon">
+										<button class="dropdown-item" on:click={() => openSettings(card)}>
 											<i class="fa-solid fa-gear"></i> Settings
 										</button>
 										<button
@@ -645,6 +716,65 @@
 				{/each}
 			</tbody>
 		</table>
+	</div>
+{/if}
+
+{#if showSettingsModal && selectedCardForSettings}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="overlay-backdrop" on:click={() => (showSettingsModal = false)}>
+		<div class="modal-content" on:click|stopPropagation>
+			<div class="modal-header">
+				<h2>Card Settings</h2>
+				<button class="close-modal-btn" on:click={() => (showSettingsModal = false)}>
+					<i class="fa-solid fa-times"></i>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="card-details-mini">
+					<img src={selectedCardForSettings.image_uri} alt={selectedCardForSettings.name} />
+					<div>
+						<h3>{selectedCardForSettings.name}</h3>
+						<p>
+							{selectedCardForSettings.set_code.toUpperCase()} • {selectedCardForSettings.language.toUpperCase()}
+							• {selectedCardForSettings.finish}
+						</p>
+					</div>
+				</div>
+
+				<div class="settings-group">
+					<label for="max-price-cap">Max Price Cap ($)</label>
+					<p class="setting-description">
+						Only receive stock alerts and digests if the price is at or below this threshold. Leave
+						empty for no limit.
+					</p>
+					<div class="input-with-prefix">
+						<span>$</span>
+						<input
+							id="max-price-cap"
+							type="number"
+							step="0.01"
+							min="0"
+							bind:value={maxPriceInput}
+							placeholder="e.g. 50.00"
+							class="modal-input"
+						/>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button class="modal-btn secondary" on:click={() => (showSettingsModal = false)}
+					>Cancel</button
+				>
+				<button
+					class="modal-btn primary"
+					on:click={handleUpdateSettings}
+					disabled={isSavingSettings}
+				>
+					{isSavingSettings ? 'Saving...' : 'Save Settings'}
+				</button>
+			</div>
+		</div>
 	</div>
 {/if}
 
@@ -1222,5 +1352,170 @@
 		background-color: var(--color-primary);
 		color: var(--color-bg-primary);
 		border-color: var(--color-primary);
+	}
+
+	/* Modal Styles */
+	.modal-content {
+		background: var(--color-bg-primary);
+		border: 1px solid var(--color-border);
+		border-radius: 16px;
+		width: 90%;
+		max-width: 500px;
+		padding: 1.5rem;
+		box-shadow: var(--shadow-lg);
+		animation: scaleIn 0.3s ease-out;
+	}
+
+	.modal-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1.5rem;
+		border-bottom: 1px solid var(--color-border);
+		padding-bottom: 1rem;
+	}
+
+	.modal-header h2 {
+		margin: 0;
+		font-size: 1.25rem;
+		color: var(--color-text-primary);
+	}
+
+	.close-modal-btn {
+		background: none;
+		border: none;
+		color: var(--color-text-muted);
+		cursor: pointer;
+		font-size: 1.2rem;
+		padding: 0.5rem;
+	}
+
+	.card-details-mini {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+		margin-bottom: 1.5rem;
+		padding: 1rem;
+		background: var(--color-bg-secondary);
+		border-radius: 8px;
+	}
+
+	.card-details-mini img {
+		width: 60px;
+		height: auto;
+		border-radius: 4px;
+	}
+
+	.card-details-mini h3 {
+		margin: 0;
+		font-size: 1.1rem;
+	}
+
+	.card-details-mini p {
+		margin: 0.25rem 0 0 0;
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+	}
+
+	.settings-group {
+		margin-bottom: 1.5rem;
+	}
+
+	.settings-group label {
+		display: block;
+		font-weight: 600;
+		margin-bottom: 0.5rem;
+		color: var(--color-text-primary);
+	}
+
+	.setting-description {
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+		margin-bottom: 1rem;
+		line-height: 1.4;
+	}
+
+	.input-with-prefix {
+		display: flex;
+		align-items: center;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		padding: 0 0.75rem;
+		transition: border-color 0.2s;
+	}
+
+	.input-with-prefix:focus-within {
+		border-color: var(--color-primary);
+	}
+
+	.input-with-prefix span {
+		color: var(--color-text-muted);
+		margin-right: 0.5rem;
+	}
+
+	.modal-input {
+		background: transparent;
+		border: none;
+		color: var(--color-text-primary);
+		padding: 0.75rem 0;
+		font-size: 1rem;
+		width: 100%;
+		outline: none;
+	}
+
+	.modal-footer {
+		display: flex;
+		justify-content: flex-end;
+		gap: 1rem;
+		margin-top: 2rem;
+		border-top: 1px solid var(--color-border);
+		padding-top: 1.5rem;
+	}
+
+	.modal-btn {
+		padding: 0.75rem 1.5rem;
+		border-radius: 8px;
+		cursor: pointer;
+		font-weight: 600;
+		transition: all 0.2s;
+	}
+
+	.modal-btn.primary {
+		background-color: var(--color-primary);
+		color: white;
+		border: none;
+	}
+
+	.modal-btn.primary:hover:not(:disabled) {
+		background-color: var(--color-primary-dark, #0056b3);
+		transform: translateY(-1px);
+	}
+
+	.modal-btn.secondary {
+		background: none;
+		border: 1px solid var(--color-border);
+		color: var(--color-text-primary);
+	}
+
+	.modal-btn.secondary:hover {
+		background-color: var(--color-bg-hover);
+	}
+
+	.modal-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.cap-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		background: var(--color-bg-hover);
+		color: var(--color-accent);
+		padding: 2px 6px;
+		border-radius: 4px;
+		margin-top: 4px;
+		font-weight: 700;
+		border: 1px solid var(--color-accent);
 	}
 </style>
