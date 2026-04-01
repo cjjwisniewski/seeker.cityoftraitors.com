@@ -44,9 +44,11 @@
 
 	// --- Helper function to format date ---
 	function formatLocalDate(utcTimestamp) {
+		if (!utcTimestamp) return 'Never';
 		const date = new Date(utcTimestamp);
 		return date.toLocaleString(undefined, {
-			/* Formatting options */
+			dateStyle: 'medium',
+			timeStyle: 'short'
 		});
 	}
 
@@ -384,6 +386,12 @@
 										<span class="text-muted" style="font-size: 0.85rem; font-weight: 500;"
 											>({table.userId})</span
 										>
+										<div
+											class="last-login"
+											style="font-size: 0.75rem; font-weight: 400; color: var(--color-text-secondary); margin-top: 0.25rem;"
+										>
+											Last Login: {formatLocalDate(table.lastLogin)}
+										</div>
 									</h3>
 									<span class="item-count">{table.itemCount} items</span>
 									<div class="table-actions">
