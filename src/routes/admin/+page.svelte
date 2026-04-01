@@ -390,7 +390,7 @@
 											class="last-login"
 											style="font-size: 0.75rem; font-weight: 400; color: var(--color-text-secondary); margin-top: 0.25rem;"
 										>
-											Last Login: {formatLocalDate(table.lastLogin)}
+											Last Activity: {formatLocalDate(table.lastAccessed)}
 										</div>
 									</h3>
 									<span class="item-count">{table.itemCount} items</span>
