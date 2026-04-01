@@ -83,6 +83,7 @@ jobs:
           VITE_LOGIN_URL: ${{ vars.VITE_LOGIN_URL }}
           VITE_USER_INFO_URL: ${{ vars.VITE_USER_INFO_URL }}
           PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL: ${{ vars.PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL }}
+          PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL: ${{ vars.PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL }}
         run: npm run build
 
       - name: Azure Login
