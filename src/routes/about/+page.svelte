@@ -27,6 +27,39 @@
 					rel="noopener noreferrer">@undomian</a
 				> on the City of Traitors Discord.
 			</p>
+			<h2>Membership Tiers</h2>
+			<p>
+				Support the development of Seeker and unlock advanced features by choosing a membership
+				tier.
+			</p>
+			<div class="tier-comparison">
+				<table>
+					<thead>
+						<tr>
+							<th>Feature</th>
+							<th>Basic</th>
+							<th>Premium / Legacy</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Saved Cards</td>
+							<td>25</td>
+							<td>Unlimited</td>
+						</tr>
+						<tr>
+							<td>Marketplaces</td>
+							<td>CardTrader</td>
+							<td>CardTrader, TCGPlayer+</td>
+						</tr>
+						<tr>
+							<td>Scan Frequency</td>
+							<td>Once per day</td>
+							<td>Every 6 hours</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 			<h2>Support the Developer</h2>
 			<p>
 				Want to support the developer? Contributions help keep Seeker running and fund future
@@ -58,16 +91,6 @@
 		border-radius: 12px;
 		box-shadow: var(--shadow-sm);
 		border: 1px solid var(--color-border);
-	}
-
-	.about-content ul {
-		list-style-position: inside;
-		padding-left: 1em;
-		color: var(--color-text-secondary);
-	}
-
-	.about-content li {
-		margin-bottom: 0.5rem;
 	}
 
 	.about-content h2 {
@@ -102,5 +125,57 @@
 
 	a:hover {
 		text-decoration: underline;
+	}
+
+	.tier-comparison {
+		margin: 1.5rem 0;
+		overflow-x: auto;
+	}
+
+	.tier-comparison table {
+		width: 100%;
+		border-collapse: collapse;
+		border-radius: 8px;
+		overflow: hidden;
+		border: 1px solid var(--color-border);
+	}
+
+	.tier-comparison th,
+	.tier-comparison td {
+		padding: 1rem;
+		text-align: left;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.tier-comparison th {
+		background-color: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		font-weight: 600;
+		text-transform: uppercase;
+		font-size: 0.8rem;
+		letter-spacing: 0.05em;
+	}
+
+	.tier-comparison tr:last-child td {
+		border-bottom: none;
+	}
+
+	.tier-comparison td {
+		font-size: 0.95rem;
+	}
+
+	.tier-comparison td:first-child {
+		font-weight: 600;
+		color: var(--color-text-primary);
+		background-color: var(--color-bg-secondary);
+		width: 30%;
+	}
+
+	@media (max-width: 600px) {
+		.tier-comparison th,
+		.tier-comparison td {
+			padding: 0.75rem;
+			font-size: 0.85rem;
+		}
 	}
 </style>
