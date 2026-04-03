@@ -25,7 +25,8 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci || (sleep 5 && npm ci) || (sleep 10 && npm ci)
 
       - name: Increment PUBLIC_VERSION
         id: increment_version
@@ -84,6 +85,8 @@ jobs:
           VITE_USER_INFO_URL: ${{ vars.VITE_USER_INFO_URL }}
           PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL: ${{ vars.PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL }}
           PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL: ${{ vars.PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL }}
+          PUBLIC_GET_BANNER_FUNCTION_URL: ${{ vars.PUBLIC_GET_BANNER_FUNCTION_URL }}
+          PUBLIC_UPDATE_BANNER_FUNCTION_URL: ${{ vars.PUBLIC_UPDATE_BANNER_FUNCTION_URL }}
         run: npm run build
 
       - name: Azure Login
