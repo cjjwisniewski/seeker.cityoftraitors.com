@@ -474,10 +474,24 @@
 							<div class="user-table">
 								<div class="table-header">
 									<h3>
-										{table.username}
-										<span class="text-muted" style="font-size: 0.85rem; font-weight: 500;"
-											>({table.userId})</span
-										>
+										<div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+											{table.username}
+											<span
+												class="tier-badge tier-{(table.membershipTier || 'Basic').toLowerCase()}"
+												style="font-size: 0.7rem; padding: 0.15rem 0.6rem;"
+											>
+												<i
+													class="fa-solid {table.membershipTier === 'Premium' ||
+													table.membershipTier === 'Legacy'
+														? 'fa-crown'
+														: 'fa-certificate'}"
+												></i>
+												{table.membershipTier || 'Basic'}
+											</span>
+											<span class="text-muted" style="font-size: 0.85rem; font-weight: 500;"
+												>({table.userId})</span
+											>
+										</div>
 										<div
 											class="last-login"
 											style="font-size: 0.75rem; font-weight: 400; color: var(--color-text-secondary); margin-top: 0.25rem;"
