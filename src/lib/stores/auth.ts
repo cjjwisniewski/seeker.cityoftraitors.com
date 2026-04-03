@@ -7,10 +7,12 @@ interface User {
     username: string;
     avatar?: string;
     roles?: string[]; // Add roles if your user info endpoint returns them
+    membershipTier?: string;
     settings?: {
         stockAlertEnabled?: boolean;
         stockDigestEnabled?: boolean;
         preferredLanguage?: string;
+        membershipTier?: string;
     };
 }
 

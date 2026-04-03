@@ -258,6 +258,13 @@
 							{isAdmin ? 'Admin' : 'Not Admin'}
 						</span>
 					</div>
+					<div class="info-item">
+						<span class="label">Membership Tier</span>
+						<span class="value tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
+							<i class="fa-solid {user.membershipTier === 'Premium' || user.membershipTier === 'Legacy' ? 'fa-crown' : 'fa-certificate'}"></i>
+							{user.membershipTier || 'Basic'}
+						</span>
+					</div>
 				</div>
 			</section>
 
@@ -580,6 +587,49 @@
 		.info-grid {
 			grid-template-columns: repeat(2, 1fr);
 		}
+	}
+
+	/* Tier Badges */
+	.tier-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.25rem 0.75rem;
+		border-radius: 9999px;
+		font-size: 0.85rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.025em;
+		width: fit-content;
+		box-shadow: var(--shadow-sm);
+	}
+
+	.tier-basic {
+		background-color: var(--color-bg-secondary);
+		color: var(--color-text-secondary);
+		border: 1px solid var(--color-border);
+	}
+
+	.tier-premium {
+		background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+		color: white;
+		border: none;
+	}
+
+	.tier-legacy {
+		background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+		color: white;
+		border: none;
+	}
+
+	.tier-none {
+		background-color: var(--color-bg-secondary);
+		color: var(--color-text-secondary);
+		opacity: 0.6;
+	}
+
+	.tier-badge i {
+		font-size: 0.8rem;
 	}
 
 	.danger-zone {
