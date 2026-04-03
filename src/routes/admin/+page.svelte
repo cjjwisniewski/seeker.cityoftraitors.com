@@ -7,7 +7,9 @@
 		PUBLIC_GET_USER_TABLES_FUNCTION_URL,
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
 		PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL,
-		PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL // Add the missing import
+		PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL,
+		PUBLIC_GET_BANNER_FUNCTION_URL,
+		PUBLIC_UPDATE_BANNER_FUNCTION_URL
 	} from '$env/static/public';
 
 	// Define Role ID
@@ -196,6 +198,55 @@
 		}
 	}
 
+	// Banner state
+	let bannerMessage = '';
+	let bannerType = 'info';
+	let bannerEnabled = false;
+	let bannerLoading = false;
+	let bannerSaving = false;
+
+	async function loadBanner() {
+		if (!isAuthorized) return;
+		bannerLoading = true;
+		try {
+			const response = await fetch(PUBLIC_GET_BANNER_FUNCTION_URL);
+			if (response.ok) {
+				const data = await response.json();
+				bannerMessage = data.message;
+				bannerType = data.type;
+				bannerEnabled = data.enabled;
+			}
+		} catch (e) {
+			console.error('Error loading banner:', e);
+		} finally {
+			bannerLoading = false;
+		}
+	}
+
+	async function saveBanner() {
+		if (!isAuthorized) return;
+		bannerSaving = true;
+		try {
+			const response = await fetchWithAuth(PUBLIC_UPDATE_BANNER_FUNCTION_URL, {
+				method: 'POST',
+				body: JSON.stringify({
+					message: bannerMessage,
+					type: bannerType,
+					enabled: bannerEnabled
+				})
+			});
+			if (response && response.ok) {
+				alert('Banner updated successfully!');
+			} else {
+				throw new Error('Failed to update banner');
+			}
+		} catch (e) {
+			alert('Error updating banner: ' + e.message);
+		} finally {
+			bannerSaving = false;
+		}
+	}
+
 	// --- Statistics Logic ---
 	$: totalUsers = userTables.length;
 	$: totalItems = userTables.reduce((sum, table) => sum + (table.itemCount || 0), 0);
@@ -224,6 +275,7 @@
 		console.log('Admin Page: Authorized, loading initial data...');
 		loadUserTables();
 		loadSystemStatus();
+		loadBanner();
 	} else if (!authLoading && !isAuthorized) {
 		console.log('Admin Page: Not authorized or not authenticated.');
 		// Error/redirect is handled by reactive logic above
@@ -280,6 +332,46 @@
 							<div class="stat-value">{formatDuration(estimatedTCGTimeSeconds)}</div>
 							<div class="stat-sub">@ 20s/item</div>
 						</div>
+					</div>
+				{/if}
+			</section>
+
+			<section class="admin-section">
+				<div class="section-header">
+					<h2>Notification Banner</h2>
+				</div>
+				{#if bannerLoading}
+					<p>Loading banner settings...</p>
+				{:else}
+					<div class="banner-manager">
+						<div class="form-group">
+							<label for="banner-message">Message</label>
+							<input
+								id="banner-message"
+								type="text"
+								bind:value={bannerMessage}
+								placeholder="Enter banner message..."
+							/>
+						</div>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="banner-type">Type</label>
+								<select id="banner-type" bind:value={bannerType}>
+									<option value="info">Info (Blue)</option>
+									<option value="warning">Warning (Amber)</option>
+									<option value="error">Error (Red)</option>
+								</select>
+							</div>
+							<div class="form-group checkbox">
+								<label>
+									<input type="checkbox" bind:checked={bannerEnabled} />
+									Enabled
+								</label>
+							</div>
+						</div>
+						<button class="save-btn" on:click={saveBanner} disabled={bannerSaving}>
+							{bannerSaving ? 'Saving...' : 'Save Banner Settings'}
+						</button>
 					</div>
 				{/if}
 			</section>
@@ -772,6 +864,71 @@
 		background: var(--color-bg);
 		border-radius: 4px;
 		border: 1px solid var(--color-border);
+	}
+
+	.banner-manager {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+	}
+
+	.form-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.form-group label {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--color-text-secondary);
+	}
+
+	.form-group input[type='text'],
+	.form-group select {
+		padding: 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		font-size: 0.95rem;
+		outline: none;
+		transition: border-color var(--transition-fast);
+	}
+
+	.form-group input[type='text']:focus,
+	.form-group select:focus {
+		border-color: var(--color-primary);
+	}
+
+	.form-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+		align-items: flex-end;
+	}
+
+	.form-group.checkbox {
+		flex-direction: row;
+		align-items: center;
+		padding-bottom: 0.75rem;
+	}
+
+	.form-group.checkbox label {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		cursor: pointer;
+		user-select: none;
+		margin-bottom: 0;
+	}
+
+	.save-btn {
+		background: var(--color-primary);
+		color: white;
+		margin-top: 0.5rem;
+		align-self: flex-start;
+		padding: 0.75rem 1.5rem;
 	}
 
 	.function-header {

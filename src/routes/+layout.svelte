@@ -7,6 +7,8 @@
 	import { browser } from '$app/environment'; // Import browser check
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte'; // Import the theme toggle
 	import Logo from '$lib/components/Logo.svelte'; // Import Logo component
+	import Banner from '$lib/components/Banner.svelte'; // Import Banner component
+	import { PUBLIC_GET_BANNER_FUNCTION_URL } from '$env/static/public';
 
 	// Import global styles
 	import '$lib/styles/theme.css';
@@ -28,8 +30,22 @@
 		goto('/profile');
 	};
 
+	let bannerData = { message: '', type: 'info', enabled: false };
+
+	const fetchBanner = async () => {
+		try {
+			const res = await fetch(PUBLIC_GET_BANNER_FUNCTION_URL);
+			if (res.ok) {
+				bannerData = await res.json();
+			}
+		} catch (e) {
+			console.error('Failed to fetch banner:', e);
+		}
+	};
+
 	// Handle token from URL fragment after component mounts
 	onMount(async () => {
+		fetchBanner();
 		if (browser) {
 			// Remove the static loading spinner
 			const loader = document.getElementById('app-loading');
@@ -68,6 +84,7 @@
 </script>
 
 <div class="layout">
+	<Banner {...bannerData} />
 	{#if $page.url.pathname !== '/login'}
 		<nav>
 			<div class="nav-content">
@@ -169,7 +186,7 @@
 	/* Define nav height as variable (adjust value as needed) */
 
 	nav {
-		position: fixed;
+		position: sticky;
 		top: 0;
 		left: 0;
 		right: 0;
@@ -419,7 +436,6 @@
 	}
 
 	main {
-		padding-top: var(--nav-height);
 		background: var(--color-bg-primary);
 		flex: 1;
 		transition: background var(--transition-normal);
