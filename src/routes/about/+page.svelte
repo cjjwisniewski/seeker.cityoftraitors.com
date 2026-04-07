@@ -173,6 +173,11 @@
 		width: 30%;
 	}
 
+	.tier-comparison th:not(:first-child),
+	.tier-comparison td:not(:first-child) {
+		text-align: center;
+	}
+
 	.tier-comparison .premium-col {
 		background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
 		color: white;
