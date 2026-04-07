@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { onMount } from 'svelte';
 
 	let mounted = false;
@@ -7,7 +7,16 @@
 		mounted = true;
 	});
 
-	const tiers = [
+	interface Tier {
+		id: string;
+		name: string;
+		badgeClass: string;
+		icon: string;
+		premium?: boolean;
+		features: Record<string, string>;
+	}
+
+	const tiers: Tier[] = [
 		{
 			id: 'basic',
 			name: 'Basic',
@@ -289,6 +298,7 @@
 		align-items: center;
 		padding: 0.5rem 0;
 		border-bottom: 1px solid var(--color-border);
+		gap: 1rem;
 	}
 
 	.tier-card-features li:last-child {
@@ -303,6 +313,7 @@
 		font-weight: 600;
 		font-size: 0.9rem;
 		color: var(--color-text-secondary);
+		flex-shrink: 0;
 	}
 
 	.premium-col .feature-label {
@@ -312,6 +323,7 @@
 	.feature-value {
 		font-size: 0.95rem;
 		color: var(--color-text-primary);
+		text-align: right;
 	}
 
 	.premium-col .feature-value {
