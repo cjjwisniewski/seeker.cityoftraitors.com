@@ -136,7 +136,8 @@
 
 	.tier-comparison table {
 		width: 100%;
-		border-collapse: collapse;
+		border-collapse: separate;
+		border-spacing: 0;
 		border-radius: 8px;
 		overflow: hidden;
 		border: 1px solid var(--color-border);
@@ -186,6 +187,11 @@
 	.tier-comparison th.premium-col {
 		font-weight: 700;
 		color: white;
+		border-top-left-radius: 8px;
+	}
+
+	.tier-comparison tr:last-child td.premium-col {
+		border-bottom-left-radius: 8px;
 	}
 
 	@media (max-width: 600px) {
