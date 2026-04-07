@@ -38,28 +38,29 @@
 						<tr>
 							<th>Feature</th>
 							<th>Basic</th>
-							<th>Premium / Legacy</th>
+							<th class="premium-col">Premium</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr>
 							<td>Saved Cards</td>
 							<td>25</td>
-							<td>Unlimited</td>
+							<td class="premium-col">Unlimited</td>
 						</tr>
 						<tr>
 							<td>Marketplaces</td>
 							<td>CardTrader</td>
-							<td>CardTrader, TCGPlayer+</td>
+							<td class="premium-col">CardTrader, TCGPlayer+</td>
 						</tr>
 						<tr>
 							<td>Scan Frequency</td>
 							<td>Once per day</td>
-							<td>Every 6 hours</td>
+							<td class="premium-col">Every 6 hours</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
+			<!--
 			<h2>Support the Developer</h2>
 			<p>
 				Want to support the developer? Contributions help keep Seeker running and fund future
@@ -69,6 +70,7 @@
 					rel="noopener noreferrer">PayPal</a
 				>.
 			</p>
+			-->
 		</div>
 	</div>
 {/if}
@@ -169,6 +171,16 @@
 		color: var(--color-text-primary);
 		background-color: var(--color-bg-secondary);
 		width: 30%;
+	}
+
+	.tier-comparison .premium-col {
+		background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+		color: white;
+	}
+
+	.tier-comparison th.premium-col {
+		font-weight: 700;
+		color: white;
 	}
 
 	@media (max-width: 600px) {
