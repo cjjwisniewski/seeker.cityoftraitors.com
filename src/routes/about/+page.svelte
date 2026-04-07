@@ -28,17 +28,24 @@
 				> on the City of Traitors Discord.
 			</p>
 			<h2>Membership Tiers</h2>
-			<p>
-				Support the development of Seeker and unlock advanced features by choosing a membership
-				tier.
-			</p>
+			<p>Support the development of Seeker and unlock advanced features by upgrading to Premium!</p>
 			<div class="tier-comparison">
 				<table>
 					<thead>
 						<tr>
 							<th>Feature</th>
-							<th>Basic</th>
-							<th class="premium-col">Premium</th>
+							<th>
+								<span class="tier-badge tier-basic">
+									<i class="fa-solid fa-certificate"></i>
+									Basic
+								</span>
+							</th>
+							<th class="premium-col">
+								<span class="tier-badge tier-premium">
+									<i class="fa-solid fa-crown"></i>
+									Premium
+								</span>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -50,7 +57,7 @@
 						<tr>
 							<td>Marketplaces</td>
 							<td>CardTrader</td>
-							<td class="premium-col">CardTrader, TCGPlayer+</td>
+							<td class="premium-col">CardTrader, TCGPlayer, and more!</td>
 						</tr>
 						<tr>
 							<td>Scan Frequency</td>
