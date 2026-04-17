@@ -38,6 +38,8 @@
 	// Default settings derived from user payload
 	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
 	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
+	$: priceDropAlertEnabled = $auth.user?.settings?.priceDropAlertEnabled ?? true;
+	$: priceDropThreshold = $auth.user?.settings?.priceDropThreshold ?? 5;
 	$: preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
 	$: preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
 
@@ -52,12 +54,16 @@
 		let oldValue;
 		if (settingName === 'stockAlertEnabled') oldValue = stockAlertEnabled;
 		if (settingName === 'stockDigestEnabled') oldValue = stockDigestEnabled;
+		if (settingName === 'priceDropAlertEnabled') oldValue = priceDropAlertEnabled;
+		if (settingName === 'priceDropThreshold') oldValue = priceDropThreshold;
 		if (settingName === 'preferredLanguage') oldValue = preferredLanguage;
 		if (settingName === 'preferredFinish') oldValue = preferredFinish;
 
 		// Optimistic UI update
 		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
 		if (settingName === 'stockDigestEnabled') stockDigestEnabled = newValue;
+		if (settingName === 'priceDropAlertEnabled') priceDropAlertEnabled = newValue;
+		if (settingName === 'priceDropThreshold') priceDropThreshold = newValue;
 		if (settingName === 'preferredLanguage') preferredLanguage = newValue;
 		if (settingName === 'preferredFinish') preferredFinish = newValue;
 
@@ -80,6 +86,8 @@
 				// Revert optimistic UI update on failure
 				if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
 				if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
+				if (settingName === 'priceDropAlertEnabled') priceDropAlertEnabled = oldValue;
+				if (settingName === 'priceDropThreshold') priceDropThreshold = oldValue;
 				if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
 				if (settingName === 'preferredFinish') preferredFinish = oldValue;
 				settingsError = 'Error updating setting. Please try again.';
@@ -92,6 +100,8 @@
 			// Revert on error
 			if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
 			if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
+			if (settingName === 'priceDropAlertEnabled') priceDropAlertEnabled = oldValue;
+			if (settingName === 'priceDropThreshold') priceDropThreshold = oldValue;
 			if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
 			if (settingName === 'preferredFinish') preferredFinish = oldValue;
 			settingsError = 'Error updating setting. Please try again.';
@@ -314,6 +324,47 @@
 							/>
 							<span class="slider round"></span>
 						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<span class="label">Price Drop Alerts</span>
+							<span class="description"
+								>Receive notifications when a card on your list drops in price by at least your
+								configured threshold.</span
+							>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={priceDropAlertEnabled}
+								on:change={() => updateSetting('priceDropAlertEnabled', !priceDropAlertEnabled)}
+								disabled={isUpdatingSetting}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<span class="label">Price Drop Threshold %</span>
+							<span class="description"
+								>Only alert if the price drops by at least this percentage of the original price.</span
+							>
+						</div>
+						<div class="threshold-input-wrapper">
+							<input
+								type="number"
+								min="1"
+								max="100"
+								step="1"
+								class="threshold-input"
+								value={priceDropThreshold}
+								on:change={(e) => updateSetting('priceDropThreshold', parseInt(e.target.value))}
+								disabled={isUpdatingSetting || !priceDropAlertEnabled}
+							/>
+							<span class="unit">%</span>
+						</div>
 					</div>
 
 					<!-- Localization Setting -->
@@ -866,6 +917,60 @@
 	}
 
 	.language-select:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.threshold-input-wrapper {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background-color: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		padding-right: 0.75rem;
+		transition: all var(--transition-fast);
+	}
+
+	.threshold-input-wrapper:focus-within {
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 2px var(--color-primary-alpha);
+	}
+
+	.threshold-input {
+		width: 60px;
+		padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+		border: none;
+		background: transparent;
+		color: var(--color-text-primary);
+		font-size: 1rem;
+		font-weight: 600;
+		text-align: right;
+		outline: none;
+	}
+
+	/* Remove arrows/spinners from number input */
+	.threshold-input::-webkit-outer-spin-button,
+	.threshold-input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
+	.threshold-input[type='number'] {
+		-moz-appearance: textfield;
+	}
+
+	.unit {
+		color: var(--color-text-secondary);
+		font-weight: 600;
+		user-select: none;
+	}
+
+	.threshold-input:disabled + .unit {
+		opacity: 0.6;
+	}
+
+	.threshold-input-wrapper:has(input:disabled) {
 		opacity: 0.6;
 		cursor: not-allowed;
 	}
