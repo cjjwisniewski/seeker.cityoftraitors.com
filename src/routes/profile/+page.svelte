@@ -465,7 +465,7 @@
 			aria-label="Close dialog"
 		>
 			<!-- Added role="dialog", aria-modal, aria-labelledby to the modal content container -->
-			<!-- svelte-ignore a11y-no-static-element-interactions -->
+			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal"
 				on:click|stopPropagation
