@@ -163,7 +163,7 @@
 		try {
 			// Convert input to cents. If empty, send null to clear.
 			let max_price_cap = null;
-			if (maxPriceInput.trim() !== '') {
+			if (maxPriceInput !== null && maxPriceInput !== undefined && String(maxPriceInput).trim() !== '') {
 				max_price_cap = Math.round(parseFloat(maxPriceInput) * 100);
 				if (isNaN(max_price_cap)) throw new Error('Invalid price format');
 			}
