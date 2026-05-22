@@ -323,7 +323,9 @@
 	}
 
 	function getEbayUrl(card) {
-		const lang = card.language !== 'en' && languageMap[card.language] ? languageMap[card.language] : '';
+		let lang = card.language !== 'en' && languageMap[card.language] ? languageMap[card.language] : '';
+		if (card.language === 'zhs') lang = 'Simplified Chinese';
+		if (card.language === 'zht') lang = 'Traditional Chinese';
 		const finish = card.finish === 'foil' ? 'foil' : '';
 		const keywords = `${card.name} ${card.set_code} ${lang} ${finish}`.replace(/\s+/g, ' ').trim();
 		return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keywords)}&_sop=15`;
