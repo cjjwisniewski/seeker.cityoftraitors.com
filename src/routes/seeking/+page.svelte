@@ -343,12 +343,12 @@
 		return url;
 	}
 
-	function getEbayUrl(card) {
+	function getEbayUrl(card, map) {
 		let lang = card.language !== 'en' && languageMap[card.language] ? languageMap[card.language] : '';
 		if (card.language === 'zhs') lang = 'Simplified Chinese';
 		if (card.language === 'zht') lang = 'Traditional Chinese';
 		const finish = card.finish === 'foil' ? 'foil' : '';
-		const set = card.set_name || setCodeToNameMap[card.set_code.toLowerCase()] || card.set_code;
+		const set = card.set_name || (map && map[card.set_code.toLowerCase()]) || card.set_code;
 		const keywords = `${card.name} ${set} ${lang} ${finish}`.replace(/\s+/g, ' ').trim();
 		return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keywords)}&_sop=15`;
 	}
@@ -707,7 +707,7 @@
 						</td>
 						<td data-label="EBay" class="vendor-stock-cell">
 							<a
-								href={getEbayUrl(card)}
+								href={getEbayUrl(card, setCodeToNameMap)}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="vendor-link"
