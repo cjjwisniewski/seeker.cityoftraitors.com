@@ -322,6 +322,13 @@
 		return url;
 	}
 
+	function getEbayUrl(card) {
+		const lang = card.language !== 'en' && languageMap[card.language] ? languageMap[card.language] : '';
+		const finish = card.finish === 'foil' ? 'foil' : '';
+		const keywords = `${card.name} ${card.set_code} ${lang} ${finish}`.replace(/\s+/g, ' ').trim();
+		return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keywords)}&_sop=15`;
+	}
+
 	// Function to handle sorting
 	function sortBy(key) {
 		if (sortKey === key) {
@@ -388,11 +395,11 @@
 			'CardTrader Stock',
 			'CardTrader Price',
 			'TCGPlayer Stock',
-			'TCGPlayer Price'
+			'TCGPlayer Price',
 			// 'CardMarket Stock',
 			// 'CardMarket Price',
-			// 'eBay Stock',
-			// 'eBay Price'
+			'eBay Stock',
+			'eBay Price'
 		];
 		const csvRows = [headers.join(',')];
 
@@ -406,11 +413,11 @@
 				getStockStatus(card.cardtrader_stock),
 				card.cardtrader_low_price ? (card.cardtrader_low_price / 100).toFixed(2) : '',
 				getStockStatus(card.tcgplayer_stock),
-				card.tcgplayer_low_price ? card.tcgplayer_low_price : ''
+				card.tcgplayer_low_price ? card.tcgplayer_low_price : '',
 				// getStockStatus(card.cardmarket_stock),
 				// card.cardmarket_low_price ? (card.cardmarket_low_price / 100).toFixed(2) : '',
-				// getStockStatus(card.ebay_stock),
-				// card.ebay_low_price ? (card.ebay_low_price / 100).toFixed(2) : ''
+				getStockStatus(card.ebay_stock),
+				card.ebay_low_price ? (card.ebay_low_price / 100).toFixed(2) : ''
 			];
 			csvRows.push(row.join(','));
 		}
@@ -548,9 +555,16 @@
 						CardMarket
 						<!-- Add sorting later if needed -->
 					</th>
-					<th class="disabled-column display-none" title="Ebay stock check coming soon">
+					<th
+						on:click={() => sortBy('ebay_low_price')}
+						class:active={sortKey === 'ebay_low_price'}
+					>
 						EBay
-						<!-- Add sorting later if needed -->
+						{#if sortKey === 'ebay_low_price'}
+							<i
+								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+							></i>
+						{/if}
 					</th>
 					<th class="actions-header"></th>
 					<!-- Not sortable -->
@@ -667,17 +681,24 @@
 								{/if}
 							</div>
 						</td>
-						<td data-label="EBay" class="vendor-stock-cell disabled-column display-none">
-							<div class="stock-indicator">
-								<i
-									class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(
-										getStockStatus(card.ebay_stock)
-									)}"
-								></i>
-								{#if card.ebay_low_price !== null && card.ebay_low_price !== undefined}
-									<span class="price-text">{formatPrice(card.ebay_low_price)}</span>
-								{/if}
-							</div>
+						<td data-label="EBay" class="vendor-stock-cell">
+							<a
+								href={getEbayUrl(card)}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="vendor-link"
+							>
+								<div class="stock-indicator">
+									<i
+										class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(
+											getStockStatus(card.ebay_stock)
+										)}"
+									></i>
+									{#if card.ebay_low_price !== null && card.ebay_low_price !== undefined && getStockStatus(card.ebay_stock) === 'available'}
+										<span class="price-text">{formatPrice(card.ebay_low_price)}</span>
+									{/if}
+								</div>
+							</a>
 						</td>
 						<td data-label="Actions" class="actions-column">
 							<div class="kebab-menu-container">
@@ -1233,8 +1254,11 @@
 			grid-area: vendor2;
 		}
 
-		td[data-label='CardMarket'],
 		td[data-label='EBay'] {
+			grid-area: vendor3;
+		}
+
+		td[data-label='CardMarket'] {
 			display: none;
 		}
 
@@ -1248,7 +1272,8 @@
 			background: none;
 		}
 		td[data-label='CardTrader']::before,
-		td[data-label='TCGPlayer']::before {
+		td[data-label='TCGPlayer']::before,
+		td[data-label='EBay']::before {
 			content: attr(data-label);
 			font-weight: 600;
 			color: var(--color-text-secondary);
@@ -1257,7 +1282,8 @@
 		}
 
 		td[data-label='CardTrader'],
-		td[data-label='TCGPlayer'] {
+		td[data-label='TCGPlayer'],
+		td[data-label='EBay'] {
 			display: flex;
 			flex-direction: column;
 			align-items: center;
