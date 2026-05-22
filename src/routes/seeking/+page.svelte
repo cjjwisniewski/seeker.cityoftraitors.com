@@ -11,6 +11,7 @@
 	let cards = [];
 	let error = null;
 	let loading = true; // Re-declare the loading variable
+	let setCodeToNameMap = {}; // Map of set code to full set name from Scryfall
 	let unsubscribe; // Declare unsubscribe in the component scope
 	let isCondensed = false; // State for condensed view
 	let activeMenuId = null; // State for identifying which kebab menu is open
@@ -47,6 +48,24 @@
 	$: isAuthenticated = $auth.isAuthenticated;
 	$: authLoading = $auth.isLoading;
 
+	async function fetchScryfallSets() {
+		try {
+			const res = await fetch('https://api.scryfall.com/sets');
+			if (res.ok) {
+				const data = await res.json();
+				const sets = data.data || [];
+				setCodeToNameMap = sets.reduce((acc, s) => {
+					if (s.code && s.name) {
+						acc[s.code.toLowerCase()] = s.name;
+					}
+					return acc;
+				}, {});
+			}
+		} catch (e) {
+			console.error('Error fetching Scryfall sets:', e);
+		}
+	}
+
 	// Fetch data when component mounts and user is authenticated
 	onMount(() => {
 		// Load condensed state from localStorage
@@ -54,6 +73,8 @@
 		if (storedCondensed !== null) {
 			isCondensed = storedCondensed === 'true';
 		}
+
+		fetchScryfallSets();
 
 		// Wait for auth store to initialize if needed
 		unsubscribe = auth.subscribe((state) => {
@@ -327,7 +348,8 @@
 		if (card.language === 'zhs') lang = 'Simplified Chinese';
 		if (card.language === 'zht') lang = 'Traditional Chinese';
 		const finish = card.finish === 'foil' ? 'foil' : '';
-		const keywords = `${card.name} ${card.set_code} ${lang} ${finish}`.replace(/\s+/g, ' ').trim();
+		const set = card.set_name || setCodeToNameMap[card.set_code.toLowerCase()] || card.set_code;
+		const keywords = `${card.name} ${set} ${lang} ${finish}`.replace(/\s+/g, ' ').trim();
 		return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keywords)}&_sop=15`;
 	}
 
