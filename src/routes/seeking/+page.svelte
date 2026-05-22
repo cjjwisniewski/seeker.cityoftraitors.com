@@ -423,7 +423,9 @@
 			// 'CardMarket Stock',
 			// 'CardMarket Price',
 			'eBay Stock',
-			'eBay Price'
+			'eBay Price',
+			'Mana Pool Stock',
+			'Mana Pool Price'
 		];
 		const csvRows = [headers.join(',')];
 
@@ -441,7 +443,9 @@
 				// getStockStatus(card.cardmarket_stock),
 				// card.cardmarket_low_price ? (card.cardmarket_low_price / 100).toFixed(2) : '',
 				getStockStatus(card.ebay_stock),
-				card.ebay_low_price ? (card.ebay_low_price / 100).toFixed(2) : ''
+				card.ebay_low_price ? (card.ebay_low_price / 100).toFixed(2) : '',
+				getStockStatus(card.manapool_stock),
+				card.manapool_low_price ? (card.manapool_low_price / 100).toFixed(2) : ''
 			];
 			csvRows.push(row.join(','));
 		}
@@ -590,6 +594,17 @@
 							></i>
 						{/if}
 					</th>
+					<th
+						on:click={() => sortBy('manapool_low_price')}
+						class:active={sortKey === 'manapool_low_price'}
+					>
+						Mana Pool
+						{#if sortKey === 'manapool_low_price'}
+							<i
+								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+							></i>
+						{/if}
+					</th>
 					<th class="actions-header"></th>
 					<!-- Not sortable -->
 				</tr>
@@ -723,6 +738,34 @@
 									{/if}
 								</div>
 							</a>
+						</td>
+						<td data-label="Mana Pool" class="vendor-stock-cell">
+							{#if card.manapool_url}
+								<a
+									href={card.manapool_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="vendor-link"
+								>
+									<div class="stock-indicator">
+										<i
+											class="{getStockIcon(getStockStatus(card.manapool_stock))} {getStockColor(
+												getStockStatus(card.manapool_stock)
+											)}"
+										></i>
+										{#if card.manapool_low_price !== null && card.manapool_low_price !== undefined && getStockStatus(card.manapool_stock) === 'available'}
+											<span class="price-text">{formatPrice(card.manapool_low_price)}</span>
+										{/if}
+									</div>
+								</a>
+							{:else}
+								<div class="stock-indicator">
+									<i
+										class="fa-solid fa-circle-question text-muted"
+										title="Card not found on Mana Pool"
+									></i>
+								</div>
+							{/if}
 						</td>
 						<td data-label="Actions" class="actions-column">
 							<div class="kebab-menu-container">
