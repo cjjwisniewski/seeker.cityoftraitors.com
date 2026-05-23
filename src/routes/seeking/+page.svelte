@@ -1251,11 +1251,12 @@
 
 		tbody tr {
 			display: grid;
-			grid-template-columns: repeat(4, 1fr);
+			grid-template-columns: repeat(3, 1fr);
 			grid-template-areas:
-				'cardinfo cardinfo cardinfo cardinfo'
-				'set      language finish   .       '
-				'vendor1  vendor2  vendor3  vendor4';
+				'cardinfo cardinfo cardinfo'
+				'set      language finish'
+				'vendor1  vendor2  vendor3'
+				'vendor4  .        .';
 			background: var(--glass-bg);
 			backdrop-filter: blur(var(--backdrop-blur));
 			border: 1px solid var(--glass-border);
