@@ -1251,11 +1251,11 @@
 
 		tbody tr {
 			display: grid;
-			grid-template-columns: repeat(3, 1fr);
+			grid-template-columns: repeat(4, 1fr);
 			grid-template-areas:
-				'cardinfo cardinfo cardinfo'
-				'set      language finish'
-				'vendor1  vendor2  vendor3';
+				'cardinfo cardinfo cardinfo cardinfo'
+				'set      language finish   .       '
+				'vendor1  vendor2  vendor3  vendor4';
 			background: var(--glass-bg);
 			backdrop-filter: blur(var(--backdrop-blur));
 			border: 1px solid var(--glass-border);
@@ -1325,6 +1325,10 @@
 			grid-area: vendor3;
 		}
 
+		td[data-label='Mana Pool'] {
+			grid-area: vendor4;
+		}
+
 		td[data-label='CardMarket'] {
 			display: none;
 		}
@@ -1340,17 +1344,22 @@
 		}
 		td[data-label='CardTrader']::before,
 		td[data-label='TCGPlayer']::before,
-		td[data-label='EBay']::before {
+		td[data-label='EBay']::before,
+		td[data-label='Mana Pool']::before {
 			content: attr(data-label);
 			font-weight: 600;
 			color: var(--color-text-secondary);
 			display: block;
 			margin-bottom: 0.25rem;
+			font-size: 0.75rem;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
 		}
 
 		td[data-label='CardTrader'],
 		td[data-label='TCGPlayer'],
-		td[data-label='EBay'] {
+		td[data-label='EBay'],
+		td[data-label='Mana Pool'] {
 			display: flex;
 			flex-direction: column;
 			align-items: center;
