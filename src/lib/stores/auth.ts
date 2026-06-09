@@ -13,6 +13,10 @@ interface User {
         stockDigestEnabled?: boolean;
         preferredLanguage?: string;
         membershipTier?: string;
+        marketplaceCardtraderEnabled?: boolean;
+        marketplaceTcgplayerEnabled?: boolean;
+        marketplaceEbayEnabled?: boolean;
+        marketplaceManapoolEnabled?: boolean;
     };
 }
 
@@ -239,6 +243,20 @@ const createAuthStore = () => {
                 clearAuthData();
                 return { success: false, error: 'invalid_token' };
             }
+        },
+        updateSettings: (newSettings: Partial<NonNullable<User['settings']>>) => {
+            update(state => {
+                if (state.user) {
+                    state.user.settings = {
+                        ...state.user.settings,
+                        ...newSettings
+                    };
+                    if (browser) {
+                        localStorage.setItem('cachedUserInfo', JSON.stringify(state.user));
+                    }
+                }
+                return state;
+            });
         }
     };
 };

@@ -42,6 +42,10 @@
 	$: priceDropThreshold = $auth.user?.settings?.priceDropThreshold ?? 5;
 	$: preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
 	$: preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
+	$: marketplaceCardtraderEnabled = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
+	$: marketplaceTcgplayerEnabled = $auth.user?.settings?.marketplaceTcgplayerEnabled ?? true;
+	$: marketplaceEbayEnabled = $auth.user?.settings?.marketplaceEbayEnabled ?? true;
+	$: marketplaceManapoolEnabled = $auth.user?.settings?.marketplaceManapoolEnabled ?? true;
 
 	// --- Update Setting Logic ---
 	async function updateSetting(settingName, newValue) {
@@ -58,6 +62,10 @@
 		if (settingName === 'priceDropThreshold') oldValue = priceDropThreshold;
 		if (settingName === 'preferredLanguage') oldValue = preferredLanguage;
 		if (settingName === 'preferredFinish') oldValue = preferredFinish;
+		if (settingName === 'marketplaceCardtraderEnabled') oldValue = marketplaceCardtraderEnabled;
+		if (settingName === 'marketplaceTcgplayerEnabled') oldValue = marketplaceTcgplayerEnabled;
+		if (settingName === 'marketplaceEbayEnabled') oldValue = marketplaceEbayEnabled;
+		if (settingName === 'marketplaceManapoolEnabled') oldValue = marketplaceManapoolEnabled;
 
 		// Optimistic UI update
 		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
@@ -66,6 +74,10 @@
 		if (settingName === 'priceDropThreshold') priceDropThreshold = newValue;
 		if (settingName === 'preferredLanguage') preferredLanguage = newValue;
 		if (settingName === 'preferredFinish') preferredFinish = newValue;
+		if (settingName === 'marketplaceCardtraderEnabled') marketplaceCardtraderEnabled = newValue;
+		if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = newValue;
+		if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = newValue;
+		if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = newValue;
 
 		try {
 			console.log(`Updating setting ${settingName} to ${newValue}...`);
@@ -90,11 +102,16 @@
 				if (settingName === 'priceDropThreshold') priceDropThreshold = oldValue;
 				if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
 				if (settingName === 'preferredFinish') preferredFinish = oldValue;
+				if (settingName === 'marketplaceCardtraderEnabled') marketplaceCardtraderEnabled = oldValue;
+				if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = oldValue;
+				if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
+				if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
 				settingsError = 'Error updating setting. Please try again.';
 				return;
 			}
 
 			console.log(`Setting ${settingName} updated successfully.`);
+			auth.updateSettings({ [settingName]: newValue });
 		} catch (error) {
 			console.error('Error in updateSetting:', error);
 			// Revert on error
@@ -104,6 +121,10 @@
 			if (settingName === 'priceDropThreshold') priceDropThreshold = oldValue;
 			if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
 			if (settingName === 'preferredFinish') preferredFinish = oldValue;
+			if (settingName === 'marketplaceCardtraderEnabled') marketplaceCardtraderEnabled = oldValue;
+			if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = oldValue;
+			if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
+			if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
 			settingsError = 'Error updating setting. Please try again.';
 		} finally {
 			isUpdatingSetting = false;
@@ -410,6 +431,75 @@
 								<option value="foil">Foil</option>
 							</select>
 						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="profile-section">
+				<h2>Marketplace Settings</h2>
+				<div class="settings-content">
+					<div class="setting-item">
+						<div class="setting-info">
+							<span class="label">CardTrader</span>
+							<span class="description">Enable/disable stock checks and price tracking on CardTrader.</span>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceCardtraderEnabled}
+								on:change={() => updateSetting('marketplaceCardtraderEnabled', !marketplaceCardtraderEnabled)}
+								disabled={isUpdatingSetting}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<span class="label">TCGPlayer</span>
+							<span class="description">Enable/disable stock checks and price tracking on TCGPlayer.</span>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceTcgplayerEnabled}
+								on:change={() => updateSetting('marketplaceTcgplayerEnabled', !marketplaceTcgplayerEnabled)}
+								disabled={isUpdatingSetting}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<span class="label">eBay</span>
+							<span class="description">Enable/disable stock checks and price tracking on eBay.</span>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceEbayEnabled}
+								on:change={() => updateSetting('marketplaceEbayEnabled', !marketplaceEbayEnabled)}
+								disabled={isUpdatingSetting}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<span class="label">Mana Pool</span>
+							<span class="description">Enable/disable stock checks and price tracking on Mana Pool.</span>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceManapoolEnabled}
+								on:change={() => updateSetting('marketplaceManapoolEnabled', !marketplaceManapoolEnabled)}
+								disabled={isUpdatingSetting}
+							/>
+							<span class="slider round"></span>
+						</label>
 					</div>
 				</div>
 			</section>

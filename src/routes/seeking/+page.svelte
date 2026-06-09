@@ -48,6 +48,12 @@
 	$: isAuthenticated = $auth.isAuthenticated;
 	$: authLoading = $auth.isLoading;
 
+	// Reactive checks for enabled marketplaces from user settings
+	$: showCardTrader = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
+	$: showTCGPlayer = $auth.user?.settings?.marketplaceTcgplayerEnabled ?? true;
+	$: showEbay = $auth.user?.settings?.marketplaceEbayEnabled ?? true;
+	$: showManapool = $auth.user?.settings?.marketplaceManapoolEnabled ?? true;
+
 	async function fetchScryfallSets() {
 		try {
 			const res = await fetch('https://api.scryfall.com/sets');
@@ -557,6 +563,7 @@
 							></i>
 						{/if}
 					</th>
+					{#if showCardTrader}
 					<th
 						on:click={() => sortBy('cardtrader_low_price')}
 						class:active={sortKey === 'cardtrader_low_price'}
@@ -568,6 +575,8 @@
 							></i>
 						{/if}
 					</th>
+					{/if}
+					{#if showTCGPlayer}
 					<th
 						on:click={() => sortBy('tcgplayer_low_price')}
 						class:active={sortKey === 'tcgplayer_low_price'}
@@ -579,10 +588,12 @@
 							></i>
 						{/if}
 					</th>
+					{/if}
 					<th class="disabled-column display-none" title="CardMarket stock check coming soon">
 						CardMarket
 						<!-- Add sorting later if needed -->
 					</th>
+					{#if showEbay}
 					<th
 						on:click={() => sortBy('ebay_low_price')}
 						class:active={sortKey === 'ebay_low_price'}
@@ -594,6 +605,8 @@
 							></i>
 						{/if}
 					</th>
+					{/if}
+					{#if showManapool}
 					<th
 						on:click={() => sortBy('manapool_low_price')}
 						class:active={sortKey === 'manapool_low_price'}
@@ -605,6 +618,7 @@
 							></i>
 						{/if}
 					</th>
+					{/if}
 					<th class="actions-header"></th>
 					<!-- Not sortable -->
 				</tr>
@@ -643,6 +657,7 @@
 						</td>
 						<td data-label="Language" class="language-column">{card.language}</td>
 						<td data-label="Finish">{card.finish}</td>
+						{#if showCardTrader}
 						<td data-label="CardTrader" class="vendor-stock-cell">
 							{#if card.cardtrader_id}
 								<a
@@ -678,6 +693,8 @@
 								</div>
 							{/if}
 						</td>
+						{/if}
+						{#if showTCGPlayer}
 						<td data-label="TCGPlayer" class="vendor-stock-cell">
 							{#if card.tcgplayer_id}
 								<a
@@ -708,6 +725,7 @@
 								</div>
 							{/if}
 						</td>
+						{/if}
 						<td data-label="CardMarket" class="vendor-stock-cell disabled-column display-none">
 							<div class="stock-indicator">
 								<i
@@ -720,6 +738,7 @@
 								{/if}
 							</div>
 						</td>
+						{#if showEbay}
 						<td data-label="EBay" class="vendor-stock-cell">
 							<a
 								href={getEbayUrl(card, setCodeToNameMap)}
@@ -739,6 +758,8 @@
 								</div>
 							</a>
 						</td>
+						{/if}
+						{#if showManapool}
 						<td data-label="Mana Pool" class="vendor-stock-cell">
 							{#if card.manapool_url}
 								<a
@@ -767,6 +788,7 @@
 								</div>
 							{/if}
 						</td>
+						{/if}
 						<td data-label="Actions" class="actions-column">
 							<div class="kebab-menu-container">
 								<button
