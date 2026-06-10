@@ -227,7 +227,18 @@
 				</div>
 			{/if}
 			<div class="profile-title">
-				<h1>{user.global_name || user.username || 'User'}</h1>
+				<div class="username-wrapper" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+					<h1>{user.global_name || user.username || 'User'}</h1>
+					<span class="tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
+						<i
+							class="fa-solid {user.membershipTier === 'Premium' ||
+							user.membershipTier === 'Legacy'
+								? 'fa-crown'
+								: 'fa-certificate'}"
+						></i>
+						{user.membershipTier || 'Basic'}
+					</span>
+				</div>
 			</div>
 		</div>
 
@@ -258,18 +269,6 @@
 						</span>
 					</div>
 
-					<div class="info-item">
-						<span class="label">Membership Tier</span>
-						<span class="value tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
-							<i
-								class="fa-solid {user.membershipTier === 'Premium' ||
-								user.membershipTier === 'Legacy'
-									? 'fa-crown'
-									: 'fa-certificate'}"
-							></i>
-							{user.membershipTier || 'Basic'}
-						</span>
-					</div>
 				</div>
 			</section>
 
