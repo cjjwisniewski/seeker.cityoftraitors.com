@@ -634,7 +634,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each sortedCards as card (`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`)}
+				{#each sortedCards as card, index (`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`)}
 					<tr
 						class:condensed={isCondensed}
 						style={activeMenuId ===
@@ -815,7 +815,7 @@
 								{#if activeMenuId === `${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`}
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<!-- svelte-ignore a11y-no-static-element-interactions -->
-									<div class="kebab-dropdown" on:click|stopPropagation>
+									<div class="kebab-dropdown" class:drop-up={index >= sortedCards.length - 2} on:click|stopPropagation>
 										<button class="dropdown-item" on:click={() => openSettings(card)}>
 											<i class="fa-solid fa-gear"></i> Settings
 										</button>
@@ -991,10 +991,26 @@
 		backdrop-filter: blur(var(--backdrop-blur));
 		-webkit-backdrop-filter: blur(var(--backdrop-blur));
 		border-radius: 12px;
-		overflow: hidden;
 		margin-top: 1rem;
 		box-shadow: var(--glass-shadow);
 		border: 1px solid var(--glass-border);
+	}
+
+	/* Keep rounded corners on the table headers and footers since overflow: hidden was removed to allow kebab menu dropdowns */
+	table thead tr:first-child th:first-child {
+		border-top-left-radius: 11px;
+	}
+
+	table thead tr:first-child th:last-child {
+		border-top-right-radius: 11px;
+	}
+
+	table tbody tr:last-child td:first-child {
+		border-bottom-left-radius: 11px;
+	}
+
+	table tbody tr:last-child td:last-child {
+		border-bottom-right-radius: 11px;
 	}
 
 	th,
@@ -1193,6 +1209,13 @@
 		padding: 0.5rem 0;
 		margin-top: 0.25rem;
 		animation: fadeIn 0.2s ease-out;
+	}
+
+	.kebab-dropdown.drop-up {
+		top: auto;
+		bottom: 100%;
+		margin-top: 0;
+		margin-bottom: 0.25rem;
 	}
 
 	.dropdown-item {
