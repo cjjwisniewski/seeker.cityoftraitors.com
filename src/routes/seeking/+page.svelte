@@ -49,10 +49,11 @@
 	$: authLoading = $auth.isLoading;
 
 	// Reactive checks for enabled marketplaces from user settings
+	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
 	$: showCardTrader = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
-	$: showTCGPlayer = $auth.user?.settings?.marketplaceTcgplayerEnabled ?? true;
-	$: showEbay = $auth.user?.settings?.marketplaceEbayEnabled ?? true;
-	$: showManapool = $auth.user?.settings?.marketplaceManapoolEnabled ?? true;
+	$: showTCGPlayer = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
+	$: showEbay = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
+	$: showManapool = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
 
 	async function fetchScryfallSets() {
 		try {

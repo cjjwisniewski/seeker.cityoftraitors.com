@@ -36,6 +36,7 @@
 	$: isAdmin = $auth.user?.roles?.includes(ADMIN_ROLE_ID) ?? false;
 
 	// Default settings derived from user payload
+	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
 	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
 	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
 	$: priceDropAlertEnabled = $auth.user?.settings?.priceDropAlertEnabled ?? true;
@@ -43,9 +44,9 @@
 	$: preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
 	$: preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
 	$: marketplaceCardtraderEnabled = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
-	$: marketplaceTcgplayerEnabled = $auth.user?.settings?.marketplaceTcgplayerEnabled ?? true;
-	$: marketplaceEbayEnabled = $auth.user?.settings?.marketplaceEbayEnabled ?? true;
-	$: marketplaceManapoolEnabled = $auth.user?.settings?.marketplaceManapoolEnabled ?? true;
+	$: marketplaceTcgplayerEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
+	$: marketplaceEbayEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
+	$: marketplaceManapoolEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
 
 	// --- Update Setting Logic ---
 	async function updateSetting(settingName, newValue) {
@@ -454,6 +455,7 @@
 						</label>
 					</div>
 
+					{#if isPremiumOrLegacy}
 					<div class="setting-item">
 						<div class="setting-info">
 							<span class="label">TCGPlayer</span>
@@ -501,6 +503,7 @@
 							<span class="slider round"></span>
 						</label>
 					</div>
+					{/if}
 				</div>
 			</section>
 
