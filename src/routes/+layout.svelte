@@ -25,9 +25,9 @@
 		auth.logout();
 	};
 
-	const goToProfile = () => {
+	const goToAccount = () => {
 		showDropdown = false; // Close dropdown
-		goto('/profile');
+		goto('/account');
 	};
 
 	let bannerData = { message: '', type: 'info', enabled: false };
@@ -134,9 +134,9 @@
 									tabindex="-1"
 									on:mouseleave={() => (showDropdown = false)}
 								>
-									<button class="dropdown-item" role="menuitem" tabindex="0" on:click={goToProfile}>
+									<button class="dropdown-item" role="menuitem" tabindex="0" on:click={goToAccount}>
 										<i class="fa-solid fa-user"></i>
-										Profile
+										Account
 									</button>
 									<!-- Check roles from the auth store user object -->
 									{#if $auth.user?.roles?.includes('1352632325640294411')}

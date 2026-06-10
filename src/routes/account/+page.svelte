@@ -201,14 +201,18 @@
 <!-- Listen for keydown events when the modal is shown -->
 <svelte:window on:keydown={showConfirmDialog ? handleKeydown : null} />
 
+<svelte:head>
+	<title>Account - Seeker</title>
+</svelte:head>
+
 {#if isLoading}
 	<div class="loading-container">
-		<p>Loading profile...</p>
+		<p>Loading account...</p>
 		<!-- Add a spinner or other loading indicator here -->
 	</div>
 {:else if !user}
 	<div class="error-container">
-		<p>Could not load user profile. You may need to log in again.</p>
+		<p>Could not load user account. You may need to log in again.</p>
 		<button on:click={() => auth.login()}>Login</button>
 	</div>
 {:else}
