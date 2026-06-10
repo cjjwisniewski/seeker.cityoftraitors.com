@@ -8,8 +8,6 @@
 	import { browser } from '$app/environment'; // To ensure code runs client-side
 	import { languageNames } from '$lib/utils/languageUtils'; // Import language support
 
-	// Define Role IDs (ensure these match your Discord setup)
-	const REQUIRED_ROLE_ID = '1352632428342280212'; // Seeker Role
 
 	// State variables
 	let showConfirmDialog = false;
@@ -26,12 +24,6 @@
 	// Split the user ID into chunks for readability without adding real spaces (facilitates copying)
 	$: userIdChunks = $auth.user?.id?.match(/.{1,4}/g) || [];
 
-	// Derive status from user roles (assuming roles are fetched by auth store)
-	// Use $auth.user directly here too for consistency
-	// Note: 'guildMember' might be implicitly true if roles are present.
-	// Adjust logic if your /api/userinfo provides explicit guild membership.
-	$: guildMember = !!$auth.user?.roles; // Assumes roles array exists only if they are a member
-	$: hasRole = $auth.user?.roles?.includes(REQUIRED_ROLE_ID) ?? false;
 
 	// Default settings derived from user payload
 	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
@@ -266,21 +258,6 @@
 						</span>
 					</div>
 
-					<!-- Status Information -->
-					<div class="info-item">
-						<span class="label">Server Member</span>
-						<span class="value status {guildMember ? 'active' : 'inactive'}">
-							<i class="fa-solid {guildMember ? 'fa-check' : 'fa-xmark'}"></i>
-							{guildMember ? 'Member' : 'Not Detected'}
-						</span>
-					</div>
-					<div class="info-item">
-						<span class="label">Seeker Role</span>
-						<span class="value status {hasRole ? 'active' : 'inactive'}">
-							<i class="fa-solid {hasRole ? 'fa-check' : 'fa-xmark'}"></i>
-							{hasRole ? 'Has Role' : 'No Role'}
-						</span>
-					</div>
 					<div class="info-item">
 						<span class="label">Membership Tier</span>
 						<span class="value tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
