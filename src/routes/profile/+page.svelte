@@ -455,10 +455,16 @@
 						</label>
 					</div>
 
-					{#if isPremiumOrLegacy}
 					<div class="setting-item">
 						<div class="setting-info">
-							<span class="label">TCGPlayer</span>
+							<span class="label">
+								TCGPlayer
+								{#if !isPremiumOrLegacy}
+									<span class="tier-badge tier-premium" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; margin-left: 0.5rem; vertical-align: middle;">
+										<i class="fa-solid fa-crown" style="font-size: 0.65rem;"></i> Premium
+									</span>
+								{/if}
+							</span>
 							<span class="description">Enable/disable stock checks and price tracking on TCGPlayer.</span>
 						</div>
 						<label class="toggle-switch">
@@ -466,7 +472,7 @@
 								type="checkbox"
 								checked={marketplaceTcgplayerEnabled}
 								on:change={() => updateSetting('marketplaceTcgplayerEnabled', !marketplaceTcgplayerEnabled)}
-								disabled={isUpdatingSetting}
+								disabled={isUpdatingSetting || !isPremiumOrLegacy}
 							/>
 							<span class="slider round"></span>
 						</label>
@@ -474,7 +480,14 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
-							<span class="label">eBay</span>
+							<span class="label">
+								eBay
+								{#if !isPremiumOrLegacy}
+									<span class="tier-badge tier-premium" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; margin-left: 0.5rem; vertical-align: middle;">
+										<i class="fa-solid fa-crown" style="font-size: 0.65rem;"></i> Premium
+									</span>
+								{/if}
+							</span>
 							<span class="description">Enable/disable stock checks and price tracking on eBay.</span>
 						</div>
 						<label class="toggle-switch">
@@ -482,7 +495,7 @@
 								type="checkbox"
 								checked={marketplaceEbayEnabled}
 								on:change={() => updateSetting('marketplaceEbayEnabled', !marketplaceEbayEnabled)}
-								disabled={isUpdatingSetting}
+								disabled={isUpdatingSetting || !isPremiumOrLegacy}
 							/>
 							<span class="slider round"></span>
 						</label>
@@ -490,7 +503,14 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
-							<span class="label">Mana Pool</span>
+							<span class="label">
+								Mana Pool
+								{#if !isPremiumOrLegacy}
+									<span class="tier-badge tier-premium" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; margin-left: 0.5rem; vertical-align: middle;">
+										<i class="fa-solid fa-crown" style="font-size: 0.65rem;"></i> Premium
+									</span>
+								{/if}
+							</span>
 							<span class="description">Enable/disable stock checks and price tracking on Mana Pool.</span>
 						</div>
 						<label class="toggle-switch">
@@ -498,12 +518,11 @@
 								type="checkbox"
 								checked={marketplaceManapoolEnabled}
 								on:change={() => updateSetting('marketplaceManapoolEnabled', !marketplaceManapoolEnabled)}
-								disabled={isUpdatingSetting}
+								disabled={isUpdatingSetting || !isPremiumOrLegacy}
 							/>
 							<span class="slider round"></span>
 						</label>
 					</div>
-					{/if}
 				</div>
 			</section>
 
