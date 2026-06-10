@@ -1,111 +1,121 @@
-# Seeker Site
+# Seeker - Frontend Web Application
 
-A web application built with SvelteKit for searching and managing card information, likely related to trading card games. It features user authentication via Discord and interacts with various backend Azure Functions.
+`seeker.cityoftraitors.com` is the user-facing frontend dashboard for **Seeker**, a comprehensive trading card stock tracking and notification platform. It is built as a Single Page Application (SPA) using SvelteKit, styled with custom Vanilla CSS, and compiled using `@sveltejs/adapter-static` for static hosting.
 
-## Features
+---
 
-*   User Authentication (Login via Discord, Profile Management)
-*   Card Search Functionality
-*   Display Card Lists (`CardList.svelte`)
-*   "Seeking" Feature (Add/View/Delete items from a seeking list)
-*   Language detection for cards (via Scryfall API)
-*   Role-based access control (inferred from `roleCache.js`)
-*   Admin Section (`/admin`)
-*   User Account Deletion
+## 🧭 The Seeker Ecosystem
 
-## Tech Stack
+This repository acts as the frontend client. The complete Seeker platform is divided across several sister projects located in the `~/seeker*` directories:
 
-*   **Framework:** SvelteKit
-*   **Language:** TypeScript, JavaScript
-*   **Styling:** CSS (potentially with Prettier for formatting)
-*   **API Interaction:** Fetch API, Scryfall API, Azure Functions
-*   **Authentication:** Custom JWT via Discord OAuth 2.0
-*   **Linting:** ESLint
-*   **Package Manager:** npm
-*   **Deployment:** Azure Blob Storage & Azure CDN via GitHub Actions
+*   **[seeker_functions](file:///home/cwisniewski/seeker_functions)**: The Azure Functions Python backend. It handles Discord OAuth2 authentication, signs and verifies custom JWTs, performs user settings management, and runs background timers to monitor card availability (e.g., on CardTrader).
+*   **[seeker_checkTCGPlayerStock](file:///home/cwisniewski/seeker_checkTCGPlayerStock)**: A queue-driven containerized Python scraping worker using Selenium and `undetected-chromedriver`. It processes TCGPlayer check requests from Azure Storage Queues without triggering bot detection, updating stocks and dispatching new alerts.
+*   **[seeker_infra](file:///home/cwisniewski/seeker_infra)**: The Terraform infrastructure configurations. This defines the security architecture, including the Azure API Management (APIM) gateway proxy, Function App IP firewalls, storage tables, queue configurations, and DNS settings.
 
-## Getting Started
+---
 
-### Prerequisites
+## ✨ Features
 
-*   Node.js (version 20 recommended, based on `deploy.yml`) and npm installed.
-*   Access to the required Azure Functions and Discord application credentials.
+*   **Discord OAuth2 Authentication**: Sign-in via Discord, storing authentication tokens and caching user profile info for instant loading.
+*   **Seeking List Manager**: Add, view, update, and remove cards you are looking to buy or collect.
+*   **Multi-Marketplace Integration**: Custom tracking toggles for major marketplaces:
+    *   **CardTrader** (standard user tier)
+    *   **TCGPlayer** (Premium/Legacy tier)
+    *   **eBay** (Premium/Legacy tier)
+    *   **Mana Pool** (Premium/Legacy tier)
+*   **Granular Settings & Alerts**:
+    *   Toggle immediate Direct Message alerts for stock findings or price drops.
+    *   Configure percentage-based price drop alert thresholds.
+    *   Set default preferred card language (detects via Scryfall API) and finish (foil vs. non-foil).
+*   **Dynamic Notification Banner**: Shows system announcements or alerts fetched dynamically from the backend function.
+*   **Role-Based Access Control (RBAC)**: Custom layout access and features tailored for user membership tiers (Basic, Premium, Legacy) and Admin dashboard roles.
+*   **Dark Mode & Responsive UI**: Curated theme system with smooth transitions and full accessibility adjustments (Escape-key modal closures, focus rings, etc.).
 
-### Installation
+---
 
-1.  Clone the repository:
+## 🛠️ Tech Stack
+
+*   **Framework**: SvelteKit
+*   **Language**: TypeScript / JavaScript
+*   **Styling**: Vanilla CSS (CSS Variables theme design system)
+*   **Marketplace APIs**: Direct Scryfall integration for card language lookup; APIM proxy routes for CardTrader and other backend resources.
+*   **Hosting/CDN**: Azure Blob Storage static website hosting & Azure CDN.
+
+---
+
+## 🚀 Getting Started
+
+### 📋 Prerequisites
+
+*   Node.js (v20 recommended)
+*   npm
+
+### ⚙️ Installation
+
+1.  Navigate to the project directory:
     ```bash
-    git clone <repository-url>
-    cd seeker_site
+    cd ~/seeker.cityoftraitors.com
     ```
 2.  Install dependencies:
     ```bash
     npm ci
     ```
 
-### Environment Variables
+### 🔑 Environment Variables
 
-This project relies heavily on environment variables passed during the build process (see `.github/workflows/deploy.yml`). For local development, create a `.env` file in the root directory and populate it with the necessary `VITE_` prefixed variables.
-
-Essential variables for local development likely include:
+To run the client locally, configure a `.env` file in the root directory. Variables prefixed with `VITE_` are automatically exposed to SvelteKit at build/dev runtime.
 
 ```env
-# Publicly accessible variables (prefixed with VITE_)
 VITE_PUBLIC_VERSION=local-dev
 VITE_PUBLIC_DISCORD_CLIENT_ID=your_discord_client_id
-VITE_PUBLIC_DISCORD_REDIRECT_URI=http://localhost:5173/callback # Or your local dev callback URL
-VITE_PUBLIC_USER_TABLE_FUNCTION_URL=your_azure_function_url
-VITE_PUBLIC_ADD_TO_SEEKING_FUNCTION_URL=your_azure_function_url
-VITE_PUBLIC_GET_SEEKING_LIST_FUNCTION_URL=your_azure_function_url
-VITE_PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL=your_azure_function_url
-VITE_PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL=your_azure_function_url
-VITE_PUBLIC_GET_USER_TABLES_FUNCTION_URL=your_azure_function_url
-VITE_PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL=your_azure_function_url
-VITE_PUBLIC_AUTH_ENDPOINT=your_azure_function_url # Likely handles the start of the auth flow
-VITE_PUBLIC_LOGIN_ENDPOINT=your_azure_function_url # Might be the same as AUTH_ENDPOINT
-VITE_PUBLIC_LOGOUT_ENDPOINT=your_azure_function_url # Endpoint to call for logout
-VITE_LOGIN_URL=your_login_initiation_url # URL the user is redirected to for login (likely Discord)
+VITE_PUBLIC_DISCORD_REDIRECT_URI=http://localhost:5173/callback
 
-# Add any other VITE_ prefixed variables needed by your specific setup
+# Backend Azure APIM / Function Endpoints
+VITE_LOGIN_URL=https://seeker.azure-api.net/api/login
+VITE_USER_INFO_URL=https://seeker.azure-api.net/api/userinfo
+PUBLIC_GET_BANNER_FUNCTION_URL=https://seeker.azure-api.net/api/getBanner
+PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL=https://seeker.azure-api.net/api/updateUserSetting
+PUBLIC_ADD_TO_SEEKING_FUNCTION_URL=https://seeker.azure-api.net/api/addToSeeking
+PUBLIC_GET_SEEKING_LIST_FUNCTION_URL=https://seeker.azure-api.net/api/getSeekingList
+PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL=https://seeker.azure-api.net/api/deleteFromSeeking
+PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL=https://seeker.azure-api.net/api/deleteUserAccount
+PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL=https://seeker.azure-api.net/api/updateSeekingCard
+PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL=https://seeker.azure-api.net/api/getSystemStatus
 ```
 
-*Note: Variables prefixed with `VITE_` are exposed to the client-side code. Non-prefixed variables are typically used server-side or during the build process.*
+### 💻 Local Development
 
-### Running the Development Server
-
+Run the SvelteKit development server:
 ```bash
 npm run dev
 ```
+The application will start at `http://localhost:5173`. Make sure your Discord developer settings contain this Redirect URI for local callbacks.
 
-This will start the development server, usually available at `http://localhost:5173`. Ensure your Discord application is configured with the correct redirect URI for local development.
+### 🔍 Linting and Code Quality
 
-### Building for Production
+Validate TypeScript compilation, formatting, and linting rules before committing:
+```bash
+# Type-check and sync Svelte files
+npm run check
 
+# Check formatting and run ESLint
+npm run lint
+```
+
+---
+
+## 📦 Build & Deployment
+
+The project is built as a static site:
 ```bash
 npm run build
 ```
+This compiles the SPA into the `./build` directory.
 
-This command compiles the application into the `build` directory, ready for deployment. The build process requires specific environment variables to be set, as shown in the `deploy.yml` workflow.
-
-## Deployment
-
-Deployment is automated via the GitHub Actions workflow defined in `.github/workflows/deploy.yml`. Pushing to the `main` branch triggers the following steps:
-
-1.  Checkout code.
-2.  Set up Node.js.
-3.  Install dependencies (`npm ci`).
-4.  Build the SvelteKit application (`npm run build`), injecting secrets and variables.
-5.  Log in to Azure.
-6.  Clean the `$web` container in the specified Azure Storage Account.
-7.  Upload the contents of the `build` directory to the `$web` container.
-8.  Purge the Azure CDN endpoint to ensure users get the latest version.
-9.  Log out of Azure.
-
-## Linting and Formatting
-
-*   **Linting:** Run `npm run lint` to check for code style issues using ESLint (`eslint.config.js`).
-*   **Formatting:** Run `npm run format` to format the code using Prettier (`.prettierrc`, `.prettierignore`).
-
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+### 🌐 Azure Deployment Workflow
+Deployment is automated via GitHub Actions in [.github/workflows/deploy.yml](file:///home/cwisniewski/seeker.cityoftraitors.com/.github/workflows/deploy.yml). When a push is made to the `main` branch:
+1.  **Version Increment**: Increments the patch version dynamically in the repository's action variables.
+2.  **Asset Compilation**: Compiles the project using `npm run build` injecting necessary production environment keys.
+3.  **Clean Batch**: Authenticates with Azure and clears the existing static contents from the `$web` storage container.
+4.  **Upload**: Uploads the static bundle from `./build` to the `$web` Azure Storage account container.
+5.  **CDN Purge**: Purges the Azure CDN endpoints to deliver the latest release to users.
