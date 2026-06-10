@@ -10,7 +10,6 @@
 
 	// Define Role IDs (ensure these match your Discord setup)
 	const REQUIRED_ROLE_ID = '1352632428342280212'; // Seeker Role
-	const ADMIN_ROLE_ID = '1352632325640294411'; // Admin Role
 
 	// State variables
 	let showConfirmDialog = false;
@@ -33,7 +32,6 @@
 	// Adjust logic if your /api/userinfo provides explicit guild membership.
 	$: guildMember = !!$auth.user?.roles; // Assumes roles array exists only if they are a member
 	$: hasRole = $auth.user?.roles?.includes(REQUIRED_ROLE_ID) ?? false;
-	$: isAdmin = $auth.user?.roles?.includes(ADMIN_ROLE_ID) ?? false;
 
 	// Default settings derived from user payload
 	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
@@ -281,13 +279,6 @@
 						<span class="value status {hasRole ? 'active' : 'inactive'}">
 							<i class="fa-solid {hasRole ? 'fa-check' : 'fa-xmark'}"></i>
 							{hasRole ? 'Has Role' : 'No Role'}
-						</span>
-					</div>
-					<div class="info-item">
-						<span class="label">Admin Status</span>
-						<span class="value status {isAdmin ? 'active' : 'inactive'}">
-							<i class="fa-solid {isAdmin ? 'fa-shield' : 'fa-user'}"></i>
-							{isAdmin ? 'Admin' : 'Not Admin'}
 						</span>
 					</div>
 					<div class="info-item">
