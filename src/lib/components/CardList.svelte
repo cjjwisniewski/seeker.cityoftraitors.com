@@ -258,6 +258,22 @@
 				return;
 			}
 
+			if (response.status === 403 && result.error === 'LIMIT_REACHED') {
+				buttonStates[card.id] = {
+					error: true,
+					success: false,
+					exists: false,
+					message: 'Limit reached'
+				};
+				buttonStates = { ...buttonStates };
+
+				setTimeout(() => {
+					buttonStates[card.id] = { error: false, success: false, exists: false };
+					buttonStates = { ...buttonStates };
+				}, 3000);
+				return;
+			}
+
 			if (!response.ok) {
 				throw new Error(`Failed to add card: ${result.message || `HTTP ${response.status}`}`);
 			}
