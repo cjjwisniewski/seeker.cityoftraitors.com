@@ -473,7 +473,16 @@
 <svelte:window on:click={closeMenu} />
 
 <div class="page-title">
-	<h1>Seeking List</h1>
+	<h1>
+		Sought Cards
+		<span class="card-count-badge">
+			{#if isPremiumOrLegacy}
+				({cards.length})
+			{:else}
+				({cards.length} / 25)
+			{/if}
+		</span>
+	</h1>
 	<div class="view-controls">
 		{#if showFilter}
 			<div class="search-container">
@@ -916,6 +925,16 @@
 		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
+	}
+
+	.card-count-badge {
+		font-size: 1.25rem;
+		font-weight: 500;
+		color: var(--color-text-secondary);
+		margin-left: 0.5rem;
+		vertical-align: middle;
+		background: none;
+		-webkit-text-fill-color: var(--color-text-secondary);
 	}
 
 	.view-controls {
