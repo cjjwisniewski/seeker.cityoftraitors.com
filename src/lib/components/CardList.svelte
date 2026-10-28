@@ -25,6 +25,40 @@
 	}
 
 	// --- Original Functions (handleSetChange, handleLanguageChange, etc.) ---
+	async function handleSetDropdownOpen(card) {
+		if (!card || card.prints_loaded || !card.prints_search_uri) return;
+
+		try {
+			const printsResponse = await fetch(card.prints_search_uri);
+			if (!printsResponse.ok) return;
+			const printsData = await printsResponse.json();
+			if (!Array.isArray(printsData?.data)) return;
+
+			const prints = printsData.data
+				.map((print) => ({
+					set: print.set_name,
+					set_code: print.set,
+					lang: print.lang,
+					collector_number: print.collector_number,
+					image_uri: getCardImageUri(print),
+					flavor_text: print.flavor_text,
+					oracle_text: print.oracle_text,
+					type_line: print.type_line,
+					mana_cost: print.mana_cost,
+					finishes: print.finishes || [],
+					tcgplayer_id: print.tcgplayer_id || null,
+					cardmarket_id: print.cardmarket_id || null
+				}))
+				.sort((a, b) => (a.set || '').localeCompare(b.set || ''));
+
+			card.all_prints = prints;
+			card.prints_loaded = true;
+			sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...card } : c));
+		} catch (error) {
+			console.error(`Error lazy-loading prints for ${card.name}:`, error);
+		}
+	}
+
 	async function handleSetChange(card, newPrint) {
 		if (!card || !newPrint) return;
 
@@ -389,6 +423,7 @@
 								<!-- MODIFIED: Select binds to a combined value representing the current print -->
 								<select
 									value="{card.set}|{card.collector_number}"
+									on:focus={() => handleSetDropdownOpen(card)}
 									on:change={(e) => {
 										const [set_code, collector_number] = e.target.value.split('|');
 										// Find the specific print object based on both parts

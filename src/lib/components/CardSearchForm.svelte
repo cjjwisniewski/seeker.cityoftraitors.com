@@ -252,111 +252,47 @@
 				return;
 			}
 
-			const cardsWithPrints = await Promise.all(
-				data.data.map(async (card: any) => {
-					const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
+			// Initialize search results immediately with their default print;
+			// additional printings are lazy-loaded when the user opens the set selector
+			const cardsWithPrints = data.data.map((card: any) => {
+				const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
+				const availableLanguages = [card.lang || 'en'];
+				let selectedLanguage = availableLanguages.includes(preferredLanguage)
+					? preferredLanguage
+					: 'en';
+				if (!availableLanguages.includes(selectedLanguage))
+					selectedLanguage = availableLanguages[0];
 
-					if (!card.prints_search_uri) {
-						const availableLanguages = [card.lang || 'en'];
-						let selectedLanguage = availableLanguages.includes(preferredLanguage)
-							? preferredLanguage
-							: 'en';
-						if (!availableLanguages.includes(selectedLanguage))
-							selectedLanguage = availableLanguages[0];
-
-						return {
-							...card,
-							image_uris: {
-								...card.image_uris,
-								grid: getCardImageUri(card),
-								normal: getCardImageUri(card)
-							},
-							all_prints: [
-								{
-									set: card.set_name,
-									set_code: card.set,
-									collector_number: card.collector_number,
-									image_uri: getCardImageUri(card),
-									languages: null,
-									flavor_text: card.flavor_text,
-									oracle_text: card.oracle_text,
-									type_line: card.type_line,
-									mana_cost: card.mana_cost,
-									finishes: card.finishes || []
-								}
-							],
-							available_languages: availableLanguages,
-							selected_language: selectedLanguage
-						};
-					}
-
-					try {
-						const printsResponse = await fetch(card.prints_search_uri);
-						const printsData = await printsResponse.json();
-
-						const prints = printsData.data.map((print: any) => ({
-							set: print.set_name,
-							set_code: print.set,
-							lang: print.lang,
-							collector_number: print.collector_number,
-							image_uri: getCardImageUri(print),
-							flavor_text: print.flavor_text,
-							oracle_text: print.oracle_text,
-							type_line: print.type_line,
-							mana_cost: print.mana_cost,
-							finishes: print.finishes || [],
-							tcgplayer_id: print.tcgplayer_id || null,
-							cardmarket_id: print.cardmarket_id || null
-						}));
-
-						// Get correct per-printing languages and selected language
-						const initialLanguages = await getAvailableLanguages(card.set, card.collector_number);
-						const selectedLanguage = initialLanguages.includes(preferredLanguage)
-							? preferredLanguage
-							: initialLanguages.includes('en')
-								? 'en'
-								: initialLanguages[0];
-
-						// Cache on the matching print
-						const initialPrint = prints.find(
-							(p: any) => p.set_code === card.set && p.collector_number === card.collector_number
-						);
-						if (initialPrint) initialPrint.languages = initialLanguages;
-
-						const result = {
-							...card,
-							all_prints: prints,
-							available_languages: initialLanguages,
-							selected_language: selectedLanguage
-						};
-
-						// Fetch localized image/text if selected language differs from the card's native lang
-						if (selectedLanguage !== (card.lang || 'en')) {
-							const localized = await fetchLocalizedData(
-								card.set,
-								card.collector_number,
-								selectedLanguage
-							);
-							if (localized) Object.assign(result, localized);
+				const cardImg = getCardImageUri(card);
+				return {
+					...card,
+					image_uris: {
+						...card.image_uris,
+						grid: cardImg,
+						normal: cardImg
+					},
+					all_prints: [
+						{
+							set: card.set_name,
+							set_code: card.set,
+							lang: card.lang,
+							collector_number: card.collector_number,
+							image_uri: cardImg,
+							languages: availableLanguages,
+							flavor_text: card.flavor_text,
+							oracle_text: card.oracle_text,
+							type_line: card.type_line,
+							mana_cost: card.mana_cost,
+							finishes: card.finishes || [],
+							tcgplayer_id: card.tcgplayer_id || null,
+							cardmarket_id: card.cardmarket_id || null
 						}
-
-						return result;
-					} catch (error) {
-						console.error(`Error fetching prints for ${card.name}:`, error);
-						const availableLanguages = [card.lang || 'en'];
-						const selectedLanguage = availableLanguages.includes(preferredLanguage)
-							? preferredLanguage
-							: 'en';
-
-						return {
-							...card,
-							all_prints: [],
-							available_languages: availableLanguages,
-							selected_language: selectedLanguage
-						};
-					}
-				})
-			);
+					],
+					prints_loaded: !card.prints_search_uri,
+					available_languages: availableLanguages,
+					selected_language: selectedLanguage
+				};
+			});
 
 			dispatch('search', cardsWithPrints);
 		} catch (error) {
