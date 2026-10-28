@@ -23,7 +23,11 @@ export const load = async ({ url }) => {
     const currentPath = url.pathname;
 
     // Define paths that don't require authentication
-    const isAuthPath = currentPath === '/login' || currentPath === '/auth/callback' || currentPath === '/auth/logout';
+    const isAuthPath =
+        currentPath === '/login' ||
+        currentPath === '/callback' ||
+        currentPath === '/auth/callback' ||
+        currentPath === '/auth/logout';
 
     // Redirect to login if not authenticated, not loading, and not on an auth path
     if (!authState.isAuthenticated && !authState.isLoading && !isAuthPath) {

@@ -43,7 +43,8 @@
 
             if (result?.success) {
                 message = 'Login successful! Redirecting...';
-                const redirectTo = state || '/'; // Default to home if no state
+                const rawState = state || '/';
+                const redirectTo = rawState.startsWith('/') && !rawState.startsWith('//') ? rawState : '/';
                 console.log('Callback: Redirecting to:', redirectTo);
                 // Use replaceState: true if you don't want the callback page in history
                 goto(redirectTo, { replaceState: true });

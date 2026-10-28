@@ -402,13 +402,20 @@
 
 		// Specific handling for price/stock if needed, e.g., nulls last
 		if (sortKey.includes('_price')) {
-			aValue = aValue ?? (sortDirection === 'asc' ? Infinity : -Infinity);
-			bValue = bValue ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+			const normalizePrice = (card, val) => {
+				if (val === null || val === undefined || val <= 0) return null;
+				if (sortKey === 'tcgplayer_low_price' && getStockStatus(card.tcgplayer_stock) !== 'available') {
+					return null;
+				}
+				return val;
+			};
+			aValue = normalizePrice(a, aValue) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+			bValue = normalizePrice(b, bValue) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
 		} else if (sortKey.includes('_stock')) {
-			// Define a sort order for stock: true (available) > null (unknown) > false (unavailable)
-			const stockOrder = { true: 1, null: 0, false: -1 };
-			aValue = stockOrder[getStockStatus(aValue)];
-			bValue = stockOrder[getStockStatus(bValue)];
+			// Define a sort order for stock: available (1) > unknown (0) > unavailable (-1)
+			const stockOrder = { available: 1, unknown: 0, unavailable: -1 };
+			aValue = stockOrder[getStockStatus(aValue)] ?? 0;
+			bValue = stockOrder[getStockStatus(bValue)] ?? 0;
 		} else if (typeof aValue === 'string' && typeof bValue === 'string') {
 			// Case-insensitive sort for strings
 			aValue = aValue.toLowerCase();

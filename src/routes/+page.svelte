@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import CardSearchForm from '$lib/components/CardSearchForm.svelte';
 	import CardList from '$lib/components/CardList.svelte';
-	import { page } from '$app/stores';
 
 	let cards = [];
 	let hasSearched = false;
@@ -16,26 +15,6 @@
 		cards = event.detail;
 		hasSearched = true;
 	};
-
-	async function handleAddToSeeking(card) {
-		const response = await fetch('/api/addToSeeking', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'x-finish': selectedFinishes[card.id] || 'nonfoil'
-			},
-			body: JSON.stringify(cardData)
-		});
-
-		if (!response.ok) {
-			// Handle error
-			console.error('Failed to add card to seeking list');
-			return;
-		}
-
-		const result = await response.json();
-		// Handle success
-	}
 </script>
 
 {#if mounted}
@@ -59,7 +38,7 @@
 			</div>
 		{/if}
 
-		<CardList {cards} {hasSearched} on:addToSeeking={handleAddToSeeking} />
+		<CardList {cards} {hasSearched} />
 	</div>
 {/if}
 

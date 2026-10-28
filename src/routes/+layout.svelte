@@ -54,9 +54,15 @@
 				setTimeout(() => loader.remove(), 300);
 			}
 
+			// Skip layout fragment handling on /callback where callback/+page.svelte handles it
+			if (window.location.pathname === '/callback') {
+				return;
+			}
+
 			const hashParams = new URLSearchParams(window.location.hash.substring(1));
 			const token = hashParams.get('token');
-			const state = hashParams.get('state') || '/'; // Default redirect target
+			const rawState = hashParams.get('state') || '/';
+			const state = rawState.startsWith('/') && !rawState.startsWith('//') ? rawState : '/';
 
 			if (token) {
 				console.log('Layout onMount: Found token in URL fragment. Handling callback...');
