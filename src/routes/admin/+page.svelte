@@ -120,18 +120,32 @@
 		}
 	}
 
-	async function handleDeleteAccount(targetUserId) {
-		// Consider using your dialog variables 'showConfirmDialog' and 'tableToDelete'
-		// for a better confirmation experience instead of the basic confirm().
-		if (
-			!confirm(
-				`Are you sure you want to delete user account ${targetUserId}? This action cannot be undone.`
-			)
-		) {
-			return;
-		}
-		if (!isAuthorized) return; // Don't attempt if not authorized
+	// Delete confirmation modal state
+	let showDeleteModal = false;
+	let userToDelete = null;
+	let isDeletingUser = false;
 
+	function promptDeleteAccount(targetUserId) {
+		userToDelete = targetUserId;
+		showDeleteModal = true;
+	}
+
+	function closeDeleteModal() {
+		if (isDeletingUser) return;
+		showDeleteModal = false;
+		userToDelete = null;
+	}
+
+	function handleKeydown(event) {
+		if (event.key === 'Escape' && showDeleteModal) {
+			closeDeleteModal();
+		}
+	}
+
+	async function handleDeleteAccount() {
+		if (!userToDelete || !isAuthorized) return;
+		const targetUserId = userToDelete;
+		isDeletingUser = true;
 		error = null; // Clear error before attempt
 		try {
 			// Backend needs to accept targetUserIdToDelete in body and verify admin access based on token
@@ -167,6 +181,10 @@
 		} catch (e) {
 			error = e.message;
 			console.error(`Error deleting account ${targetUserId}:`, e);
+		} finally {
+			isDeletingUser = false;
+			showDeleteModal = false;
+			userToDelete = null;
 		}
 	}
 
@@ -204,6 +222,8 @@
 	let bannerEnabled = false;
 	let bannerLoading = false;
 	let bannerSaving = false;
+	let bannerStatusMessage = null;
+	let bannerStatusType = 'success';
 
 	async function loadBanner() {
 		if (!isAuthorized) return;
@@ -226,6 +246,7 @@
 	async function saveBanner() {
 		if (!isAuthorized) return;
 		bannerSaving = true;
+		bannerStatusMessage = null;
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_BANNER_FUNCTION_URL, {
 				method: 'POST',
@@ -236,12 +257,14 @@
 				})
 			});
 			if (response && response.ok) {
-				alert('Banner updated successfully!');
+				bannerStatusType = 'success';
+				bannerStatusMessage = 'Banner settings updated successfully.';
 			} else {
 				throw new Error('Failed to update banner');
 			}
 		} catch (e) {
-			alert('Error updating banner: ' + e.message);
+			bannerStatusType = 'error';
+			bannerStatusMessage = 'Error updating banner: ' + e.message;
 		} finally {
 			bannerSaving = false;
 		}
@@ -251,9 +274,21 @@
 	$: totalUsers = userTables.length;
 	$: totalItems = userTables.reduce((sum, table) => sum + (table.itemCount || 0), 0);
 
-	// Estimates: CT = 2s/item, TCG = 20s/item
+	// Estimates: CT = 2s/item, TCG = 20s/item, eBay = 1s/item, Mana Pool = 1s/item
 	$: estimatedCTTimeSeconds = totalItems * 2;
 	$: estimatedTCGTimeSeconds = totalItems * 20;
+	$: estimatedEbayTimeSeconds = totalItems * 1;
+	$: estimatedManapoolTimeSeconds = totalItems * 1;
+
+	function formatCents(cents) {
+		if (cents === null || cents === undefined || cents <= 0) return '—';
+		return `$${(cents / 100).toFixed(2)}`;
+	}
+
+	function formatDollars(dollars) {
+		if (dollars === null || dollars === undefined || Number(dollars) <= 0) return '—';
+		return `$${Number(dollars).toFixed(2)}`;
+	}
 
 	function formatDuration(seconds) {
 		if (!seconds) return '0s';
@@ -283,6 +318,8 @@
 		statusLoading = false;
 	}
 </script>
+
+<svelte:window on:keydown={showDeleteModal ? handleKeydown : null} />
 
 {#if authLoading}
 	<div class="loading-container">
@@ -332,6 +369,16 @@
 							<div class="stat-value">{formatDuration(estimatedTCGTimeSeconds)}</div>
 							<div class="stat-sub">@ 20s/item</div>
 						</div>
+						<div class="stat-card">
+							<h3>Avg. eBay Time</h3>
+							<div class="stat-value">{formatDuration(estimatedEbayTimeSeconds)}</div>
+							<div class="stat-sub">@ 1s/item</div>
+						</div>
+						<div class="stat-card">
+							<h3>Avg. Mana Pool Time</h3>
+							<div class="stat-value">{formatDuration(estimatedManapoolTimeSeconds)}</div>
+							<div class="stat-sub">@ 1s/item</div>
+						</div>
 					</div>
 				{/if}
 			</section>
@@ -372,6 +419,11 @@
 						<button class="save-btn" on:click={saveBanner} disabled={bannerSaving}>
 							{bannerSaving ? 'Saving...' : 'Save Banner Settings'}
 						</button>
+						{#if bannerStatusMessage}
+							<div class="banner-feedback {bannerStatusType}" role="status">
+								{bannerStatusMessage}
+							</div>
+						{/if}
 					</div>
 				{/if}
 			</section>
@@ -458,6 +510,36 @@
 								</div>
 							</div>
 						{/if}
+
+						{#if systemStatus.queues && systemStatus.queues.length > 0}
+							<div class="status-item functions">
+								<h3>Queue Health &amp; Backlog</h3>
+								<div class="function-grid">
+									{#each systemStatus.queues as q}
+										<div class="function-status">
+											<div class="function-header">
+												<span class="function-name">{q.label || q.name}</span>
+												<span class="status-badge {q.poison_messages > 0 ? 'degraded' : 'running'}">
+													{q.poison_messages > 0 ? `${q.poison_messages} poison` : 'healthy'}
+												</span>
+											</div>
+											<div class="function-details">
+												<span class="response-time">
+													<i class="fa-solid fa-layer-group"></i>
+													Queued: {q.active_messages}
+												</span>
+												{#if q.poison_messages > 0}
+													<span class="error-message">
+														<i class="fa-solid fa-skull-crossbones"></i>
+														Poison: {q.poison_messages}
+													</span>
+												{/if}
+											</div>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
 					</div>
 				{/if}
 			</section>
@@ -518,7 +600,7 @@
 										</button>
 										<button
 											class="delete-btn"
-											on:click={() => handleDeleteAccount(table.userId)}
+											on:click={() => promptDeleteAccount(table.userId)}
 											disabled={!token}
 										>
 											Delete
@@ -542,16 +624,36 @@
 														<th>Number</th>
 														<th>Language</th>
 														<th>Finish</th>
+														<th>CardTrader</th>
+														<th>TCGPlayer</th>
+														<th>eBay</th>
+														<th>Mana Pool</th>
+														<th>Price Cap</th>
 													</tr>
 												</thead>
 												<tbody>
 													{#each expandedTableData as card}
 														<tr>
 															<td data-label="Name">{card.name}</td>
-															<td data-label="Set">{card.set_code}</td>
+															<td data-label="Set">{card.set_code.toUpperCase()}</td>
 															<td data-label="Number">{card.collector_number}</td>
-															<td data-label="Language">{card.language}</td>
+															<td data-label="Language">{card.language.toUpperCase()}</td>
 															<td data-label="Finish">{card.finish}</td>
+															<td data-label="CardTrader">
+																{card.cardtrader_stock ? formatCents(card.cardtrader_low_price) : 'Out of Stock'}
+															</td>
+															<td data-label="TCGPlayer">
+																{card.tcgplayer_stock ? formatDollars(card.tcgplayer_low_price) : 'Out of Stock'}
+															</td>
+															<td data-label="eBay">
+																{card.ebay_stock ? formatCents(card.ebay_low_price) : 'Out of Stock'}
+															</td>
+															<td data-label="Mana Pool">
+																{card.manapool_stock ? formatCents(card.manapool_low_price) : 'Out of Stock'}
+															</td>
+															<td data-label="Price Cap">
+																{formatCents(card.max_price_cap)}
+															</td>
 														</tr>
 													{/each}
 												</tbody>
@@ -566,6 +668,45 @@
 			</section>
 		</div>
 	</div>
+
+	{#if showDeleteModal}
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div
+			class="modal-overlay"
+			on:click={closeDeleteModal}
+			on:keydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') closeDeleteModal();
+			}}
+			role="button"
+			tabindex="0"
+			aria-label="Close dialog"
+		>
+			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+			<div
+				class="modal"
+				on:click|stopPropagation
+				on:keydown|stopPropagation
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="admin-delete-dialog-title"
+				tabindex="-1"
+			>
+				<h3 id="admin-delete-dialog-title">Confirm User Account Deletion</h3>
+				<p>
+					Are you sure you want to delete user account <strong>{userToDelete}</strong>? This action
+					cannot be undone.
+				</p>
+				<div class="modal-buttons">
+					<button class="cancel-btn" on:click={closeDeleteModal} disabled={isDeletingUser}>
+						Cancel
+					</button>
+					<button class="confirm-btn" on:click={handleDeleteAccount} disabled={isDeletingUser}>
+						{isDeletingUser ? 'Deleting...' : 'Yes, Delete Account'}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 {/if}
 
 <!-- End of authorization check block -->
@@ -943,6 +1084,77 @@
 		margin-top: 0.5rem;
 		align-self: flex-start;
 		padding: 0.75rem 1.5rem;
+	}
+
+	.banner-feedback {
+		padding: 0.75rem 1rem;
+		border-radius: 8px;
+		font-size: 0.9rem;
+		font-weight: 500;
+	}
+
+	.banner-feedback.success {
+		background: rgba(16, 185, 129, 0.15);
+		color: var(--color-success);
+		border: 1px solid var(--color-success);
+	}
+
+	.banner-feedback.error {
+		background: rgba(239, 68, 68, 0.15);
+		color: var(--color-error);
+		border: 1px solid var(--color-error);
+	}
+
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+		padding: 1rem;
+	}
+
+	.modal {
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		border-radius: 12px;
+		padding: 1.5rem;
+		max-width: 440px;
+		width: 100%;
+		box-shadow: var(--shadow-lg);
+	}
+
+	.modal h3 {
+		margin: 0 0 0.75rem 0;
+		color: var(--color-error);
+	}
+
+	.modal p {
+		margin: 0 0 1.25rem 0;
+		color: var(--color-text-secondary);
+		line-height: 1.5;
+	}
+
+	.modal-buttons {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.75rem;
+	}
+
+	.cancel-btn {
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		border: 1px solid var(--color-border);
+	}
+
+	.confirm-btn {
+		background: var(--color-error);
+		color: white;
 	}
 
 	.function-header {

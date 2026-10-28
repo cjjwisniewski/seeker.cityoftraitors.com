@@ -450,7 +450,8 @@
 			'eBay Stock',
 			'eBay Price',
 			'Mana Pool Stock',
-			'Mana Pool Price'
+			'Mana Pool Price',
+			'Max Price Cap'
 		];
 		const csvRows = [headers.join(',')];
 
@@ -462,15 +463,24 @@
 				card.language,
 				card.finish,
 				getStockStatus(card.cardtrader_stock),
-				card.cardtrader_low_price ? (card.cardtrader_low_price / 100).toFixed(2) : '',
+				card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined
+					? (card.cardtrader_low_price / 100).toFixed(2)
+					: '',
 				getStockStatus(card.tcgplayer_stock),
-				card.tcgplayer_low_price ? card.tcgplayer_low_price : '',
-				// getStockStatus(card.cardmarket_stock),
-				// card.cardmarket_low_price ? (card.cardmarket_low_price / 100).toFixed(2) : '',
+				card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined
+					? Number(card.tcgplayer_low_price).toFixed(2)
+					: '',
 				getStockStatus(card.ebay_stock),
-				card.ebay_low_price ? (card.ebay_low_price / 100).toFixed(2) : '',
+				card.ebay_low_price !== null && card.ebay_low_price !== undefined
+					? (card.ebay_low_price / 100).toFixed(2)
+					: '',
 				getStockStatus(card.manapool_stock),
-				card.manapool_low_price ? (card.manapool_low_price / 100).toFixed(2) : ''
+				card.manapool_low_price !== null && card.manapool_low_price !== undefined
+					? (card.manapool_low_price / 100).toFixed(2)
+					: '',
+				card.max_price_cap !== null && card.max_price_cap !== undefined
+					? (card.max_price_cap / 100).toFixed(2)
+					: ''
 			];
 			csvRows.push(row.join(','));
 		}
