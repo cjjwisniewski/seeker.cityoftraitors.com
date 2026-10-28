@@ -18,6 +18,12 @@
 	const SEARCH_URL = `${SCRYFALL_API}/cards/search`;
 	const NAMED_URL = `${SCRYFALL_API}/cards/named`;
 
+	// Prefer Scryfall's WebP 'grid' format, with fallback to legacy 'normal'/'jpeg' and double-faced card_faces
+	const getCardImageUri = (cardData: any): string | undefined => {
+		const uris = cardData?.image_uris || cardData?.card_faces?.[0]?.image_uris;
+		return uris?.grid || uris?.normal || uris?.jpeg;
+	};
+
 	// Fetches the localized image/text for a card if the selected language differs from its native lang.
 	// Returns an object with the fields to override, or null if no override is needed.
 	const fetchLocalizedData = async (
@@ -25,7 +31,7 @@
 		collectorNumber: string,
 		lang: string
 	): Promise<{
-		image_uris: { normal: string };
+		image_uris: { grid: string; normal: string };
 		flavor_text?: string;
 		oracle_text?: string;
 		type_line?: string;
@@ -35,10 +41,10 @@
 			const res = await fetch(url);
 			if (!res.ok) return null;
 			const data = await res.json();
-			const imageUri = data.image_uris?.normal || data.card_faces?.[0]?.image_uris?.normal;
+			const imageUri = getCardImageUri(data);
 			if (!imageUri) return null;
 			return {
-				image_uris: { normal: imageUri },
+				image_uris: { grid: imageUri, normal: imageUri },
 				flavor_text: data.flavor_text,
 				oracle_text: data.oracle_text,
 				type_line: data.type_line
@@ -139,7 +145,7 @@
 						set_code: print.set,
 						lang: print.lang,
 						collector_number: print.collector_number,
-						image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
+						image_uri: getCardImageUri(print),
 						flavor_text: print.flavor_text,
 						oracle_text: print.oracle_text,
 						type_line: print.type_line,
@@ -194,12 +200,17 @@
 					: 'en';
 				cardWithPrints = {
 					...card,
+					image_uris: {
+						...card.image_uris,
+						grid: getCardImageUri(card),
+						normal: getCardImageUri(card)
+					},
 					all_prints: [
 						{
 							set: card.set_name,
 							set_code: card.set,
 							collector_number: card.collector_number,
-							image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
+							image_uri: getCardImageUri(card),
 							languages: null,
 							flavor_text: card.flavor_text,
 							oracle_text: card.oracle_text,
@@ -255,12 +266,17 @@
 
 						return {
 							...card,
+							image_uris: {
+								...card.image_uris,
+								grid: getCardImageUri(card),
+								normal: getCardImageUri(card)
+							},
 							all_prints: [
 								{
 									set: card.set_name,
 									set_code: card.set,
 									collector_number: card.collector_number,
-									image_uri: card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal,
+									image_uri: getCardImageUri(card),
 									languages: null,
 									flavor_text: card.flavor_text,
 									oracle_text: card.oracle_text,
@@ -283,7 +299,7 @@
 							set_code: print.set,
 							lang: print.lang,
 							collector_number: print.collector_number,
-							image_uri: print.image_uris?.normal || print.card_faces?.[0]?.image_uris?.normal,
+							image_uri: getCardImageUri(print),
 							flavor_text: print.flavor_text,
 							oracle_text: print.oracle_text,
 							type_line: print.type_line,

@@ -285,6 +285,17 @@
 		}
 	}
 
+	// Helper function to ensure legacy Scryfall JPEG URLs in storage are loaded as WebP ('grid')
+	function getWebpImageUri(uri) {
+		if (!uri) return '';
+		if (uri.includes('cards.scryfall.io/normal/')) {
+			return uri
+				.replace('cards.scryfall.io/normal/', 'cards.scryfall.io/grid/')
+				.replace(/\.jpg(\?.*)?$/, '.webp$1');
+		}
+		return uri;
+	}
+
 	// Helper function to map specific set codes for icons
 	function getSetIconCode(originalCode) {
 		const codeMap = {
@@ -648,10 +659,10 @@
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 									<img
-										src={card.image_uri}
+										src={getWebpImageUri(card.image_uri)}
 										alt={card.name}
 										class="card-thumbnail"
-										on:click={() => (enlargedCardImage = card.image_uri)}
+										on:click={() => (enlargedCardImage = getWebpImageUri(card.image_uri))}
 									/>
 								{/if}
 								<span>{card.name}</span>
@@ -853,7 +864,7 @@
 			</div>
 			<div class="modal-body">
 				<div class="card-details-mini">
-					<img src={selectedCardForSettings.image_uri} alt={selectedCardForSettings.name} />
+					<img src={getWebpImageUri(selectedCardForSettings.image_uri)} alt={selectedCardForSettings.name} />
 					<div>
 						<h3>{selectedCardForSettings.name}</h3>
 						<p>

@@ -18,6 +18,12 @@
 	// REMOVED: getCookie function
 	// REMOVED: onMount logic for accessToken and userId
 
+	// Helper to resolve Scryfall WebP ('grid') image URI with fallbacks
+	function getCardImageUri(cardData) {
+		const uris = cardData?.image_uris || cardData?.card_faces?.[0]?.image_uris;
+		return uris?.grid || uris?.normal || uris?.jpeg;
+	}
+
 	// --- Original Functions (handleSetChange, handleLanguageChange, etc.) ---
 	async function handleSetChange(card, newPrint) {
 		if (!card || !newPrint) return;
@@ -26,6 +32,7 @@
 		card.set = newPrint.set_code;
 		card.collector_number = newPrint.collector_number;
 		card.image_uris = {
+			grid: newPrint.image_uri,
 			normal: newPrint.image_uri
 		};
 
@@ -104,8 +111,8 @@
 			if (!response.ok) throw new Error('Failed to fetch card data');
 			const cardData = await response.json();
 
-			// Get the correct image URI from the response
-			const imageUri = cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal;
+			// Get the correct image URI from the response (preferring Scryfall WebP 'grid')
+			const imageUri = getCardImageUri(cardData);
 			if (!imageUri) throw new Error('No image URI found');
 
 			// Update card image and language while maintaining other print information
@@ -113,7 +120,7 @@
 				if (c.id === card.id) {
 					return {
 						...c,
-						image_uris: { normal: imageUri },
+						image_uris: { grid: imageUri, normal: imageUri },
 						selected_language: language,
 						// Ensure set and collector number remain consistent with the selected print
 						set: currentPrint.set_code,
@@ -207,7 +214,7 @@
 				collector_number: card.collector_number, // Use card.collector_number (updated by handleSetChange)
 				language: card.selected_language || 'en',
 				oracle_id: card.oracle_id,
-				image_uri: card.image_uris.normal, // Use current image URI
+				image_uri: getCardImageUri(card) || currentPrint.image_uri, // Use current WebP image URI
 				timestamp: new Date().toISOString(),
 				finish: selectedFinishes[card.id] || 'nonfoil',
 				tcgplayer_id: currentPrint.tcgplayer_id || null,
@@ -369,11 +376,12 @@
 				{@const currentPrint = card.all_prints?.find(
 					(p) => p.set_code === card.set && p.collector_number === card.collector_number
 				)}
-				<div class="card-item">
+					{@const cardImageUri = getCardImageUri(card) || currentPrint?.image_uri}
+					<div class="card-item">
 					<div class="card-image-section">
 						<div class="card-image-container">
-							{#if card.image_uris?.normal}
-								<img src={card.image_uris.normal} alt={card.name} class="card-image" />
+							{#if cardImageUri}
+								<img src={cardImageUri} alt={card.name} class="card-image" />
 							{/if}
 						</div>
 						{#if card.all_prints}
