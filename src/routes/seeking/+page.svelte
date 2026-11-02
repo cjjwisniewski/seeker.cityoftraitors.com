@@ -328,6 +328,7 @@
 
 	const languageMap = {
 		en: 'English',
+		ja: 'Japanese',
 		jp: 'Japanese',
 		de: 'German',
 		fr: 'French',
@@ -335,6 +336,7 @@
 		es: 'Spanish',
 		pt: 'Portuguese',
 		ru: 'Russian',
+		ko: 'Korean',
 		kr: 'Korean',
 		zht: 'Chinese (T)',
 		zhs: 'Chinese (S)'

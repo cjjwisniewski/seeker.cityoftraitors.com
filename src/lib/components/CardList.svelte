@@ -245,6 +245,7 @@
 				id: crypto.randomUUID(),
 				name: card.name,
 				set_code: card.set, // Use card.set (updated by handleSetChange)
+				set_name: currentPrint.set || card.set_name,
 				collector_number: card.collector_number, // Use card.collector_number (updated by handleSetChange)
 				language: card.selected_language || 'en',
 				oracle_id: card.oracle_id,
