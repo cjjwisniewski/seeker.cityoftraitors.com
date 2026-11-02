@@ -19,14 +19,12 @@
 
 {#if mounted}
 	<div class="home-container">
-		<div class="search-hero">
-			<div class="hero-badge">
-				<i class="fa-solid fa-wand-magic-sparkles"></i>
-				<span>Card Wishlist Discovery</span>
-			</div>
-			<p class="hero-prompt">
-				Search any Magic card to track prices, foil printings, and multi-marketplace restocks
-			</p>
+		<div class="search-hero" class:has-searched={hasSearched}>
+			{#if !hasSearched}
+				<p class="hero-prompt">
+					Search any Magic card to track prices, foil printings, and multi-marketplace restocks
+				</p>
+			{/if}
 			<CardSearchForm on:search={handleSearch} />
 		</div>
 
@@ -81,20 +79,11 @@
 		align-items: center;
 		gap: 0.75rem;
 		margin-bottom: 2rem;
+		transition: margin-bottom var(--transition-normal);
 	}
 
-	.hero-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.35rem 0.85rem;
-		border-radius: 9999px;
-		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.12));
-		border: 1px solid var(--color-primary-alpha, rgba(99, 102, 241, 0.25));
-		color: var(--color-primary, #6366f1);
-		font-size: 0.85rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
+	.search-hero.has-searched {
+		margin-bottom: 0.75rem;
 	}
 
 	.hero-prompt {

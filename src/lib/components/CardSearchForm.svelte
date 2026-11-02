@@ -26,6 +26,131 @@
 		return uris?.grid || uris?.normal || uris?.jpeg;
 	};
 
+	// Normalizes a printing object with full multi-face, stats, and market metadata
+	const normalizePrint = (print: any, fallbackCard?: any) => {
+		const cardFaces = print.card_faces && print.card_faces.length > 0 ? print.card_faces : null;
+		const manaCost =
+			print.mana_cost ||
+			(cardFaces ? cardFaces.map((f: any) => f.mana_cost || '').filter(Boolean).join(' // ') : '') ||
+			'';
+		const typeLine =
+			print.type_line ||
+			(cardFaces ? cardFaces.map((f: any) => f.type_line || '').filter(Boolean).join(' // ') : '') ||
+			'';
+		const oracleText =
+			print.oracle_text ||
+			(cardFaces
+				? cardFaces
+						.map((f: any) => (cardFaces.length > 1 && f.name ? `[${f.name}]\n${f.oracle_text || ''}` : f.oracle_text || ''))
+						.filter(Boolean)
+						.join('\n\n')
+				: '') ||
+			'';
+		const flavorText =
+			print.flavor_text ||
+			(cardFaces ? cardFaces.map((f: any) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+			'';
+		const power =
+			print.power !== undefined
+				? print.power
+				: cardFaces
+					? cardFaces.map((f: any) => f.power).filter((p: any) => p !== undefined).join(' // ')
+					: null;
+		const toughness =
+			print.toughness !== undefined
+				? print.toughness
+				: cardFaces
+					? cardFaces.map((f: any) => f.toughness).filter((t: any) => t !== undefined).join(' // ')
+					: null;
+		const loyalty =
+			print.loyalty !== undefined
+				? print.loyalty
+				: cardFaces
+					? cardFaces.map((f: any) => f.loyalty).filter((l: any) => l !== undefined).join(' // ')
+					: null;
+
+		return {
+			set: print.set_name || print.set,
+			set_code: print.set || print.set_code,
+			lang: print.lang || 'en',
+			collector_number: print.collector_number,
+			image_uri: getCardImageUri(print),
+			flavor_text: flavorText,
+			oracle_text: oracleText,
+			type_line: typeLine,
+			mana_cost: manaCost,
+			power,
+			toughness,
+			loyalty,
+			rarity: print.rarity || fallbackCard?.rarity || 'common',
+			artist: print.artist || fallbackCard?.artist || '',
+			prices: print.prices || fallbackCard?.prices || null,
+			finishes: print.finishes || [],
+			tcgplayer_id: print.tcgplayer_id || null,
+			cardmarket_id: print.cardmarket_id || null,
+			card_faces: cardFaces
+		};
+	};
+
+	// Normalizes the root card object ensuring split, transform, and normal cards have rich metadata
+	const normalizeCard = (card: any) => {
+		const cardFaces = card.card_faces && card.card_faces.length > 0 ? card.card_faces : null;
+		const manaCost =
+			card.mana_cost ||
+			(cardFaces ? cardFaces.map((f: any) => f.mana_cost || '').filter(Boolean).join(' // ') : '') ||
+			'';
+		const typeLine =
+			card.type_line ||
+			(cardFaces ? cardFaces.map((f: any) => f.type_line || '').filter(Boolean).join(' // ') : '') ||
+			'';
+		const oracleText =
+			card.oracle_text ||
+			(cardFaces
+				? cardFaces
+						.map((f: any) => (cardFaces.length > 1 && f.name ? `[${f.name}]\n${f.oracle_text || ''}` : f.oracle_text || ''))
+						.filter(Boolean)
+						.join('\n\n')
+				: '') ||
+			'';
+		const flavorText =
+			card.flavor_text ||
+			(cardFaces ? cardFaces.map((f: any) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+			'';
+		const power =
+			card.power !== undefined
+				? card.power
+				: cardFaces
+					? cardFaces.map((f: any) => f.power).filter((p: any) => p !== undefined).join(' // ')
+					: null;
+		const toughness =
+			card.toughness !== undefined
+				? card.toughness
+				: cardFaces
+					? cardFaces.map((f: any) => f.toughness).filter((t: any) => t !== undefined).join(' // ')
+					: null;
+		const loyalty =
+			card.loyalty !== undefined
+				? card.loyalty
+				: cardFaces
+					? cardFaces.map((f: any) => f.loyalty).filter((l: any) => l !== undefined).join(' // ')
+					: null;
+
+		return {
+			...card,
+			card_faces: cardFaces,
+			mana_cost: manaCost,
+			type_line: typeLine,
+			oracle_text: oracleText,
+			flavor_text: flavorText,
+			power,
+			toughness,
+			loyalty,
+			rarity: card.rarity || 'common',
+			artist: card.artist || '',
+			prices: card.prices || null
+		};
+	};
+
 	// Fetches the localized image/text for a card if the selected language differs from its native lang.
 	// Returns an object with the fields to override, or null if no override is needed.
 	const fetchLocalizedData = async (
@@ -34,6 +159,7 @@
 		lang: string
 	): Promise<{
 		image_uris: { grid: string; normal: string };
+		card_faces?: any;
 		flavor_text?: string;
 		oracle_text?: string;
 		type_line?: string;
@@ -45,11 +171,32 @@
 			const data = await res.json();
 			const imageUri = getCardImageUri(data);
 			if (!imageUri) return null;
+			const cardFaces = data.card_faces && data.card_faces.length > 0 ? data.card_faces : null;
+			const oracle_text =
+				data.oracle_text ||
+				(cardFaces
+					? cardFaces
+							.map((f: any) => (cardFaces.length > 1 && (f.printed_name || f.name) ? `[${f.printed_name || f.name}]\n${f.printed_text || f.oracle_text || ''}` : f.printed_text || f.oracle_text || ''))
+							.filter(Boolean)
+							.join('\n\n')
+					: '') ||
+				'';
+			const flavor_text =
+				data.flavor_text ||
+				(cardFaces ? cardFaces.map((f: any) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+				'';
+			const type_line =
+				data.printed_type_line ||
+				data.type_line ||
+				(cardFaces ? cardFaces.map((f: any) => f.printed_type_line || f.type_line || '').filter(Boolean).join(' // ') : '') ||
+				'';
+
 			return {
 				image_uris: { grid: imageUri, normal: imageUri },
-				flavor_text: data.flavor_text,
-				oracle_text: data.oracle_text,
-				type_line: data.type_line
+				card_faces: cardFaces,
+				flavor_text,
+				oracle_text,
+				type_line
 			};
 		} catch {
 			return null;
@@ -140,27 +287,15 @@
 				throw new Error(`Failed to fetch exact card: ${response.statusText}`);
 			}
 
-			const card = await response.json();
+			const rawCard = await response.json();
+			const card = normalizeCard(rawCard);
 
 			let cardWithPrints = card;
 			if (card.prints_search_uri) {
 				try {
 					const printsResponse = await fetch(card.prints_search_uri);
 					const printsData = await printsResponse.json();
-					const prints = printsData.data.map((print: any) => ({
-						set: print.set_name,
-						set_code: print.set,
-						lang: print.lang,
-						collector_number: print.collector_number,
-						image_uri: getCardImageUri(print),
-						flavor_text: print.flavor_text,
-						oracle_text: print.oracle_text,
-						type_line: print.type_line,
-						mana_cost: print.mana_cost,
-						finishes: print.finishes || [],
-						tcgplayer_id: print.tcgplayer_id || null,
-						cardmarket_id: print.cardmarket_id || null
-					}));
+					const prints = printsData.data.map((print: any) => normalizePrint(print, card));
 
 					// Collect unique languages from all prints
 					const availableLanguages = [...new Set(prints.map((p: any) => p.lang).filter(Boolean))];
@@ -212,26 +347,11 @@
 						grid: getCardImageUri(card),
 						normal: getCardImageUri(card)
 					},
-					all_prints: [
-						{
-							set: card.set_name,
-							set_code: card.set,
-							collector_number: card.collector_number,
-							image_uri: getCardImageUri(card),
-							languages: null,
-							flavor_text: card.flavor_text,
-							oracle_text: card.oracle_text,
-							type_line: card.type_line,
-							mana_cost: card.mana_cost,
-							finishes: card.finishes || []
-						}
-					],
+					all_prints: [normalizePrint(card, card)],
 					available_languages: availableLanguages,
 					selected_language: selectedLanguage
 				};
 			}
-
-			// (selected_language is already set correctly above for both paths)
 
 			dispatch('search', [cardWithPrints]);
 		} catch (error) {
@@ -267,7 +387,8 @@
 
 			// Initialize search results immediately with their default print;
 			// additional printings are lazy-loaded when the user opens the set selector
-			const cardsWithPrints = data.data.map((card: any) => {
+			const cardsWithPrints = data.data.map((rawCard: any) => {
+				const card = normalizeCard(rawCard);
 				const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
 				const availableLanguages = [card.lang || 'en'];
 				let selectedLanguage = availableLanguages.includes(preferredLanguage)
@@ -277,6 +398,9 @@
 					selectedLanguage = availableLanguages[0];
 
 				const cardImg = getCardImageUri(card);
+				const defaultPrint = normalizePrint(card, card);
+				defaultPrint.languages = availableLanguages;
+
 				return {
 					...card,
 					image_uris: {
@@ -284,23 +408,7 @@
 						grid: cardImg,
 						normal: cardImg
 					},
-					all_prints: [
-						{
-							set: card.set_name,
-							set_code: card.set,
-							lang: card.lang,
-							collector_number: card.collector_number,
-							image_uri: cardImg,
-							languages: availableLanguages,
-							flavor_text: card.flavor_text,
-							oracle_text: card.oracle_text,
-							type_line: card.type_line,
-							mana_cost: card.mana_cost,
-							finishes: card.finishes || [],
-							tcgplayer_id: card.tcgplayer_id || null,
-							cardmarket_id: card.cardmarket_id || null
-						}
-					],
+					all_prints: [defaultPrint],
 					prints_loaded: !card.prints_search_uri,
 					available_languages: availableLanguages,
 					selected_language: selectedLanguage
@@ -351,21 +459,40 @@
 <div class="search-form">
 	<div class="search-container">
 		<div class="input-group">
+			<div class="search-icon-wrapper">
+				<i class="fa-solid fa-magnifying-glass search-icon"></i>
+			</div>
 			<input
 				bind:this={searchInput}
 				type="text"
 				bind:value={searchTerm}
 				on:input={handleInput}
 				on:keydown={handleKeyDown}
-				placeholder="Search for cards..."
+				placeholder="Search MTG cards (e.g. Fire // Ice, Black Lotus)..."
 				aria-autocomplete="list"
 				aria-expanded={showDropdown && suggestions.length > 0}
 			/>
-			<button on:click={performSearch} disabled={isSearching}>
+			{#if searchTerm}
+				<button
+					type="button"
+					class="clear-btn"
+					on:click={() => {
+						searchTerm = '';
+						suggestions = [];
+						showDropdown = false;
+						searchInput?.focus();
+					}}
+					title="Clear search"
+				>
+					<i class="fa-solid fa-xmark"></i>
+				</button>
+			{/if}
+			<button class="search-submit-btn" on:click={performSearch} disabled={isSearching}>
 				{#if isSearching}
-					<i class="fa-solid fa-spinner fa-spin"></i> Searching...
+					<i class="fa-solid fa-spinner fa-spin"></i>
+					<span>Searching</span>
 				{:else}
-					Search
+					<span>Search</span>
 				{/if}
 			</button>
 		</div>
@@ -382,7 +509,8 @@
 								on:mouseenter={() => (selectedIndex = i)}
 								on:click={() => selectSuggestion(suggestion)}
 							>
-								{suggestion}
+								<i class="fa-solid fa-magnifying-glass suggestion-icon"></i>
+								<span class="suggestion-text">{suggestion}</span>
 							</button>
 						</li>
 					{/each}
@@ -394,76 +522,120 @@
 
 <style>
 	.search-form {
-		margin-bottom: 20px;
-		/* Allow form to take available width */
+		margin-bottom: 1rem;
 		width: 100%;
-		max-width: 500px; /* Optional: Limit max width on larger screens */
-		margin-left: auto; /* Center the form */
+		max-width: 580px;
+		margin-left: auto;
 		margin-right: auto;
 	}
 
 	.search-container {
 		position: relative;
-		/* display: inline-block; Remove this */
-		display: block; /* Make it block to use width: 100% */
-		width: 100%; /* Take full width of parent (.search-form) */
+		width: 100%;
 	}
 
 	.input-group {
 		display: flex;
-		gap: 0.5rem;
-		align-items: stretch; /* Make items same height */
-		width: 100%; /* Ensure group takes full width */
+		align-items: center;
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border: 1px solid var(--glass-border, var(--color-border));
+		border-radius: 9999px;
+		padding: 0.35rem 0.45rem 0.35rem 1rem;
+		box-shadow: var(--shadow-sm);
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+	}
+
+	.input-group:focus-within {
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 3px var(--color-primary-alpha);
+	}
+
+	.search-icon-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--color-text-muted);
+		margin-right: 0.65rem;
+		font-size: 0.95rem;
 	}
 
 	input {
-		flex: 1; /* Allow input to grow */
-		min-width: 150px; /* Prevent input becoming too small */
-		padding: 0.5rem; /* Consistent padding */
-		border: 1px solid var(--color-border, #ccc);
-		border-radius: 4px;
-		/* width: 300px; Remove fixed width */
-		background-color: var(--color-bg-secondary, white);
-		color: var(--color-text-primary, #111);
-		font-size: 1rem;
-	}
-	input:focus {
+		flex: 1;
+		min-width: 120px;
+		border: none;
+		background: transparent;
+		color: var(--color-text-primary);
+		font-size: 0.95rem;
+		font-weight: 500;
 		outline: none;
-		border-color: var(--color-primary);
-		box-shadow: 0 0 0 2px var(--color-primary-alpha);
+		padding: 0.4rem 0;
 	}
 
-	button {
-		padding: 0.5rem 1rem;
-		border: 1px solid var(--color-border, #ccc);
-		border-radius: 4px;
-		background: var(--color-bg-secondary, white);
-		color: var(--color-text-primary);
+	input::placeholder {
+		color: var(--color-text-muted);
+	}
+
+	.clear-btn {
+		background: transparent;
+		border: none;
+		color: var(--color-text-muted);
 		cursor: pointer;
-		transition:
-			background-color 0.2s,
-			border-color 0.2s;
+		padding: 0.4rem 0.6rem;
+		border-radius: 50%;
+		font-size: 0.85rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: color var(--transition-fast);
+	}
+
+	.clear-btn:hover {
+		color: var(--color-text-primary);
+	}
+
+	.search-submit-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.55rem 1.25rem;
+		border: none;
+		border-radius: 9999px;
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+		color: white;
+		font-size: 0.9rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 		white-space: nowrap;
 	}
 
-	button:hover {
-		background-color: var(--color-bg-hover, #f0f0f0);
-		border-color: var(--color-border-hover, #bbb);
+	.search-submit-btn:hover:not(:disabled) {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+	}
+
+	.search-submit-btn:disabled {
+		opacity: 0.7;
+		cursor: not-allowed;
 	}
 
 	.dropdown-container {
 		position: absolute;
-		top: 100%;
+		top: calc(100% + 0.4rem);
 		left: 0;
 		right: 0;
-		background: var(--color-bg-elevated, white);
-		border: 1px solid var(--color-border, #ccc);
-		border-top: none;
-		border-radius: 0 0 4px 4px;
-		max-height: 300px;
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		border-radius: 12px;
+		max-height: 320px;
 		overflow-y: auto;
 		z-index: 1000;
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--shadow-lg);
+		padding: 0.35rem;
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
 	}
 
 	.suggestions-list {
@@ -472,39 +644,39 @@
 		padding: 0;
 	}
 
+	.suggestions-list li {
+		margin-bottom: 2px;
+	}
+
 	.suggestion-button {
 		width: 100%;
-		text-align: left;
-		padding: 0.5rem 1rem;
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		padding: 0.6rem 0.85rem;
 		border: none;
 		background: none;
+		border-radius: 8px;
 		cursor: pointer;
-		color: var(--color-text-secondary);
+		color: var(--color-text-primary);
 		font-size: 0.9rem;
+		text-align: left;
+		transition: background-color var(--transition-fast), color var(--transition-fast);
+	}
+
+	.suggestion-icon {
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
 	}
 
 	.suggestion-button:hover,
 	.suggestion-button.selected {
-		background-color: var(--color-bg-hover, #f0f0f0);
-		color: var(--color-text-primary);
+		background-color: var(--color-primary-alpha);
+		color: var(--color-primary);
 	}
 
-	.suggestions-list li {
-		padding: 0;
-		border-bottom: 1px solid var(--color-border-light, #eee);
+	.suggestion-button:hover .suggestion-icon,
+	.suggestion-button.selected .suggestion-icon {
+		color: var(--color-primary);
 	}
-	.suggestions-list li:last-child {
-		border-bottom: none;
-	}
-
-	/* Optional: Media query for very small screens if needed */
-	/* @media (max-width: 400px) {
-        .input-group {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        button {
-            width: 100%;
-        }
-    } */
 </style>

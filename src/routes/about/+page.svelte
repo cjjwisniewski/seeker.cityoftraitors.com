@@ -51,16 +51,6 @@
 
 {#if mounted}
 	<div class="about-container">
-		<div class="about-hero">
-			<div class="hero-badge">
-				<i class="fa-solid fa-circle-info"></i>
-				<span>Platform Overview</span>
-			</div>
-			<p class="hero-subtitle">
-				Automated multi-marketplace MTG collection hunting & instant Discord restock alerts
-			</p>
-		</div>
-
 		<div class="about-content">
 			<p>
 				Seeker is designed to help Magic: The Gathering collectors efficiently find the
@@ -150,40 +140,10 @@
 <style>
 	.about-container {
 		text-align: center;
-		padding: 1.5rem 1rem 3rem 1rem;
+		padding: 2rem 1rem 3rem 1rem;
 		max-width: 860px;
 		margin: 0 auto;
 		animation: fadeIn 0.5s ease-out;
-	}
-
-	.about-hero {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 2rem;
-	}
-
-	.hero-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.35rem 0.85rem;
-		border-radius: 9999px;
-		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.12));
-		border: 1px solid var(--color-primary-alpha, rgba(99, 102, 241, 0.25));
-		color: var(--color-primary, #6366f1);
-		font-size: 0.85rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-	}
-
-	.hero-subtitle {
-		margin: 0;
-		color: var(--color-text-secondary);
-		font-size: 1.05rem;
-		max-width: 600px;
-		line-height: 1.5;
 	}
 
 	.about-content {

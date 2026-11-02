@@ -2,21 +2,17 @@
 	import { createEventDispatcher } from 'svelte';
 	import { getLanguageName, getAvailableLanguages } from '$lib/utils/languageUtils';
 	import { PUBLIC_ADD_TO_SEEKING_FUNCTION_URL } from '$env/static/public';
-	import { auth } from '$lib/stores/auth'; // Import the auth store
-	import { fetchWithAuth } from '$lib/utils/api'; // Import fetchWithAuth
+	import { auth } from '$lib/stores/auth';
+	import { fetchWithAuth } from '$lib/utils/api';
 
 	const dispatch = createEventDispatcher();
 
 	export let cards = [];
 	export let hasSearched = false;
-	// REMOVED: export let userId;
 
-	let selectedFinishes = {}; // Track foil status for each card
-	let buttonErrors = {}; // Add error state tracking (original state tracking) - Note: This seems unused, consider removing if buttonStates covers it.
-	let buttonStates = {}; // Track button states (error, success, exists) (original state tracking)
-	// REMOVED: let accessToken = null;
-	// REMOVED: getCookie function
-	// REMOVED: onMount logic for accessToken and userId
+	let selectedFinishes = {};
+	let buttonStates = {};
+	let faceIndices = {};
 
 	// Helper to resolve Scryfall WebP ('grid') image URI with fallbacks
 	function getCardImageUri(cardData) {
@@ -24,7 +20,62 @@
 		return uris?.grid || uris?.normal || uris?.jpeg;
 	}
 
-	// --- Original Functions (handleSetChange, handleLanguageChange, etc.) ---
+	function hasMultipleImageFaces(card) {
+		return !!(card?.card_faces?.[0]?.image_uris && card?.card_faces?.[1]?.image_uris);
+	}
+
+	function getActiveCardImage(card, currentPrint) {
+		const faceIdx = faceIndices[card.id] || 0;
+		if (faceIdx === 1 && card.card_faces?.[1]?.image_uris) {
+			return getCardImageUri(card.card_faces[1]);
+		}
+		if (faceIdx === 0 && card.card_faces?.[0]?.image_uris) {
+			return getCardImageUri(card.card_faces[0]);
+		}
+		return getCardImageUri(card) || currentPrint?.image_uri;
+	}
+
+	function toggleCardFace(cardId) {
+		faceIndices[cardId] = faceIndices[cardId] === 1 ? 0 : 1;
+		faceIndices = { ...faceIndices };
+	}
+
+	function parseManaCost(manaStr) {
+		if (!manaStr) return [];
+		const parts = String(manaStr).split(' // ');
+		const result = [];
+		for (let i = 0; i < parts.length; i++) {
+			if (i > 0) result.push({ type: 'separator', value: '//' });
+			const symbols = parts[i].match(/\{([^}]+)\}/g) || [];
+			for (const sym of symbols) {
+				const clean = sym.slice(1, -1);
+				result.push({ type: 'symbol', value: clean, raw: sym });
+			}
+		}
+		return result;
+	}
+
+	function getManaSymbolClass(symbol) {
+		const s = String(symbol).toLowerCase().replace('/', '-');
+		return `ms-${s}`;
+	}
+
+	function getSetIconCode(originalCode) {
+		if (!originalCode) return '';
+		const codeMap = {
+			'4bb': '4ed',
+			fbb: '3ed',
+			sld: 'pmei',
+			tsb: 'tsp'
+		};
+		return codeMap[originalCode.toLowerCase()] || originalCode.toLowerCase();
+	}
+
+	function formatCardPrice(val) {
+		if (val === null || val === undefined || isNaN(Number(val))) return null;
+		return `$${parseFloat(val).toFixed(2)}`;
+	}
+
 	async function handleSetDropdownOpen(card) {
 		if (!card || card.prints_loaded || !card.prints_search_uri) return;
 
@@ -35,20 +86,70 @@
 			if (!Array.isArray(printsData?.data)) return;
 
 			const prints = printsData.data
-				.map((print) => ({
-					set: print.set_name,
-					set_code: print.set,
-					lang: print.lang,
-					collector_number: print.collector_number,
-					image_uri: getCardImageUri(print),
-					flavor_text: print.flavor_text,
-					oracle_text: print.oracle_text,
-					type_line: print.type_line,
-					mana_cost: print.mana_cost,
-					finishes: print.finishes || [],
-					tcgplayer_id: print.tcgplayer_id || null,
-					cardmarket_id: print.cardmarket_id || null
-				}))
+				.map((print) => {
+					const cardFaces = print.card_faces && print.card_faces.length > 0 ? print.card_faces : null;
+					const manaCost =
+						print.mana_cost ||
+						(cardFaces ? cardFaces.map((f) => f.mana_cost || '').filter(Boolean).join(' // ') : '') ||
+						'';
+					const typeLine =
+						print.type_line ||
+						(cardFaces ? cardFaces.map((f) => f.type_line || '').filter(Boolean).join(' // ') : '') ||
+						'';
+					const oracleText =
+						print.oracle_text ||
+						(cardFaces
+							? cardFaces
+									.map((f) => (cardFaces.length > 1 && f.name ? `[${f.name}]\n${f.oracle_text || ''}` : f.oracle_text || ''))
+									.filter(Boolean)
+									.join('\n\n')
+							: '') ||
+						'';
+					const flavorText =
+						print.flavor_text ||
+						(cardFaces ? cardFaces.map((f) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+						'';
+					const power =
+						print.power !== undefined
+							? print.power
+							: cardFaces
+								? cardFaces.map((f) => f.power).filter((p) => p !== undefined).join(' // ')
+								: null;
+					const toughness =
+						print.toughness !== undefined
+							? print.toughness
+							: cardFaces
+								? cardFaces.map((f) => f.toughness).filter((t) => t !== undefined).join(' // ')
+								: null;
+					const loyalty =
+						print.loyalty !== undefined
+							? print.loyalty
+							: cardFaces
+								? cardFaces.map((f) => f.loyalty).filter((l) => l !== undefined).join(' // ')
+								: null;
+
+					return {
+						set: print.set_name || print.set,
+						set_code: print.set || print.set_code,
+						lang: print.lang || 'en',
+						collector_number: print.collector_number,
+						image_uri: getCardImageUri(print),
+						flavor_text: flavorText,
+						oracle_text: oracleText,
+						type_line: typeLine,
+						mana_cost: manaCost,
+						power,
+						toughness,
+						loyalty,
+						rarity: print.rarity || card.rarity || 'common',
+						artist: print.artist || card.artist || '',
+						prices: print.prices || card.prices || null,
+						finishes: print.finishes || [],
+						tcgplayer_id: print.tcgplayer_id || null,
+						cardmarket_id: print.cardmarket_id || null,
+						card_faces: cardFaces
+					};
+				})
 				.sort((a, b) => (a.set || '').localeCompare(b.set || ''));
 
 			card.all_prints = prints;
@@ -62,7 +163,6 @@
 	async function handleSetChange(card, newPrint) {
 		if (!card || !newPrint) return;
 
-		// Update card information for the selected printing
 		card.set = newPrint.set_code;
 		card.collector_number = newPrint.collector_number;
 		card.image_uris = {
@@ -70,7 +170,11 @@
 			normal: newPrint.image_uri
 		};
 
-		// Fetch available languages for this specific printing (cached on newPrint to avoid repeat requests)
+		if (faceIndices[card.id]) {
+			faceIndices[card.id] = 0;
+			faceIndices = { ...faceIndices };
+		}
+
 		if (!newPrint.languages) {
 			newPrint.languages = await getAvailableLanguages(
 				newPrint.set_code,
@@ -79,7 +183,6 @@
 		}
 		card.available_languages = newPrint.languages;
 
-		// Select language in order: preferred → en → first available
 		const preferredLang = $auth.user?.settings?.preferredLanguage || 'en';
 		if (card.available_languages.includes(preferredLang)) {
 			card.selected_language = preferredLang;
@@ -89,30 +192,31 @@
 			card.selected_language = card.available_languages[0] || 'en';
 		}
 
-		// Update other card information based on the selected print
 		card.flavor_text = newPrint.flavor_text;
 		card.oracle_text = newPrint.oracle_text;
 		card.type_line = newPrint.type_line;
 		card.mana_cost = newPrint.mana_cost;
+		card.card_faces = newPrint.card_faces || card.card_faces;
+		card.rarity = newPrint.rarity || card.rarity;
+		card.artist = newPrint.artist || card.artist;
+		card.prices = newPrint.prices || card.prices;
+		card.power = newPrint.power ?? card.power;
+		card.toughness = newPrint.toughness ?? card.toughness;
+		card.loyalty = newPrint.loyalty ?? card.loyalty;
 
-		// Update available finishes and ensure a valid finish is selected BEFORE remapping for Svelte
 		const preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
 		const availableFinishes = newPrint.finishes || [];
 
 		if (availableFinishes.includes(preferredFinish)) {
-			// Apply preference if available
 			selectedFinishes[card.id] = preferredFinish;
 		} else if (
 			availableFinishes.length > 0 &&
 			!availableFinishes.includes(selectedFinishes[card.id])
 		) {
-			// If current selection is invalid, grab the first valid finish
 			selectedFinishes[card.id] = availableFinishes[0];
 		}
 		selectedFinishes = { ...selectedFinishes };
 
-		// If the selected language matches the print's native language, just update the UI.
-		// Otherwise fetch the localized image and card text via handleLanguageChange.
 		if (card.selected_language === (newPrint.lang || 'en')) {
 			sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...card } : c));
 		} else {
@@ -123,8 +227,7 @@
 	async function handleLanguageChange(card, language) {
 		if (!card || !language) return;
 
-		// Find the currently selected print based on card.set and card.collector_number
-		const currentPrint = card.all_prints.find(
+		const currentPrint = card.all_prints?.find(
 			(p) => p.set_code === card.set && p.collector_number === card.collector_number
 		);
 		if (!currentPrint) {
@@ -133,37 +236,52 @@
 				card.set,
 				card.collector_number
 			);
-			return; // Cannot proceed without the correct print context
+			return;
 		}
 
-		// Construct the API URI for the language-specific card data using the correct collector_number
 		const cardUri = `https://api.scryfall.com/cards/${currentPrint.set_code}/${currentPrint.collector_number}/${language}`;
 
 		try {
-			// Fetch the language-specific card data
 			const response = await fetch(cardUri);
 			if (!response.ok) throw new Error('Failed to fetch card data');
 			const cardData = await response.json();
 
-			// Get the correct image URI from the response (preferring Scryfall WebP 'grid')
 			const imageUri = getCardImageUri(cardData);
 			if (!imageUri) throw new Error('No image URI found');
 
-			// Update card image and language while maintaining other print information
+			const cardFaces = cardData.card_faces && cardData.card_faces.length > 0 ? cardData.card_faces : null;
+			const oracle_text =
+				cardData.oracle_text ||
+				(cardFaces
+					? cardFaces
+							.map((f) => (cardFaces.length > 1 && (f.printed_name || f.name) ? `[${f.printed_name || f.name}]\n${f.printed_text || f.oracle_text || ''}` : f.printed_text || f.oracle_text || ''))
+							.filter(Boolean)
+							.join('\n\n')
+					: '') ||
+				currentPrint.oracle_text;
+			const flavor_text =
+				cardData.flavor_text ||
+				(cardFaces ? cardFaces.map((f) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+				currentPrint.flavor_text;
+			const type_line =
+				cardData.printed_type_line ||
+				cardData.type_line ||
+				(cardFaces ? cardFaces.map((f) => f.printed_type_line || f.type_line || '').filter(Boolean).join(' // ') : '') ||
+				currentPrint.type_line;
+
 			sortedCards = sortedCards.map((c) => {
 				if (c.id === card.id) {
 					return {
 						...c,
 						image_uris: { grid: imageUri, normal: imageUri },
 						selected_language: language,
-						// Ensure set and collector number remain consistent with the selected print
 						set: currentPrint.set_code,
 						collector_number: currentPrint.collector_number,
-						// Update text fields from the language-specific data
-						flavor_text: cardData.flavor_text || currentPrint.flavor_text,
-						oracle_text: cardData.oracle_text || currentPrint.oracle_text,
-						type_line: cardData.type_line || currentPrint.type_line,
-						mana_cost: currentPrint.mana_cost // Keep from selected print
+						flavor_text,
+						oracle_text,
+						type_line,
+						mana_cost: currentPrint.mana_cost,
+						card_faces: cardFaces || currentPrint.card_faces
 					};
 				}
 				return c;
@@ -179,7 +297,6 @@
 		);
 		if (!print) return;
 
-		// Use cached languages if already fetched, otherwise fetch and cache
 		if (!print.languages) {
 			print.languages = await getAvailableLanguages(print.set_code, print.collector_number);
 			card.available_languages = print.languages;
@@ -190,11 +307,7 @@
 		}
 	}
 
-	// --- MODIFIED: Add Card to Seeking List ---
 	async function handleAddToSeeking(card) {
-		// REMOVED: Checks for accessToken and userId
-
-		// Check authentication status directly from the store
 		if (!$auth.isAuthenticated) {
 			console.error('Cannot add card: User not authenticated.');
 			buttonStates[card.id] = {
@@ -212,11 +325,9 @@
 		}
 
 		try {
-			// Reset button state (original logic)
 			buttonStates[card.id] = { error: false, success: false, exists: false };
-			buttonStates = { ...buttonStates }; // Force Svelte reactivity
+			buttonStates = { ...buttonStates };
 
-			// Find the currently selected print based on card.set and card.collector_number
 			const currentPrint = card.all_prints?.find(
 				(p) => p.set_code === card.set && p.collector_number === card.collector_number
 			);
@@ -241,37 +352,30 @@
 			}
 
 			const payload = {
-				// Use the current card state
 				id: crypto.randomUUID(),
 				name: card.name,
-				set_code: card.set, // Use card.set (updated by handleSetChange)
+				set_code: card.set,
 				set_name: currentPrint.set || card.set_name,
-				collector_number: card.collector_number, // Use card.collector_number (updated by handleSetChange)
+				collector_number: card.collector_number,
 				language: card.selected_language || 'en',
 				oracle_id: card.oracle_id,
-				image_uri: getCardImageUri(card) || currentPrint.image_uri, // Use current WebP image URI
+				image_uri: getCardImageUri(card) || currentPrint.image_uri,
 				timestamp: new Date().toISOString(),
 				finish: selectedFinishes[card.id] || 'nonfoil',
 				tcgplayer_id: currentPrint.tcgplayer_id || null,
 				cardmarket_id: currentPrint.cardmarket_id || null
 			};
 
-			console.log('Adding card to seeking list with payload:', payload);
-
-			// --- Use fetchWithAuth ---
 			const response = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
-					// Authorization header is added by fetchWithAuth
 				},
 				body: JSON.stringify(payload)
 			});
 
-			// fetchWithAuth returns undefined if it triggered a redirect (e.g., on 401)
 			if (!response) {
 				console.warn('Add to seeking aborted because fetchWithAuth triggered a redirect.');
-				// Set error state
 				buttonStates[card.id] = {
 					error: true,
 					success: false,
@@ -283,12 +387,11 @@
 					buttonStates[card.id] = { error: false, success: false, exists: false };
 					buttonStates = { ...buttonStates };
 				}, 3000);
-				return; // Stop processing
+				return;
 			}
 
 			const result = await response.json();
 
-			// Original status handling logic
 			if (response.status === 409) {
 				buttonStates[card.id] = { error: false, success: false, exists: true };
 				buttonStates = { ...buttonStates };
@@ -328,11 +431,10 @@
 				buttonStates = { ...buttonStates };
 			}, 3000);
 
-			dispatch('cardAdded', result); // Original dispatch
+			dispatch('cardAdded', result);
 		} catch (error) {
 			console.error('Error adding card to seeking list:', error);
-			// Original error handling for button state
-			buttonStates[card.id] = { error: true, success: false, exists: false, message: 'Add failed' }; // Added generic message
+			buttonStates[card.id] = { error: true, success: false, exists: false, message: 'Add failed' };
 			buttonStates = { ...buttonStates };
 
 			setTimeout(() => {
@@ -342,7 +444,6 @@
 		}
 	}
 
-	// --- Original Functions (handleFinishChange, sortedCards, getManaCost, getTypeLine - UNCHANGED from message #19) ---
 	function handleFinishChange(cardId, finish) {
 		selectedFinishes[cardId] = finish;
 		selectedFinishes = { ...selectedFinishes };
@@ -350,12 +451,6 @@
 
 	$: sortedCards = cards.map((card) => {
 		if (!card.all_prints) return card;
-
-		// Map the initial preferred finish based on the first initially selected print
-		const preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
-		const currentPrint = card.all_prints.find(
-			(p) => p.set_code === card.set && p.collector_number === card.collector_number
-		);
 
 		return {
 			...card,
@@ -378,7 +473,7 @@
 					} else if (availableFinishes.length > 0) {
 						selectedFinishes[card.id] = availableFinishes[0];
 					} else {
-						selectedFinishes[card.id] = 'nonfoil'; // fallback
+						selectedFinishes[card.id] = 'nonfoil';
 					}
 					finishesUpdated = true;
 				}
@@ -388,138 +483,241 @@
 			selectedFinishes = { ...selectedFinishes };
 		}
 	}
-
-	function getManaCost(card) {
-		return card.mana_cost || '';
-	}
-
-	function getTypeLine(card) {
-		return [card.type_line, card.oracle_text].filter(Boolean).join('\n');
-	}
-
-	// REMOVED: userId warning check
 </script>
 
-<!-- REMOVED: script context="module" block -->
-
-<!-- REMOVED: #if !userId block -->
 <div class="card-list">
 	{#if sortedCards?.length > 0}
 		<div class="cards-list">
 			{#each sortedCards as card (card.id)}
-				<!-- MODIFIED: Get current print based on card's set AND collector_number -->
 				{@const currentPrint = card.all_prints?.find(
 					(p) => p.set_code === card.set && p.collector_number === card.collector_number
 				)}
-					{@const cardImageUri = getCardImageUri(card) || currentPrint?.image_uri}
-					<div class="card-item">
+				{@const cardImageUri = getActiveCardImage(card, currentPrint)}
+				{@const currentPrices = currentPrint?.prices || card.prices}
+
+				<div class="card-item">
 					<div class="card-image-section">
 						<div class="card-image-container">
 							{#if cardImageUri}
-								<img src={cardImageUri} alt={card.name} class="card-image" />
+								<img src={cardImageUri} alt={card.name} class="card-image" loading="lazy" />
+							{/if}
+							{#if hasMultipleImageFaces(card)}
+								<button
+									type="button"
+									class="flip-badge-btn"
+									on:click={() => toggleCardFace(card.id)}
+									title="Flip card to view opposite face"
+								>
+									<i class="fa-solid fa-arrows-rotate"></i>
+									<span>{faceIndices[card.id] === 1 ? 'Front Face' : 'Back Face'}</span>
+								</button>
 							{/if}
 						</div>
-						{#if card.all_prints}
-							<div class="set-selector">
-								<!-- MODIFIED: Select binds to a combined value representing the current print -->
-								<select
-									value="{card.set}|{card.collector_number}"
-									on:focus={() => handleSetDropdownOpen(card)}
-									on:change={(e) => {
-										const [set_code, collector_number] = e.target.value.split('|');
-										// Find the specific print object based on both parts
-										const newPrint = card.all_prints.find(
-											(p) => p.set_code === set_code && p.collector_number === collector_number
-										);
-										if (newPrint) handleSetChange(card, newPrint); // Pass the found print object
-									}}
-									aria-label="Select card set and printing"
-								>
-									<option value="">Select a print...</option>
-									<!-- MODIFIED: Option value includes both set_code and collector_number -->
-									{#each [...new Map(card.all_prints
-												.filter((p) => p?.set_code && p?.set && p?.collector_number)
-												.map((p) => [`${p.set_code}|${p.collector_number}`, p])).values()] as print}
-										<option value="{print.set_code}|{print.collector_number}">
-											{print.set} ({print.collector_number})
-										</option>
-									{/each}
-								</select>
-							</div>
-						{/if}
+
+						<div class="card-print-controls">
+							{#if card.all_prints}
+								<div class="select-wrapper">
+									<i class="fa-solid fa-layer-group select-icon"></i>
+									<select
+										value="{card.set}|{card.collector_number}"
+										on:focus={() => handleSetDropdownOpen(card)}
+										on:change={(e) => {
+											const [set_code, collector_number] = e.target.value.split('|');
+											const newPrint = card.all_prints.find(
+												(p) => p.set_code === set_code && p.collector_number === collector_number
+											);
+											if (newPrint) handleSetChange(card, newPrint);
+										}}
+										aria-label="Select card set and printing"
+									>
+										<option value="">Select a print...</option>
+										{#each [...new Map(card.all_prints
+													.filter((p) => p?.set_code && p?.set && p?.collector_number)
+													.map((p) => [`${p.set_code}|${p.collector_number}`, p])).values()] as print}
+											<option value="{print.set_code}|{print.collector_number}">
+												{print.set} ({print.collector_number})
+											</option>
+										{/each}
+									</select>
+								</div>
+							{/if}
+
+							{#if card.available_languages?.length > 1}
+								<div class="select-wrapper">
+									<i class="fa-solid fa-globe select-icon"></i>
+									<select
+										id="language-{card.id}"
+										value={card.selected_language || 'en'}
+										on:focus={() => handleLanguageDropdownOpen(card)}
+										on:change={(e) => handleLanguageChange(card, e.target.value)}
+										aria-label="Select card language"
+									>
+										{#each card.available_languages as lang}
+											<option value={lang}>
+												{getLanguageName(lang)}
+											</option>
+										{/each}
+									</select>
+								</div>
+							{/if}
+						</div>
 					</div>
+
 					<div class="card-details">
-						<div class="card-header">
-							<div class="name-line">
-								<h3>{card.name}</h3>
-								<span class="mana-cost">{getManaCost(card)}</span>
+						<div class="card-header-bar">
+							<div class="title-and-mana">
+								<h3 class="card-name">{card.name}</h3>
+								{#if card.mana_cost}
+									<div class="mana-cost-display">
+										{#each parseManaCost(card.mana_cost) as m}
+											{#if m.type === 'symbol'}
+												<span class="mana-symbol {getManaSymbolClass(m.value)}" title="{m.raw}">{m.value}</span>
+											{:else}
+												<span class="mana-separator">{m.value}</span>
+											{/if}
+										{/each}
+									</div>
+								{/if}
+							</div>
+
+							<div class="header-badges">
+								{#if card.rarity}
+									<span class="rarity-badge {card.rarity.toLowerCase()}">{card.rarity}</span>
+								{/if}
+								{#if card.set}
+									<span class="set-badge" title="{currentPrint?.set || card.set_name || card.set}">
+										<img
+											src="https://svgs.scryfall.io/sets/{getSetIconCode(card.set)}.svg"
+											alt=""
+											class="set-icon"
+										/>
+										<span>{card.set.toUpperCase()} #{card.collector_number}</span>
+									</span>
+								{/if}
+								{#if currentPrices?.usd}
+									<span class="price-pill" title="Estimated Regular Market Price">
+										<i class="fa-solid fa-tag"></i>
+										<span>{formatCardPrice(currentPrices.usd)}</span>
+									</span>
+								{/if}
+								{#if currentPrices?.usd_foil}
+									<span class="price-pill foil-price" title="Estimated Foil Market Price">
+										<i class="fa-solid fa-sparkles"></i>
+										<span>Foil {formatCardPrice(currentPrices.usd_foil)}</span>
+									</span>
+								{/if}
 							</div>
 						</div>
-						<div class="card-text">
-							<p class="type-line">{card.type_line}</p>
-							<p class="oracle-text">{card.oracle_text}</p>
-							{#if card.flavor_text}
-								<p class="flavor-text">"{card.flavor_text}"</p>
+
+						<div class="card-content-body">
+							{#if card.card_faces && card.card_faces.length > 1}
+								<div class="faces-grid">
+									{#each card.card_faces as face}
+										<div class="face-panel">
+											<div class="face-header-line">
+												<div class="face-title-group">
+													<span class="face-name">{face.name || face.printed_name}</span>
+													{#if face.type_line || face.printed_type_line}
+														<span class="face-type-sep">•</span>
+														<span class="face-type">{face.type_line || face.printed_type_line}</span>
+													{/if}
+												</div>
+												{#if face.mana_cost}
+													<div class="face-mana-row">
+														{#each parseManaCost(face.mana_cost) as m}
+															{#if m.type === 'symbol'}
+																<span class="mana-symbol small {getManaSymbolClass(m.value)}" title="{m.raw}">{m.value}</span>
+															{:else}
+																<span class="mana-separator">{m.value}</span>
+															{/if}
+														{/each}
+													</div>
+												{/if}
+											</div>
+
+											{#if face.oracle_text || face.printed_text}
+												<p class="face-oracle-text">{face.oracle_text || face.printed_text}</p>
+											{/if}
+
+											{#if face.flavor_text}
+												<p class="face-flavor-text">"{face.flavor_text}"</p>
+											{/if}
+
+											{#if face.power !== undefined && face.power !== null && face.power !== ''}
+												<div class="stats-row">
+													<span class="pt-pill">{face.power}/{face.toughness}</span>
+												</div>
+											{:else if face.loyalty}
+												<div class="stats-row">
+													<span class="loyalty-pill"><i class="fa-solid fa-shield-halved"></i> Loyalty: {face.loyalty}</span>
+												</div>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							{:else}
+								<div class="single-card-body">
+									<p class="type-line-text">{card.type_line}</p>
+
+									{#if card.oracle_text}
+										<p class="oracle-text-display">{card.oracle_text}</p>
+									{/if}
+
+									{#if card.flavor_text}
+										<p class="flavor-text-display">"{card.flavor_text}"</p>
+									{/if}
+
+									{#if card.power !== undefined && card.power !== null && card.power !== ''}
+										<div class="stats-row">
+											<span class="pt-pill">{card.power}/{card.toughness}</span>
+										</div>
+									{:else if card.loyalty}
+										<div class="stats-row">
+											<span class="loyalty-pill"><i class="fa-solid fa-shield-halved"></i> Loyalty: {card.loyalty}</span>
+										</div>
+									{/if}
+								</div>
+							{/if}
+
+							{#if card.artist}
+								<div class="artist-line">
+									<i class="fa-solid fa-paintbrush"></i>
+									<span>Illustrated by <strong>{card.artist}</strong></span>
+								</div>
 							{/if}
 						</div>
-						<!-- MODIFIED: Pass card directly, handleLanguageDropdownOpen finds print inside -->
-						{#if card.available_languages?.length > 0}
-							<div class="language-selector">
-								<label for="language-{card.id}">Language:</label>
-								<select
-									id="language-{card.id}"
-									value={card.selected_language || 'en'}
-									on:focus={() => handleLanguageDropdownOpen(card)}
-									on:change={(e) => handleLanguageChange(card, e.target.value)}
-								>
-									{#each card.available_languages as lang}
-										<option value={lang}>
-											{getLanguageName(lang)}
-										</option>
-									{/each}
-								</select>
+
+						<div class="card-footer-actions">
+							<div class="finish-segmented-picker">
+								<span class="finish-title">Finish:</span>
+								<div class="finish-buttons">
+									<button
+										type="button"
+										class="finish-toggle-btn"
+										class:selected={selectedFinishes[card.id] === 'nonfoil'}
+										disabled={currentPrint?.finishes && !currentPrint.finishes.includes('nonfoil')}
+										on:click={() => handleFinishChange(card.id, 'nonfoil')}
+									>
+										Nonfoil
+									</button>
+									<button
+										type="button"
+										class="finish-toggle-btn foil-option"
+										class:selected={selectedFinishes[card.id] === 'foil'}
+										disabled={currentPrint?.finishes && !currentPrint.finishes.includes('foil')}
+										on:click={() => handleFinishChange(card.id, 'foil')}
+									>
+										<i class="fa-solid fa-sparkles"></i>
+										<span>Foil</span>
+									</button>
+								</div>
 							</div>
-						{/if}
-						<div class="card-finishes">
-							<label class="finish-label">
-								<input
-									type="radio"
-									name="finish-{card.id}"
-									value="nonfoil"
-									checked={selectedFinishes[card.id] === 'nonfoil'}
-									on:change={() => handleFinishChange(card.id, 'nonfoil')}
-									disabled={currentPrint?.finishes && !currentPrint.finishes.includes('nonfoil')}
-								/>
-								<span
-									class="finish-text {currentPrint?.finishes &&
-									!currentPrint.finishes.includes('nonfoil')
-										? 'disabled'
-										: ''}">Nonfoil</span
-								>
-							</label>
-							<label class="finish-label">
-								<input
-									type="radio"
-									name="finish-{card.id}"
-									value="foil"
-									checked={selectedFinishes[card.id] === 'foil'}
-									on:change={() => handleFinishChange(card.id, 'foil')}
-									disabled={currentPrint?.finishes && !currentPrint.finishes.includes('foil')}
-								/>
-								<span
-									class="finish-text {currentPrint?.finishes &&
-									!currentPrint.finishes.includes('foil')
-										? 'disabled'
-										: ''}">Foil</span
-								>
-							</label>
-						</div>
-						<div class="card-actions">
+
 							<button
 								class="add-to-seeking-btn
-                                        {buttonStates[card.id]?.error ? 'error' : ''}
-                                        {buttonStates[card.id]?.success ? 'success' : ''}
-                                        {buttonStates[card.id]?.exists ? 'exists' : ''}"
+										{buttonStates[card.id]?.error ? 'error' : ''}
+										{buttonStates[card.id]?.success ? 'success' : ''}
+										{buttonStates[card.id]?.exists ? 'exists' : ''}"
 								on:click={() => handleAddToSeeking(card)}
 								disabled={!card.set || !card.collector_number || !$auth.isAuthenticated}
 								title={!$auth.isAuthenticated
@@ -529,13 +727,17 @@
 										: 'Add to Seeking List'}
 							>
 								{#if buttonStates[card.id]?.error}
-									Error {buttonStates[card.id]?.message ? `(${buttonStates[card.id].message})` : ''}
+									<i class="fa-solid fa-triangle-exclamation"></i>
+									<span>Error {buttonStates[card.id]?.message ? `(${buttonStates[card.id].message})` : ''}</span>
 								{:else if buttonStates[card.id]?.success}
-									Added to Seeking
+									<i class="fa-solid fa-circle-check"></i>
+									<span>Added to Seeking</span>
 								{:else if buttonStates[card.id]?.exists}
-									Already in Seeking
+									<i class="fa-solid fa-check"></i>
+									<span>Already in Seeking</span>
 								{:else}
-									Add to Seeking
+									<i class="fa-solid fa-plus"></i>
+									<span>Add to Seeking</span>
 								{/if}
 							</button>
 						</div>
@@ -544,292 +746,646 @@
 			{/each}
 		</div>
 	{:else if hasSearched}
-		<p class="no-results">No cards found.</p>
+		<div class="no-results-card">
+			<div class="no-results-icon">
+				<i class="fa-solid fa-magnifying-glass"></i>
+			</div>
+			<p class="no-results-title">No cards found matching your search</p>
+			<span class="no-results-hint">Check for typos or try searching with card names like <em>Fire // Ice</em> or <em>Black Lotus</em>.</span>
+		</div>
 	{/if}
 </div>
-
-<!-- REMOVED: closing {:else} -->
 
 <style>
 	.card-list {
 		width: 100%;
-		max-width: 1200px;
-		margin: 2rem auto;
-		padding: 0 1rem;
+		max-width: 1000px;
+		margin: 1.5rem auto 3rem auto;
+		padding: 0 0.5rem;
 	}
 
 	.cards-list {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 1.5rem;
 	}
 
 	.card-item {
 		display: flex;
-		gap: 2rem;
+		gap: 1.75rem;
 		padding: 1.5rem;
-		background: var(--color-bg-elevated);
-		border-radius: 8px;
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border-radius: 16px;
 		box-shadow: var(--shadow-sm);
-		border: 1px solid var(--color-border);
-		transition:
-			transform 0.2s ease,
-			box-shadow 0.2s ease;
+		border: 1px solid var(--glass-border, var(--color-border));
+		transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+		text-align: left;
 	}
 
 	.card-item:hover {
 		transform: translateY(-2px);
 		box-shadow: var(--shadow-md);
-		border-color: var(--color-border-hover);
+		border-color: var(--color-primary-alpha);
 	}
 
+	/* Left side: Image and selectors */
 	.card-image-section {
 		flex-shrink: 0;
-		width: 250px;
+		width: 240px;
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.75rem;
 	}
 
 	.card-image-container {
+		position: relative;
 		width: 100%;
+		border-radius: 4.75%;
+		overflow: hidden;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+		background: rgba(0, 0, 0, 0.05);
 	}
 
 	.card-image {
 		width: 100%;
 		height: auto;
-		border-radius: 4.75%;
-		box-shadow: var(--shadow-sm);
+		display: block;
+		transition: transform var(--transition-normal);
 	}
 
-	.card-details {
-		flex: 1;
+	.flip-badge-btn {
+		position: absolute;
+		bottom: 8px;
+		right: 8px;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.35rem 0.65rem;
+		border-radius: 9999px;
+		background: rgba(0, 0, 0, 0.75);
+		color: white;
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		backdrop-filter: blur(4px);
+		font-size: 0.75rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background var(--transition-fast), transform var(--transition-fast);
+	}
+
+	.flip-badge-btn:hover {
+		background: var(--color-primary);
+		transform: scale(1.05);
+	}
+
+	.card-print-controls {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 0.5rem;
+		width: 100%;
 	}
 
-	.name-line {
+	.select-wrapper {
+		position: relative;
+		width: 100%;
 		display: flex;
 		align-items: center;
-		gap: 1rem;
 	}
 
-	h3 {
-		margin: 0;
-		font-size: 1.25rem;
-		color: var(--color-text-primary);
+	.select-icon {
+		position: absolute;
+		left: 0.75rem;
+		font-size: 0.8rem;
+		color: var(--color-text-muted);
+		pointer-events: none;
 	}
 
-	.mana-cost {
-		font-family: monospace;
-		color: var(--color-text-secondary);
-	}
-
-	.type-line {
-		color: var(--color-text-secondary);
-		font-size: 0.9rem;
-		margin: 0;
-	}
-
-	.oracle-text {
-		white-space: pre-wrap;
-		margin: 0.5rem 0;
-	}
-
-	.flavor-text {
-		color: var(--color-text-secondary);
-		font-style: italic;
-		margin: 0.5rem 0;
-	}
-
-	.set-selector {
+	.select-wrapper select {
 		width: 100%;
-	}
-
-	.set-selector select {
-		width: 100%;
-		padding: 0.5rem;
+		padding: 0.5rem 0.75rem 0.5rem 2.1rem;
 		border: 1px solid var(--color-border);
-		border-radius: 4px;
-		background: var(--color-bg-elevated);
+		border-radius: 8px;
+		background: var(--color-bg-secondary);
 		color: var(--color-text-primary);
-		font-size: 0.9rem;
+		font-size: 0.85rem;
+		font-weight: 500;
+		outline: none;
+		cursor: pointer;
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 	}
 
-	select:hover {
+	.select-wrapper select:hover {
 		border-color: var(--color-border-hover);
 	}
 
-	select:focus {
-		outline: none;
+	.select-wrapper select:focus {
 		border-color: var(--color-primary);
 		box-shadow: 0 0 0 2px var(--color-primary-alpha);
 	}
 
-	.language-selector {
+	/* Right side: Card details */
+	.card-details {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.card-header-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+		padding-bottom: 0.85rem;
+		border-bottom: 1px solid var(--color-border);
+		flex-wrap: wrap;
+	}
+
+	.title-and-mana {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.card-name {
+		margin: 0;
+		font-size: 1.35rem;
+		font-weight: 700;
+		color: var(--color-text-primary);
+		letter-spacing: -0.01em;
+	}
+
+	.mana-cost-display {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+		flex-wrap: wrap;
+	}
+
+	.mana-symbol {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		border-radius: 50%;
+		font-size: 0.7rem;
+		font-weight: 800;
+		line-height: 1;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+		text-transform: uppercase;
+		flex-shrink: 0;
+	}
+
+	.mana-symbol.small {
+		width: 17px;
+		height: 17px;
+		font-size: 0.65rem;
+	}
+
+	.mana-separator {
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: var(--color-text-muted);
+		padding: 0 0.2rem;
+	}
+
+	/* Mana Colors */
+	.mana-symbol.ms-w { background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; }
+	.mana-symbol.ms-u { background: #3b82f6; color: #ffffff; }
+	.mana-symbol.ms-b { background: #334155; color: #ffffff; }
+	.mana-symbol.ms-r { background: #ef4444; color: #ffffff; }
+	.mana-symbol.ms-g { background: #22c55e; color: #ffffff; }
+	.mana-symbol.ms-c { background: #94a3b8; color: #ffffff; }
+	.mana-symbol[class*='ms-'] {
+		background: #64748b;
+		color: #ffffff;
+	}
+	.mana-symbol.ms-w { background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; }
+	.mana-symbol.ms-u { background: #3b82f6; color: #ffffff; }
+	.mana-symbol.ms-b { background: #334155; color: #ffffff; }
+	.mana-symbol.ms-r { background: #ef4444; color: #ffffff; }
+	.mana-symbol.ms-g { background: #22c55e; color: #ffffff; }
+	.mana-symbol.ms-c { background: #94a3b8; color: #ffffff; }
+
+	.header-badges {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		margin-top: 0.5rem;
+		flex-wrap: wrap;
 	}
 
-	.language-selector label {
-		color: var(--color-text-secondary);
-		font-size: 0.9rem;
+	.rarity-badge {
+		padding: 0.2rem 0.55rem;
+		border-radius: 6px;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 	}
 
-	.language-selector select {
-		padding: 0.25rem 0.5rem;
+	.rarity-badge.mythic {
+		background: rgba(234, 88, 12, 0.15);
+		color: #ea580c;
+		border: 1px solid rgba(234, 88, 12, 0.3);
+	}
+	.rarity-badge.rare {
+		background: rgba(202, 138, 4, 0.15);
+		color: #ca8a04;
+		border: 1px solid rgba(202, 138, 4, 0.3);
+	}
+	.rarity-badge.uncommon {
+		background: rgba(2, 132, 199, 0.15);
+		color: #0284c7;
+		border: 1px solid rgba(2, 132, 199, 0.3);
+	}
+	.rarity-badge.common {
+		background: rgba(100, 116, 139, 0.15);
+		color: #64748b;
+		border: 1px solid rgba(100, 116, 139, 0.25);
+	}
+
+	.set-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.2rem 0.55rem;
+		border-radius: 6px;
+		background: var(--color-bg-secondary);
 		border: 1px solid var(--color-border);
-		border-radius: 4px;
-		background: var(--color-bg-elevated);
-		color: var(--color-text-primary);
-		font-size: 0.9rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--color-text-secondary);
 	}
-	.card-actions {
-		margin-top: auto; /* This pushes the button to the bottom */
-		padding-top: 0.5rem;
+
+	.set-icon {
+		width: 14px;
+		height: 14px;
+		object-fit: contain;
+		display: inline-block;
+	}
+
+	.price-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.2rem 0.55rem;
+		border-radius: 6px;
+		background: rgba(34, 197, 94, 0.1);
+		border: 1px solid rgba(34, 197, 94, 0.25);
+		color: #16a34a;
+		font-size: 0.75rem;
+		font-weight: 700;
+	}
+
+	.price-pill.foil-price {
+		background: rgba(168, 85, 247, 0.1);
+		border-color: rgba(168, 85, 247, 0.25);
+		color: #9333ea;
+	}
+
+	/* Card content body */
+	.card-content-body {
+		padding: 1rem 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		flex: 1;
+	}
+
+	.type-line-text {
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--color-text-secondary);
+	}
+
+	.oracle-text-display {
+		white-space: pre-wrap;
+		margin: 0;
+		font-size: 0.9rem;
+		line-height: 1.55;
+		color: var(--color-text-primary);
+	}
+
+	.flavor-text-display {
+		margin: 0;
+		font-size: 0.85rem;
+		font-style: italic;
+		line-height: 1.45;
+		color: var(--color-text-muted);
+	}
+
+	.stats-row {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 0.25rem;
+	}
+
+	.pt-pill,
+	.loyalty-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.25rem 0.65rem;
+		border-radius: 6px;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-primary);
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+
+	/* Faces Grid for Multi-Face & Split Cards */
+	.faces-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: 0.85rem;
+	}
+
+	.face-panel {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+		padding: 0.85rem 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.face-header-line {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
+		padding-bottom: 0.4rem;
+		border-bottom: 1px solid var(--color-border-light, var(--color-border));
+		flex-wrap: wrap;
+	}
+
+	.face-title-group {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+	}
+
+	.face-name {
+		font-weight: 700;
+		font-size: 0.95rem;
+		color: var(--color-text-primary);
+	}
+
+	.face-type-sep {
+		color: var(--color-text-muted);
+		font-size: 0.75rem;
+	}
+
+	.face-type {
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--color-text-secondary);
+	}
+
+	.face-mana-row {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+	}
+
+	.face-oracle-text {
+		white-space: pre-wrap;
+		margin: 0;
+		font-size: 0.85rem;
+		line-height: 1.5;
+		color: var(--color-text-primary);
+	}
+
+	.face-flavor-text {
+		margin: 0;
+		font-size: 0.8rem;
+		font-style: italic;
+		color: var(--color-text-muted);
+		line-height: 1.4;
+	}
+
+	.artist-line {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.8rem;
+		color: var(--color-text-muted);
+		margin-top: auto;
+		padding-top: 0.4rem;
+	}
+
+	.artist-line strong {
+		color: var(--color-text-secondary);
+	}
+
+	/* Footer actions */
+	.card-footer-actions {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-top: 0.85rem;
+		border-top: 1px solid var(--color-border);
+		flex-wrap: wrap;
+	}
+
+	.finish-segmented-picker {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+	}
+
+	.finish-title {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--color-text-secondary);
+	}
+
+	.finish-buttons {
+		display: inline-flex;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		padding: 2px;
+		gap: 2px;
+	}
+
+	.finish-toggle-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.35rem 0.75rem;
+		border: none;
+		background: transparent;
+		color: var(--color-text-secondary);
+		font-size: 0.825rem;
+		font-weight: 600;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.finish-toggle-btn:hover:not(:disabled) {
+		color: var(--color-text-primary);
+		background: var(--color-bg-hover);
+	}
+
+	.finish-toggle-btn.selected {
+		background: var(--color-primary-alpha);
+		color: var(--color-primary);
+	}
+
+	.finish-toggle-btn.foil-option.selected {
+		background: rgba(168, 85, 247, 0.15);
+		color: #9333ea;
+	}
+
+	.finish-toggle-btn:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+		text-decoration: line-through;
 	}
 
 	.add-to-seeking-btn {
-		/* renamed selector */
-		width: 100%; /* Make button full width */
-		padding: 0.75rem 1rem;
-		background-color: var(--color-primary);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1.4rem;
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
 		color: white;
 		border: none;
-		border-radius: 4px;
+		border-radius: 8px;
 		font-size: 0.9rem;
+		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all var(--transition-fast);
+		box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+		white-space: nowrap;
 	}
 
 	.add-to-seeking-btn:hover:not(:disabled) {
-		/* renamed selector */
-		background-color: var(--color-primary-dark);
+		transform: translateY(-1px);
+		box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
 	}
 
 	.add-to-seeking-btn:disabled {
-		/* renamed selector */
-		background-color: var(--color-disabled);
+		background: var(--color-disabled);
 		cursor: not-allowed;
 		opacity: 0.7;
+		box-shadow: none;
+		transform: none;
 	}
 
 	.add-to-seeking-btn.error {
-		background-color: var(--color-error, #dc2626);
+		background: var(--color-error, #dc2626);
 		animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 	}
 
 	.add-to-seeking-btn.success {
-		background-color: var(--color-success, #22c55e);
+		background: var(--color-success, #22c55e);
 		animation: pulse 1.5s ease-in-out;
 	}
 
 	.add-to-seeking-btn.exists {
-		background-color: var(--color-warning, #f59e0b);
+		background: var(--color-warning, #f59e0b);
 		animation: pulse 1.5s ease-in-out;
 	}
 
 	@keyframes shake {
-		10%,
-		90% {
-			transform: translate3d(-1px, 0, 0);
-		}
-
-		20%,
-		80% {
-			transform: translate3d(2px, 0, 0);
-		}
-
-		30%,
-		50%,
-		70% {
-			transform: translate3d(-4px, 0, 0);
-		}
-
-		40%,
-		60% {
-			transform: translate3d(4px, 0, 0);
-		}
+		10%, 90% { transform: translate3d(-1px, 0, 0); }
+		20%, 80% { transform: translate3d(2px, 0, 0); }
+		30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+		40%, 60% { transform: translate3d(4px, 0, 0); }
 	}
 
 	@keyframes pulse {
-		0% {
-			transform: scale(1);
-		}
-		50% {
-			transform: scale(1.05);
-		}
-		100% {
-			transform: scale(1);
-		}
+		0% { transform: scale(1); }
+		50% { transform: scale(1.04); }
+		100% { transform: scale(1); }
 	}
 
-	.card-finishes {
+	/* Empty state */
+	.no-results-card {
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border: 1px solid var(--glass-border, var(--color-border));
+		border-radius: 16px;
+		padding: 3rem 2rem;
+		text-align: center;
+		box-shadow: var(--shadow-sm);
+		max-width: 500px;
+		margin: 2rem auto;
 		display: flex;
-		gap: 1rem;
-		align-items: center;
-		padding: 0.5rem;
-		background: var(--color-bg-secondary, #f3f4f6);
-		border: 1px solid var(--color-border, transparent);
-		border-radius: 6px;
-	}
-
-	.finish-label {
-		display: flex;
+		flex-direction: column;
 		align-items: center;
 		gap: 0.5rem;
-		cursor: pointer;
-		padding: 0.25rem 0.5rem;
-		border-radius: 4px;
-		transition: background-color 0.2s ease;
 	}
 
-	.finish-label:hover {
-		background-color: var(--color-bg-hover, #e5e7eb);
+	.no-results-icon {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background: var(--color-primary-alpha);
+		color: var(--color-primary);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.25rem;
+		margin-bottom: 0.5rem;
 	}
 
-	.finish-text {
-		font-size: 0.875rem;
-		color: var(--color-text-secondary, #374151);
-	}
-
-	input[type='radio'] {
-		accent-color: var(--color-primary, #6b7280);
+	.no-results-title {
 		margin: 0;
+		font-size: 1.1rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
 	}
 
-	input[type='radio']:checked + .finish-text {
-		font-weight: 500;
-		color: var(--color-text-primary, #1f2937);
-	}
-
-	.finish-text.disabled {
-		opacity: 0.5;
-		text-decoration: line-through;
-	}
-
-	.no-results {
-		/* Original style */
-		text-align: center;
-		color: var(--color-text-secondary);
-		margin-top: 2rem;
+	.no-results-hint {
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
 	}
 
 	@media (max-width: 768px) {
-		/* Original responsive styles */
 		.card-item {
 			flex-direction: column;
-			gap: 1rem;
+			gap: 1.25rem;
+			padding: 1.25rem;
 		}
 
 		.card-image-section {
 			width: 100%;
-			max-width: 300px;
+			max-width: 260px;
 			margin: 0 auto;
 		}
+
+		.card-header-bar {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.5rem;
+		}
+
+		.card-footer-actions {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.finish-segmented-picker {
+			justify-content: space-between;
+			width: 100%;
+		}
+
+		.add-to-seeking-btn {
+			width: 100%;
+		}
 	}
-	/* Removed second media query block from previous attempt */
 </style>
