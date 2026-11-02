@@ -39,6 +39,9 @@
 				case 'no_code':
 					errorMessage = message || 'Authorization code missing from Discord callback.';
 					break;
+				case 'invalid_state':
+					errorMessage = message || 'Your login session expired or was invalid. Please try again.';
+					break;
 				default:
 					errorMessage = message || 'An unknown authentication error occurred.';
 			}
