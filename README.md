@@ -8,9 +8,9 @@
 
 This repository acts as the frontend client. The complete Seeker platform is divided across several sister projects located in the `~/seeker*` directories:
 
-*   **[seeker_functions](file:///home/cwisniewski/seeker_functions)**: The Azure Functions Python backend. It handles Discord OAuth2 authentication, signs and verifies custom JWTs, performs user settings management, and runs background timers to monitor card availability (e.g., on CardTrader).
-*   **[seeker_checkTCGPlayerStock](file:///home/cwisniewski/seeker_checkTCGPlayerStock)**: A queue-driven containerized Python scraping worker using Selenium and `undetected-chromedriver`. It processes TCGPlayer check requests from Azure Storage Queues without triggering bot detection, updating stocks and dispatching new alerts.
-*   **[seeker_infra](file:///home/cwisniewski/seeker_infra)**: The Terraform infrastructure configurations. This defines the security architecture, including the Azure API Management (APIM) gateway proxy, Function App IP firewalls, storage tables, queue configurations, and DNS settings.
+*   **[seeker_functions](https://github.com/cjjwisniewski/seeker_functions)**: The Azure Functions Python backend. It handles Discord OAuth2 authentication, signs and verifies custom JWTs, performs user settings management, and runs background timers/queues to monitor card availability (CardTrader, eBay, Mana Pool).
+*   **[seeker_checkTCGPlayerStock](https://github.com/cjjwisniewski/seeker_checkTCGPlayerStock)**: A queue-driven containerized Python scraping worker using Selenium and `undetected-chromedriver`. It processes TCGPlayer check requests from Azure Storage Queues without triggering bot detection, updating stocks and dispatching new alerts.
+*   **[seeker_infra](https://github.com/cjjwisniewski/seeker_infra)**: The Terraform infrastructure configurations. This defines the security architecture, including the Azure API Management (APIM) gateway proxy, Function App IP firewalls, storage tables, queue configurations, and DNS settings.
 
 ---
 
