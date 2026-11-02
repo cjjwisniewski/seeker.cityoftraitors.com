@@ -4,6 +4,8 @@
 	import { PUBLIC_ADD_TO_SEEKING_FUNCTION_URL } from '$env/static/public';
 	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
+	import { parseManaCost } from '$lib/utils/cardSymbols';
+	import CardText from '$lib/components/CardText.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -40,25 +42,6 @@
 		faceIndices = { ...faceIndices };
 	}
 
-	function parseManaCost(manaStr) {
-		if (!manaStr) return [];
-		const parts = String(manaStr).split(' // ');
-		const result = [];
-		for (let i = 0; i < parts.length; i++) {
-			if (i > 0) result.push({ type: 'separator', value: '//' });
-			const symbols = parts[i].match(/\{([^}]+)\}/g) || [];
-			for (const sym of symbols) {
-				const clean = sym.slice(1, -1);
-				result.push({ type: 'symbol', value: clean, raw: sym });
-			}
-		}
-		return result;
-	}
-
-	function getManaSymbolClass(symbol) {
-		const s = String(symbol).toLowerCase().replace('/', '-');
-		return `ms-${s}`;
-	}
 
 	function getSetIconCode(originalCode) {
 		if (!originalCode) return '';
@@ -571,7 +554,13 @@
 									<div class="mana-cost-display">
 										{#each parseManaCost(card.mana_cost) as m}
 											{#if m.type === 'symbol'}
-												<span class="mana-symbol {getManaSymbolClass(m.value)}" title="{m.raw}">{m.value}</span>
+												<img
+													class="mana-symbol-svg"
+													src="{m.svg}"
+													alt="{m.raw}"
+													title="{m.raw}"
+													loading="lazy"
+												/>
 											{:else}
 												<span class="mana-separator">{m.value}</span>
 											{/if}
@@ -626,7 +615,13 @@
 													<div class="face-mana-row">
 														{#each parseManaCost(face.mana_cost) as m}
 															{#if m.type === 'symbol'}
-																<span class="mana-symbol small {getManaSymbolClass(m.value)}" title="{m.raw}">{m.value}</span>
+																<img
+																	class="mana-symbol-svg small"
+																	src="{m.svg}"
+																	alt="{m.raw}"
+																	title="{m.raw}"
+																	loading="lazy"
+																/>
 															{:else}
 																<span class="mana-separator">{m.value}</span>
 															{/if}
@@ -636,7 +631,7 @@
 											</div>
 
 											{#if face.oracle_text || face.printed_text}
-												<p class="face-oracle-text">{face.oracle_text || face.printed_text}</p>
+												<CardText text="{face.oracle_text || face.printed_text}" className="face-oracle-text" />
 											{/if}
 
 											{#if face.flavor_text}
@@ -660,7 +655,7 @@
 									<p class="type-line-text">{card.type_line}</p>
 
 									{#if card.oracle_text}
-										<p class="oracle-text-display">{card.oracle_text}</p>
+										<CardText text="{card.oracle_text}" className="oracle-text-display" />
 									{/if}
 
 									{#if card.flavor_text}
@@ -924,51 +919,32 @@
 		flex-wrap: wrap;
 	}
 
-	.mana-symbol {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 20px;
-		height: 20px;
+	.mana-symbol-svg {
+		width: 19px;
+		height: 19px;
 		border-radius: 50%;
-		font-size: 0.7rem;
-		font-weight: 800;
-		line-height: 1;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-		text-transform: uppercase;
+		filter: drop-shadow(-1px 1px 0 rgba(0, 0, 0, 0.75));
+		vertical-align: middle;
+		display: inline-block;
 		flex-shrink: 0;
+		transition: transform var(--transition-fast);
 	}
 
-	.mana-symbol.small {
-		width: 17px;
-		height: 17px;
-		font-size: 0.65rem;
+	.mana-symbol-svg:hover {
+		transform: scale(1.15);
+	}
+
+	.mana-symbol-svg.small {
+		width: 16px;
+		height: 16px;
 	}
 
 	.mana-separator {
-		font-size: 0.8rem;
+		font-size: 0.85rem;
 		font-weight: 700;
 		color: var(--color-text-muted);
-		padding: 0 0.2rem;
+		padding: 0 0.15rem;
 	}
-
-	/* Mana Colors */
-	.mana-symbol.ms-w { background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; }
-	.mana-symbol.ms-u { background: #3b82f6; color: #ffffff; }
-	.mana-symbol.ms-b { background: #334155; color: #ffffff; }
-	.mana-symbol.ms-r { background: #ef4444; color: #ffffff; }
-	.mana-symbol.ms-g { background: #22c55e; color: #ffffff; }
-	.mana-symbol.ms-c { background: #94a3b8; color: #ffffff; }
-	.mana-symbol[class*='ms-'] {
-		background: #64748b;
-		color: #ffffff;
-	}
-	.mana-symbol.ms-w { background: #f8fafc; color: #1e293b; border: 1px solid #cbd5e1; }
-	.mana-symbol.ms-u { background: #3b82f6; color: #ffffff; }
-	.mana-symbol.ms-b { background: #334155; color: #ffffff; }
-	.mana-symbol.ms-r { background: #ef4444; color: #ffffff; }
-	.mana-symbol.ms-g { background: #22c55e; color: #ffffff; }
-	.mana-symbol.ms-c { background: #94a3b8; color: #ffffff; }
 
 	.header-badges {
 		display: flex;
@@ -1062,8 +1038,7 @@
 		color: var(--color-text-secondary);
 	}
 
-	.oracle-text-display {
-		white-space: pre-wrap;
+	:global(.oracle-text-display) {
 		margin: 0;
 		font-size: 0.9rem;
 		line-height: 1.55;
@@ -1155,8 +1130,7 @@
 		gap: 0.15rem;
 	}
 
-	.face-oracle-text {
-		white-space: pre-wrap;
+	:global(.face-oracle-text) {
 		margin: 0;
 		font-size: 0.85rem;
 		line-height: 1.5;
