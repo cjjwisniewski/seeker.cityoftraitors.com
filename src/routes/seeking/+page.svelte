@@ -199,10 +199,6 @@
 		}
 	}
 
-	function closeMenu() {
-		activeMenuId = null;
-	}
-
 	function toggleCondensed() {
 		isCondensed = !isCondensed;
 		if (typeof localStorage !== 'undefined') {
