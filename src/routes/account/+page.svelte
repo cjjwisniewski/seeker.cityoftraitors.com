@@ -218,30 +218,42 @@
 {:else}
 	<div class="profile-container">
 		<div class="profile-header">
-			{#if user.id && user.avatar}
-				<img
-					src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.png?size=128"
-					alt="{user.username}'s avatar"
-					class="profile-avatar"
-					loading="lazy"
-				/>
-			{:else}
-				<div class="profile-avatar placeholder-avatar">
-					<i class="fa-solid fa-user"></i>
+			<div class="profile-left">
+				{#if user.id && user.avatar}
+					<img
+						src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.png?size=128"
+						alt="{user.username}'s avatar"
+						class="profile-avatar"
+						loading="lazy"
+					/>
+				{:else}
+					<div class="profile-avatar placeholder-avatar">
+						<i class="fa-solid fa-user"></i>
+					</div>
+				{/if}
+				<div class="profile-title">
+					<div class="username-wrapper">
+						<h1>{user.global_name || user.username || 'User'}</h1>
+						<span class="tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
+							<i
+								class="fa-solid {user.membershipTier === 'Premium' ||
+								user.membershipTier === 'Legacy'
+									? 'fa-crown'
+									: 'fa-certificate'}"
+							></i>
+							{user.membershipTier || 'Basic'}
+						</span>
+					</div>
+					{#if user.global_name && user.username}
+						<span class="handle-text">@{user.username}</span>
+					{/if}
 				</div>
-			{/if}
-			<div class="profile-title">
-				<div class="username-wrapper" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-					<h1>{user.global_name || user.username || 'User'}</h1>
-					<span class="tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
-						<i
-							class="fa-solid {user.membershipTier === 'Premium' ||
-							user.membershipTier === 'Legacy'
-								? 'fa-crown'
-								: 'fa-certificate'}"
-						></i>
-						{user.membershipTier || 'Basic'}
-					</span>
+			</div>
+
+			<div class="profile-right">
+				<div class="discord-status-badge">
+					<i class="fa-brands fa-discord"></i>
+					<span>Discord Connected</span>
 				</div>
 			</div>
 		</div>
@@ -602,17 +614,63 @@
 
 	.profile-header {
 		display: flex;
+		justify-content: space-between;
 		align-items: center;
-		gap: 1rem;
+		gap: 1.5rem;
 		margin-bottom: 2rem;
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border: 1px solid var(--glass-border, var(--color-border));
+		border-radius: 12px;
+		padding: 1.25rem 1.5rem;
+		box-shadow: var(--shadow-sm);
 		flex-wrap: wrap;
 	}
 
+	.profile-left {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+		flex-wrap: wrap;
+	}
+
+	.profile-right {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.discord-status-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.4rem 0.85rem;
+		background: rgba(88, 101, 242, 0.12);
+		border: 1px solid rgba(88, 101, 242, 0.25);
+		color: #5865f2;
+		border-radius: 8px;
+		font-size: 0.825rem;
+		font-weight: 600;
+	}
+
+	.username-wrapper {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.handle-text {
+		font-size: 0.875rem;
+		color: var(--color-text-secondary);
+	}
+
 	.profile-avatar {
-		width: 80px;
-		height: 80px;
+		width: 72px;
+		height: 72px;
 		border-radius: 50%;
-		border: 3px solid var(--color-bg-elevated);
+		border: 2px solid var(--color-primary-alpha, rgba(99, 102, 241, 0.3));
 		box-shadow: var(--shadow-md);
 		object-fit: cover;
 	}
@@ -622,9 +680,9 @@
 		justify-content: center;
 		background-color: var(--color-bg-secondary);
 		color: var(--color-text-secondary);
-		font-size: 2rem;
-		width: 80px;
-		height: 80px;
+		font-size: 1.75rem;
+		width: 72px;
+		height: 72px;
 	}
 
 	.profile-title {
@@ -662,11 +720,13 @@
 	}
 
 	.profile-section {
-		background: var(--color-bg-elevated);
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
 		border-radius: 12px;
 		padding: 1.5rem;
 		box-shadow: var(--shadow-sm);
-		border: 1px solid var(--color-border);
+		border: 1px solid var(--glass-border, var(--color-border));
 	}
 
 	.profile-section h2 {

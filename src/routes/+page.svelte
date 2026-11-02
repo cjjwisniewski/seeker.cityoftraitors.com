@@ -19,22 +19,46 @@
 
 {#if mounted}
 	<div class="home-container">
-		<h1>Add to Seeking</h1>
-		<CardSearchForm on:search={handleSearch} />
+		<div class="search-hero">
+			<div class="hero-badge">
+				<i class="fa-solid fa-wand-magic-sparkles"></i>
+				<span>Card Wishlist Discovery</span>
+			</div>
+			<p class="hero-prompt">
+				Search any Magic card to track prices, foil printings, and multi-marketplace restocks
+			</p>
+			<CardSearchForm on:search={handleSearch} />
+		</div>
 
 		{#if !hasSearched}
-			<div class="instructions">
-				<h2>How to use Seeker</h2>
-				<ol>
-					<li>
-						Search for the cards that you need to finish your collection and add them to your
-						Seeking list.
-					</li>
-					<li>
-						Seeker will automatically search for the cards on your wishlist on a regular basis.
-					</li>
-					<li>When Seeker finds your card, it will DM you on Discord to let you know!</li>
-				</ol>
+			<div class="instructions-grid">
+				<div class="instruction-card">
+					<div class="card-icon-badge">
+						<i class="fa-solid fa-magnifying-glass"></i>
+					</div>
+					<div class="card-body">
+						<h3>Find & Configure</h3>
+						<p>Search any card by name, choose your target set, preferred finish, and set a maximum price cap.</p>
+					</div>
+				</div>
+				<div class="instruction-card">
+					<div class="card-icon-badge">
+						<i class="fa-solid fa-arrows-rotate"></i>
+					</div>
+					<div class="card-body">
+						<h3>Automated Scanning</h3>
+						<p>Seeker continuously polls CardTrader, TCGPlayer, eBay, and Mana Pool around the clock.</p>
+					</div>
+				</div>
+				<div class="instruction-card">
+					<div class="card-icon-badge">
+						<i class="fa-brands fa-discord"></i>
+					</div>
+					<div class="card-body">
+						<h3>Discord Restock Alerts</h3>
+						<p>Receive immediate Discord direct messages with direct buy links when a seller lists your card.</p>
+					</div>
+				</div>
 			</div>
 		{/if}
 
@@ -45,52 +69,104 @@
 <style>
 	.home-container {
 		text-align: center;
-		padding: 2em;
-		max-width: 800px;
+		padding: 1.5rem 1rem 3rem 1rem;
+		max-width: 900px;
 		margin: 0 auto;
-		margin-top: 2em;
 		animation: fadeIn 0.5s ease-out;
 	}
 
-	h1 {
-		margin-bottom: 1.5rem;
-		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
-		display: inline-block;
+	.search-hero {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 2rem;
 	}
 
-	.instructions {
-		margin-top: 3rem;
-		text-align: left;
-		background: var(--color-surface, rgba(255, 255, 255, 0.05));
-		padding: 2rem;
-		border-radius: 12px;
-		display: inline-block;
+	.hero-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.35rem 0.85rem;
+		border-radius: 9999px;
+		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.12));
+		border: 1px solid var(--color-primary-alpha, rgba(99, 102, 241, 0.25));
+		color: var(--color-primary, #6366f1);
+		font-size: 0.85rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+	}
+
+	.hero-prompt {
+		margin: 0 0 0.5rem 0;
+		color: var(--color-text-secondary);
+		font-size: 1rem;
 		max-width: 600px;
-		border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
-	}
-
-	.instructions h2 {
-		font-size: 1.5rem;
-		margin-bottom: 1rem;
-		color: var(--color-text-primary, inherit);
-		text-align: center;
-	}
-
-	.instructions ol {
-		padding-left: 1.5rem;
-		margin: 0;
-	}
-
-	.instructions li {
-		margin-bottom: 0.75rem;
 		line-height: 1.5;
-		color: var(--color-text-secondary, inherit);
 	}
 
-	.instructions li:last-child {
-		margin-bottom: 0;
+	.instructions-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1.25rem;
+		margin-top: 2rem;
+		text-align: left;
+	}
+
+	.instruction-card {
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border: 1px solid var(--glass-border, var(--color-border));
+		border-radius: 12px;
+		padding: 1.25rem;
+		box-shadow: var(--shadow-sm);
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		transition: transform var(--transition-fast), border-color var(--transition-fast);
+	}
+
+	.instruction-card:hover {
+		transform: translateY(-2px);
+		border-color: var(--color-primary);
+	}
+
+	.card-icon-badge {
+		width: 38px;
+		height: 38px;
+		border-radius: 10px;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-primary);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1rem;
+	}
+
+	.card-body h3 {
+		margin: 0 0 0.4rem 0;
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--color-text-primary);
+	}
+
+	.card-body p {
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--color-text-secondary);
+		line-height: 1.5;
+	}
+
+	@media (max-width: 768px) {
+		.instructions-grid {
+			grid-template-columns: 1fr;
+			gap: 1rem;
+		}
+
+		.home-container {
+			padding: 1rem 1rem 2rem 1rem;
+		}
 	}
 </style>

@@ -334,13 +334,43 @@
 {:else}
 	<!-- Only render content if authorized -->
 	<div class="admin-container">
-		<div class="admin-header">
-			<h1>Admin Panel</h1>
-			{#if user}
-				<p class="admin-subtitle">
-					Logged in as {user.username}. With great power comes great responsibility.
-				</p>
-			{/if}
+		<div class="workspace-toolbar">
+			<div class="toolbar-left">
+				<div class="admin-badge">
+					<i class="fa-solid fa-shield-halved"></i>
+					<span>Admin Console</span>
+				</div>
+				{#if user}
+					<span class="user-pill" title="Logged in as {user.username}">
+						<i class="fa-solid fa-user-gear"></i>
+						<strong>{user.username}</strong>
+					</span>
+				{/if}
+			</div>
+
+			<div class="toolbar-right">
+				{#if systemStatus}
+					<div class="status-indicator-pill" title="System Status: {systemStatus.status || 'Active'}">
+						<span class="pulse-dot"></span>
+						<span>System Healthy</span>
+					</div>
+				{/if}
+				<div class="card-counter" title="Total registered users">
+					<i class="fa-solid fa-users"></i>
+					<span><strong>{totalUsers}</strong> users</span>
+				</div>
+				<button
+					class="toolbar-icon-btn"
+					on:click={() => {
+						loadUserTables();
+						loadSystemStatus();
+						loadBanner();
+					}}
+					title="Refresh Admin Data"
+				>
+					<i class="fa-solid fa-rotate {loading || statusLoading || bannerLoading ? 'fa-spin' : ''}"></i>
+				</button>
+			</div>
 		</div>
 
 		<div class="admin-content">
@@ -741,24 +771,143 @@
 		animation: fadeIn 0.5s ease-out;
 	}
 
-	.admin-header {
-		margin-bottom: 2rem;
-		text-align: center;
+	/* Workspace Toolbar */
+	.workspace-toolbar {
+		margin-bottom: 1.5rem;
+		padding: 0.65rem 1rem;
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border: 1px solid var(--glass-border, var(--color-border));
+		border-radius: 12px;
+		box-shadow: var(--shadow-sm);
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
 	}
 
-	.admin-header h1 {
-		margin: 0;
-		font-size: 2rem;
+	.toolbar-left,
+	.toolbar-right {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.admin-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0 0.75rem;
+		height: 34px;
+		border-radius: 8px;
+		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.12));
+		border: 1px solid var(--color-primary-alpha, rgba(99, 102, 241, 0.25));
+		color: var(--color-primary, #6366f1);
+		font-size: 0.85rem;
 		font-weight: 700;
-		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		display: inline-block;
+		letter-spacing: 0.02em;
 	}
 
-	.admin-subtitle {
+	.user-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		padding: 0 0.75rem;
+		height: 34px;
+		border-radius: 8px;
+		font-size: 0.85rem;
 		color: var(--color-text-secondary);
-		margin: 0.5rem 0;
+	}
+
+	.user-pill strong {
+		color: var(--color-text-primary);
+	}
+
+	.status-indicator-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: rgba(34, 197, 94, 0.1);
+		border: 1px solid rgba(34, 197, 94, 0.25);
+		color: #22c55e;
+		padding: 0 0.75rem;
+		height: 34px;
+		border-radius: 8px;
+		font-size: 0.825rem;
+		font-weight: 600;
+	}
+
+	.pulse-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background-color: #22c55e;
+		box-shadow: 0 0 8px #22c55e;
+		animation: pulse 2s infinite;
+	}
+
+	@keyframes pulse {
+		0%, 100% { opacity: 1; transform: scale(1); }
+		50% { opacity: 0.5; transform: scale(0.85); }
+	}
+
+	.card-counter {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.825rem;
+		color: var(--color-text-muted, var(--color-text-secondary));
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		padding: 0 0.75rem;
+		height: 34px;
+		border-radius: 8px;
+		font-weight: 500;
+	}
+
+	.card-counter strong {
+		color: var(--color-text-primary);
+		font-weight: 700;
+	}
+
+	.toolbar-icon-btn {
+		width: 34px;
+		height: 34px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		font-size: 0.875rem;
+		transition: all var(--transition-fast);
+	}
+
+	.toolbar-icon-btn:hover {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+		background: var(--color-bg-hover, rgba(255, 255, 255, 0.04));
+	}
+
+	@media (max-width: 768px) {
+		.workspace-toolbar {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.75rem;
+		}
+
+		.toolbar-left,
+		.toolbar-right {
+			justify-content: space-between;
+			width: 100%;
+		}
 	}
 
 	.admin-content {

@@ -51,25 +51,37 @@
 
 {#if mounted}
 	<div class="about-container">
-		<h1>About Seeker</h1>
+		<div class="about-hero">
+			<div class="hero-badge">
+				<i class="fa-solid fa-circle-info"></i>
+				<span>Platform Overview</span>
+			</div>
+			<p class="hero-subtitle">
+				Automated multi-marketplace MTG collection hunting & instant Discord restock alerts
+			</p>
+		</div>
+
 		<div class="about-content">
 			<p>
-				Seeker is a tool designed to help Magic: The Gathering collectors efficiently find the
+				Seeker is designed to help Magic: The Gathering collectors efficiently find the
 				specific cards they need to complete their collections. Whether you're searching for a rare
-				foil, a specific language version, or just that one missing card from a set, Seeker
-				streamlines the process by automatically searching across multiple online marketplaces and
-				notifying you when the card you're Seeking is found.
+				foil, a specific language version, or that one missing card from a vintage set, Seeker
+				streamlines the process by continuously searching across multiple marketplaces and
+				notifying you directly via Discord when your card is listed.
 			</p>
-			<h2>Contact</h2>
-			<p>
-				For support, feature requests, or any questions, please reach out to <a
-					href="https://discord.com/users/213058259076913152"
-					target="_blank"
-					rel="noopener noreferrer">@undomian</a
-				> on the City of Traitors Discord.
-			</p>
+
+			<div class="contact-card">
+				<div class="contact-icon">
+					<i class="fa-brands fa-discord"></i>
+				</div>
+				<div class="contact-details">
+					<strong>Have questions or feedback?</strong>
+					<span>Reach out to <a href="https://discord.com/users/213058259076913152" target="_blank" rel="noopener noreferrer">@undomian</a> on the City of Traitors Discord.</span>
+				</div>
+			</div>
+
 			<h2>Membership Tiers</h2>
-			<p>Support the development of Seeker and unlock advanced features by upgrading to Premium!</p>
+			<p>Support the development of Seeker and unlock advanced features with Premium membership.</p>
 
 			<div class="tier-comparison desktop-only">
 				<table>
@@ -138,21 +150,86 @@
 <style>
 	.about-container {
 		text-align: center;
-		padding: 2em;
-		max-width: 800px;
+		padding: 1.5rem 1rem 3rem 1rem;
+		max-width: 860px;
 		margin: 0 auto;
-		margin-top: 2em;
 		animation: fadeIn 0.5s ease-out;
+	}
+
+	.about-hero {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 2rem;
+	}
+
+	.hero-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.35rem 0.85rem;
+		border-radius: 9999px;
+		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.12));
+		border: 1px solid var(--color-primary-alpha, rgba(99, 102, 241, 0.25));
+		color: var(--color-primary, #6366f1);
+		font-size: 0.85rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+	}
+
+	.hero-subtitle {
+		margin: 0;
+		color: var(--color-text-secondary);
+		font-size: 1.05rem;
+		max-width: 600px;
+		line-height: 1.5;
 	}
 
 	.about-content {
 		text-align: left;
-		margin-top: 2em;
-		background: var(--color-bg-elevated);
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
 		padding: 2rem;
 		border-radius: 12px;
 		box-shadow: var(--shadow-sm);
+		border: 1px solid var(--glass-border, var(--color-border));
+	}
+
+	.contact-card {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		background: var(--color-bg-secondary);
 		border: 1px solid var(--color-border);
+		border-radius: 10px;
+		padding: 1rem 1.25rem;
+		margin: 1.5rem 0;
+	}
+
+	.contact-icon {
+		font-size: 1.75rem;
+		color: #5865f2;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.contact-details {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		font-size: 0.9rem;
+	}
+
+	.contact-details strong {
+		color: var(--color-text-primary);
+	}
+
+	.contact-details span {
+		color: var(--color-text-secondary);
 	}
 
 	.about-content h2 {
@@ -163,15 +240,6 @@
 		font-weight: 600;
 		border-bottom: 1px solid var(--color-border);
 		padding-bottom: 0.5rem;
-	}
-
-	h1 {
-		margin-bottom: 1rem;
-		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
-		display: inline-block; /* Ensures gradient applies correctly to text width */
 	}
 
 	p {
