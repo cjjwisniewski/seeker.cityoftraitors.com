@@ -9,7 +9,8 @@
 		PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL,
 		PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL,
 		PUBLIC_GET_BANNER_FUNCTION_URL,
-		PUBLIC_UPDATE_BANNER_FUNCTION_URL
+		PUBLIC_UPDATE_BANNER_FUNCTION_URL,
+		PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL
 	} from '$env/static/public';
 
 	// Define Role ID
@@ -18,6 +19,9 @@
 	// State variables
 	let userTables = [];
 	let userSearchQuery = '';
+	let tierFilter = 'all'; // 'all', 'basic', 'premium', 'legacy', 'none'
+	let sortBy = 'lastAccessed'; // 'username', 'userId', 'itemCount', 'tier', 'lastAccessed'
+	let sortDirection = 'desc'; // 'asc', 'desc'
 	let expandedTable = null;
 	let expandedTableData = [];
 	let loading = true; // Loading state for user tables list
@@ -26,6 +30,24 @@
 	let error = null; // General error display
 	let statusError = null; // Error display for system status
 	let systemStatus = null;
+
+	// Tier counts for filter pills
+	$: tierCounts = {
+		all: userTables.length,
+		basic: userTables.filter((t) => (t.membershipTier || 'Basic').toLowerCase() === 'basic').length,
+		premium: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'premium').length,
+		legacy: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'legacy').length,
+		none: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'none').length
+	};
+
+	function toggleSort(field) {
+		if (sortBy === field) {
+			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+		} else {
+			sortBy = field;
+			sortDirection = field === 'username' || field === 'userId' ? 'asc' : 'desc';
+		}
+	}
 
 	// Reactive variables from auth store
 	$: user = $auth.user;
@@ -53,16 +75,45 @@
 		});
 	}
 
-	// Filtered users for admin management
-	$: filteredUserTables = userTables.filter((table) => {
-		if (!userSearchQuery.trim()) return true;
-		const q = userSearchQuery.toLowerCase();
-		return (
-			(table.username && table.username.toLowerCase().includes(q)) ||
-			(table.userId && table.userId.toLowerCase().includes(q)) ||
-			(table.membershipTier && table.membershipTier.toLowerCase().includes(q))
-		);
-	});
+	// Filtered & sorted users for admin management
+	$: filteredUserTables = userTables
+		.filter((table) => {
+			if (tierFilter !== 'all') {
+				const tier = (table.membershipTier || 'basic').toLowerCase();
+				if (tierFilter === 'none') {
+					if (tier !== 'none' && tier !== '') return false;
+				} else if (tier !== tierFilter) {
+					return false;
+				}
+			}
+			if (!userSearchQuery.trim()) return true;
+			const q = userSearchQuery.toLowerCase();
+			return (
+				(table.username && table.username.toLowerCase().includes(q)) ||
+				(table.userId && table.userId.toLowerCase().includes(q)) ||
+				(table.membershipTier && table.membershipTier.toLowerCase().includes(q))
+			);
+		})
+		.sort((a, b) => {
+			let cmp = 0;
+			if (sortBy === 'username') {
+				cmp = (a.username || '').localeCompare(b.username || '');
+			} else if (sortBy === 'userId') {
+				cmp = (a.userId || '').localeCompare(b.userId || '');
+			} else if (sortBy === 'itemCount') {
+				cmp = (a.itemCount || 0) - (b.itemCount || 0);
+			} else if (sortBy === 'tier') {
+				const rank = { legacy: 3, premium: 2, basic: 1, none: 0 };
+				const rankA = rank[(a.membershipTier || '').toLowerCase()] ?? 0;
+				const rankB = rank[(b.membershipTier || '').toLowerCase()] ?? 0;
+				cmp = rankA - rankB;
+			} else if (sortBy === 'lastAccessed') {
+				const timeA = a.lastAccessed ? new Date(a.lastAccessed).getTime() : 0;
+				const timeB = b.lastAccessed ? new Date(b.lastAccessed).getTime() : 0;
+				cmp = timeA - timeB;
+			}
+			return sortDirection === 'asc' ? cmp : -cmp;
+		});
 
 	// --- API Call Functions ---
 
@@ -140,9 +191,160 @@
 		userToDelete = null;
 	}
 
+	// Tier override modal state & functions
+	let showTierModal = false;
+	let userToEditTier = null;
+	let selectedTier = 'Basic';
+	let isUpdatingTier = false;
+
+	function openTierModal(table) {
+		userToEditTier = table;
+		selectedTier = table.membershipTier || 'Basic';
+		showTierModal = true;
+	}
+
+	function closeTierModal() {
+		if (isUpdatingTier) return;
+		showTierModal = false;
+		userToEditTier = null;
+	}
+
+	async function handleSaveTier() {
+		if (!userToEditTier || !isAuthorized) return;
+		isUpdatingTier = true;
+		error = null;
+		try {
+			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
+				method: 'POST',
+				body: JSON.stringify({
+					targetUserId: userToEditTier.userId,
+					settingName: 'membershipTier',
+					settingValue: selectedTier
+				})
+			});
+			if (!response || !response.ok) {
+				const errText = response ? await response.text() : 'Network error';
+				throw new Error(`Failed to update tier: ${errText}`);
+			}
+			userTables = userTables.map((u) => {
+				if (u.userId === userToEditTier.userId) {
+					return {
+						...u,
+						membershipTier: selectedTier,
+						tierOverride: selectedTier !== 'None'
+					};
+				}
+				return u;
+			});
+			closeTierModal();
+		} catch (e) {
+			console.error('Error updating user tier:', e);
+			error = e.message;
+		} finally {
+			isUpdatingTier = false;
+		}
+	}
+
+	// Poison queue inspect and manage state & functions
+	let showPoisonModal = false;
+	let activePoisonQueue = null;
+	let poisonMessages = [];
+	let poisonLoading = false;
+	let poisonActionLoading = false;
+	let poisonFeedback = null;
+
+	async function openPoisonInspectModal(q) {
+		activePoisonQueue = q;
+		showPoisonModal = true;
+		poisonLoading = true;
+		poisonFeedback = null;
+		poisonMessages = [];
+		try {
+			const url = `${PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL}?action=peek_poison&queue=${encodeURIComponent(q.name)}`;
+			const response = await fetchWithAuth(url);
+			if (response && response.ok) {
+				const data = await response.json();
+				poisonMessages = data.messages || [];
+			} else {
+				const errText = response ? await response.text() : 'Failed to fetch poison queue messages';
+				poisonFeedback = { type: 'error', text: errText };
+			}
+		} catch (e) {
+			console.error('Error fetching poison queue:', e);
+			poisonFeedback = { type: 'error', text: e.message };
+		} finally {
+			poisonLoading = false;
+		}
+	}
+
+	function closePoisonModal() {
+		if (poisonActionLoading) return;
+		showPoisonModal = false;
+		activePoisonQueue = null;
+		poisonMessages = [];
+		poisonFeedback = null;
+	}
+
+	async function handleReplayPoison(queueName) {
+		poisonActionLoading = true;
+		poisonFeedback = null;
+		try {
+			const url = `${PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL}?action=replay_poison&queue=${encodeURIComponent(queueName)}`;
+			const response = await fetchWithAuth(url);
+			if (response && response.ok) {
+				const data = await response.json();
+				poisonFeedback = { type: 'success', text: data.message || 'Messages replayed successfully.' };
+				await loadSystemStatus();
+				if (showPoisonModal && activePoisonQueue) {
+					const refreshQ = activePoisonQueue;
+					await openPoisonInspectModal(refreshQ);
+				}
+			} else {
+				const errText = response ? await response.text() : 'Failed to replay poison messages';
+				poisonFeedback = { type: 'error', text: errText };
+			}
+		} catch (e) {
+			console.error('Error replaying poison queue:', e);
+			poisonFeedback = { type: 'error', text: e.message };
+		} finally {
+			poisonActionLoading = false;
+		}
+	}
+
+	async function handleClearPoison(queueName) {
+		if (!confirm(`Are you sure you want to permanently clear all poison messages for ${queueName}?`)) {
+			return;
+		}
+		poisonActionLoading = true;
+		poisonFeedback = null;
+		try {
+			const url = `${PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL}?action=clear_poison&queue=${encodeURIComponent(queueName)}`;
+			const response = await fetchWithAuth(url);
+			if (response && response.ok) {
+				const data = await response.json();
+				poisonFeedback = { type: 'success', text: data.message || 'Poison queue cleared.' };
+				await loadSystemStatus();
+				if (showPoisonModal && activePoisonQueue) {
+					const refreshQ = activePoisonQueue;
+					await openPoisonInspectModal(refreshQ);
+				}
+			} else {
+				const errText = response ? await response.text() : 'Failed to clear poison queue';
+				poisonFeedback = { type: 'error', text: errText };
+			}
+		} catch (e) {
+			console.error('Error clearing poison queue:', e);
+			poisonFeedback = { type: 'error', text: e.message };
+		} finally {
+			poisonActionLoading = false;
+		}
+	}
+
 	function handleKeydown(event) {
-		if (event.key === 'Escape' && showDeleteModal) {
-			closeDeleteModal();
+		if (event.key === 'Escape') {
+			if (showDeleteModal) closeDeleteModal();
+			if (showTierModal) closeTierModal();
+			if (showPoisonModal) closePoisonModal();
 		}
 	}
 
@@ -650,6 +852,39 @@
 												</span>
 											{/if}
 										</div>
+										<div class="queue-actions-row">
+											<button
+												type="button"
+												class="queue-action-btn inspect-btn"
+												on:click={() => openPoisonInspectModal(q)}
+												title="Inspect messages in poison queue"
+											>
+												<i class="fa-solid fa-eye"></i>
+												<span>Inspect</span>
+											</button>
+											{#if q.poison_messages > 0}
+												<button
+													type="button"
+													class="queue-action-btn replay-btn"
+													on:click={() => handleReplayPoison(q.name)}
+													disabled={poisonActionLoading}
+													title="Replay all poison messages back to active queue"
+												>
+													<i class="fa-solid fa-rotate-left"></i>
+													<span>Replay All</span>
+												</button>
+												<button
+													type="button"
+													class="queue-action-btn clear-btn"
+													on:click={() => handleClearPoison(q.name)}
+													disabled={poisonActionLoading}
+													title="Permanently purge poison messages"
+												>
+													<i class="fa-solid fa-trash-can"></i>
+													<span>Purge</span>
+												</button>
+											{/if}
+										</div>
 									</div>
 								{/each}
 							</div>
@@ -665,24 +900,118 @@
 						<i class="fa-solid fa-users-gear"></i>
 					</div>
 					<h2>User Management</h2>
-					<span class="user-count-badge">{filteredUserTables.length} {filteredUserTables.length === 1 ? 'user' : 'users'}</span>
+					<span class="user-count-badge">
+						{filteredUserTables.length} of {userTables.length} {userTables.length === 1 ? 'user' : 'users'}
+					</span>
 				</div>
 
-				<!-- User Filter Bar -->
-				<div class="user-filter-bar">
-					<div class="search-input-wrapper">
-						<i class="fa-solid fa-magnifying-glass search-icon"></i>
-						<input
-							type="text"
-							bind:value={userSearchQuery}
-							placeholder="Filter by username, user ID, or tier..."
-							class="user-search-input"
-						/>
-						{#if userSearchQuery}
-							<button class="clear-search-btn" on:click={() => (userSearchQuery = '')} title="Clear search">
-								<i class="fa-solid fa-xmark"></i>
+				<!-- User Filter & Sort Toolbar -->
+				<div class="user-toolbar-card">
+					<div class="toolbar-top-row">
+						<div class="search-input-wrapper">
+							<i class="fa-solid fa-magnifying-glass search-icon"></i>
+							<input
+								type="text"
+								bind:value={userSearchQuery}
+								placeholder="Filter by username, user ID, or tier..."
+								class="user-search-input"
+							/>
+							{#if userSearchQuery}
+								<button class="clear-search-btn" on:click={() => (userSearchQuery = '')} title="Clear search">
+									<i class="fa-solid fa-xmark"></i>
+								</button>
+							{/if}
+						</div>
+
+						<!-- Sort Controls -->
+						<div class="sort-controls-wrapper">
+							<span class="sort-label"><i class="fa-solid fa-arrow-down-short-wide"></i> Sort:</span>
+							<button
+								type="button"
+								class="sort-pill"
+								class:active={sortBy === 'username'}
+								on:click={() => toggleSort('username')}
+								title="Sort by Username"
+							>
+								<span>User</span>
+								{#if sortBy === 'username'}
+									<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
+								{/if}
 							</button>
-						{/if}
+							<button
+								type="button"
+								class="sort-pill"
+								class:active={sortBy === 'itemCount'}
+								on:click={() => toggleSort('itemCount')}
+								title="Sort by Card Count"
+							>
+								<span>Cards</span>
+								{#if sortBy === 'itemCount'}
+									<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
+								{/if}
+							</button>
+							<button
+								type="button"
+								class="sort-pill"
+								class:active={sortBy === 'tier'}
+								on:click={() => toggleSort('tier')}
+								title="Sort by Tier"
+							>
+								<span>Tier</span>
+								{#if sortBy === 'tier'}
+									<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
+								{/if}
+							</button>
+							<button
+								type="button"
+								class="sort-pill"
+								class:active={sortBy === 'lastAccessed'}
+								on:click={() => toggleSort('lastAccessed')}
+								title="Sort by Last Activity"
+							>
+								<span>Activity</span>
+								{#if sortBy === 'lastAccessed'}
+									<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
+								{/if}
+							</button>
+						</div>
+					</div>
+
+					<!-- Tier Filter Pills -->
+					<div class="tier-pills-row">
+						<span class="filter-pills-label"><i class="fa-solid fa-filter"></i> Tier:</span>
+						<button
+							type="button"
+							class="tier-filter-pill"
+							class:active={tierFilter === 'all'}
+							on:click={() => (tierFilter = 'all')}
+						>
+							All ({tierCounts.all})
+						</button>
+						<button
+							type="button"
+							class="tier-filter-pill tier-basic"
+							class:active={tierFilter === 'basic'}
+							on:click={() => (tierFilter = 'basic')}
+						>
+							Basic ({tierCounts.basic})
+						</button>
+						<button
+							type="button"
+							class="tier-filter-pill tier-premium"
+							class:active={tierFilter === 'premium'}
+							on:click={() => (tierFilter = 'premium')}
+						>
+							Premium ({tierCounts.premium})
+						</button>
+						<button
+							type="button"
+							class="tier-filter-pill tier-legacy"
+							class:active={tierFilter === 'legacy'}
+							on:click={() => (tierFilter = 'legacy')}
+						>
+							Legacy ({tierCounts.legacy})
+						</button>
 					</div>
 				</div>
 
@@ -722,6 +1051,20 @@
 													></i>
 													{table.membershipTier || 'Basic'}
 												</span>
+												{#if table.tierOverride}
+													<span class="override-pill" title="Tier manually overridden by administrator">
+														<i class="fa-solid fa-user-pen"></i> Override
+													</span>
+												{/if}
+												<button
+													type="button"
+													class="edit-tier-pill-btn"
+													on:click|stopPropagation={() => openTierModal(table)}
+													title="Change or override membership tier"
+												>
+													<i class="fa-solid fa-pen-to-square"></i>
+													<span>Edit Tier</span>
+												</button>
 												<span class="user-id-chip">{table.userId}</span>
 											</div>
 											<div class="user-meta-line">
@@ -933,6 +1276,173 @@
 						<i class="fa-solid {isDeletingUser ? 'fa-spinner fa-spin' : 'fa-trash-can'}"></i>
 						<span>{isDeletingUser ? 'Deleting...' : 'Yes, Delete Account'}</span>
 					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Edit Tier Modal -->
+	{#if showTierModal && userToEditTier}
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div
+			class="modal-overlay"
+			on:click={closeTierModal}
+			on:keydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') closeTierModal();
+			}}
+			role="button"
+			tabindex="0"
+			aria-label="Close dialog"
+		>
+			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+			<div
+				class="modal tier-modal"
+				on:click|stopPropagation
+				on:keydown|stopPropagation
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="admin-tier-dialog-title"
+				tabindex="-1"
+			>
+				<div class="modal-icon-badge tier">
+					<i class="fa-solid fa-crown"></i>
+				</div>
+				<h3 id="admin-tier-dialog-title">Override Membership Tier</h3>
+				<p>
+					Update membership tier for user <strong class="tier-target-user">{userToEditTier.username || userToEditTier.userId}</strong>
+				</p>
+				<p class="modal-subtext">Setting an explicit tier will override Discord role synchronization until reset to 'None'.</p>
+
+				<div class="tier-select-options">
+					{#each ['Basic', 'Premium', 'Legacy', 'None'] as tierOption}
+						<button
+							type="button"
+							class="tier-choice-btn tier-btn-{tierOption.toLowerCase()}"
+							class:selected={selectedTier.toLowerCase() === tierOption.toLowerCase()}
+							on:click={() => (selectedTier = tierOption)}
+						>
+							<i class="fa-solid {tierOption === 'Legacy' ? 'fa-wand-magic-sparkles' : tierOption === 'Premium' ? 'fa-gem' : tierOption === 'Basic' ? 'fa-certificate' : 'fa-ban'}"></i>
+							<div class="tier-choice-label">
+								<span class="tier-choice-name">{tierOption}</span>
+								<span class="tier-choice-desc">
+									{tierOption === 'Legacy' ? 'Legacy supporter (unlimited alerts)' : tierOption === 'Premium' ? 'Premium tier (enhanced limits)' : tierOption === 'Basic' ? 'Standard free tier' : 'Default / Discord synced'}
+								</span>
+							</div>
+							{#if selectedTier.toLowerCase() === tierOption.toLowerCase()}
+								<i class="fa-solid fa-circle-check check-icon"></i>
+							{/if}
+						</button>
+					{/each}
+				</div>
+
+				<div class="modal-buttons">
+					<button class="cancel-btn" on:click={closeTierModal} disabled={isUpdatingTier}>
+						Cancel
+					</button>
+					<button class="confirm-btn save-tier-btn" on:click={handleSaveTier} disabled={isUpdatingTier}>
+						<i class="fa-solid {isUpdatingTier ? 'fa-spinner fa-spin' : 'fa-check'}"></i>
+						<span>{isUpdatingTier ? 'Saving...' : 'Save Tier'}</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Poison Queue Inspector Modal -->
+	{#if showPoisonModal && activePoisonQueue}
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div
+			class="modal-overlay"
+			on:click={closePoisonModal}
+			on:keydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') closePoisonModal();
+			}}
+			role="button"
+			tabindex="0"
+			aria-label="Close poison inspector"
+		>
+			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+			<div
+				class="modal modal-wide"
+				on:click|stopPropagation
+				on:keydown|stopPropagation
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="admin-poison-dialog-title"
+				tabindex="-1"
+			>
+				<div class="modal-header-row">
+					<div class="modal-header-title">
+						<div class="modal-icon-badge danger small">
+							<i class="fa-solid fa-skull"></i>
+						</div>
+						<div>
+							<h3 id="admin-poison-dialog-title">Poison Queue: {activePoisonQueue.name}-poison</h3>
+							<span class="modal-subtitle">Dead-letter messages that failed execution multiple times</span>
+						</div>
+					</div>
+					<button class="modal-close-icon-btn" on:click={closePoisonModal} title="Close">
+						<i class="fa-solid fa-xmark"></i>
+					</button>
+				</div>
+
+				{#if poisonFeedback}
+					<div class="poison-feedback-banner {poisonFeedback.type}">
+						<i class="fa-solid {poisonFeedback.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i>
+						<span>{poisonFeedback.text}</span>
+					</div>
+				{/if}
+
+				{#if poisonLoading}
+					<div class="poison-loading-wrap">
+						<div class="loading-spinner small"></div>
+						<span>Peeking poison messages...</span>
+					</div>
+				{:else if poisonMessages.length === 0}
+					<div class="poison-empty-wrap">
+						<i class="fa-solid fa-shield-halved"></i>
+						<p>No messages currently in poison queue.</p>
+					</div>
+				{:else}
+					<div class="poison-messages-list">
+						{#each poisonMessages as msg, idx}
+							<div class="poison-message-card">
+								<div class="poison-msg-header">
+									<span class="poison-msg-id"><i class="fa-solid fa-envelope"></i> Msg #{idx + 1} ({msg.id || 'N/A'})</span>
+									<span class="poison-msg-time">{msg.inserted_on ? new Date(msg.inserted_on).toLocaleString() : ''} (Deq: {msg.dequeue_count ?? 'N/A'})</span>
+								</div>
+								<div class="poison-msg-content">
+									<pre><code>{msg.content || '(empty)'}</code></pre>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+
+				<div class="modal-footer-row">
+					<button class="cancel-btn" on:click={closePoisonModal} disabled={poisonActionLoading}>
+						Close
+					</button>
+					<div class="poison-actions-group">
+						<button
+							class="purge-action-btn"
+							on:click={() => handleClearPoison(activePoisonQueue.name)}
+							disabled={poisonActionLoading || poisonMessages.length === 0}
+							title="Permanently remove all poison messages"
+						>
+							<i class="fa-solid {poisonActionLoading ? 'fa-spinner fa-spin' : 'fa-trash'}"></i>
+							<span>Purge All</span>
+						</button>
+						<button
+							class="replay-action-btn"
+							on:click={() => handleReplayPoison(activePoisonQueue.name)}
+							disabled={poisonActionLoading || poisonMessages.length === 0}
+							title="Re-enqueue all poison messages back to active queue"
+						>
+							<i class="fa-solid {poisonActionLoading ? 'fa-spinner fa-spin' : 'fa-arrow-rotate-right'}"></i>
+							<span>Replay All</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -1707,6 +2217,56 @@
 		border-radius: 6px;
 	}
 
+	.queue-actions-row {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-top: 0.25rem;
+		padding-top: 0.4rem;
+		border-top: 1px dashed var(--color-border);
+	}
+
+	.queue-action-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		padding: 0.25rem 0.55rem;
+		border-radius: 6px;
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.queue-action-btn:hover:not(:disabled) {
+		background: var(--color-bg-hover);
+		color: var(--color-text-primary);
+		border-color: var(--color-border-hover);
+	}
+
+	.queue-action-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.queue-action-btn.inspect-btn:hover:not(:disabled) {
+		color: var(--color-primary);
+		border-color: var(--color-primary);
+	}
+
+	.queue-action-btn.replay-btn:hover:not(:disabled) {
+		color: #eab308;
+		border-color: #eab308;
+	}
+
+	.queue-action-btn.clear-btn:hover:not(:disabled) {
+		color: var(--color-error);
+		border-color: var(--color-error);
+	}
+
 	/* User Management */
 	.user-count-badge {
 		background: var(--color-bg-secondary);
@@ -1767,6 +2327,131 @@
 
 	.clear-search-btn:hover {
 		color: var(--color-text-primary);
+	}
+
+	.user-toolbar-card {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 12px;
+		padding: 0.85rem 1rem;
+		margin-bottom: 1.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.toolbar-top-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.toolbar-top-row .search-input-wrapper {
+		flex: 1;
+		min-width: 260px;
+		max-width: 450px;
+	}
+
+	.sort-controls-wrapper {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+	}
+
+	.sort-label,
+	.filter-pills-label {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-right: 0.2rem;
+	}
+
+	.sort-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.8rem;
+		padding: 0.35rem 0.65rem;
+		border-radius: 8px;
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.sort-pill:hover {
+		background: var(--color-bg-hover);
+		color: var(--color-text-primary);
+	}
+
+	.sort-pill.active {
+		background: rgba(59, 130, 246, 0.12);
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+		font-weight: 600;
+	}
+
+	.tier-pills-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		padding-top: 0.65rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.tier-filter-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.8rem;
+		padding: 0.3rem 0.75rem;
+		border-radius: 999px;
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.tier-filter-pill:hover {
+		background: var(--color-bg-hover);
+		color: var(--color-text-primary);
+	}
+
+	.tier-filter-pill.active {
+		font-weight: 600;
+	}
+
+	.tier-filter-pill.active:not(.tier-basic):not(.tier-premium):not(.tier-legacy) {
+		background: var(--color-text-primary);
+		border-color: var(--color-text-primary);
+		color: var(--color-bg-primary);
+	}
+
+	.tier-filter-pill.tier-basic.active {
+		background: rgba(148, 163, 184, 0.2);
+		border-color: #94a3b8;
+		color: #e2e8f0;
+	}
+
+	.tier-filter-pill.tier-premium.active {
+		background: rgba(59, 130, 246, 0.2);
+		border-color: #3b82f6;
+		color: #60a5fa;
+	}
+
+	.tier-filter-pill.tier-legacy.active {
+		background: rgba(168, 85, 247, 0.2);
+		border-color: #a855f7;
+		color: #c084fc;
 	}
 
 	.user-accordion-list {
@@ -1834,6 +2519,40 @@
 		align-items: center;
 		gap: 0.6rem;
 		flex-wrap: wrap;
+	}
+
+	.override-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.72rem;
+		font-weight: 600;
+		padding: 0.15rem 0.5rem;
+		border-radius: 6px;
+		background: rgba(234, 179, 8, 0.15);
+		border: 1px solid rgba(234, 179, 8, 0.35);
+		color: #eab308;
+	}
+
+	.edit-tier-pill-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.72rem;
+		font-weight: 500;
+		padding: 0.15rem 0.5rem;
+		border-radius: 6px;
+		background: var(--color-bg-hover, rgba(255, 255, 255, 0.06));
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.edit-tier-pill-btn:hover {
+		background: rgba(59, 130, 246, 0.12);
+		border-color: var(--color-primary);
+		color: var(--color-primary);
 	}
 
 	.user-name {
@@ -2232,6 +2951,333 @@
 
 	.confirm-btn:disabled,
 	.cancel-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.modal-icon-badge.tier {
+		background: rgba(168, 85, 247, 0.12);
+		color: #a855f7;
+		border: 1px solid rgba(168, 85, 247, 0.25);
+	}
+
+	.modal-icon-badge.danger.small {
+		width: 38px;
+		height: 38px;
+		font-size: 1.15rem;
+		margin-bottom: 0;
+	}
+
+	.tier-target-user {
+		color: var(--color-text-primary);
+	}
+
+	.tier-select-options {
+		display: flex;
+		flex-direction: column;
+		gap: 0.65rem;
+		width: 100%;
+		margin: 1.25rem 0 0.5rem 0;
+	}
+
+	.tier-choice-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.85rem 1rem;
+		border-radius: 12px;
+		background: var(--color-bg-secondary);
+		border: 2px solid var(--color-border);
+		color: var(--color-text-primary);
+		cursor: pointer;
+		text-align: left;
+		transition: all var(--transition-fast);
+		width: 100%;
+	}
+
+	.tier-choice-btn i {
+		font-size: 1.2rem;
+		width: 24px;
+		text-align: center;
+	}
+
+	.tier-choice-label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		flex: 1;
+	}
+
+	.tier-choice-name {
+		font-weight: 700;
+		font-size: 0.95rem;
+	}
+
+	.tier-choice-desc {
+		font-size: 0.78rem;
+		color: var(--color-text-secondary);
+	}
+
+	.tier-choice-btn .check-icon {
+		color: var(--color-primary);
+		font-size: 1.1rem;
+		margin-left: auto;
+	}
+
+	.tier-choice-btn:hover {
+		border-color: var(--color-border-hover);
+		background: var(--color-bg-hover);
+	}
+
+	.tier-choice-btn.selected {
+		border-color: var(--color-primary);
+		background: rgba(59, 130, 246, 0.08);
+	}
+
+	.tier-choice-btn.tier-btn-legacy.selected {
+		border-color: #a855f7;
+		background: rgba(168, 85, 247, 0.08);
+	}
+
+	.tier-choice-btn.tier-btn-legacy i {
+		color: #c084fc;
+	}
+
+	.tier-choice-btn.tier-btn-premium.selected {
+		border-color: #3b82f6;
+		background: rgba(59, 130, 246, 0.08);
+	}
+
+	.tier-choice-btn.tier-btn-premium i {
+		color: #60a5fa;
+	}
+
+	.tier-choice-btn.tier-btn-basic.selected {
+		border-color: #94a3b8;
+		background: rgba(148, 163, 184, 0.08);
+	}
+
+	.tier-choice-btn.tier-btn-basic i {
+		color: #94a3b8;
+	}
+
+	.save-tier-btn {
+		background: var(--color-primary);
+		box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+	}
+
+	.save-tier-btn:hover:not(:disabled) {
+		background-color: var(--color-primary-hover, #2563eb);
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+	}
+
+	/* Modal Wide (Poison Inspector) */
+	.modal-wide {
+		max-width: 780px;
+		width: 100%;
+		text-align: left;
+		align-items: stretch;
+	}
+
+	.modal-header-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		border-bottom: 1px solid var(--color-border);
+		padding-bottom: 1rem;
+		margin-bottom: 1rem;
+	}
+
+	.modal-header-title {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+	}
+
+	.modal-header-title h3 {
+		margin: 0;
+		font-size: 1.15rem;
+	}
+
+	.modal-subtitle {
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+	}
+
+	.modal-close-icon-btn {
+		background: none;
+		border: none;
+		color: var(--color-text-secondary);
+		font-size: 1.25rem;
+		cursor: pointer;
+		padding: 0.4rem;
+		border-radius: 8px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all var(--transition-fast);
+	}
+
+	.modal-close-icon-btn:hover {
+		color: var(--color-text-primary);
+		background: var(--color-bg-hover);
+	}
+
+	.poison-feedback-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		border-radius: 10px;
+		font-size: 0.88rem;
+		margin-bottom: 1rem;
+	}
+
+	.poison-feedback-banner.success {
+		background: rgba(34, 197, 94, 0.12);
+		border: 1px solid rgba(34, 197, 94, 0.3);
+		color: #22c55e;
+	}
+
+	.poison-feedback-banner.error {
+		background: rgba(239, 68, 68, 0.12);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		color: var(--color-error);
+	}
+
+	.poison-loading-wrap,
+	.poison-empty-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 3rem 1rem;
+		gap: 0.75rem;
+		color: var(--color-text-secondary);
+		background: var(--color-bg-secondary);
+		border-radius: 12px;
+		border: 1px dashed var(--color-border);
+		text-align: center;
+	}
+
+	.poison-empty-wrap i {
+		font-size: 2.25rem;
+		color: #22c55e;
+	}
+
+	.poison-messages-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		max-height: 420px;
+		overflow-y: auto;
+		padding-right: 0.35rem;
+	}
+
+	.poison-message-card {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+		padding: 0.85rem;
+	}
+
+	.poison-msg-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+		margin-bottom: 0.5rem;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+	}
+
+	.poison-msg-id {
+		font-weight: 600;
+		color: var(--color-text-primary);
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	}
+
+	.poison-msg-time {
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+	}
+
+	.poison-msg-content pre {
+		margin: 0;
+		background: var(--color-bg-primary);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		padding: 0.65rem 0.85rem;
+		font-size: 0.78rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		overflow-x: auto;
+		white-space: pre-wrap;
+		word-break: break-all;
+		color: var(--color-text-primary);
+		max-height: 180px;
+	}
+
+	.modal-footer-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		width: 100%;
+		margin-top: 1.25rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.poison-actions-group {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+	}
+
+	.replay-action-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		background: #eab308;
+		color: #1a1a1a;
+		border: none;
+		padding: 0.65rem 1.15rem;
+		border-radius: 10px;
+		cursor: pointer;
+		font-weight: 600;
+		font-size: 0.88rem;
+		transition: all var(--transition-fast);
+	}
+
+	.replay-action-btn:hover:not(:disabled) {
+		background: #ca8a04;
+		color: #ffffff;
+	}
+
+	.purge-action-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		background: rgba(239, 68, 68, 0.15);
+		color: var(--color-error);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		padding: 0.65rem 1.15rem;
+		border-radius: 10px;
+		cursor: pointer;
+		font-weight: 600;
+		font-size: 0.88rem;
+		transition: all var(--transition-fast);
+	}
+
+	.purge-action-btn:hover:not(:disabled) {
+		background: var(--color-error);
+		color: white;
+	}
+
+	.replay-action-btn:disabled,
+	.purge-action-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}
