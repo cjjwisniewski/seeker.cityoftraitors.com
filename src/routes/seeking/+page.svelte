@@ -682,7 +682,19 @@
 										on:click={() => (enlargedCardImage = getWebpImageUri(card.image_uri))}
 									/>
 								{/if}
-								<span>{card.name}</span>
+								<div class="card-name-group">
+									<span>{card.name}</span>
+									{#if card.max_price_cap !== null && card.max_price_cap !== undefined}
+										<button
+											type="button"
+											class="cap-badge"
+											title="Click to edit Max Price Cap"
+											on:click|stopPropagation={() => openSettings(card)}
+										>
+											MAX {formatPrice(card.max_price_cap)}
+										</button>
+									{/if}
+								</div>
 							</div>
 						</td>
 						<td data-label="Set" class="set-column">
@@ -712,11 +724,6 @@
 										></i>
 										{#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
 											<span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
-										{/if}
-										{#if card.max_price_cap !== null && card.max_price_cap !== undefined}
-											<span class="cap-badge" title="Max Price Cap">
-												MAX {formatPrice(card.max_price_cap)}
-											</span>
 										{/if}
 									</div>
 								</a>
@@ -1347,9 +1354,7 @@
 			grid-template-columns: repeat(3, 1fr);
 			grid-template-areas:
 				'cardinfo cardinfo cardinfo'
-				'set      language finish'
-				'vendor1  vendor2  vendor3'
-				'vendor4  .        .';
+				'set      language finish';
 			background: var(--glass-bg);
 			backdrop-filter: blur(var(--backdrop-blur));
 			border: 1px solid var(--glass-border);
@@ -1384,6 +1389,10 @@
 			gap: 0.5rem;
 		}
 
+		td[data-label='Card'] .card-name-group {
+			align-items: center;
+		}
+
 		td[data-label='Card'] .card-info img {
 			margin-right: 0;
 			width: 60px;
@@ -1405,22 +1414,6 @@
 
 		td[data-label='Finish'] {
 			grid-area: finish;
-		}
-
-		td[data-label='CardTrader'] {
-			grid-area: vendor1;
-		}
-
-		td[data-label='TCGPlayer'] {
-			grid-area: vendor2;
-		}
-
-		td[data-label='EBay'] {
-			grid-area: vendor3;
-		}
-
-		td[data-label='Mana Pool'] {
-			grid-area: vendor4;
 		}
 
 		td[data-label='CardMarket'] {
@@ -1704,6 +1697,17 @@
 		cursor: not-allowed;
 	}
 
+	.card-name-group {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.25rem;
+	}
+
+	tr.condensed .card-name-group {
+		align-items: center;
+	}
+
 	.cap-badge {
 		display: inline-block;
 		font-size: 0.65rem;
@@ -1711,8 +1715,14 @@
 		color: var(--color-accent);
 		padding: 2px 6px;
 		border-radius: 4px;
-		margin-top: 4px;
 		font-weight: 700;
 		border: 1px solid var(--color-accent);
+		cursor: pointer;
+		transition: transform var(--transition-fast), opacity var(--transition-fast);
+	}
+
+	.cap-badge:hover {
+		transform: translateY(-1px);
+		opacity: 0.9;
 	}
 </style>

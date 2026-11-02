@@ -9,6 +9,8 @@
 	let searchTerm = '';
 	let suggestions: string[] = [];
 	let showDropdown = false;
+	let selectedIndex = -1;
+	let isSearching = false;
 	let searchInput: HTMLInputElement;
 	let dropdownContainer: HTMLDivElement;
 	let debounceTimer: number;
@@ -62,8 +64,8 @@
 
 	// Validate search term
 	const validateSearchTerm = (term: string): boolean => {
-		// Only allow alphanumeric characters, spaces, and common card name characters
-		return /^[a-zA-Z0-9\s\-'.,]+$/.test(term);
+		// Allow Unicode letters/numbers, spaces, and valid MTG card name / Scryfall query characters
+		return /^[\p{L}\p{N}\s\-'.,/:&!?"()+]+$/u.test(term);
 	};
 
 	onMount(() => {
@@ -92,12 +94,14 @@
 		if (searchTerm.length < 2) {
 			suggestions = [];
 			showDropdown = false;
+			selectedIndex = -1;
 			return;
 		}
 
 		if (!validateSearchTerm(searchTerm)) {
 			suggestions = [];
 			showDropdown = false;
+			selectedIndex = -1;
 			return;
 		}
 
@@ -105,7 +109,8 @@
 			try {
 				const response = await fetch(`${AUTOCOMPLETE_URL}?q=${encodeURIComponent(searchTerm)}`);
 				const data = await response.json();
-				suggestions = data.data;
+				suggestions = data.data || [];
+				selectedIndex = -1;
 				showDropdown = suggestions.length > 0;
 			} catch (error) {
 				console.error('Error fetching suggestions:', error);
@@ -116,10 +121,12 @@
 	const selectSuggestion = async (suggestion: string) => {
 		searchTerm = sanitizeInput(suggestion);
 		showDropdown = false;
+		selectedIndex = -1;
 		await fetchExactCard(suggestion);
 	};
 
 	const fetchExactCard = async (name: string) => {
+		isSearching = true;
 		try {
 			const exactUrl = `${NAMED_URL}?exact=${encodeURIComponent(name)}`;
 			const response = await fetch(exactUrl);
@@ -230,10 +237,16 @@
 		} catch (error) {
 			console.error(`Error fetching exact card "${name}":`, error);
 			dispatch('search', []);
+		} finally {
+			isSearching = false;
 		}
 	};
 
 	const performSearch = async () => {
+		if (!searchTerm.trim() || !validateSearchTerm(searchTerm.trim())) {
+			return;
+		}
+		isSearching = true;
 		try {
 			const response = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(searchTerm)}`);
 			if (!response.ok) {
@@ -298,13 +311,39 @@
 		} catch (error) {
 			console.error('Error performing search:', error);
 			dispatch('search', []);
+		} finally {
+			isSearching = false;
 		}
 	};
 
-	const handleKeyPress = async (event: KeyboardEvent) => {
+	const handleKeyDown = async (event: KeyboardEvent) => {
+		if (showDropdown && suggestions.length > 0) {
+			if (event.key === 'ArrowDown') {
+				event.preventDefault();
+				selectedIndex = (selectedIndex + 1) % suggestions.length;
+				return;
+			}
+			if (event.key === 'ArrowUp') {
+				event.preventDefault();
+				selectedIndex = selectedIndex <= 0 ? suggestions.length - 1 : selectedIndex - 1;
+				return;
+			}
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				showDropdown = false;
+				selectedIndex = -1;
+				return;
+			}
+		}
 		if (event.key === 'Enter') {
-			showDropdown = false;
-			await performSearch();
+			event.preventDefault();
+			if (showDropdown && selectedIndex >= 0 && suggestions[selectedIndex]) {
+				await selectSuggestion(suggestions[selectedIndex]);
+			} else {
+				showDropdown = false;
+				selectedIndex = -1;
+				await performSearch();
+			}
 		}
 	};
 </script>
@@ -317,20 +356,30 @@
 				type="text"
 				bind:value={searchTerm}
 				on:input={handleInput}
-				on:keypress={handleKeyPress}
+				on:keydown={handleKeyDown}
 				placeholder="Search for cards..."
+				aria-autocomplete="list"
+				aria-expanded={showDropdown && suggestions.length > 0}
 			/>
-			<button on:click={performSearch}>Search</button>
+			<button on:click={performSearch} disabled={isSearching}>
+				{#if isSearching}
+					<i class="fa-solid fa-spinner fa-spin"></i> Searching...
+				{:else}
+					Search
+				{/if}
+			</button>
 		</div>
 
 		{#if showDropdown && suggestions.length > 0}
 			<div class="dropdown-container" bind:this={dropdownContainer}>
 				<ul class="suggestions-list" role="listbox">
-					{#each suggestions as suggestion}
-						<li role="option" aria-selected="false">
+					{#each suggestions as suggestion, i}
+						<li role="option" aria-selected={i === selectedIndex}>
 							<button
 								type="button"
 								class="suggestion-button"
+								class:selected={i === selectedIndex}
+								on:mouseenter={() => (selectedIndex = i)}
 								on:click={() => selectSuggestion(suggestion)}
 							>
 								{suggestion}
@@ -434,7 +483,8 @@
 		font-size: 0.9rem;
 	}
 
-	.suggestion-button:hover {
+	.suggestion-button:hover,
+	.suggestion-button.selected {
 		background-color: var(--color-bg-hover, #f0f0f0);
 		color: var(--color-text-primary);
 	}

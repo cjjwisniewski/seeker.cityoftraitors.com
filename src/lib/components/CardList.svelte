@@ -771,7 +771,8 @@
 		gap: 1rem;
 		align-items: center;
 		padding: 0.5rem;
-		background: #f3f4f6;
+		background: var(--color-bg-secondary, #f3f4f6);
+		border: 1px solid var(--color-border, transparent);
 		border-radius: 6px;
 	}
 
@@ -786,22 +787,22 @@
 	}
 
 	.finish-label:hover {
-		background-color: #e5e7eb;
+		background-color: var(--color-bg-hover, #e5e7eb);
 	}
 
 	.finish-text {
 		font-size: 0.875rem;
-		color: #374151;
+		color: var(--color-text-secondary, #374151);
 	}
 
 	input[type='radio'] {
-		accent-color: #6b7280;
+		accent-color: var(--color-primary, #6b7280);
 		margin: 0;
 	}
 
 	input[type='radio']:checked + .finish-text {
 		font-weight: 500;
-		color: #1f2937;
+		color: var(--color-text-primary, #1f2937);
 	}
 
 	.finish-text.disabled {
