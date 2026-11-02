@@ -307,14 +307,14 @@
 								<span>{copiedUserId ? 'Copied' : 'Copy'}</span>
 							</button>
 						</div>
-						<span class="info-value user-id">
+						<div class="user-id-pill">
 							{#each userIdChunks as chunk}
 								<span class="id-chunk">{chunk}</span>
 							{/each}
 							{#if userIdChunks.length === 0}
-								{$auth.user?.id || 'N/A'}
+								<span>{$auth.user?.id || 'N/A'}</span>
 							{/if}
-						</span>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -991,20 +991,23 @@
 		word-break: break-word;
 	}
 
-	.user-id {
+	.user-id-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: var(--color-bg-hover, rgba(0, 0, 0, 0.05));
+		border: 1px solid var(--color-border);
+		padding: 0.35rem 0.75rem;
+		border-radius: 9999px;
 		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 		font-size: 0.9rem;
-		font-weight: 500;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.35rem;
-		align-items: center;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		width: fit-content;
+		letter-spacing: 0.02em;
 	}
 
 	.id-chunk {
-		background: var(--color-bg-hover, rgba(0, 0, 0, 0.05));
-		padding: 0.15rem 0.4rem;
-		border-radius: 4px;
 		letter-spacing: 0.05em;
 	}
 

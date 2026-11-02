@@ -163,6 +163,7 @@
 		flavor_text?: string;
 		oracle_text?: string;
 		type_line?: string;
+		printed_name?: string;
 	} | null> => {
 		try {
 			const url = `${SCRYFALL_API}/cards/${encodeURIComponent(setCode)}/${encodeURIComponent(collectorNumber)}/${encodeURIComponent(lang)}`;
@@ -190,13 +191,18 @@
 				data.type_line ||
 				(cardFaces ? cardFaces.map((f: any) => f.printed_type_line || f.type_line || '').filter(Boolean).join(' // ') : '') ||
 				'';
+			const printed_name =
+				data.printed_name ||
+				(cardFaces ? cardFaces.map((f: any) => f.printed_name || f.name).join(' // ') : '') ||
+				data.name;
 
 			return {
 				image_uris: { grid: imageUri, normal: imageUri },
 				card_faces: cardFaces,
 				flavor_text,
 				oracle_text,
-				type_line
+				type_line,
+				printed_name
 			};
 		} catch {
 			return null;
@@ -310,9 +316,12 @@
 							: initialLanguages[0];
 
 					// Cache languages on the matching print to avoid re-fetching later
-					const initialPrint = prints.find(
-						(p: any) => p.set_code === card.set && p.collector_number === card.collector_number
-					);
+					const initialPrint =
+						prints.find(
+							(p: any) =>
+								(p.set_code || '').toLowerCase() === (card.set || '').toLowerCase() &&
+								String(p.collector_number) === String(card.collector_number)
+						) || prints[0];
 					if (initialPrint) initialPrint.languages = initialLanguages;
 
 					cardWithPrints = {
@@ -335,11 +344,17 @@
 					console.error(`Error fetching prints for ${card.name}:`, error);
 				}
 			} else {
-				const availableLanguages = [card.lang || 'en'];
+				const initialLanguages = await getAvailableLanguages(card.set, card.collector_number);
 				const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
-				const selectedLanguage = availableLanguages.includes(preferredLanguage)
+				const selectedLanguage = initialLanguages.includes(preferredLanguage)
 					? preferredLanguage
-					: 'en';
+					: initialLanguages.includes('en')
+						? 'en'
+						: initialLanguages[0] || 'en';
+
+				const defaultPrint = normalizePrint(card, card);
+				defaultPrint.languages = initialLanguages;
+
 				cardWithPrints = {
 					...card,
 					image_uris: {
@@ -347,10 +362,20 @@
 						grid: getCardImageUri(card),
 						normal: getCardImageUri(card)
 					},
-					all_prints: [normalizePrint(card, card)],
-					available_languages: availableLanguages,
+					all_prints: [defaultPrint],
+					prints_loaded: true,
+					available_languages: initialLanguages,
 					selected_language: selectedLanguage
 				};
+
+				if (selectedLanguage !== (card.lang || 'en')) {
+					const localized = await fetchLocalizedData(
+						card.set,
+						card.collector_number,
+						selectedLanguage
+					);
+					if (localized) Object.assign(cardWithPrints, localized);
+				}
 			}
 
 			dispatch('search', [cardWithPrints]);
@@ -385,35 +410,54 @@
 				return;
 			}
 
-			// Initialize search results immediately with their default print;
-			// additional printings are lazy-loaded when the user opens the set selector
-			const cardsWithPrints = data.data.map((rawCard: any) => {
-				const card = normalizeCard(rawCard);
-				const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
-				const availableLanguages = [card.lang || 'en'];
-				let selectedLanguage = availableLanguages.includes(preferredLanguage)
-					? preferredLanguage
-					: 'en';
-				if (!availableLanguages.includes(selectedLanguage))
-					selectedLanguage = availableLanguages[0];
+			// Initialize search results with their default print and available languages.
+			// Eagerly resolve languages for initial results (up to 12 cards) for instant
+			// preferred-language rendering, with subsequent results resolved on demand.
+			const preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
+			const cardsWithPrints = await Promise.all(
+				data.data.map(async (rawCard: any, index: number) => {
+					const card = normalizeCard(rawCard);
 
-				const cardImg = getCardImageUri(card);
-				const defaultPrint = normalizePrint(card, card);
-				defaultPrint.languages = availableLanguages;
+					let initialLanguages: string[] = [card.lang || 'en'];
+					if (index < 12) {
+						initialLanguages = await getAvailableLanguages(card.set, card.collector_number);
+					}
 
-				return {
-					...card,
-					image_uris: {
-						...card.image_uris,
-						grid: cardImg,
-						normal: cardImg
-					},
-					all_prints: [defaultPrint],
-					prints_loaded: !card.prints_search_uri,
-					available_languages: availableLanguages,
-					selected_language: selectedLanguage
-				};
-			});
+					let selectedLanguage = initialLanguages.includes(preferredLanguage)
+						? preferredLanguage
+						: initialLanguages.includes('en')
+							? 'en'
+							: initialLanguages[0] || 'en';
+
+					const cardImg = getCardImageUri(card);
+					const defaultPrint = normalizePrint(card, card);
+					defaultPrint.languages = initialLanguages;
+
+					const cardWithPrints = {
+						...card,
+						image_uris: {
+							...card.image_uris,
+							grid: cardImg,
+							normal: cardImg
+						},
+						all_prints: [defaultPrint],
+						prints_loaded: !card.prints_search_uri,
+						available_languages: initialLanguages,
+						selected_language: selectedLanguage
+					};
+
+					if (selectedLanguage !== (card.lang || 'en')) {
+						const localized = await fetchLocalizedData(
+							card.set,
+							card.collector_number,
+							selectedLanguage
+						);
+						if (localized) Object.assign(cardWithPrints, localized);
+					}
+
+					return cardWithPrints;
+				})
+			);
 
 			dispatch('search', cardsWithPrints);
 		} catch (error) {

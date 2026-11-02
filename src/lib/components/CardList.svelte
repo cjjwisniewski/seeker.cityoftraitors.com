@@ -186,6 +186,7 @@
 		card.power = newPrint.power ?? card.power;
 		card.toughness = newPrint.toughness ?? card.toughness;
 		card.loyalty = newPrint.loyalty ?? card.loyalty;
+		card.printed_name = undefined;
 
 		const preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
 		const availableFinishes = newPrint.finishes || [];
@@ -251,6 +252,18 @@
 				cardData.type_line ||
 				(cardFaces ? cardFaces.map((f) => f.printed_type_line || f.type_line || '').filter(Boolean).join(' // ') : '') ||
 				currentPrint.type_line;
+			const printed_name =
+				cardData.printed_name ||
+				(cardFaces ? cardFaces.map((f) => f.printed_name || f.name).join(' // ') : '') ||
+				card.name;
+
+			card.selected_language = language;
+			card.image_uris = { grid: imageUri, normal: imageUri };
+			card.flavor_text = flavor_text;
+			card.oracle_text = oracle_text;
+			card.type_line = type_line;
+			card.card_faces = cardFaces || currentPrint.card_faces;
+			card.printed_name = printed_name;
 
 			sortedCards = sortedCards.map((c) => {
 				if (c.id === card.id) {
@@ -264,7 +277,8 @@
 						oracle_text,
 						type_line,
 						mana_cost: currentPrint.mana_cost,
-						card_faces: cardFaces || currentPrint.card_faces
+						card_faces: cardFaces || currentPrint.card_faces,
+						printed_name
 					};
 				}
 				return c;
@@ -280,13 +294,13 @@
 		);
 		if (!print) return;
 
-		if (!print.languages) {
+		if (!print.languages || print.languages.length <= 1) {
 			print.languages = await getAvailableLanguages(print.set_code, print.collector_number);
 			card.available_languages = print.languages;
-			sortedCards = [...sortedCards];
+			sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...c, ...card } : c));
 		} else if (card.available_languages !== print.languages) {
 			card.available_languages = print.languages;
-			sortedCards = [...sortedCards];
+			sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...c, ...card } : c));
 		}
 	}
 
@@ -432,6 +446,41 @@
 		selectedFinishes = { ...selectedFinishes };
 	}
 
+	const languageFetchPromises = new Map();
+
+	async function ensureCardLanguages(card) {
+		if (!card || !card.set || !card.collector_number) return;
+		if (card.available_languages && card.available_languages.length > 1) return;
+		const key = `${card.id || ''}:${card.set}:${card.collector_number}`;
+		if (languageFetchPromises.has(key)) return;
+
+		const fetchPromise = (async () => {
+			try {
+				const langs = await getAvailableLanguages(card.set, card.collector_number);
+				if (langs && langs.length > 0) {
+					card.available_languages = langs;
+					const currentPrint = card.all_prints?.find(
+						(p) => p.set_code === card.set && p.collector_number === card.collector_number
+					);
+					if (currentPrint) currentPrint.languages = langs;
+
+					const preferredLang = $auth.user?.settings?.preferredLanguage || 'en';
+					if (!card.selected_language || card.selected_language === 'en') {
+						if (langs.includes(preferredLang) && preferredLang !== 'en') {
+							card.selected_language = preferredLang;
+							await handleLanguageChange(card, preferredLang);
+						}
+					}
+					sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...c, ...card } : c));
+				}
+			} catch (err) {
+				console.error('Error ensuring card languages:', err);
+			}
+		})();
+
+		languageFetchPromises.set(key, fetchPromise);
+	}
+
 	$: sortedCards = cards.map((card) => {
 		if (!card.all_prints) return card;
 
@@ -440,6 +489,16 @@
 			all_prints: [...card.all_prints].sort((a, b) => (a.set || '').localeCompare(b.set || ''))
 		};
 	});
+
+	$: {
+		if (sortedCards && sortedCards.length > 0) {
+			for (const card of sortedCards) {
+				if (!card.available_languages || card.available_languages.length <= 1) {
+					ensureCardLanguages(card);
+				}
+			}
+		}
+	}
 
 	$: {
 		const preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
@@ -549,7 +608,7 @@
 					<div class="card-details">
 						<div class="card-header-bar">
 							<div class="title-and-mana">
-								<h3 class="card-name">{card.name}</h3>
+								<h3 class="card-name">{card.printed_name || card.name}</h3>
 								{#if card.mana_cost}
 									<div class="mana-cost-display">
 										{#each parseManaCost(card.mana_cost) as m}
