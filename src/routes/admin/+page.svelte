@@ -13,10 +13,11 @@
 	} from '$env/static/public';
 
 	// Define Role ID
-	const ADMIN_ROLE_ID = '1352632325640294411'; // Ensure this matches your setup
+	const ADMIN_ROLE_ID = '1352632325640294411';
 
 	// State variables
 	let userTables = [];
+	let userSearchQuery = '';
 	let expandedTable = null;
 	let expandedTableData = [];
 	let loading = true; // Loading state for user tables list
@@ -39,12 +40,10 @@
 
 	// Redirect if unauthorized after loading finishes
 	$: if (showUnauthorized) {
-		console.warn('Admin Page: User is not authorized. Redirecting...');
-		// Optional: Redirect to home or login with an error message
-		// goto('/?error=unauthorized');
+		console.warn('Admin Page: User is not authorized.');
 	}
 
-	// --- Helper function to format date ---
+	// Helper function to format date
 	function formatLocalDate(utcTimestamp) {
 		if (!utcTimestamp) return 'Never';
 		const date = new Date(utcTimestamp);
@@ -54,21 +53,30 @@
 		});
 	}
 
-	// --- API Call Functions (Now use imported fetchWithAuth) ---
+	// Filtered users for admin management
+	$: filteredUserTables = userTables.filter((table) => {
+		if (!userSearchQuery.trim()) return true;
+		const q = userSearchQuery.toLowerCase();
+		return (
+			(table.username && table.username.toLowerCase().includes(q)) ||
+			(table.userId && table.userId.toLowerCase().includes(q)) ||
+			(table.membershipTier && table.membershipTier.toLowerCase().includes(q))
+		);
+	});
+
+	// --- API Call Functions ---
 
 	async function loadUserTables() {
-		if (!isAuthorized) return; // Don't fetch if not authorized
+		if (!isAuthorized) return;
 		loading = true;
 		error = null;
 		try {
-			// Use imported fetchWithAuth
 			const response = await fetchWithAuth(PUBLIC_GET_USER_TABLES_FUNCTION_URL);
 
-			// fetchWithAuth returns undefined if it redirects (e.g., on 401)
 			if (!response) {
 				error = 'Authentication failed while fetching user tables.';
 				console.error(error);
-				return; // Stop execution
+				return;
 			}
 
 			if (!response.ok) {
@@ -85,22 +93,18 @@
 	}
 
 	async function loadTableData(targetUserId) {
-		if (!isAuthorized) return; // Don't fetch if not authorized
+		if (!isAuthorized) return;
 		tableDataLoading = true;
-		error = null; // Clear general error when loading specific table data
+		error = null;
 		expandedTableData = [];
 		try {
-			// Backend needs to accept targetUserId and verify admin access based on the token
 			const urlWithQuery = `${PUBLIC_GET_SEEKING_LIST_FUNCTION_URL}?targetUserId=${encodeURIComponent(targetUserId)}`;
-
-			// Use imported fetchWithAuth
 			const response = await fetchWithAuth(urlWithQuery);
 
-			// fetchWithAuth returns undefined if it redirects (e.g., on 401)
 			if (!response) {
 				error = `Authentication failed while fetching data for user ${targetUserId}.`;
 				console.error(error);
-				return; // Stop execution
+				return;
 			}
 
 			if (!response.ok) {
@@ -113,8 +117,8 @@
 			expandedTableData = responseData.cards || [];
 		} catch (e) {
 			console.error(`Error loading table data for ${targetUserId}:`, e);
-			error = e.message; // Display the error
-			expandedTableData = []; // Ensure it's reset on error
+			error = e.message;
+			expandedTableData = [];
 		} finally {
 			tableDataLoading = false;
 		}
@@ -146,22 +150,18 @@
 		if (!userToDelete || !isAuthorized) return;
 		const targetUserId = userToDelete;
 		isDeletingUser = true;
-		error = null; // Clear error before attempt
+		error = null;
 		try {
-			// Backend needs to accept targetUserIdToDelete in body and verify admin access based on token
 			const requestBody = { targetUserIdToDelete: targetUserId };
-
-			// Use imported fetchWithAuth
 			const response = await fetchWithAuth(PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, {
 				method: 'DELETE',
-				body: JSON.stringify(requestBody) // Send target ID in body
+				body: JSON.stringify(requestBody)
 			});
 
-			// fetchWithAuth returns undefined if it redirects (e.g., on 401)
 			if (!response) {
 				error = `Authentication failed while attempting to delete user ${targetUserId}.`;
 				console.error(error);
-				return; // Stop execution
+				return;
 			}
 
 			if (!response.ok) {
@@ -171,9 +171,7 @@
 				);
 			}
 
-			// Refresh user tables list after successful deletion
 			await loadUserTables();
-			// Reset expansion state if the deleted user was expanded
 			if (expandedTable === targetUserId) {
 				expandedTable = null;
 				expandedTableData = [];
@@ -189,18 +187,16 @@
 	}
 
 	async function loadSystemStatus() {
-		if (!isAuthorized) return; // Don't fetch if not authorized
+		if (!isAuthorized) return;
 		statusLoading = true;
 		statusError = null;
 		try {
-			// Use imported fetchWithAuth
 			const response = await fetchWithAuth(PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL);
 
-			// fetchWithAuth returns undefined if it redirects (e.g., on 401)
 			if (!response) {
 				statusError = 'Authentication failed while fetching system status.';
 				console.error(statusError);
-				return; // Stop execution
+				return;
 			}
 
 			if (!response.ok) {
@@ -270,11 +266,10 @@
 		}
 	}
 
-	// --- Statistics Logic ---
+	// Statistics Logic
 	$: totalUsers = userTables.length;
 	$: totalItems = userTables.reduce((sum, table) => sum + (table.itemCount || 0), 0);
 
-	// Estimates: CT = 2s/item, TCG = 20s/item, eBay = 1s/item, Mana Pool = 1s/item
 	$: estimatedCTTimeSeconds = totalItems * 2;
 	$: estimatedTCGTimeSeconds = totalItems * 20;
 	$: estimatedEbayTimeSeconds = totalItems * 1;
@@ -304,36 +299,43 @@
 		return parts.join(' ');
 	}
 
-	// --- Lifecycle ---
-	// Load data only when authorization status is confirmed
+	// Lifecycle
 	$: if (!authLoading && isAuthorized) {
-		console.log('Admin Page: Authorized, loading initial data...');
 		loadUserTables();
 		loadSystemStatus();
 		loadBanner();
 	} else if (!authLoading && !isAuthorized) {
-		console.log('Admin Page: Not authorized or not authenticated.');
-		// Error/redirect is handled by reactive logic above
-		loading = false; // Ensure loading states reflect reality
+		loading = false;
 		statusLoading = false;
 	}
 </script>
+
+<svelte:head>
+	<title>Admin Console - Seeker</title>
+</svelte:head>
 
 <svelte:window on:keydown={showDeleteModal ? handleKeydown : null} />
 
 {#if authLoading}
 	<div class="loading-container">
-		<p>Checking authorization...</p>
+		<div class="loading-spinner"></div>
+		<p>Checking admin authorization...</p>
 	</div>
 {:else if showUnauthorized}
 	<div class="unauthorized-container">
-		<h2>Unauthorized</h2>
-		<p>You do not have permission to access the admin panel.</p>
-		<a href="/">Go to Home</a>
+		<div class="unauthorized-icon-badge">
+			<i class="fa-solid fa-lock"></i>
+		</div>
+		<h2>Restricted Access</h2>
+		<p>You do not have administrative privileges to view this console.</p>
+		<a href="/" class="return-home-btn">
+			<i class="fa-solid fa-arrow-left"></i>
+			<span>Return to Home</span>
+		</a>
 	</div>
 {:else}
-	<!-- Only render content if authorized -->
 	<div class="admin-container">
+		<!-- Workspace Toolbar -->
 		<div class="workspace-toolbar">
 			<div class="toolbar-left">
 				<div class="admin-badge">
@@ -343,14 +345,14 @@
 				{#if user}
 					<span class="user-pill" title="Logged in as {user.username}">
 						<i class="fa-solid fa-user-gear"></i>
-						<strong>{user.username}</strong>
+						<span>{user.username}</span>
 					</span>
 				{/if}
 			</div>
 
 			<div class="toolbar-right">
 				{#if systemStatus}
-					<div class="status-indicator-pill" title="System Status: {systemStatus.status || 'Active'}">
+					<div class="status-indicator-pill" title="System Status: {systemStatus.state || 'Active'}">
 						<span class="pulse-dot"></span>
 						<span>System Healthy</span>
 					</div>
@@ -366,7 +368,7 @@
 						loadSystemStatus();
 						loadBanner();
 					}}
-					title="Refresh Admin Data"
+					title="Refresh All Admin Data"
 				>
 					<i class="fa-solid fa-rotate {loading || statusLoading || bannerLoading ? 'fa-spin' : ''}"></i>
 				</button>
@@ -374,320 +376,512 @@
 		</div>
 
 		<div class="admin-content">
-			<!-- Statistics Section -->
+			<!-- Section 1: Overview Statistics -->
 			<section class="admin-section">
-				<h2>Overview Statistics</h2>
+				<div class="section-title-row">
+					<div class="section-title-icon">
+						<i class="fa-solid fa-chart-pie"></i>
+					</div>
+					<h2>Overview Statistics</h2>
+				</div>
+
 				{#if loading}
-					<p>Calculating stats...</p>
+					<div class="section-loading">
+						<div class="loading-spinner small"></div>
+						<span>Calculating stats...</span>
+					</div>
 				{:else}
 					<div class="stats-grid">
 						<div class="stat-card">
-							<h3>Total Users</h3>
+							<div class="stat-card-header">
+								<span class="stat-title">Total Users</span>
+								<div class="stat-icon-badge users">
+									<i class="fa-solid fa-users"></i>
+								</div>
+							</div>
 							<div class="stat-value">{totalUsers}</div>
+							<div class="stat-sub">Registered accounts</div>
 						</div>
+
 						<div class="stat-card">
-							<h3>Total Items</h3>
+							<div class="stat-card-header">
+								<span class="stat-title">Total Items</span>
+								<div class="stat-icon-badge items">
+									<i class="fa-solid fa-layer-group"></i>
+								</div>
+							</div>
 							<div class="stat-value">{totalItems}</div>
+							<div class="stat-sub">Across all wishlists</div>
 						</div>
+
 						<div class="stat-card">
-							<h3>Avg. CT Time</h3>
+							<div class="stat-card-header">
+								<span class="stat-title">CardTrader Time</span>
+								<div class="stat-icon-badge ct">
+									<i class="fa-solid fa-cube"></i>
+								</div>
+							</div>
 							<div class="stat-value">{formatDuration(estimatedCTTimeSeconds)}</div>
-							<div class="stat-sub">@ 2s/item</div>
+							<div class="stat-sub">Est. @ 2s / card</div>
 						</div>
+
 						<div class="stat-card">
-							<h3>Avg. TCG Time</h3>
+							<div class="stat-card-header">
+								<span class="stat-title">TCGPlayer Time</span>
+								<div class="stat-icon-badge tcg">
+									<i class="fa-solid fa-store"></i>
+								</div>
+							</div>
 							<div class="stat-value">{formatDuration(estimatedTCGTimeSeconds)}</div>
-							<div class="stat-sub">@ 20s/item</div>
+							<div class="stat-sub">Est. @ 20s / card</div>
 						</div>
+
 						<div class="stat-card">
-							<h3>Avg. eBay Time</h3>
+							<div class="stat-card-header">
+								<span class="stat-title">eBay Time</span>
+								<div class="stat-icon-badge ebay">
+									<i class="fa-brands fa-ebay"></i>
+								</div>
+							</div>
 							<div class="stat-value">{formatDuration(estimatedEbayTimeSeconds)}</div>
-							<div class="stat-sub">@ 1s/item</div>
+							<div class="stat-sub">Est. @ 1s / card</div>
 						</div>
+
 						<div class="stat-card">
-							<h3>Avg. Mana Pool Time</h3>
+							<div class="stat-card-header">
+								<span class="stat-title">Mana Pool Time</span>
+								<div class="stat-icon-badge manapool">
+									<i class="fa-solid fa-droplet"></i>
+								</div>
+							</div>
 							<div class="stat-value">{formatDuration(estimatedManapoolTimeSeconds)}</div>
-							<div class="stat-sub">@ 1s/item</div>
+							<div class="stat-sub">Est. @ 1s / card</div>
 						</div>
 					</div>
 				{/if}
 			</section>
 
+			<!-- Section 2: Notification Banner -->
 			<section class="admin-section">
-				<div class="section-header">
+				<div class="section-title-row">
+					<div class="section-title-icon">
+						<i class="fa-solid fa-bullhorn"></i>
+					</div>
 					<h2>Notification Banner</h2>
 				</div>
+
 				{#if bannerLoading}
-					<p>Loading banner settings...</p>
+					<div class="section-loading">
+						<div class="loading-spinner small"></div>
+						<span>Loading banner settings...</span>
+					</div>
 				{:else}
 					<div class="banner-manager">
 						<div class="form-group">
-							<label for="banner-message">Message</label>
+							<label for="banner-message">Banner Message</label>
 							<input
 								id="banner-message"
 								type="text"
 								bind:value={bannerMessage}
-								placeholder="Enter banner message..."
+								placeholder="e.g. Scheduled maintenance in 15 minutes..."
+								class="styled-input"
 							/>
 						</div>
+
 						<div class="form-row">
 							<div class="form-group">
-								<label for="banner-type">Type</label>
-								<select id="banner-type" bind:value={bannerType}>
-									<option value="info">Info (Blue)</option>
-									<option value="warning">Warning (Amber)</option>
-									<option value="error">Error (Red)</option>
-								</select>
+								<label for="banner-type">Banner Alert Style</label>
+								<div class="select-wrapper">
+									<select id="banner-type" bind:value={bannerType} class="styled-select">
+										<option value="info">Info (Blue)</option>
+										<option value="warning">Warning (Amber)</option>
+										<option value="error">Error (Red)</option>
+									</select>
+									<i class="fa-solid fa-chevron-down select-chevron"></i>
+								</div>
 							</div>
-							<div class="form-group checkbox">
-								<label>
-									<input type="checkbox" bind:checked={bannerEnabled} />
-									Enabled
-								</label>
+
+							<div class="form-group toggle-group">
+								<label class="toggle-control-label" for="banner-toggle-switch">Display Active</label>
+								<div class="toggle-wrapper">
+									<label class="toggle-switch" id="banner-toggle-switch">
+										<input type="checkbox" bind:checked={bannerEnabled} />
+										<span class="slider round"></span>
+									</label>
+									<span class="toggle-status-text {bannerEnabled ? 'active' : ''}">
+										{bannerEnabled ? 'Visible' : 'Hidden'}
+									</span>
+								</div>
 							</div>
 						</div>
-						<button class="save-btn" on:click={saveBanner} disabled={bannerSaving}>
-							{bannerSaving ? 'Saving...' : 'Save Banner Settings'}
-						</button>
-						{#if bannerStatusMessage}
-							<div class="banner-feedback {bannerStatusType}" role="status">
-								{bannerStatusMessage}
-							</div>
-						{/if}
+
+						<div class="banner-actions">
+							<button class="save-btn" on:click={saveBanner} disabled={bannerSaving}>
+								<i class="fa-solid {bannerSaving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}"></i>
+								<span>{bannerSaving ? 'Saving...' : 'Save Banner'}</span>
+							</button>
+
+							{#if bannerStatusMessage}
+								<div class="banner-feedback {bannerStatusType}" role="status">
+									<i class="fa-solid {bannerStatusType === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
+									<span>{bannerStatusMessage}</span>
+								</div>
+							{/if}
+						</div>
 					</div>
 				{/if}
 			</section>
 
+			<!-- Section 3: System Status -->
 			<section class="admin-section">
-				<div class="section-header">
-					<h2>System Status</h2>
-					<button class="refresh-btn" on:click={loadSystemStatus} disabled={statusLoading}>
-						<i class="fa-solid fa-arrows-rotate"></i>
+				<div class="section-title-row">
+					<div class="section-title-icon">
+						<i class="fa-solid fa-heart-pulse"></i>
+					</div>
+					<h2>System Status &amp; Microservices</h2>
+					<button
+						class="header-refresh-btn"
+						on:click={loadSystemStatus}
+						disabled={statusLoading}
+						title="Refresh system status"
+					>
+						<i class="fa-solid fa-arrows-rotate {statusLoading ? 'fa-spin' : ''}"></i>
 					</button>
 				</div>
+
 				{#if statusLoading}
-					<p>Loading system status...</p>
+					<div class="section-loading">
+						<div class="loading-spinner small"></div>
+						<span>Querying system status...</span>
+					</div>
 				{:else if statusError}
-					<p class="error">{statusError}</p>
+					<div class="error-banner">
+						<i class="fa-solid fa-triangle-exclamation"></i>
+						<span>{statusError}</span>
+					</div>
 				{:else if systemStatus}
-					<div class="status-grid">
-						<div class="status-item">
-							<h3>State</h3>
-							<span class="status-badge {systemStatus.state.toLowerCase()}">
-								{systemStatus.state}
+					<div class="status-summary-row">
+						<div class="status-chip">
+							<span class="chip-label">State</span>
+							<span class="status-badge {systemStatus.state?.toLowerCase() || 'unknown'}">
+								<span class="dot"></span>
+								{systemStatus.state || 'N/A'}
 							</span>
 						</div>
-						<div class="status-item">
-							<h3>Availability</h3>
-							<span class="status-badge {systemStatus.availability.toLowerCase()}">
-								{systemStatus.availability}
+						<div class="status-chip">
+							<span class="chip-label">Availability</span>
+							<span class="status-badge {systemStatus.availability?.toLowerCase() || 'unknown'}">
+								<span class="dot"></span>
+								{systemStatus.availability || 'N/A'}
 							</span>
 						</div>
-						<div class="status-item">
-							<h3>Last Checked</h3>
-							<span>{formatLocalDate(systemStatus.last_checked)}</span>
+						<div class="status-chip">
+							<span class="chip-label">Last Checked</span>
+							<span class="chip-value">
+								<i class="fa-regular fa-clock"></i>
+								{formatLocalDate(systemStatus.last_checked)}
+							</span>
 						</div>
+					</div>
 
-						{#if systemStatus.metrics}
-							<div class="status-item metrics">
-								<h3>Metrics</h3>
-								<ul>
-									{#each systemStatus.metrics as metric}
-										<li>{metric.name}: {metric.value}</li>
-									{/each}
-								</ul>
-							</div>
-						{/if}
-
-						{#if systemStatus.functions}
-							<div class="status-item functions">
-								<h3>Function Status</h3>
-								<div class="function-grid">
-									{#each systemStatus.functions as func}
-										{#if func.name !== 'callback'}
-											<!-- Add this condition -->
-											<div class="function-status">
-												<div class="function-header">
-													<span class="function-name">{func.name}</span>
-													<span class="status-badge {func.status}">
-														{func.status}
+					{#if systemStatus.functions && systemStatus.functions.length > 0}
+						<div class="subsection">
+							<h3 class="subsection-title">Azure Functions</h3>
+							<div class="function-grid">
+								{#each systemStatus.functions as func}
+									{#if func.name !== 'callback'}
+										<div class="function-card">
+											<div class="func-header">
+												<span class="func-name">{func.name}</span>
+												<span class="status-badge {func.status}">
+													<span class="dot"></span>
+													{func.status}
+												</span>
+											</div>
+											<div class="func-details">
+												{#if func.response_time}
+													<span class="metric-pill">
+														<i class="fa-solid fa-stopwatch"></i>
+														{func.response_time}
 													</span>
-												</div>
-												<div class="function-details">
-													{#if func.response_time}
-														<span class="response-time">
-															<i class="fa-solid fa-clock"></i>
-															{func.response_time}
-														</span>
-													{/if}
-													{#if func.status_code}
-														<span class="status-code">
-															<i class="fa-solid fa-signal"></i>
-															{func.status_code}
-														</span>
-													{/if}
-													{#if func.error}
-														<span class="error-message">
-															<i class="fa-solid fa-triangle-exclamation"></i>
-															{func.error}
-														</span>
-													{/if}
-												</div>
-											</div>
-										{/if}
-										<!-- Close the condition -->
-									{/each}
-								</div>
-							</div>
-						{/if}
-
-						{#if systemStatus.queues && systemStatus.queues.length > 0}
-							<div class="status-item functions">
-								<h3>Queue Health &amp; Backlog</h3>
-								<div class="function-grid">
-									{#each systemStatus.queues as q}
-										<div class="function-status">
-											<div class="function-header">
-												<span class="function-name">{q.label || q.name}</span>
-												<span class="status-badge {q.poison_messages > 0 ? 'degraded' : 'running'}">
-													{q.poison_messages > 0 ? `${q.poison_messages} poison` : 'healthy'}
-												</span>
-											</div>
-											<div class="function-details">
-												<span class="response-time">
-													<i class="fa-solid fa-layer-group"></i>
-													Queued: {q.active_messages}
-												</span>
-												{#if q.poison_messages > 0}
-													<span class="error-message">
-														<i class="fa-solid fa-skull-crossbones"></i>
-														Poison: {q.poison_messages}
+												{/if}
+												{#if func.status_code}
+													<span class="metric-pill">
+														<i class="fa-solid fa-signal"></i>
+														{func.status_code}
+													</span>
+												{/if}
+												{#if func.error}
+													<span class="error-pill">
+														<i class="fa-solid fa-triangle-exclamation"></i>
+														{func.error}
 													</span>
 												{/if}
 											</div>
 										</div>
-									{/each}
-								</div>
+									{/if}
+								{/each}
 							</div>
-						{/if}
-					</div>
+						</div>
+					{/if}
+
+					{#if systemStatus.queues && systemStatus.queues.length > 0}
+						<div class="subsection">
+							<h3 class="subsection-title">Queue Health &amp; Backlog</h3>
+							<div class="function-grid">
+								{#each systemStatus.queues as q}
+									<div class="function-card">
+										<div class="func-header">
+											<span class="func-name">{q.label || q.name}</span>
+											<span class="status-badge {q.poison_messages > 0 ? 'degraded' : 'running'}">
+												<span class="dot"></span>
+												{q.poison_messages > 0 ? `${q.poison_messages} poison` : 'healthy'}
+											</span>
+										</div>
+										<div class="func-details">
+											<span class="metric-pill">
+												<i class="fa-solid fa-layer-group"></i>
+												Queued: {q.active_messages}
+											</span>
+											{#if q.poison_messages > 0}
+												<span class="error-pill">
+													<i class="fa-solid fa-skull-crossbones"></i>
+													Poison: {q.poison_messages}
+												</span>
+											{/if}
+										</div>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
 				{/if}
 			</section>
 
+			<!-- Section 4: User Management -->
 			<section class="admin-section">
-				<h2>User Management</h2>
+				<div class="section-title-row">
+					<div class="section-title-icon">
+						<i class="fa-solid fa-users-gear"></i>
+					</div>
+					<h2>User Management</h2>
+					<span class="user-count-badge">{filteredUserTables.length} {filteredUserTables.length === 1 ? 'user' : 'users'}</span>
+				</div>
+
+				<!-- User Filter Bar -->
+				<div class="user-filter-bar">
+					<div class="search-input-wrapper">
+						<i class="fa-solid fa-magnifying-glass search-icon"></i>
+						<input
+							type="text"
+							bind:value={userSearchQuery}
+							placeholder="Filter by username, user ID, or tier..."
+							class="user-search-input"
+						/>
+						{#if userSearchQuery}
+							<button class="clear-search-btn" on:click={() => (userSearchQuery = '')} title="Clear search">
+								<i class="fa-solid fa-xmark"></i>
+							</button>
+						{/if}
+					</div>
+				</div>
+
 				{#if loading}
-					<p>Loading user data...</p>
+					<div class="section-loading">
+						<div class="loading-spinner small"></div>
+						<span>Loading registered user directories...</span>
+					</div>
 				{:else if error}
-					<p class="error">{error}</p>
+					<div class="error-banner">
+						<i class="fa-solid fa-triangle-exclamation"></i>
+						<span>{error}</span>
+					</div>
+				{:else if filteredUserTables.length === 0}
+					<div class="empty-state">
+						<i class="fa-solid fa-user-slash"></i>
+						<p>No user accounts found matching "{userSearchQuery}".</p>
+					</div>
 				{:else}
-					<div class="user-tables">
-						{#each userTables as table}
-							<div class="user-table">
-								<div class="table-header">
-									<h3>
-										<div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-											{table.username}
-											<span
-												class="tier-badge tier-{(table.membershipTier || 'Basic').toLowerCase()}"
-												style="font-size: 0.7rem; padding: 0.15rem 0.6rem;"
-											>
-												<i
-													class="fa-solid {table.membershipTier === 'Premium' ||
-													table.membershipTier === 'Legacy'
-														? 'fa-crown'
-														: 'fa-certificate'}"
-												></i>
-												{table.membershipTier || 'Basic'}
-											</span>
-											<span class="text-muted" style="font-size: 0.85rem; font-weight: 500;"
-												>({table.userId})</span
-											>
+					<div class="user-accordion-list">
+						{#each filteredUserTables as table}
+							<div class="user-card {expandedTable === table.userId ? 'is-expanded' : ''}">
+								<div class="user-card-header">
+									<div class="user-main-info">
+										<div class="user-avatar-badge">
+											<i class="fa-solid fa-user"></i>
 										</div>
-										<div
-											class="last-login"
-											style="font-size: 0.75rem; font-weight: 400; color: var(--color-text-secondary); margin-top: 0.25rem;"
-										>
-											Last Activity: {formatLocalDate(table.lastAccessed)}
+										<div class="user-titles">
+											<div class="user-name-line">
+												<span class="user-name">{table.username}</span>
+												<span class="tier-badge tier-{(table.membershipTier || 'Basic').toLowerCase()}">
+													<i
+														class="fa-solid {table.membershipTier === 'Premium' ||
+														table.membershipTier === 'Legacy'
+															? 'fa-crown'
+															: 'fa-certificate'}"
+													></i>
+													{table.membershipTier || 'Basic'}
+												</span>
+												<span class="user-id-chip">{table.userId}</span>
+											</div>
+											<div class="user-meta-line">
+												<span>
+													<i class="fa-regular fa-clock"></i>
+													Last Activity: {formatLocalDate(table.lastAccessed)}
+												</span>
+											</div>
 										</div>
-									</h3>
-									<span class="item-count">{table.itemCount} items</span>
-									<div class="table-actions">
+									</div>
+
+									<div class="user-actions">
+										<span class="item-count-chip">
+											<i class="fa-solid fa-layer-group"></i>
+											{table.itemCount} items
+										</span>
 										<button
 											class="expand-btn"
 											on:click={() => {
 												if (expandedTable === table.userId) {
 													expandedTable = null;
-													expandedTableData = []; // Reset data on collapse
+													expandedTableData = [];
 												} else {
 													expandedTable = table.userId;
-													loadTableData(table.userId); // Fetch data on expand
+													loadTableData(table.userId);
 												}
 											}}
 											disabled={!token}
 										>
-											{expandedTable === table.userId ? 'Collapse' : 'Expand'}
+											<i class="fa-solid {expandedTable === table.userId ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+											<span>{expandedTable === table.userId ? 'Collapse' : 'Expand'}</span>
 										</button>
 										<button
-											class="delete-btn"
+											class="delete-user-btn"
 											on:click={() => promptDeleteAccount(table.userId)}
 											disabled={!token}
+											title="Delete user account and all wishlist data"
 										>
-											Delete
+											<i class="fa-solid fa-trash-can"></i>
 										</button>
 									</div>
 								</div>
+
+								<!-- Expanded Seeking Table -->
 								{#if expandedTable === table.userId}
-									<div class="table-content">
+									<div class="user-table-wrapper">
 										{#if tableDataLoading}
-											<p>Loading table data...</p>
+											<div class="section-loading">
+												<div class="loading-spinner small"></div>
+												<span>Loading seeking list...</span>
+											</div>
 										{:else if error && expandedTable === table.userId}
-											<p class="error">{error}</p>
+											<div class="error-banner">
+												<i class="fa-solid fa-triangle-exclamation"></i>
+												<span>{error}</span>
+											</div>
 										{:else if expandedTableData.length === 0}
-											<p>No cards found in seeking list.</p>
+											<div class="empty-table-state">
+												<i class="fa-solid fa-box-open"></i>
+												<p>No cards found in this user's seeking list.</p>
+											</div>
 										{:else}
-											<table>
-												<thead>
-													<tr>
-														<th>Name</th>
-														<th>Set</th>
-														<th>Number</th>
-														<th>Language</th>
-														<th>Finish</th>
-														<th>CardTrader</th>
-														<th>TCGPlayer</th>
-														<th>eBay</th>
-														<th>Mana Pool</th>
-														<th>Price Cap</th>
-													</tr>
-												</thead>
-												<tbody>
-													{#each expandedTableData as card}
+											<div class="table-scroll-container">
+												<table class="modern-table">
+													<thead>
 														<tr>
-															<td data-label="Name">{card.name}</td>
-															<td data-label="Set">{card.set_code.toUpperCase()}</td>
-															<td data-label="Number">{card.collector_number}</td>
-															<td data-label="Language">{card.language.toUpperCase()}</td>
-															<td data-label="Finish">{card.finish}</td>
-															<td data-label="CardTrader">
-																{card.cardtrader_stock ? formatCents(card.cardtrader_low_price) : 'Out of Stock'}
-															</td>
-															<td data-label="TCGPlayer">
-																{card.tcgplayer_stock ? formatDollars(card.tcgplayer_low_price) : 'Out of Stock'}
-															</td>
-															<td data-label="eBay">
-																{card.ebay_stock ? formatCents(card.ebay_low_price) : 'Out of Stock'}
-															</td>
-															<td data-label="Mana Pool">
-																{card.manapool_stock ? formatCents(card.manapool_low_price) : 'Out of Stock'}
-															</td>
-															<td data-label="Price Cap">
-																{formatCents(card.max_price_cap)}
-															</td>
+															<th class="col-name">Card Name</th>
+															<th class="col-set">Set</th>
+															<th class="col-num">#</th>
+															<th class="col-lang">Lang</th>
+															<th class="col-finish">Finish</th>
+															<th class="col-vendor">CardTrader</th>
+															<th class="col-vendor">TCGPlayer</th>
+															<th class="col-vendor">eBay</th>
+															<th class="col-vendor">Mana Pool</th>
+															<th class="col-cap">Price Cap</th>
 														</tr>
-													{/each}
-												</tbody>
-											</table>
+													</thead>
+													<tbody>
+														{#each expandedTableData as card}
+															<tr>
+																<td class="col-name" data-label="Name">
+																	<span class="card-name-text">{card.name}</span>
+																</td>
+																<td class="col-set" data-label="Set">
+																	<div class="set-cell">
+																		<img
+																			class="set-icon"
+																			src="https://svgs.scryfall.io/sets/{card.set_code?.toLowerCase()}.svg"
+																			alt="{card.set_code}"
+																			loading="lazy"
+																		/>
+																		<span class="set-code">{card.set_code?.toUpperCase()}</span>
+																	</div>
+																</td>
+																<td class="col-num" data-label="Number">
+																	<span class="collector-number">{card.collector_number}</span>
+																</td>
+																<td class="col-lang" data-label="Language">
+																	<span class="lang-pill">{card.language?.toUpperCase()}</span>
+																</td>
+																<td class="col-finish" data-label="Finish">
+																	{#if card.finish === 'foil'}
+																		<span class="finish-pill foil">
+																			<i class="fa-solid fa-sparkles"></i> Foil
+																		</span>
+																	{:else}
+																		<span class="finish-pill nonfoil">Nonfoil</span>
+																	{/if}
+																</td>
+																<td class="col-vendor" data-label="CardTrader">
+																	{#if card.cardtrader_stock}
+																		<span class="stock-pill in-stock">
+																			<i class="fa-solid fa-check"></i>
+																			{formatCents(card.cardtrader_low_price)}
+																		</span>
+																	{:else}
+																		<span class="stock-pill out-of-stock">Out of Stock</span>
+																	{/if}
+																</td>
+																<td class="col-vendor" data-label="TCGPlayer">
+																	{#if card.tcgplayer_stock}
+																		<span class="stock-pill in-stock">
+																			<i class="fa-solid fa-check"></i>
+																			{formatDollars(card.tcgplayer_low_price)}
+																		</span>
+																	{:else}
+																		<span class="stock-pill out-of-stock">Out of Stock</span>
+																	{/if}
+																</td>
+																<td class="col-vendor" data-label="eBay">
+																	{#if card.ebay_stock}
+																		<span class="stock-pill in-stock">
+																			<i class="fa-solid fa-check"></i>
+																			{formatCents(card.ebay_low_price)}
+																		</span>
+																	{:else}
+																		<span class="stock-pill out-of-stock">Out of Stock</span>
+																	{/if}
+																</td>
+																<td class="col-vendor" data-label="Mana Pool">
+																	{#if card.manapool_stock}
+																		<span class="stock-pill in-stock">
+																			<i class="fa-solid fa-check"></i>
+																			{formatCents(card.manapool_low_price)}
+																		</span>
+																	{:else}
+																		<span class="stock-pill out-of-stock">Out of Stock</span>
+																	{/if}
+																</td>
+																<td class="col-cap" data-label="Price Cap">
+																	<span class="price-cap-value">
+																		{formatCents(card.max_price_cap)}
+																	</span>
+																</td>
+															</tr>
+														{/each}
+													</tbody>
+												</table>
+											</div>
 										{/if}
 									</div>
 								{/if}
@@ -699,6 +893,7 @@
 		</div>
 	</div>
 
+	<!-- Delete User Modal -->
 	{#if showDeleteModal}
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div
@@ -721,25 +916,28 @@
 				aria-labelledby="admin-delete-dialog-title"
 				tabindex="-1"
 			>
+				<div class="modal-icon-badge danger">
+					<i class="fa-solid fa-triangle-exclamation"></i>
+				</div>
 				<h3 id="admin-delete-dialog-title">Confirm User Account Deletion</h3>
 				<p>
-					Are you sure you want to delete user account <strong>{userToDelete}</strong>? This action
-					cannot be undone.
+					Are you sure you want to delete user account <strong class="delete-user-id">{userToDelete}</strong>?
 				</p>
+				<p class="modal-subtext">This action is irreversible and deletes all seeking list cards associated with this user.</p>
+
 				<div class="modal-buttons">
 					<button class="cancel-btn" on:click={closeDeleteModal} disabled={isDeletingUser}>
 						Cancel
 					</button>
 					<button class="confirm-btn" on:click={handleDeleteAccount} disabled={isDeletingUser}>
-						{isDeletingUser ? 'Deleting...' : 'Yes, Delete Account'}
+						<i class="fa-solid {isDeletingUser ? 'fa-spinner fa-spin' : 'fa-trash-can'}"></i>
+						<span>{isDeletingUser ? 'Deleting...' : 'Yes, Delete Account'}</span>
 					</button>
 				</div>
 			</div>
 		</div>
 	{/if}
 {/if}
-
-<!-- End of authorization check block -->
 
 <style>
 	.loading-container,
@@ -748,38 +946,95 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		min-height: 300px;
+		min-height: 350px;
 		text-align: center;
-		padding: 2rem;
+		padding: 3rem 1.5rem;
+		gap: 1rem;
 	}
-	.unauthorized-container h2 {
+
+	.loading-spinner {
+		width: 44px;
+		height: 44px;
+		border: 3px solid var(--color-border);
+		border-radius: 50%;
+		border-top-color: var(--color-primary);
+		animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+	}
+
+	.loading-spinner.small {
+		width: 20px;
+		height: 20px;
+		border-width: 2px;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.unauthorized-icon-badge {
+		width: 60px;
+		height: 60px;
+		border-radius: 16px;
+		background: rgba(239, 68, 68, 0.12);
 		color: var(--color-error);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.75rem;
 	}
-	.unauthorized-container a {
+
+	.unauthorized-container h2 {
+		margin: 0;
+		color: var(--color-text-primary);
+		font-size: 1.5rem;
+		font-weight: 700;
+	}
+
+	.unauthorized-container p {
+		margin: 0;
+		color: var(--color-text-secondary);
+		max-width: 400px;
+	}
+
+	.return-home-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
 		margin-top: 1rem;
-		padding: 0.5rem 1rem;
-		background-color: var(--color-primary);
+		padding: 0.65rem 1.25rem;
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
 		color: white;
 		text-decoration: none;
-		border-radius: 4px;
+		border-radius: 10px;
+		font-weight: 600;
+		font-size: 0.95rem;
+		box-shadow: 0 4px 12px var(--color-primary-alpha);
+		transition: all var(--transition-fast);
+	}
+
+	.return-home-btn:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 6px 16px var(--color-primary-alpha);
 	}
 
 	.admin-container {
 		max-width: 1200px;
 		margin: 2rem auto;
-		padding: 0 1rem;
-		animation: fadeIn 0.5s ease-out;
+		padding: 0 1.25rem;
+		animation: fadeIn 0.4s ease-out;
 	}
 
 	/* Workspace Toolbar */
 	.workspace-toolbar {
-		margin-bottom: 1.5rem;
-		padding: 0.65rem 1rem;
+		margin-bottom: 2rem;
+		padding: 0.75rem 1.25rem;
 		background: var(--glass-bg, var(--color-bg-elevated));
 		backdrop-filter: blur(var(--backdrop-blur, 10px));
 		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
 		border: 1px solid var(--glass-border, var(--color-border));
-		border-radius: 12px;
+		border-radius: 16px;
 		box-shadow: var(--shadow-sm);
 		display: flex;
 		justify-content: space-between;
@@ -800,13 +1055,13 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0 0.75rem;
-		height: 34px;
-		border-radius: 8px;
+		padding: 0 0.85rem;
+		height: 36px;
+		border-radius: 10px;
 		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.12));
 		border: 1px solid var(--color-primary-alpha, rgba(99, 102, 241, 0.25));
 		color: var(--color-primary, #6366f1);
-		font-size: 0.85rem;
+		font-size: 0.875rem;
 		font-weight: 700;
 		letter-spacing: 0.02em;
 	}
@@ -817,15 +1072,16 @@
 		gap: 0.4rem;
 		background: var(--color-bg-secondary);
 		border: 1px solid var(--color-border);
-		padding: 0 0.75rem;
-		height: 34px;
-		border-radius: 8px;
+		padding: 0 0.85rem;
+		height: 36px;
+		border-radius: 10px;
 		font-size: 0.85rem;
-		color: var(--color-text-secondary);
+		font-weight: 600;
+		color: var(--color-text-primary);
 	}
 
-	.user-pill strong {
-		color: var(--color-text-primary);
+	.user-pill i {
+		color: var(--color-text-secondary);
 	}
 
 	.status-indicator-pill {
@@ -835,9 +1091,9 @@
 		background: rgba(34, 197, 94, 0.1);
 		border: 1px solid rgba(34, 197, 94, 0.25);
 		color: #22c55e;
-		padding: 0 0.75rem;
-		height: 34px;
-		border-radius: 8px;
+		padding: 0 0.85rem;
+		height: 36px;
+		border-radius: 10px;
 		font-size: 0.825rem;
 		font-weight: 600;
 	}
@@ -859,14 +1115,14 @@
 	.card-counter {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: 0.45rem;
 		font-size: 0.825rem;
-		color: var(--color-text-muted, var(--color-text-secondary));
+		color: var(--color-text-secondary);
 		background: var(--color-bg-secondary);
 		border: 1px solid var(--color-border);
-		padding: 0 0.75rem;
-		height: 34px;
-		border-radius: 8px;
+		padding: 0 0.85rem;
+		height: 36px;
+		border-radius: 10px;
 		font-weight: 500;
 	}
 
@@ -876,8 +1132,86 @@
 	}
 
 	.toolbar-icon-btn {
+		width: 36px;
+		height: 36px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		font-size: 0.9rem;
+		transition: all var(--transition-fast);
+	}
+
+	.toolbar-icon-btn:hover {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+		background: var(--color-bg-hover);
+	}
+
+	/* Content Layout */
+	.admin-content {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	.admin-section {
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border-radius: 16px;
+		padding: 1.75rem;
+		box-shadow: var(--shadow-sm);
+		border: 1px solid var(--glass-border, var(--color-border));
+	}
+
+	.section-title-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
+		padding-bottom: 0.85rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.section-title-icon {
 		width: 34px;
 		height: 34px;
+		border-radius: 10px;
+		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.12));
+		color: var(--color-primary);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1rem;
+		flex-shrink: 0;
+	}
+
+	.admin-section h2 {
+		margin: 0;
+		color: var(--color-text-primary);
+		font-size: 1.2rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		flex-grow: 1;
+	}
+
+	.section-loading {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+		padding: 1rem 0;
+	}
+
+	.header-refresh-btn {
+		width: 32px;
+		height: 32px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -886,290 +1220,111 @@
 		border-radius: 8px;
 		color: var(--color-text-secondary);
 		cursor: pointer;
-		font-size: 0.875rem;
+		font-size: 0.85rem;
 		transition: all var(--transition-fast);
 	}
 
-	.toolbar-icon-btn:hover {
+	.header-refresh-btn:hover:not(:disabled) {
+		color: var(--color-primary);
 		border-color: var(--color-primary);
-		color: var(--color-primary);
-		background: var(--color-bg-hover, rgba(255, 255, 255, 0.04));
 	}
 
-	@media (max-width: 768px) {
-		.workspace-toolbar {
-			flex-direction: column;
-			align-items: stretch;
-			gap: 0.75rem;
-		}
-
-		.toolbar-left,
-		.toolbar-right {
-			justify-content: space-between;
-			width: 100%;
-		}
-	}
-
-	.admin-content {
-		display: flex;
-		flex-direction: column;
-		gap: 2rem;
-	}
-
-	.admin-section {
-		background: var(--color-bg-elevated);
-		border-radius: 12px;
-		padding: 1.5rem;
-		box-shadow: var(--shadow-sm);
-		border: 1px solid var(--color-border);
-	}
-
-	.admin-section h2 {
-		margin: 0 0 1rem 0;
-		color: var(--color-text-primary);
-		font-size: 1.25rem;
-		font-weight: 600;
-		border-bottom: 1px solid var(--color-border);
-		padding-bottom: 0.5rem;
-	}
-
-	.user-tables {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.user-table {
-		border: 1px solid var(--color-border);
-		border-radius: 8px;
-		padding: 1rem;
-		background: var(--color-bg-secondary);
-	}
-
-	.table-header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 1rem;
-	}
-
-	.table-header h3 {
-		flex: 1 1 auto;
-		margin: 0;
-		min-width: 150px;
-		font-size: 1rem;
-		font-weight: 600;
-	}
-
-	.item-count {
-		flex: 0 1 auto;
-		color: var(--color-text-secondary);
-		font-size: 0.9rem;
-		white-space: nowrap;
-	}
-
-	.table-actions {
-		display: flex;
-		gap: 0.5rem;
-		margin-left: auto;
-	}
-
-	.expand-btn {
-		background: var(--color-bg-button);
-		color: var(--color-text);
-	}
-
-	.delete-btn {
-		background: var(--color-error);
-		color: white;
-	}
-
-	button {
-		padding: 0.5rem 1rem;
-		border: none;
-		border-radius: 4px;
-		cursor: pointer;
-		transition: opacity 0.2s;
-		font-weight: 500;
-	}
-
-	button:hover {
-		opacity: 0.8;
-	}
-
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		margin-top: 1rem;
-	}
-
-	th,
-	td {
-		padding: 0.5rem;
-		text-align: left;
-		border-bottom: 1px solid var(--color-border);
-	}
-
-	th {
-		background: var(--color-bg-elevated);
-		font-weight: 600;
-		color: var(--color-text-secondary);
-		font-size: 0.875rem;
-		text-transform: uppercase;
-	}
-
-	.error {
-		color: var(--color-error);
-	}
-
-	.status-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1rem;
-	}
-
-	.status-item {
-		padding: 1rem;
-		background: var(--color-bg-secondary);
-		border-radius: 8px;
-		border: 1px solid var(--color-border);
-		overflow-wrap: break-word;
-		word-wrap: break-word;
-		word-break: break-word;
-	}
-
-	.status-item ul {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.status-item li {
-		overflow-wrap: break-word;
-		word-wrap: break-word;
-		word-break: break-word;
-		font-size: 0.875rem;
-	}
-
-	.status-item h3 {
-		margin: 0 0 0.5rem 0;
-		font-size: 0.875rem;
-		text-transform: uppercase;
-		color: var(--color-text-secondary);
-		font-weight: 600;
-	}
-
-	.stats-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-		gap: 1rem;
-	}
-
-	.stat-card {
-		padding: 1rem;
-		background: var(--color-bg-secondary);
-		border-radius: 8px;
-		border: 1px solid var(--color-border);
-		text-align: center;
-	}
-
-	.stat-card h3 {
-		margin: 0 0 0.5rem 0;
-		font-size: 0.875rem;
-		text-transform: uppercase;
-		color: var(--color-text-secondary);
-		font-weight: 600;
-	}
-
-	.stat-value {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--color-primary);
-	}
-
-	.stat-sub {
-		margin-top: 0.25rem;
-		font-size: 0.75rem;
-		color: var(--color-text-secondary);
-	}
-
-	.status-badge {
-		padding: 0.25rem 0.5rem;
-		border-radius: 999px;
-		font-size: 0.875rem;
-		font-weight: 500;
-	}
-
-	.status-badge.running {
-		background: var(--color-success);
-		color: white;
-	}
-
-	.status-badge.stopped {
-		background: var(--color-error);
-		color: white;
-	}
-
-	.status-badge.normal {
-		background: var(--color-success);
-		color: white;
-	}
-
-	.status-badge.limited {
-		background: var(--color-warning);
-		color: white;
-	}
-
-	.metrics {
-		grid-column: 1 / -1;
-	}
-
-	.metrics ul {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-		gap: 0.5rem;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.section-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1rem;
-	}
-
-	.refresh-btn {
-		background: var(--color-bg-button);
-		color: var(--color-text);
-		font-size: 0.875rem;
-	}
-
-	.refresh-btn:disabled {
+	.header-refresh-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}
 
-	.functions {
-		grid-column: 1 / -1;
-	}
-
-	.function-grid {
+	/* Stats Grid */
+	.stats-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 		gap: 1rem;
-		margin-top: 0.5rem;
 	}
 
-	.function-status {
-		padding: 0.75rem;
-		background: var(--color-bg);
-		border-radius: 4px;
+	.stat-card {
+		padding: 1.15rem;
+		background: var(--color-bg-secondary);
+		border-radius: 14px;
 		border: 1px solid var(--color-border);
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+		transition: transform var(--transition-fast), border-color var(--transition-fast);
 	}
 
+	.stat-card:hover {
+		transform: translateY(-2px);
+		border-color: var(--color-border-hover);
+	}
+
+	.stat-card-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.stat-title {
+		font-size: 0.8rem;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		font-weight: 700;
+		letter-spacing: 0.04em;
+	}
+
+	.stat-icon-badge {
+		width: 28px;
+		height: 28px;
+		border-radius: 7px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.85rem;
+	}
+
+	.stat-icon-badge.users {
+		background: rgba(99, 102, 241, 0.12);
+		color: #6366f1;
+	}
+
+	.stat-icon-badge.items {
+		background: rgba(16, 185, 129, 0.12);
+		color: #10b981;
+	}
+
+	.stat-icon-badge.ct {
+		background: rgba(59, 130, 246, 0.12);
+		color: #3b82f6;
+	}
+
+	.stat-icon-badge.tcg {
+		background: rgba(16, 185, 129, 0.12);
+		color: #10b981;
+	}
+
+	.stat-icon-badge.ebay {
+		background: rgba(245, 158, 11, 0.12);
+		color: #f59e0b;
+	}
+
+	.stat-icon-badge.manapool {
+		background: rgba(139, 92, 246, 0.12);
+		color: #8b5cf6;
+	}
+
+	.stat-value {
+		font-size: 1.75rem;
+		font-weight: 700;
+		color: var(--color-text-primary);
+		letter-spacing: -0.02em;
+	}
+
+	.stat-sub {
+		font-size: 0.775rem;
+		color: var(--color-text-muted);
+		font-weight: 500;
+	}
+
+	/* Banner Manager */
 	.banner-manager {
 		display: flex;
 		flex-direction: column;
@@ -1183,247 +1338,933 @@
 	}
 
 	.form-group label {
-		font-size: 0.875rem;
+		font-size: 0.85rem;
 		font-weight: 600;
 		color: var(--color-text-secondary);
 	}
 
-	.form-group input[type='text'],
-	.form-group select {
-		padding: 0.75rem;
+	.styled-input {
+		padding: 0.75rem 1rem;
 		border: 1px solid var(--color-border);
-		border-radius: 8px;
+		border-radius: 10px;
 		background: var(--color-bg-secondary);
 		color: var(--color-text-primary);
 		font-size: 0.95rem;
 		outline: none;
-		transition: border-color var(--transition-fast);
+		transition: all var(--transition-fast);
 	}
 
-	.form-group input[type='text']:focus,
-	.form-group select:focus {
+	.styled-input:focus {
 		border-color: var(--color-primary);
+		box-shadow: 0 0 0 2px var(--color-primary-alpha);
 	}
 
 	.form-row {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-		align-items: flex-end;
-	}
-
-	.form-group.checkbox {
-		flex-direction: row;
+		gap: 1.25rem;
 		align-items: center;
-		padding-bottom: 0.75rem;
 	}
 
-	.form-group.checkbox label {
+	.select-wrapper {
+		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		cursor: pointer;
-		user-select: none;
-		margin-bottom: 0;
 	}
 
-	.save-btn {
-		background: var(--color-primary);
-		color: white;
-		margin-top: 0.5rem;
-		align-self: flex-start;
-		padding: 0.75rem 1.5rem;
-	}
-
-	.banner-feedback {
-		padding: 0.75rem 1rem;
-		border-radius: 8px;
-		font-size: 0.9rem;
+	.styled-select {
+		width: 100%;
+		padding: 0.75rem 2.25rem 0.75rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		font-size: 0.95rem;
 		font-weight: 500;
+		outline: none;
+		appearance: none;
+		cursor: pointer;
+		transition: all var(--transition-fast);
 	}
 
-	.banner-feedback.success {
-		background: rgba(16, 185, 129, 0.15);
+	.styled-select:focus {
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 2px var(--color-primary-alpha);
+	}
+
+	.select-chevron {
+		position: absolute;
+		right: 1rem;
+		pointer-events: none;
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+	}
+
+	.toggle-group {
+		justify-content: center;
+	}
+
+	.toggle-control-label {
+		margin-bottom: 0.35rem;
+	}
+
+	.toggle-wrapper {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		height: 42px;
+	}
+
+	.toggle-status-text {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+	}
+
+	.toggle-status-text.active {
 		color: var(--color-success);
-		border: 1px solid var(--color-success);
 	}
 
-	.banner-feedback.error {
-		background: rgba(239, 68, 68, 0.15);
-		color: var(--color-error);
-		border: 1px solid var(--color-error);
+	/* Toggle Switch */
+	.toggle-switch {
+		position: relative;
+		display: inline-block;
+		width: 48px;
+		height: 26px;
+		flex-shrink: 0;
 	}
 
-	.modal-overlay {
-		position: fixed;
+	.toggle-switch input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+
+	.slider {
+		position: absolute;
+		cursor: pointer;
 		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: rgba(0, 0, 0, 0.6);
+		background-color: var(--color-bg-hover, #e2e8f0);
+		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+		border: 1px solid var(--color-border);
+	}
+
+	.slider:before {
+		position: absolute;
+		content: '';
+		height: 18px;
+		width: 18px;
+		left: 3px;
+		bottom: 3px;
+		background-color: #ffffff;
+		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	input:checked + .slider {
+		background-color: var(--color-success);
+		border-color: var(--color-success);
+		box-shadow: 0 0 8px rgba(34, 197, 94, 0.25);
+	}
+
+	input:checked + .slider:before {
+		transform: translateX(22px);
+	}
+
+	.slider.round {
+		border-radius: 999px;
+	}
+
+	.slider.round:before {
+		border-radius: 50%;
+	}
+
+	.banner-actions {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+		margin-top: 0.5rem;
+	}
+
+	.save-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+		color: white;
+		border: none;
+		border-radius: 10px;
+		padding: 0.75rem 1.5rem;
+		font-weight: 600;
+		font-size: 0.95rem;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		box-shadow: 0 4px 12px var(--color-primary-alpha);
+	}
+
+	.save-btn:hover:not(:disabled) {
+		transform: translateY(-1px);
+		box-shadow: 0 6px 16px var(--color-primary-alpha);
+	}
+
+	.save-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.banner-feedback {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.65rem 1rem;
+		border-radius: 10px;
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+
+	.banner-feedback.success {
+		background: rgba(34, 197, 94, 0.12);
+		color: #22c55e;
+		border: 1px solid rgba(34, 197, 94, 0.25);
+	}
+
+	.banner-feedback.error {
+		background: rgba(239, 68, 68, 0.12);
+		color: var(--color-error);
+		border: 1px solid rgba(239, 68, 68, 0.25);
+	}
+
+	/* System Status */
+	.status-summary-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.status-chip {
+		flex: 1 1 200px;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 12px;
+		padding: 0.85rem 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.chip-label {
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		color: var(--color-text-secondary);
+		font-weight: 700;
+		letter-spacing: 0.04em;
+	}
+
+	.chip-value {
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.status-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.25rem 0.65rem;
+		border-radius: 999px;
+		font-size: 0.775rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		width: fit-content;
+	}
+
+	.status-badge .dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+	}
+
+	.status-badge.running,
+	.status-badge.healthy,
+	.status-badge.normal {
+		background: rgba(34, 197, 94, 0.12);
+		border: 1px solid rgba(34, 197, 94, 0.25);
+		color: #22c55e;
+	}
+	.status-badge.running .dot,
+	.status-badge.healthy .dot,
+	.status-badge.normal .dot {
+		background-color: #22c55e;
+	}
+
+	.status-badge.limited,
+	.status-badge.degraded {
+		background: rgba(245, 158, 11, 0.12);
+		border: 1px solid rgba(245, 158, 11, 0.25);
+		color: #f59e0b;
+	}
+	.status-badge.limited .dot,
+	.status-badge.degraded .dot {
+		background-color: #f59e0b;
+	}
+
+	.status-badge.stopped,
+	.status-badge.error {
+		background: rgba(239, 68, 68, 0.12);
+		border: 1px solid rgba(239, 68, 68, 0.25);
+		color: var(--color-error);
+	}
+	.status-badge.stopped .dot,
+	.status-badge.error .dot {
+		background-color: var(--color-error);
+	}
+
+	.subsection {
+		margin-top: 1.5rem;
+	}
+
+	.subsection-title {
+		margin: 0 0 0.85rem 0;
+		font-size: 0.95rem;
+		color: var(--color-text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-weight: 700;
+	}
+
+	.function-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		gap: 0.85rem;
+	}
+
+	.function-card {
+		padding: 0.85rem 1rem;
+		background: var(--color-bg-secondary);
+		border-radius: 12px;
+		border: 1px solid var(--color-border);
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		transition: border-color var(--transition-fast);
+	}
+
+	.function-card:hover {
+		border-color: var(--color-border-hover);
+	}
+
+	.func-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.func-name {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		word-break: break-all;
+	}
+
+	.func-details {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.metric-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.75rem;
+		color: var(--color-text-secondary);
+		background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
+		border: 1px solid var(--color-border);
+		padding: 0.15rem 0.5rem;
+		border-radius: 6px;
+	}
+
+	.error-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.75rem;
+		color: var(--color-error);
+		background: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.25);
+		padding: 0.15rem 0.5rem;
+		border-radius: 6px;
+	}
+
+	/* User Management */
+	.user-count-badge {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		padding: 0.2rem 0.65rem;
+		border-radius: 999px;
+		font-size: 0.8rem;
+		font-weight: 600;
+	}
+
+	.user-filter-bar {
+		margin-bottom: 1.25rem;
+	}
+
+	.search-input-wrapper {
+		position: relative;
+		display: flex;
+		align-items: center;
+		max-width: 480px;
+	}
+
+	.search-icon {
+		position: absolute;
+		left: 0.85rem;
+		color: var(--color-text-muted);
+		font-size: 0.9rem;
+		pointer-events: none;
+	}
+
+	.user-search-input {
+		width: 100%;
+		padding: 0.65rem 2.25rem 0.65rem 2.4rem;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+		color: var(--color-text-primary);
+		font-size: 0.9rem;
+		outline: none;
+		transition: all var(--transition-fast);
+	}
+
+	.user-search-input:focus {
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 2px var(--color-primary-alpha);
+	}
+
+	.clear-search-btn {
+		position: absolute;
+		right: 0.75rem;
+		background: none;
+		border: none;
+		color: var(--color-text-muted);
+		cursor: pointer;
+		padding: 0.2rem;
+		font-size: 0.85rem;
+	}
+
+	.clear-search-btn:hover {
+		color: var(--color-text-primary);
+	}
+
+	.user-accordion-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+	}
+
+	.user-card {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 14px;
+		overflow: hidden;
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+	}
+
+	.user-card:hover {
+		border-color: var(--color-border-hover);
+	}
+
+	.user-card.is-expanded {
+		border-color: var(--color-primary-alpha, rgba(99, 102, 241, 0.4));
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+	}
+
+	.user-card-header {
+		padding: 1rem 1.25rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.user-main-info {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		flex-wrap: wrap;
+		flex-grow: 1;
+	}
+
+	.user-avatar-badge {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		background: var(--color-bg-hover, rgba(0, 0, 0, 0.05));
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		z-index: 1000;
+		font-size: 1.1rem;
+		flex-shrink: 0;
+	}
+
+	.user-titles {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.user-name-line {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+	}
+
+	.user-name {
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--color-text-primary);
+	}
+
+	.user-id-chip {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 0.775rem;
+		color: var(--color-text-muted);
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		padding: 0.1rem 0.45rem;
+		border-radius: 6px;
+	}
+
+	.user-meta-line {
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.user-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+	}
+
+	.item-count-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		padding: 0.4rem 0.75rem;
+		border-radius: 8px;
+		font-size: 0.825rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		white-space: nowrap;
+	}
+
+	.item-count-chip i {
+		color: var(--color-text-secondary);
+	}
+
+	.expand-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-primary);
+		padding: 0.4rem 0.85rem;
+		border-radius: 8px;
+		font-size: 0.825rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.expand-btn:hover:not(:disabled) {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+		background: var(--color-bg-hover);
+	}
+
+	.delete-user-btn {
+		width: 34px;
+		height: 34px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.25);
+		color: var(--color-error);
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 0.85rem;
+		transition: all var(--transition-fast);
+	}
+
+	.delete-user-btn:hover:not(:disabled) {
+		background: var(--color-error);
+		color: white;
+		transform: translateY(-1px);
+	}
+
+	/* Expanded Table Container */
+	.user-table-wrapper {
+		border-top: 1px solid var(--color-border);
+		background: var(--color-bg-elevated);
+		padding: 1.25rem;
+	}
+
+	.table-scroll-container {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.modern-table {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0;
+		border-radius: 10px;
+		border: 1px solid var(--color-border);
+		overflow: hidden;
+		font-size: 0.875rem;
+	}
+
+	.modern-table th {
+		background: var(--color-bg-secondary);
+		padding: 0.75rem 1rem;
+		text-align: left;
+		font-weight: 700;
+		color: var(--color-text-secondary);
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		border-bottom: 1px solid var(--color-border);
+		white-space: nowrap;
+	}
+
+	.modern-table td {
+		padding: 0.85rem 1rem;
+		border-bottom: 1px solid var(--color-border);
+		color: var(--color-text-primary);
+		vertical-align: middle;
+		background: var(--color-bg-elevated);
+		transition: background-color var(--transition-fast);
+	}
+
+	.modern-table tbody tr:hover td {
+		background: var(--color-bg-hover);
+	}
+
+	.modern-table tbody tr:last-child td {
+		border-bottom: none;
+	}
+
+	.card-name-text {
+		font-weight: 600;
+		color: var(--color-text-primary);
+	}
+
+	.set-cell {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.set-icon {
+		height: 1.35em;
+		width: 1.35em;
+		vertical-align: middle;
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+	}
+
+	:global([data-theme='dark']) .set-icon {
+		filter: invert(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+	}
+
+	.set-code {
+		font-weight: 700;
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+	}
+
+	.collector-number {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 0.8rem;
+		color: var(--color-text-muted);
+	}
+
+	.lang-pill {
+		display: inline-block;
+		font-size: 0.75rem;
+		font-weight: 700;
+		padding: 0.15rem 0.45rem;
+		border-radius: 4px;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+	}
+
+	.finish-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		padding: 0.15rem 0.5rem;
+		border-radius: 6px;
+	}
+
+	.finish-pill.foil {
+		background: rgba(245, 158, 11, 0.12);
+		border: 1px solid rgba(245, 158, 11, 0.3);
+		color: #d97706;
+	}
+
+	.finish-pill.nonfoil {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+	}
+
+	.stock-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	.stock-pill.in-stock {
+		color: #22c55e;
+	}
+
+	.stock-pill.out-of-stock {
+		color: var(--color-text-muted);
+		font-weight: 500;
+		font-size: 0.75rem;
+	}
+
+	.price-cap-value {
+		font-weight: 700;
+		color: var(--color-text-primary);
+		font-size: 0.85rem;
+	}
+
+	.error-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		color: var(--color-error);
+		background: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.25);
+		border-radius: 10px;
+		padding: 0.85rem 1.25rem;
+		font-size: 0.9rem;
+	}
+
+	.empty-state,
+	.empty-table-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		padding: 2.5rem 1rem;
+		text-align: center;
+		color: var(--color-text-muted);
+	}
+
+	.empty-state i,
+	.empty-table-state i {
+		font-size: 2rem;
+		opacity: 0.5;
+	}
+
+	.empty-state p,
+	.empty-table-state p {
+		margin: 0;
+		font-size: 0.95rem;
+	}
+
+	/* Modals */
+	.modal-overlay {
+		position: fixed;
+		z-index: 2000;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.65);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		padding: 1rem;
+		animation: fadeIn 0.2s ease-out;
 	}
 
 	.modal {
 		background: var(--color-bg-elevated);
-		border: 1px solid var(--color-border);
-		border-radius: 12px;
-		padding: 1.5rem;
-		max-width: 440px;
+		padding: 2rem;
+		border-radius: 16px;
+		box-shadow: var(--shadow-lg), 0 20px 30px rgba(0, 0, 0, 0.25);
+		max-width: 480px;
 		width: 100%;
-		box-shadow: var(--shadow-lg);
+		border: 1px solid var(--color-border);
+		animation: scaleIn 0.2s ease-out;
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.modal-icon-badge {
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.5rem;
+		margin-bottom: 1.25rem;
+	}
+
+	.modal-icon-badge.danger {
+		background: rgba(239, 68, 68, 0.12);
+		color: var(--color-error);
+		border: 1px solid rgba(239, 68, 68, 0.25);
 	}
 
 	.modal h3 {
-		margin: 0 0 0.75rem 0;
-		color: var(--color-error);
+		margin: 0 0 0.5rem 0;
+		color: var(--color-text-primary);
+		font-size: 1.25rem;
+		font-weight: 700;
 	}
 
 	.modal p {
-		margin: 0 0 1.25rem 0;
+		margin: 0.25rem 0;
 		color: var(--color-text-secondary);
 		line-height: 1.5;
+		font-size: 0.95rem;
+	}
+
+	.delete-user-id {
+		color: var(--color-text-primary);
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		word-break: break-all;
+	}
+
+	.modal-subtext {
+		font-size: 0.85rem !important;
+		color: var(--color-text-muted) !important;
+		margin-top: 0.5rem !important;
 	}
 
 	.modal-buttons {
 		display: flex;
-		justify-content: flex-end;
 		gap: 0.75rem;
+		margin-top: 1.75rem;
+		width: 100%;
+		justify-content: flex-end;
 	}
 
 	.cancel-btn {
 		background: var(--color-bg-secondary);
 		color: var(--color-text-primary);
 		border: 1px solid var(--color-border);
+		padding: 0.65rem 1.25rem;
+		border-radius: 10px;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		font-weight: 600;
+		font-size: 0.9rem;
+		flex: 1;
+	}
+
+	.cancel-btn:hover {
+		background-color: var(--color-bg-hover);
+		border-color: var(--color-border-hover);
 	}
 
 	.confirm-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
 		background: var(--color-error);
 		color: white;
+		border: none;
+		padding: 0.65rem 1.25rem;
+		border-radius: 10px;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		font-weight: 600;
+		font-size: 0.9rem;
+		flex: 1;
+		box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
 	}
 
-	.function-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 0.5rem;
+	.confirm-btn:hover:not(:disabled) {
+		background-color: #b91c1c;
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 	}
 
-	.function-name {
-		font-family: monospace;
-		font-size: 0.875rem;
+	.confirm-btn:disabled,
+	.cancel-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
-	.function-details {
-		display: flex;
-		gap: 1rem;
-		font-size: 0.75rem;
-		color: var(--color-text-secondary);
-	}
+	@media (max-width: 768px) {
+		.workspace-toolbar {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.85rem;
+		}
 
-	.response-time,
-	.status-code,
-	.error-message {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-	}
+		.toolbar-left,
+		.toolbar-right {
+			justify-content: space-between;
+			width: 100%;
+		}
 
-	.error-message {
-		color: var(--color-error);
-	}
+		.form-row {
+			grid-template-columns: 1fr;
+		}
 
-	.status-badge.error {
-		background: var(--color-error);
-		color: white;
-	}
-
-	.status-badge.degraded {
-		background: var(--color-warning);
-		color: white;
-	}
-
-	.status-badge {
-		padding: 0.25rem 0.5rem;
-		border-radius: 999px;
-		font-size: 0.75rem;
-		font-weight: 500;
-	}
-
-	@media (max-width: 480px) {
-		.table-header {
+		.user-card-header {
 			flex-direction: column;
 			align-items: flex-start;
 		}
 
-		.table-actions {
+		.user-actions {
 			width: 100%;
 			justify-content: flex-end;
 		}
 
-		.user-table {
-			padding: 0.75rem;
-		}
-
-		table {
-			display: block;
-			overflow-x: auto;
-			-webkit-overflow-scrolling: touch;
-		}
-
-		td,
-		th {
-			min-width: 120px;
-			white-space: nowrap;
-		}
-	}
-
-	.table-content {
-		margin-top: 1rem;
-	}
-
-	@media (max-width: 768px) {
-		.table-content table {
-			display: block;
-			overflow-x: auto;
-			-webkit-overflow-scrolling: touch;
-		}
-
-		.table-content table tbody tr {
-			display: grid;
-			grid-template-columns: 1fr;
-			padding: 0.5rem;
-			border: 1px solid var(--color-border);
-			margin-bottom: 0.5rem;
-			border-radius: 4px;
-		}
-
-		.table-content table tbody td {
-			display: grid;
-			grid-template-columns: minmax(100px, auto) 1fr;
-			gap: 0.5rem;
-			padding: 0.25rem 0.5rem;
-			border: none;
-		}
-
-		.table-content table tbody td::before {
-			content: attr(data-label);
-			font-weight: 600;
-			color: var(--color-text-secondary);
-		}
-
-		.table-content table thead {
-			display: none;
-		}
-	}
-
-	@media (max-width: 480px) {
-		.table-content table tbody td {
-			font-size: 0.875rem;
+		.modal-buttons {
+			flex-direction: column;
 		}
 	}
 </style>
