@@ -715,101 +715,100 @@
 
 <svelte:window on:click={closeMenu} on:keydown={handleGlobalKeyDown} />
 
-<div class="seeking-header-container">
-	<div class="header-main-row">
-		<div class="title-meta">
-			<h1 class="page-heading">
-				Sought Cards
-				<span class="card-count-pill">
-					{#if isPremiumOrLegacy}
-						{cards.length}
-					{:else}
-						{cards.length} / 25
-					{/if}
-				</span>
-			</h1>
-			<p class="page-subtitle">
-				Manage your sought card wishlist, track live marketplace availability, and configure price limits.
-			</p>
+<div class="workspace-toolbar">
+	<div class="toolbar-left">
+		<div class="search-box">
+			<i class="fa-solid fa-magnifying-glass search-icon"></i>
+			<input
+				type="text"
+				bind:value={searchQuery}
+				placeholder="Filter cards..."
+				class="search-input"
+			/>
+			{#if searchQuery}
+				<button class="clear-btn" on:click={() => (searchQuery = '')} title="Clear filter">
+					<i class="fa-solid fa-times"></i>
+				</button>
+			{/if}
 		</div>
 
-		<div class="header-actions">
-			<div class="search-bar-inline">
-				<i class="fa-solid fa-magnifying-glass search-inline-icon"></i>
-				<input
-					type="text"
-					bind:value={searchQuery}
-					placeholder="Filter by name, set, lang..."
-					class="search-inline-input"
-				/>
-				{#if searchQuery}
-					<button class="clear-search-btn" on:click={() => (searchQuery = '')} title="Clear search">
-						<i class="fa-solid fa-times"></i>
-					</button>
-				{/if}
-			</div>
-			<button class="header-btn" on:click={downloadCSV} title="Export CSV">
-				<i class="fa-solid fa-file-csv"></i>
-				<span class="btn-text">Export CSV</span>
+		<div class="filter-group">
+			<button
+				type="button"
+				class="filter-pill"
+				class:active={filterInStockOnly}
+				on:click={() => (filterInStockOnly = !filterInStockOnly)}
+			>
+				<i class="fa-solid fa-circle-check"></i> In Stock
 			</button>
-			<button on:click={toggleCondensed} class="header-btn toggle-view-btn" title="Toggle Compact View">
-				<i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
+			<button
+				type="button"
+				class="filter-pill"
+				class:active={filterUnderPriceCap}
+				on:click={() => (filterUnderPriceCap = !filterUnderPriceCap)}
+			>
+				<i class="fa-solid fa-tag"></i> Under Cap
 			</button>
-		</div>
-	</div>
-
-	<!-- Quick Filter Pills: Subtly integrated in header toolbar -->
-	<div class="quick-filters-bar">
-		<span class="filter-label"><i class="fa-solid fa-sliders"></i> Filters:</span>
-		<button
-			type="button"
-			class="filter-pill"
-			class:active={filterInStockOnly}
-			on:click={() => (filterInStockOnly = !filterInStockOnly)}
-		>
-			<i class="fa-solid fa-circle-check"></i> In Stock Only
-		</button>
-		<button
-			type="button"
-			class="filter-pill"
-			class:active={filterUnderPriceCap}
-			on:click={() => (filterUnderPriceCap = !filterUnderPriceCap)}
-		>
-			<i class="fa-solid fa-tag"></i> Under Price Cap
-		</button>
-		<button
-			type="button"
-			class="filter-pill"
-			class:active={filterFoilOnly}
-			on:click={() => (filterFoilOnly = !filterFoilOnly)}
-		>
-			<i class="fa-solid fa-sparkles"></i> Foil Only
-		</button>
-		{#if availableSetCodes.length > 0}
-			<div class="set-filter-wrapper">
-				<select bind:value={filterSetCode} class="set-filter-select" aria-label="Filter by Set">
+			<button
+				type="button"
+				class="filter-pill"
+				class:active={filterFoilOnly}
+				on:click={() => (filterFoilOnly = !filterFoilOnly)}
+			>
+				<i class="fa-solid fa-sparkles"></i> Foil
+			</button>
+			{#if availableSetCodes.length > 0}
+				<select bind:value={filterSetCode} class="set-select" aria-label="Filter by Set">
 					<option value="">All Sets ({availableSetCodes.length})</option>
 					{#each availableSetCodes as code}
 						<option value={code}>{code}</option>
 					{/each}
 				</select>
-			</div>
-		{/if}
-		{#if filterInStockOnly || filterUnderPriceCap || filterFoilOnly || filterSetCode || searchQuery}
-			<button
-				type="button"
-				class="filter-pill reset"
-				on:click={() => {
-					filterInStockOnly = false;
-					filterUnderPriceCap = false;
-					filterFoilOnly = false;
-					filterSetCode = '';
-					searchQuery = '';
-				}}
-			>
-				<i class="fa-solid fa-xmark"></i> Reset Filters
+			{/if}
+			{#if filterInStockOnly || filterUnderPriceCap || filterFoilOnly || filterSetCode || searchQuery}
+				<button
+					type="button"
+					class="filter-pill reset"
+					on:click={() => {
+						filterInStockOnly = false;
+						filterUnderPriceCap = false;
+						filterFoilOnly = false;
+						filterSetCode = '';
+						searchQuery = '';
+					}}
+					title="Reset all filters"
+				>
+					<i class="fa-solid fa-xmark"></i>
+				</button>
+			{/if}
+		</div>
+	</div>
+
+	<div class="toolbar-right">
+		<div class="card-counter" title="Total sought cards">
+			<i class="fa-solid fa-layer-group"></i>
+			<span>
+				{#if isPremiumOrLegacy}
+					<strong>{cards.length}</strong> cards
+				{:else}
+					<strong>{cards.length}</strong> / 25 cards
+				{/if}
+			</span>
+		</div>
+
+		<div class="view-buttons">
+			<button class="toolbar-icon-btn" on:click={downloadCSV} title="Export CSV">
+				<i class="fa-solid fa-file-csv"></i>
 			</button>
-		{/if}
+			<button
+				on:click={toggleCondensed}
+				class="toolbar-icon-btn"
+				class:active={isCondensed}
+				title={isCondensed ? "Expanded view" : "Compact view"}
+			>
+				<i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
+			</button>
+		</div>
 	</div>
 </div>
 
@@ -1338,158 +1337,237 @@
 		animation: fadeIn 0.5s ease-out;
 	}
 
-	.seeking-header-container {
-		margin: 2rem auto 1.5rem auto;
+	/* Workspace Toolbar */
+	.workspace-toolbar {
+		margin: 1.5rem auto 1rem auto;
 		max-width: 1200px;
-		padding: 0 1rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-	}
-
-	.header-main-row {
+		padding: 0.65rem 1rem;
+		background: var(--glass-bg);
+		backdrop-filter: blur(var(--backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur));
+		border: 1px solid var(--glass-border);
+		border-radius: 12px;
+		box-shadow: var(--shadow-sm);
 		display: flex;
 		justify-content: space-between;
-		align-items: flex-end;
-		gap: 1.5rem;
+		align-items: center;
+		gap: 1rem;
 		flex-wrap: wrap;
 	}
 
-	.title-meta {
+	.toolbar-left {
 		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-	}
-
-	.page-heading {
-		margin: 0;
-		font-size: 2.25rem;
-		font-weight: 800;
-		letter-spacing: -0.02em;
-		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		display: inline-flex;
 		align-items: center;
 		gap: 0.75rem;
-	}
-
-	.card-count-pill {
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--color-primary);
-		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.12));
-		border: 1px solid var(--color-primary-alpha, rgba(99, 102, 241, 0.3));
-		padding: 0.2rem 0.65rem;
-		border-radius: 9999px;
-		vertical-align: middle;
-		-webkit-text-fill-color: var(--color-primary);
-	}
-
-	.page-subtitle {
-		margin: 0;
-		font-size: 0.95rem;
-		color: var(--color-text-muted);
-		max-width: 600px;
-		line-height: 1.4;
-	}
-
-	.header-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
 		flex-wrap: wrap;
+		flex: 1;
 	}
 
-	.search-bar-inline {
+	.search-box {
 		display: flex;
 		align-items: center;
-		position: relative;
 		background: var(--color-bg-secondary);
 		border: 1px solid var(--color-border);
 		border-radius: 8px;
-		padding: 0 0.75rem;
-		height: 38px;
+		padding: 0 0.6rem;
+		height: 36px;
+		gap: 0.5rem;
 		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 	}
 
-	.search-bar-inline:focus-within {
+	.search-box:focus-within {
 		border-color: var(--color-primary);
 		box-shadow: 0 0 0 2px var(--color-primary-alpha, rgba(99, 102, 241, 0.2));
 	}
 
-	.search-inline-icon {
+	.search-icon {
 		font-size: 0.85rem;
 		color: var(--color-text-muted);
-		margin-right: 0.5rem;
 	}
 
-	.search-inline-input {
+	.search-input {
 		background: transparent;
 		border: none;
 		color: var(--color-text-primary);
-		font-size: 0.9rem;
+		font-size: 0.85rem;
 		outline: none;
-		width: 180px;
+		width: 150px;
 		transition: width var(--transition-normal);
 	}
 
-	.search-inline-input:focus {
-		width: 240px;
+	.search-input:focus {
+		width: 200px;
 	}
 
-	.btn-text {
-		margin-left: 0.4rem;
-	}
-
-	@media (max-width: 768px) {
-		.header-main-row {
-			flex-direction: column;
-			align-items: stretch;
-			gap: 1rem;
-		}
-
-		.page-heading {
-			font-size: 1.85rem;
-		}
-
-		.search-inline-input {
-			width: 100%;
-		}
-
-		.search-inline-input:focus {
-			width: 100%;
-		}
-
-		.search-bar-inline {
-			flex: 1;
-		}
-
-		.btn-text {
-			display: none;
-		}
-	}
-
-	/* Quick Filters Bar */
-	.quick-filters-bar {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		align-items: center;
-		padding-top: 0.25rem;
-		border-top: 1px solid var(--color-border-light, rgba(255, 255, 255, 0.06));
-	}
-
-	.filter-label {
-		font-size: 0.8rem;
-		font-weight: 600;
+	.clear-btn {
+		background: transparent;
+		border: none;
 		color: var(--color-text-muted);
+		cursor: pointer;
+		padding: 0.2rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.8rem;
+	}
+
+	.clear-btn:hover {
+		color: var(--color-text-primary);
+	}
+
+	.filter-group {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+	}
+
+	.filter-pill {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		padding: 0 0.7rem;
+		height: 34px;
+		border-radius: 8px;
+		font-size: 0.8rem;
+		cursor: pointer;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.35rem;
-		margin-right: 0.25rem;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
+		transition: all var(--transition-fast);
+		font-weight: 500;
+	}
+
+	.filter-pill:hover {
+		border-color: var(--color-primary);
+		color: var(--color-text-primary);
+	}
+
+	.filter-pill.active {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: #ffffff;
+	}
+
+	.filter-pill.reset {
+		background: transparent;
+		border: 1px dashed var(--color-border);
+		padding: 0 0.55rem;
+	}
+
+	.filter-pill.reset:hover {
+		border-color: var(--color-error);
+		color: var(--color-error);
+	}
+
+	.set-select {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		padding: 0 0.65rem;
+		height: 34px;
+		border-radius: 8px;
+		font-size: 0.8rem;
+		cursor: pointer;
+		outline: none;
+		font-weight: 500;
+		transition: border-color var(--transition-fast);
+	}
+
+	.set-select:focus {
+		border-color: var(--color-primary);
+	}
+
+	.toolbar-right {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-shrink: 0;
+	}
+
+	.card-counter {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.825rem;
+		color: var(--color-text-muted);
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		padding: 0 0.75rem;
+		height: 34px;
+		border-radius: 8px;
+		font-weight: 500;
+	}
+
+	.card-counter strong {
+		color: var(--color-text-primary);
+		font-weight: 700;
+	}
+
+	.view-buttons {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.toolbar-icon-btn {
+		width: 34px;
+		height: 34px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		font-size: 0.875rem;
+		transition: all var(--transition-fast);
+	}
+
+	.toolbar-icon-btn:hover {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+		background: var(--color-bg-hover, rgba(255, 255, 255, 0.04));
+	}
+
+	.toolbar-icon-btn.active {
+		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.15));
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+	}
+
+	@media (max-width: 768px) {
+		.workspace-toolbar {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.75rem;
+			padding: 0.75rem;
+		}
+
+		.toolbar-left {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.5rem;
+		}
+
+		.search-box {
+			width: 100%;
+		}
+
+		.search-input,
+		.search-input:focus {
+			width: 100%;
+		}
+
+		.filter-group {
+			width: 100%;
+		}
+
+		.toolbar-right {
+			justify-content: space-between;
+			width: 100%;
+		}
 	}
 
 	table {
@@ -1570,68 +1648,6 @@
 		box-shadow: inset 3px 0 0 var(--color-primary, #6366f1);
 	}
 
-	/* Quick Filters Bar */
-	.quick-filters-bar {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		align-items: center;
-		margin: 0 auto 1.5rem auto;
-		max-width: 1200px;
-		padding: 0 1rem;
-	}
-
-	.filter-pill {
-		background: var(--color-bg-secondary);
-		border: 1px solid var(--color-border);
-		color: var(--color-text-secondary);
-		padding: 0.35rem 0.75rem;
-		border-radius: 20px;
-		font-size: 0.8rem;
-		cursor: pointer;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		transition: all var(--transition-fast);
-		font-weight: 500;
-	}
-
-	.filter-pill:hover {
-		border-color: var(--color-primary);
-		color: var(--color-text-primary);
-	}
-
-	.filter-pill.active {
-		background: var(--color-primary);
-		border-color: var(--color-primary);
-		color: white;
-	}
-
-	.filter-pill.reset {
-		background: transparent;
-		border: 1px dashed var(--color-border);
-	}
-
-	.filter-pill.reset:hover {
-		border-color: var(--color-error);
-		color: var(--color-error);
-	}
-
-	.set-filter-select {
-		background: var(--color-bg-secondary);
-		border: 1px solid var(--color-border);
-		color: var(--color-text-secondary);
-		padding: 0.35rem 0.75rem;
-		border-radius: 20px;
-		font-size: 0.8rem;
-		cursor: pointer;
-		outline: none;
-		font-weight: 500;
-	}
-
-	.set-filter-select:focus {
-		border-color: var(--color-primary);
-	}
 
 	/* Floating Bulk Actions Toolbar */
 	.floating-bulk-bar {
