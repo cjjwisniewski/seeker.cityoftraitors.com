@@ -37,7 +37,7 @@
 		basic: userTables.filter((t) => (t.membershipTier || 'Basic').toLowerCase() === 'basic').length,
 		premium: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'premium').length,
 		legacy: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'legacy').length,
-		none: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'none').length
+		banned: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'banned').length
 	};
 
 	function toggleSort(field) {
@@ -103,7 +103,7 @@
 			} else if (sortBy === 'itemCount') {
 				cmp = (a.itemCount || 0) - (b.itemCount || 0);
 			} else if (sortBy === 'tier') {
-				const rank = { legacy: 3, premium: 2, basic: 1, none: 0 };
+				const rank = { legacy: 3, premium: 2, basic: 1, none: 0, banned: -1 };
 				const rankA = rank[(a.membershipTier || '').toLowerCase()] ?? 0;
 				const rankB = rank[(b.membershipTier || '').toLowerCase()] ?? 0;
 				cmp = rankA - rankB;
@@ -1012,6 +1012,14 @@
 						>
 							Legacy ({tierCounts.legacy})
 						</button>
+						<button
+							type="button"
+							class="tier-filter-pill tier-banned"
+							class:active={tierFilter === 'banned'}
+							on:click={() => (tierFilter = 'banned')}
+						>
+							Banned ({tierCounts.banned})
+						</button>
 					</div>
 				</div>
 
@@ -1047,7 +1055,9 @@
 														class="fa-solid {table.membershipTier === 'Premium' ||
 														table.membershipTier === 'Legacy'
 															? 'fa-crown'
-															: 'fa-certificate'}"
+															: table.membershipTier === 'Banned'
+																? 'fa-ban'
+																: 'fa-certificate'}"
 													></i>
 													{table.membershipTier || 'Basic'}
 												</span>
@@ -1314,21 +1324,25 @@
 				<p class="modal-subtext">Setting an explicit tier will override Discord role synchronization until reset to 'None'.</p>
 
 				<div class="tier-select-options">
-					{#each ['Basic', 'Premium', 'Legacy', 'None'] as tierOption}
+					{#each [
+						{ id: 'Basic', label: 'Basic', desc: 'Standard free tier (25 cards)', icon: 'fa-certificate' },
+						{ id: 'Premium', label: 'Premium', desc: 'Premium tier (enhanced limits)', icon: 'fa-gem' },
+						{ id: 'Legacy', label: 'Legacy', desc: 'Legacy supporter (unlimited alerts)', icon: 'fa-wand-magic-sparkles' },
+						{ id: 'Banned', label: 'Banned', desc: 'Suspended (cannot add cards, checks disabled)', icon: 'fa-ban' },
+						{ id: 'None', label: 'Reset (Discord Sync)', desc: 'Remove manual override, sync with Discord roles', icon: 'fa-rotate' }
+					] as opt}
 						<button
 							type="button"
-							class="tier-choice-btn tier-btn-{tierOption.toLowerCase()}"
-							class:selected={selectedTier.toLowerCase() === tierOption.toLowerCase()}
-							on:click={() => (selectedTier = tierOption)}
+							class="tier-choice-btn tier-btn-{opt.id.toLowerCase()}"
+							class:selected={selectedTier.toLowerCase() === opt.id.toLowerCase()}
+							on:click={() => (selectedTier = opt.id)}
 						>
-							<i class="fa-solid {tierOption === 'Legacy' ? 'fa-wand-magic-sparkles' : tierOption === 'Premium' ? 'fa-gem' : tierOption === 'Basic' ? 'fa-certificate' : 'fa-ban'}"></i>
+							<i class="fa-solid {opt.icon}"></i>
 							<div class="tier-choice-label">
-								<span class="tier-choice-name">{tierOption}</span>
-								<span class="tier-choice-desc">
-									{tierOption === 'Legacy' ? 'Legacy supporter (unlimited alerts)' : tierOption === 'Premium' ? 'Premium tier (enhanced limits)' : tierOption === 'Basic' ? 'Standard free tier' : 'Default / Discord synced'}
-								</span>
+								<span class="tier-choice-name">{opt.label}</span>
+								<span class="tier-choice-desc">{opt.desc}</span>
 							</div>
-							{#if selectedTier.toLowerCase() === tierOption.toLowerCase()}
+							{#if selectedTier.toLowerCase() === opt.id.toLowerCase()}
 								<i class="fa-solid fa-circle-check check-icon"></i>
 							{/if}
 						</button>
@@ -2454,6 +2468,12 @@
 		color: #c084fc;
 	}
 
+	.tier-filter-pill.tier-banned.active {
+		background: rgba(239, 68, 68, 0.2);
+		border-color: #ef4444;
+		color: #f87171;
+	}
+
 	.user-accordion-list {
 		display: flex;
 		flex-direction: column;
@@ -3059,6 +3079,15 @@
 
 	.tier-choice-btn.tier-btn-basic i {
 		color: #94a3b8;
+	}
+
+	.tier-choice-btn.tier-btn-banned.selected {
+		border-color: #ef4444;
+		background: rgba(239, 68, 68, 0.08);
+	}
+
+	.tier-choice-btn.tier-btn-banned i {
+		color: #ef4444;
 	}
 
 	.save-tier-btn {

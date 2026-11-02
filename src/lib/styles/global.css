@@ -100,6 +100,12 @@ h1 {
   opacity: 0.6;
 }
 
+.tier-banned {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
 .tier-badge i {
   font-size: 0.8rem;
 }

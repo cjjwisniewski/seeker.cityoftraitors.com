@@ -715,6 +715,16 @@
 
 <svelte:window on:click={closeMenu} on:keydown={handleGlobalKeyDown} />
 
+{#if ($auth.user?.membershipTier || '').toLowerCase() === 'banned'}
+	<div class="seeking-suspended-banner">
+		<i class="fa-solid fa-triangle-exclamation"></i>
+		<div class="suspended-banner-content">
+			<strong>Account Suspended</strong>
+			<span>Your account has been suspended by an administrator. Stock checks are disabled and you cannot add new cards.</span>
+		</div>
+	</div>
+{/if}
+
 <div class="workspace-toolbar">
 	<div class="toolbar-left">
 		<div class="search-box">
@@ -788,7 +798,9 @@
 		<div class="card-counter" title="Total sought cards">
 			<i class="fa-solid fa-layer-group"></i>
 			<span>
-				{#if isPremiumOrLegacy}
+				{#if ($auth.user?.membershipTier || '').toLowerCase() === 'banned'}
+					<span class="suspended-tag">Suspended</span>
+				{:else if isPremiumOrLegacy}
 					<strong>{cards.length}</strong> cards
 				{:else}
 					<strong>{cards.length}</strong> / 25 cards
@@ -1335,6 +1347,45 @@
 		max-width: 1200px;
 		padding: 0 1rem;
 		animation: fadeIn 0.5s ease-out;
+	}
+
+	.seeking-suspended-banner {
+		margin: 1.5rem auto 0.5rem auto;
+		max-width: 1200px;
+		padding: 0.85rem 1.25rem;
+		background: rgba(239, 68, 68, 0.12);
+		border: 1px solid rgba(239, 68, 68, 0.35);
+		border-radius: 12px;
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		color: var(--color-text-primary);
+	}
+
+	.seeking-suspended-banner i {
+		font-size: 1.35rem;
+		color: #ef4444;
+		flex-shrink: 0;
+	}
+
+	.suspended-banner-content {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		font-size: 0.875rem;
+	}
+
+	.suspended-banner-content strong {
+		color: #ef4444;
+	}
+
+	.suspended-banner-content span {
+		color: var(--color-text-secondary);
+	}
+
+	.suspended-tag {
+		color: #ef4444;
+		font-weight: 700;
 	}
 
 	/* Workspace Toolbar */

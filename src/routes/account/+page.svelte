@@ -239,7 +239,9 @@
 								class="fa-solid {user.membershipTier === 'Premium' ||
 								user.membershipTier === 'Legacy'
 									? 'fa-crown'
-									: 'fa-certificate'}"
+									: (user.membershipTier || '').toLowerCase() === 'banned'
+										? 'fa-ban'
+										: 'fa-certificate'}"
 							></i>
 							{user.membershipTier || 'Basic'}
 						</span>
@@ -258,6 +260,18 @@
 				</div>
 			</div>
 		</div>
+
+		{#if (user.membershipTier || '').toLowerCase() === 'banned'}
+			<div class="account-suspended-banner">
+				<div class="suspended-icon">
+					<i class="fa-solid fa-triangle-exclamation"></i>
+				</div>
+				<div class="suspended-text">
+					<h3>Account Suspended</h3>
+					<p>Your account has been suspended by an administrator. Automated stock checks, Discord alerts, and adding cards to your seeking list are currently disabled.</p>
+				</div>
+			</div>
+		{/if}
 
 		<!-- Profile Sections Grid -->
 		<div class="profile-content">
@@ -288,7 +302,9 @@
 									class="fa-solid {user.membershipTier === 'Premium' ||
 									user.membershipTier === 'Legacy'
 										? 'fa-crown'
-										: 'fa-certificate'}"
+										: (user.membershipTier || '').toLowerCase() === 'banned'
+											? 'fa-ban'
+											: 'fa-certificate'}"
 								></i>
 								{user.membershipTier || 'Basic'}
 							</span>
@@ -775,6 +791,45 @@
 		padding: 1.5rem 1.75rem;
 		box-shadow: var(--shadow-sm);
 		flex-wrap: wrap;
+	}
+
+	.account-suspended-banner {
+		display: flex;
+		align-items: flex-start;
+		gap: 1rem;
+		background: rgba(239, 68, 68, 0.12);
+		border: 1px solid rgba(239, 68, 68, 0.35);
+		border-radius: 14px;
+		padding: 1.25rem 1.5rem;
+		margin-bottom: 2rem;
+		color: var(--color-text-primary);
+	}
+
+	.suspended-icon {
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		background: rgba(239, 68, 68, 0.2);
+		color: #ef4444;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.25rem;
+		flex-shrink: 0;
+	}
+
+	.suspended-text h3 {
+		margin: 0 0 0.35rem 0;
+		color: #ef4444;
+		font-size: 1.05rem;
+		font-weight: 700;
+	}
+
+	.suspended-text p {
+		margin: 0;
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+		line-height: 1.45;
 	}
 
 	.profile-left {

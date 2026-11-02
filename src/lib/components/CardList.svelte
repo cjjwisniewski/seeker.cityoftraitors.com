@@ -400,6 +400,22 @@
 				return;
 			}
 
+			if (response.status === 403 && result.error === 'ACCOUNT_BANNED') {
+				buttonStates[card.id] = {
+					error: true,
+					success: false,
+					exists: false,
+					message: 'Suspended'
+				};
+				buttonStates = { ...buttonStates };
+
+				setTimeout(() => {
+					buttonStates[card.id] = { error: false, success: false, exists: false };
+					buttonStates = { ...buttonStates };
+				}, 4000);
+				return;
+			}
+
 			if (response.status === 403 && result.error === 'LIMIT_REACHED') {
 				buttonStates[card.id] = {
 					error: true,
