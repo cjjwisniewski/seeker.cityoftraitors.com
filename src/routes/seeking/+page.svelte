@@ -36,6 +36,15 @@
 	let filterFoilOnly = false;
 	let filterSetCode = '';
 
+	function toggleMenu(id, event) {
+		event.stopPropagation();
+		activeMenuId = activeMenuId === id ? null : id;
+	}
+
+	function closeMenu() {
+		activeMenuId = null;
+	}
+
 	function getCardKey(card) {
 		return `${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`;
 	}
@@ -710,98 +719,102 @@
 
 <svelte:window on:click={closeMenu} on:keydown={handleGlobalKeyDown} />
 
-<div class="page-title">
-	<h1>
-		Sought Cards
-		<span class="card-count-badge">
-			{#if isPremiumOrLegacy}
-				({cards.length})
-			{:else}
-				({cards.length} / 25)
-			{/if}
-		</span>
-	</h1>
-	<div class="view-controls">
-		{#if showFilter}
-			<div class="search-container">
+<div class="seeking-header-container">
+	<div class="header-main-row">
+		<div class="title-meta">
+			<h1 class="page-heading">
+				Sought Cards
+				<span class="card-count-pill">
+					{#if isPremiumOrLegacy}
+						{cards.length}
+					{:else}
+						{cards.length} / 25
+					{/if}
+				</span>
+			</h1>
+			<p class="page-subtitle">
+				Manage your sought card wishlist, track live marketplace availability, and configure price limits.
+			</p>
+		</div>
+
+		<div class="header-actions">
+			<div class="search-bar-inline">
+				<i class="fa-solid fa-magnifying-glass search-inline-icon"></i>
 				<input
 					type="text"
 					bind:value={searchQuery}
-					placeholder="Filter cards..."
-					class="search-input"
+					placeholder="Filter by name, set, lang..."
+					class="search-inline-input"
 				/>
-				<button class="clear-search-btn" on:click={() => (searchQuery = '')} title="Clear search">
-					<i class="fa-solid fa-times"></i>
-				</button>
+				{#if searchQuery}
+					<button class="clear-search-btn" on:click={() => (searchQuery = '')} title="Clear search">
+						<i class="fa-solid fa-times"></i>
+					</button>
+				{/if}
 			</div>
-		{/if}
-		<button
-			class="header-btn"
-			on:click={() => (showFilter = !showFilter)}
-			title="Toggle Filter"
-			class:active={showFilter}
-		>
-			<i class="fa-solid fa-filter"></i>
-		</button>
-		<button class="header-btn" on:click={downloadCSV} title="Export CSV">
-			<i class="fa-solid fa-file-csv"></i>
-		</button>
-		<button on:click={toggleCondensed} class="header-btn toggle-view-btn">
-			<i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
-		</button>
-	</div>
-</div>
-
-<div class="quick-filters-bar">
-	<button
-		type="button"
-		class="filter-pill"
-		class:active={filterInStockOnly}
-		on:click={() => (filterInStockOnly = !filterInStockOnly)}
-	>
-		<i class="fa-solid fa-circle-check"></i> In Stock Only
-	</button>
-	<button
-		type="button"
-		class="filter-pill"
-		class:active={filterUnderPriceCap}
-		on:click={() => (filterUnderPriceCap = !filterUnderPriceCap)}
-	>
-		<i class="fa-solid fa-tag"></i> Under Price Cap
-	</button>
-	<button
-		type="button"
-		class="filter-pill"
-		class:active={filterFoilOnly}
-		on:click={() => (filterFoilOnly = !filterFoilOnly)}
-	>
-		<i class="fa-solid fa-sparkles"></i> Foil Only
-	</button>
-	{#if availableSetCodes.length > 0}
-		<div class="set-filter-wrapper">
-			<select bind:value={filterSetCode} class="set-filter-select" aria-label="Filter by Set">
-				<option value="">All Sets ({availableSetCodes.length})</option>
-				{#each availableSetCodes as code}
-					<option value={code}>{code}</option>
-				{/each}
-			</select>
+			<button class="header-btn" on:click={downloadCSV} title="Export CSV">
+				<i class="fa-solid fa-file-csv"></i>
+				<span class="btn-text">Export CSV</span>
+			</button>
+			<button on:click={toggleCondensed} class="header-btn toggle-view-btn" title="Toggle Compact View">
+				<i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
+			</button>
 		</div>
-	{/if}
-	{#if filterInStockOnly || filterUnderPriceCap || filterFoilOnly || filterSetCode || searchQuery}
+	</div>
+
+	<!-- Quick Filter Pills: Subtly integrated in header toolbar -->
+	<div class="quick-filters-bar">
+		<span class="filter-label"><i class="fa-solid fa-sliders"></i> Filters:</span>
 		<button
 			type="button"
-			class="filter-pill reset"
-			on:click={() => {
-				filterInStockOnly = false;
-				filterUnderPriceCap = false;
-				filterFoilOnly = false;
-				filterSetCode = '';
-				searchQuery = '';
-			}}
+			class="filter-pill"
+			class:active={filterInStockOnly}
+			on:click={() => (filterInStockOnly = !filterInStockOnly)}
 		>
-			<i class="fa-solid fa-xmark"></i> Clear Filters
+			<i class="fa-solid fa-circle-check"></i> In Stock Only
 		</button>
-	{/if}
+		<button
+			type="button"
+			class="filter-pill"
+			class:active={filterUnderPriceCap}
+			on:click={() => (filterUnderPriceCap = !filterUnderPriceCap)}
+		>
+			<i class="fa-solid fa-tag"></i> Under Price Cap
+		</button>
+		<button
+			type="button"
+			class="filter-pill"
+			class:active={filterFoilOnly}
+			on:click={() => (filterFoilOnly = !filterFoilOnly)}
+		>
+			<i class="fa-solid fa-sparkles"></i> Foil Only
+		</button>
+		{#if availableSetCodes.length > 0}
+			<div class="set-filter-wrapper">
+				<select bind:value={filterSetCode} class="set-filter-select" aria-label="Filter by Set">
+					<option value="">All Sets ({availableSetCodes.length})</option>
+					{#each availableSetCodes as code}
+						<option value={code}>{code}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
+		{#if filterInStockOnly || filterUnderPriceCap || filterFoilOnly || filterSetCode || searchQuery}
+			<button
+				type="button"
+				class="filter-pill reset"
+				on:click={() => {
+					filterInStockOnly = false;
+					filterUnderPriceCap = false;
+					filterFoilOnly = false;
+					filterSetCode = '';
+					searchQuery = '';
+				}}
+			>
+				<i class="fa-solid fa-xmark"></i> Reset Filters
+			</button>
+		{/if}
+	</div>
 </div>
 
 {#if enlargedCardImage}
@@ -1329,80 +1342,158 @@
 		animation: fadeIn 0.5s ease-out;
 	}
 
-	.page-title {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		position: relative;
-		margin: 2rem auto;
+	.seeking-header-container {
+		margin: 2rem auto 1.5rem auto;
 		max-width: 1200px;
 		padding: 0 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
 	}
 
-	.page-title h1 {
+	.header-main-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: 1.5rem;
+		flex-wrap: wrap;
+	}
+
+	.title-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.page-heading {
 		margin: 0;
-		text-align: center;
-		flex-grow: 1;
-		font-weight: 700;
+		font-size: 2.25rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
 		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
-	}
-
-	.card-count-badge {
-		font-size: 1.25rem;
-		font-weight: 500;
-		color: var(--color-text-secondary);
-		margin-left: 0.5rem;
-		vertical-align: middle;
-		background: none;
-		-webkit-text-fill-color: var(--color-text-secondary);
-	}
-
-	.view-controls {
-		position: absolute;
-		right: 1rem;
-		top: 50%;
-		transform: translateY(-50%);
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.header-btn {
-		background-color: var(--color-bg-secondary);
-		color: var(--color-text-primary);
-		border: 1px solid var(--color-border);
-		padding: 0.5rem 1rem;
-		border-radius: 8px;
-		cursor: pointer;
-		font-size: 0.9rem;
-		transition: all var(--transition-fast);
 		display: inline-flex;
 		align-items: center;
-		justify-content: center;
-		box-shadow: var(--shadow-sm);
+		gap: 0.75rem;
 	}
 
-	.header-btn:hover {
-		background-color: var(--color-bg-hover);
-		border-color: var(--color-border-hover);
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
+	.card-count-pill {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--color-primary);
+		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.12));
+		border: 1px solid var(--color-primary-alpha, rgba(99, 102, 241, 0.3));
+		padding: 0.2rem 0.65rem;
+		border-radius: 9999px;
+		vertical-align: middle;
+		-webkit-text-fill-color: var(--color-primary);
+	}
+
+	.page-subtitle {
+		margin: 0;
+		font-size: 0.95rem;
+		color: var(--color-text-muted);
+		max-width: 600px;
+		line-height: 1.4;
+	}
+
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.search-bar-inline {
+		display: flex;
+		align-items: center;
+		position: relative;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		padding: 0 0.75rem;
+		height: 38px;
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+	}
+
+	.search-bar-inline:focus-within {
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 2px var(--color-primary-alpha, rgba(99, 102, 241, 0.2));
+	}
+
+	.search-inline-icon {
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+		margin-right: 0.5rem;
+	}
+
+	.search-inline-input {
+		background: transparent;
+		border: none;
+		color: var(--color-text-primary);
+		font-size: 0.9rem;
+		outline: none;
+		width: 180px;
+		transition: width var(--transition-normal);
+	}
+
+	.search-inline-input:focus {
+		width: 240px;
+	}
+
+	.btn-text {
+		margin-left: 0.4rem;
 	}
 
 	@media (max-width: 768px) {
-		.page-title {
+		.header-main-row {
 			flex-direction: column;
+			align-items: stretch;
 			gap: 1rem;
-			margin: 1.5rem auto;
 		}
 
-		.view-controls {
-			position: static;
-			transform: none;
-			width: 100%;
-			justify-content: center;
+		.page-heading {
+			font-size: 1.85rem;
 		}
+
+		.search-inline-input {
+			width: 100%;
+		}
+
+		.search-inline-input:focus {
+			width: 100%;
+		}
+
+		.search-bar-inline {
+			flex: 1;
+		}
+
+		.btn-text {
+			display: none;
+		}
+	}
+
+	/* Quick Filters Bar */
+	.quick-filters-bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		align-items: center;
+		padding-top: 0.25rem;
+		border-top: 1px solid var(--color-border-light, rgba(255, 255, 255, 0.06));
+	}
+
+	.filter-label {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-right: 0.25rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 	}
 
 	table {
