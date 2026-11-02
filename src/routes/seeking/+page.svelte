@@ -21,9 +21,173 @@
 	let maxPriceInput = '';
 	let isSavingSettings = false;
 
-	function toggleMenu(id, event) {
-		event.stopPropagation();
-		activeMenuId = activeMenuId === id ? null : id;
+	// Multi-select & Bulk action state
+	let selectedKeys = new Set();
+	let lastSelectedIndex = -1;
+	let showBulkDeleteModal = false;
+	let showBulkPriceCapModal = false;
+	let bulkPriceCapInput = '';
+	let isProcessingBulkAction = false;
+	let bulkActionProgress = { current: 0, total: 0 };
+
+	// Quick filter pills state
+	let filterInStockOnly = false;
+	let filterUnderPriceCap = false;
+	let filterFoilOnly = false;
+	let filterSetCode = '';
+
+	function getCardKey(card) {
+		return `${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`;
+	}
+
+	function handleRowClick(card, index, event) {
+		// Ignore clicks on links, buttons, inputs, images with zoom, or kebab menu
+		const target = event.target;
+		if (
+			target.closest('a') ||
+			target.closest('button') ||
+			target.closest('input') ||
+			target.closest('.card-thumbnail') ||
+			target.closest('.kebab-dropdown')
+		) {
+			return;
+		}
+
+		const key = getCardKey(card);
+		const isMac = typeof navigator !== 'undefined' && navigator.platform?.toUpperCase().indexOf('MAC') >= 0;
+		const isMultiModifier = isMac ? event.metaKey : event.ctrlKey;
+
+		if (event.shiftKey && lastSelectedIndex >= 0) {
+			// Range selection
+			event.preventDefault();
+			const start = Math.min(lastSelectedIndex, index);
+			const end = Math.max(lastSelectedIndex, index);
+			const newSelected = new Set(selectedKeys);
+			for (let i = start; i <= end; i++) {
+				if (sortedCards[i]) {
+					newSelected.add(getCardKey(sortedCards[i]));
+				}
+			}
+			selectedKeys = newSelected;
+		} else if (isMultiModifier) {
+			// Toggle single item
+			event.preventDefault();
+			const newSelected = new Set(selectedKeys);
+			if (newSelected.has(key)) {
+				newSelected.delete(key);
+			} else {
+				newSelected.add(key);
+			}
+			selectedKeys = newSelected;
+			lastSelectedIndex = index;
+		} else {
+			// Regular click - if cards are already selected, clear or toggle
+			if (selectedKeys.size > 0) {
+				if (selectedKeys.has(key) && selectedKeys.size === 1) {
+					selectedKeys = new Set();
+					lastSelectedIndex = -1;
+				} else {
+					selectedKeys = new Set([key]);
+					lastSelectedIndex = index;
+				}
+			}
+		}
+	}
+
+	function clearSelection() {
+		selectedKeys = new Set();
+		lastSelectedIndex = -1;
+	}
+
+	function selectAllFiltered() {
+		selectedKeys = new Set(sortedCards.map(getCardKey));
+	}
+
+	async function handleBulkDelete() {
+		if (selectedKeys.size === 0 || isProcessingBulkAction) return;
+		isProcessingBulkAction = true;
+		error = null;
+
+		const cardsToDelete = cards.filter((c) => selectedKeys.has(getCardKey(c)));
+		bulkActionProgress = { current: 0, total: cardsToDelete.length };
+
+		for (const card of cardsToDelete) {
+			try {
+				const requestBody = {
+					partitionKey: card.set_code,
+					rowKey: `${card.collector_number}_${card.language}_${card.finish}`
+				};
+				await fetchWithAuth(PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL, {
+					method: 'DELETE',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(requestBody)
+				});
+				cards = cards.filter((c) => getCardKey(c) !== getCardKey(card));
+			} catch (err) {
+				console.error(`Failed to delete card ${card.name}:`, err);
+			}
+			bulkActionProgress.current++;
+			bulkActionProgress = { ...bulkActionProgress };
+		}
+
+		clearSelection();
+		showBulkDeleteModal = false;
+		isProcessingBulkAction = false;
+	}
+
+	async function handleBulkSetPriceCap() {
+		if (selectedKeys.size === 0 || isProcessingBulkAction) return;
+		isProcessingBulkAction = true;
+		error = null;
+
+		const cardsToUpdate = cards.filter((c) => selectedKeys.has(getCardKey(c)));
+		bulkActionProgress = { current: 0, total: cardsToUpdate.length };
+
+		let parsedCap = null;
+		if (bulkPriceCapInput && bulkPriceCapInput.trim() !== '') {
+			const floatVal = parseFloat(bulkPriceCapInput);
+			if (!isNaN(floatVal) && floatVal >= 0) {
+				parsedCap = Math.round(floatVal * 100);
+			}
+		}
+
+		for (const card of cardsToUpdate) {
+			try {
+				const requestBody = {
+					partitionKey: card.set_code,
+					rowKey: `${card.collector_number}_${card.language}_${card.finish}`,
+					max_price_cap: parsedCap
+				};
+				await fetchWithAuth(PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(requestBody)
+				});
+				card.max_price_cap = parsedCap;
+			} catch (err) {
+				console.error(`Failed to set price cap for ${card.name}:`, err);
+			}
+			bulkActionProgress.current++;
+			bulkActionProgress = { ...bulkActionProgress };
+		}
+
+		cards = [...cards];
+		clearSelection();
+		showBulkPriceCapModal = false;
+		isProcessingBulkAction = false;
+		bulkPriceCapInput = '';
+	}
+
+	function handleGlobalKeyDown(event) {
+		if (event.key === 'Escape') {
+			if (showBulkDeleteModal) {
+				showBulkDeleteModal = false;
+			} else if (showBulkPriceCapModal) {
+				showBulkPriceCapModal = false;
+			} else if (selectedKeys.size > 0) {
+				clearSelection();
+			}
+		}
 	}
 
 	function closeMenu() {
@@ -385,16 +549,60 @@
 		}
 	}
 
-	// Reactive sorted list
+	// Derive all unique set codes present in the cards list for the set filter dropdown
+	$: availableSetCodes = [...new Set(cards.map((c) => c.set_code.toUpperCase()))].sort();
+
+	// Reactive sorted & filtered list
 	$: filteredCards = cards.filter((card) => {
-		if (!searchQuery) return true;
-		const query = searchQuery.toLowerCase();
-		return (
-			card.name.toLowerCase().includes(query) ||
-			card.set_code.toLowerCase().includes(query) ||
-			card.language.toLowerCase().includes(query) ||
-			card.finish.toLowerCase().includes(query)
-		);
+		if (searchQuery) {
+			const query = searchQuery.toLowerCase();
+			const matchesQuery = (
+				card.name.toLowerCase().includes(query) ||
+				card.set_code.toLowerCase().includes(query) ||
+				card.language.toLowerCase().includes(query) ||
+				card.finish.toLowerCase().includes(query)
+			);
+			if (!matchesQuery) return false;
+		}
+
+		// Quick filter pills
+		if (filterFoilOnly && card.finish.toLowerCase() !== 'foil') {
+			return false;
+		}
+
+		if (filterSetCode && card.set_code.toUpperCase() !== filterSetCode.toUpperCase()) {
+			return false;
+		}
+
+		if (filterInStockOnly) {
+			const hasStock = (
+				(showCardTrader && card.cardtrader_stock === true) ||
+				(showTCGPlayer && card.tcgplayer_stock === true) ||
+				(showEbay && card.ebay_stock === true) ||
+				(showManapool && card.manapool_stock === true)
+			);
+			if (!hasStock) return false;
+		}
+
+		if (filterUnderPriceCap) {
+			if (card.max_price_cap === null || card.max_price_cap === undefined) return false;
+			const cap = card.max_price_cap;
+			const prices = [];
+			if (showCardTrader && card.cardtrader_low_price > 0) prices.push(card.cardtrader_low_price);
+			if (showTCGPlayer && card.tcgplayer_low_price > 0 && getStockStatus(card.tcgplayer_stock) === 'available') {
+				prices.push(Math.round(card.tcgplayer_low_price * 100));
+			}
+			if (showEbay && card.ebay_low_price > 0 && getStockStatus(card.ebay_stock) === 'available') {
+				prices.push(card.ebay_low_price);
+			}
+			if (showManapool && card.manapool_low_price > 0 && getStockStatus(card.manapool_stock) === 'available') {
+				prices.push(card.manapool_low_price);
+			}
+			const hasPriceUnderCap = prices.some((p) => p <= cap);
+			if (!hasPriceUnderCap) return false;
+		}
+
+		return true;
 	});
 
 	$: sortedCards = [...filteredCards].sort((a, b) => {
@@ -500,7 +708,7 @@
 	}
 </script>
 
-<svelte:window on:click={closeMenu} />
+<svelte:window on:click={closeMenu} on:keydown={handleGlobalKeyDown} />
 
 <div class="page-title">
 	<h1>
@@ -542,6 +750,58 @@
 			<i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
 		</button>
 	</div>
+</div>
+
+<div class="quick-filters-bar">
+	<button
+		type="button"
+		class="filter-pill"
+		class:active={filterInStockOnly}
+		on:click={() => (filterInStockOnly = !filterInStockOnly)}
+	>
+		<i class="fa-solid fa-circle-check"></i> In Stock Only
+	</button>
+	<button
+		type="button"
+		class="filter-pill"
+		class:active={filterUnderPriceCap}
+		on:click={() => (filterUnderPriceCap = !filterUnderPriceCap)}
+	>
+		<i class="fa-solid fa-tag"></i> Under Price Cap
+	</button>
+	<button
+		type="button"
+		class="filter-pill"
+		class:active={filterFoilOnly}
+		on:click={() => (filterFoilOnly = !filterFoilOnly)}
+	>
+		<i class="fa-solid fa-sparkles"></i> Foil Only
+	</button>
+	{#if availableSetCodes.length > 0}
+		<div class="set-filter-wrapper">
+			<select bind:value={filterSetCode} class="set-filter-select" aria-label="Filter by Set">
+				<option value="">All Sets ({availableSetCodes.length})</option>
+				{#each availableSetCodes as code}
+					<option value={code}>{code}</option>
+				{/each}
+			</select>
+		</div>
+	{/if}
+	{#if filterInStockOnly || filterUnderPriceCap || filterFoilOnly || filterSetCode || searchQuery}
+		<button
+			type="button"
+			class="filter-pill reset"
+			on:click={() => {
+				filterInStockOnly = false;
+				filterUnderPriceCap = false;
+				filterFoilOnly = false;
+				filterSetCode = '';
+				searchQuery = '';
+			}}
+		>
+			<i class="fa-solid fa-xmark"></i> Clear Filters
+		</button>
+	{/if}
 </div>
 
 {#if enlargedCardImage}
@@ -665,8 +925,12 @@
 			</thead>
 			<tbody>
 				{#each sortedCards as card, index (`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`)}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 					<tr
 						class:condensed={isCondensed}
+						class:selected={selectedKeys.has(getCardKey(card))}
+						on:click={(e) => handleRowClick(card, index, e)}
 						style={activeMenuId ===
 						`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`
 							? 'z-index: 50; position: relative;'
@@ -936,6 +1200,127 @@
 	</div>
 {/if}
 
+{#if showBulkPriceCapModal}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}>
+		<div class="modal-content" on:click|stopPropagation>
+			<div class="modal-header">
+				<h2>Set Price Cap ({selectedKeys.size} Cards)</h2>
+				<button class="close-modal-btn" on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}>
+					<i class="fa-solid fa-times"></i>
+				</button>
+			</div>
+			<div class="modal-body">
+				<p class="setting-description">
+					Apply a maximum price cap to all <strong>{selectedKeys.size}</strong> selected cards. Leave empty to remove the cap on selected cards.
+				</p>
+				<div class="settings-group">
+					<label for="bulk-price-cap">Max Price Cap ($)</label>
+					<div class="input-with-prefix">
+						<span>$</span>
+						<input
+							id="bulk-price-cap"
+							type="number"
+							step="0.01"
+							min="0"
+							bind:value={bulkPriceCapInput}
+							placeholder="e.g. 25.00"
+							class="modal-input"
+							disabled={isProcessingBulkAction}
+						/>
+					</div>
+				</div>
+				{#if isProcessingBulkAction}
+					<div class="bulk-progress-text">
+						Updating {bulkActionProgress.current} of {bulkActionProgress.total}...
+					</div>
+				{/if}
+			</div>
+			<div class="modal-footer">
+				<button
+					class="modal-btn secondary"
+					on:click={() => (showBulkPriceCapModal = false)}
+					disabled={isProcessingBulkAction}
+				>
+					Cancel
+				</button>
+				<button
+					class="modal-btn primary"
+					on:click={handleBulkSetPriceCap}
+					disabled={isProcessingBulkAction}
+				>
+					{isProcessingBulkAction ? 'Applying...' : 'Apply Price Cap'}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if showBulkDeleteModal}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}>
+		<div class="modal-content" on:click|stopPropagation>
+			<div class="modal-header">
+				<h2>Delete {selectedKeys.size} Cards?</h2>
+				<button class="close-modal-btn" on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}>
+					<i class="fa-solid fa-times"></i>
+				</button>
+			</div>
+			<div class="modal-body">
+				<p class="setting-description text-error-desc">
+					Are you sure you want to remove <strong>{selectedKeys.size}</strong> selected cards from your Seeking list? This action cannot be undone.
+				</p>
+				{#if isProcessingBulkAction}
+					<div class="bulk-progress-text">
+						Deleting {bulkActionProgress.current} of {bulkActionProgress.total}...
+					</div>
+				{/if}
+			</div>
+			<div class="modal-footer">
+				<button
+					class="modal-btn secondary"
+					on:click={() => (showBulkDeleteModal = false)}
+					disabled={isProcessingBulkAction}
+				>
+					Cancel
+				</button>
+				<button
+					class="modal-btn danger"
+					on:click={handleBulkDelete}
+					disabled={isProcessingBulkAction}
+				>
+					{isProcessingBulkAction ? 'Deleting...' : `Delete ${selectedKeys.size} Cards`}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if selectedKeys.size > 0}
+	<aside class="floating-bulk-bar" aria-label="Bulk actions toolbar">
+		<div class="bulk-info">
+			<span class="bulk-count"><strong>{selectedKeys.size}</strong> card{selectedKeys.size === 1 ? '' : 's'} selected</span>
+			<span class="bulk-hint desktop-only">(Shift/Ctrl to multi-select)</span>
+		</div>
+		<div class="bulk-actions">
+			<button class="bulk-btn" on:click={() => (showBulkPriceCapModal = true)}>
+				<i class="fa-solid fa-tag"></i> Set Price Cap
+			</button>
+			<button class="bulk-btn danger" on:click={() => (showBulkDeleteModal = true)}>
+				<i class="fa-solid fa-trash"></i> Delete Selected
+			</button>
+			<button class="bulk-btn secondary" on:click={selectAllFiltered}>
+				Select All ({sortedCards.length})
+			</button>
+			<button class="bulk-btn secondary" on:click={clearSelection} title="Clear selection (Esc)">
+				<i class="fa-solid fa-xmark"></i>
+			</button>
+		</div>
+	</aside>
+{/if}
+
 <style>
 	.seeking-list {
 		margin: 2rem auto;
@@ -1084,6 +1469,181 @@
 
 	tbody tr:hover td {
 		background-color: var(--color-bg-hover);
+	}
+
+	tbody tr {
+		cursor: pointer;
+	}
+
+	tbody tr.selected td {
+		background-color: var(--color-primary-alpha, rgba(99, 102, 241, 0.15)) !important;
+	}
+
+	tbody tr.selected {
+		box-shadow: inset 3px 0 0 var(--color-primary, #6366f1);
+	}
+
+	/* Quick Filters Bar */
+	.quick-filters-bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		align-items: center;
+		margin: 0 auto 1.5rem auto;
+		max-width: 1200px;
+		padding: 0 1rem;
+	}
+
+	.filter-pill {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		padding: 0.35rem 0.75rem;
+		border-radius: 20px;
+		font-size: 0.8rem;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		transition: all var(--transition-fast);
+		font-weight: 500;
+	}
+
+	.filter-pill:hover {
+		border-color: var(--color-primary);
+		color: var(--color-text-primary);
+	}
+
+	.filter-pill.active {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: white;
+	}
+
+	.filter-pill.reset {
+		background: transparent;
+		border: 1px dashed var(--color-border);
+	}
+
+	.filter-pill.reset:hover {
+		border-color: var(--color-error);
+		color: var(--color-error);
+	}
+
+	.set-filter-select {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		padding: 0.35rem 0.75rem;
+		border-radius: 20px;
+		font-size: 0.8rem;
+		cursor: pointer;
+		outline: none;
+		font-weight: 500;
+	}
+
+	.set-filter-select:focus {
+		border-color: var(--color-primary);
+	}
+
+	/* Floating Bulk Actions Toolbar */
+	.floating-bulk-bar {
+		position: fixed;
+		bottom: 1.5rem;
+		left: 50%;
+		transform: translateX(-50%);
+		background: var(--color-bg-elevated, #1e1e2d);
+		border: 1px solid var(--color-border);
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+		border-radius: 12px;
+		padding: 0.75rem 1.25rem;
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		z-index: 900;
+		animation: slideUp 0.25s ease-out;
+		max-width: 90vw;
+	}
+
+	.bulk-info {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		white-space: nowrap;
+		color: var(--color-text-primary);
+		font-size: 0.9rem;
+	}
+
+	.bulk-hint {
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+	}
+
+	.bulk-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.bulk-btn {
+		background: var(--color-primary);
+		color: white;
+		border: none;
+		padding: 0.4rem 0.85rem;
+		border-radius: 6px;
+		font-size: 0.85rem;
+		font-weight: 500;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		transition: opacity var(--transition-fast), transform var(--transition-fast);
+		white-space: nowrap;
+	}
+
+	.bulk-btn:hover {
+		opacity: 0.9;
+		transform: translateY(-1px);
+	}
+
+	.bulk-btn.danger,
+	.modal-btn.danger {
+		background: var(--color-error, #ef4444);
+		color: white;
+		border: none;
+	}
+
+	.bulk-btn.secondary {
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-primary);
+	}
+
+	.bulk-btn.secondary:hover {
+		background: var(--color-bg-hover);
+	}
+
+	.text-error-desc {
+		color: var(--color-error) !important;
+	}
+
+	.bulk-progress-text {
+		font-size: 0.85rem;
+		color: var(--color-primary);
+		font-weight: 500;
+		margin-top: 0.5rem;
+	}
+
+	@keyframes slideUp {
+		from {
+			transform: translate(-50%, 20px);
+			opacity: 0;
+		}
+		to {
+			transform: translate(-50%, 0);
+			opacity: 1;
+		}
 	}
 
 	.sort-icon {
