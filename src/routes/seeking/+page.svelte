@@ -10,8 +10,22 @@
 		PUBLIC_ADD_TO_SEEKING_FUNCTION_URL,
 		PUBLIC_FETCH_MOXFIELD_DECK_FUNCTION_URL
 	} from '$env/static/public';
+	import { env as publicEnv } from '$env/dynamic/public';
 
 	let cards = [];
+	let lastChecked = {
+		cardtrader: null,
+		tcgplayer: null,
+		ebay: null,
+		manapool: null
+	};
+	let checkingStockCardKeys = new Set();
+	let stockCheckToast = null; // { type: 'success' | 'warning' | 'error', message: string }
+	let stockCheckToastTimer = null;
+	let nowTick = Date.now();
+	let cooldownInterval = null;
+	const MANUAL_CHECK_COOLDOWN_MS = 15 * 60 * 1000;
+	const ADMIN_COOLDOWN_MS = 30 * 1000;
 	let error = null;
 	let loading = true; // Re-declare the loading variable
 	let setCodeToNameMap = {}; // Map of set code to full set name from Scryfall
@@ -868,10 +882,157 @@
 
 	// Reactive checks for enabled marketplaces from user settings
 	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
+	$: canManualCheckStock = isPremiumOrLegacy || Boolean($auth.user?.isAdmin);
 	$: showCardTrader = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
 	$: showTCGPlayer = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
 	$: showEbay = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
 	$: showManapool = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
+
+	function showStockCheckFeedback(type, message) {
+		stockCheckToast = { type, message };
+		if (stockCheckToastTimer) clearTimeout(stockCheckToastTimer);
+		stockCheckToastTimer = setTimeout(() => {
+			stockCheckToast = null;
+		}, 4500);
+	}
+
+	function formatRelativeTime(isoStr, currentNow = nowTick) {
+		if (!isoStr) return null;
+		const parsed = Date.parse(isoStr);
+		if (isNaN(parsed)) return null;
+		const diffSec = Math.max(0, Math.floor((currentNow - parsed) / 1000));
+		if (diffSec < 60) return 'Just now';
+		const diffMin = Math.floor(diffSec / 60);
+		if (diffMin < 60) return `${diffMin}m ago`;
+		const diffHr = Math.floor(diffMin / 60);
+		if (diffHr < 24) return `${diffHr}h ago`;
+		const diffDays = Math.floor(diffHr / 24);
+		return `${diffDays}d ago`;
+	}
+
+	function formatExactTimestamp(isoStr) {
+		if (!isoStr) return 'No scheduled check recorded yet';
+		const parsed = Date.parse(isoStr);
+		if (isNaN(parsed)) return 'No scheduled check recorded yet';
+		return new Date(parsed).toLocaleString();
+	}
+
+	function getCardCooldownRemainingSec(card, currentNow = nowTick) {
+		if (!card?.last_manual_check) return 0;
+		const parsed = Date.parse(card.last_manual_check);
+		if (isNaN(parsed)) return 0;
+		const cooldownMs = $auth.user?.isAdmin ? ADMIN_COOLDOWN_MS : MANUAL_CHECK_COOLDOWN_MS;
+		const remainingMs = cooldownMs - (currentNow - parsed);
+		return remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0;
+	}
+
+	function formatCooldownRemaining(seconds) {
+		if (!seconds || seconds <= 0) return '';
+		if (seconds < 60) return `${seconds}s`;
+		return `${Math.ceil(seconds / 60)}m`;
+	}
+
+	async function handleManualStockCheck(card) {
+		if (!card || !canManualCheckStock) return;
+		const cardKey = getCardKey(card);
+		if (checkingStockCardKeys.has(cardKey)) return;
+
+		const remainingSec = getCardCooldownRemainingSec(card, Date.now());
+		if (remainingSec > 0) {
+			showStockCheckFeedback(
+				'warning',
+				`${card.name} was checked recently. Available again in ${formatCooldownRemaining(remainingSec)}.`
+			);
+			return;
+		}
+
+		checkingStockCardKeys.add(cardKey);
+		checkingStockCardKeys = new Set(checkingStockCardKeys);
+		closeMenu();
+
+		const payload = {
+			action: 'check_stock',
+			partitionKey: card.set_code,
+			rowKey: `${card.collector_number}_${card.language}_${card.finish}`
+		};
+
+		try {
+			const dedicatedUrl = publicEnv.PUBLIC_TRIGGER_STOCK_CHECK_FUNCTION_URL;
+			let response = null;
+
+			if (dedicatedUrl) {
+				response = await fetchWithAuth(dedicatedUrl, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(payload)
+				});
+			}
+
+			// Fallback to updateSeekingCard if dedicated endpoint is not yet provisioned in APIM
+			if (!response || response.status === 404) {
+				response = await fetchWithAuth(PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(payload)
+				});
+			}
+
+			if (!response) {
+				showStockCheckFeedback('error', 'Authentication failed while queuing stock check.');
+				return;
+			}
+
+			let result = null;
+			try {
+				result = await response.json();
+			} catch (e) {
+				result = null;
+			}
+
+			if (response.status === 429) {
+				if (result?.last_manual_check) {
+					cards = cards.map((c) =>
+						getCardKey(c) === cardKey ? { ...c, last_manual_check: result.last_manual_check } : c
+					);
+					if (selectedCardForSettings && getCardKey(selectedCardForSettings) === cardKey) {
+						selectedCardForSettings = {
+							...selectedCardForSettings,
+							last_manual_check: result.last_manual_check
+						};
+					}
+				}
+				nowTick = Date.now();
+				showStockCheckFeedback(
+					'warning',
+					result?.message || 'This card was checked recently. Please wait before checking again.'
+				);
+				return;
+			}
+
+			if (!response.ok) {
+				throw new Error(result?.message || `Failed to queue stock check (Status ${response.status})`);
+			}
+
+			const checkedIso = result?.last_manual_check || new Date().toISOString();
+			cards = cards.map((c) =>
+				getCardKey(c) === cardKey ? { ...c, last_manual_check: checkedIso } : c
+			);
+			if (selectedCardForSettings && getCardKey(selectedCardForSettings) === cardKey) {
+				selectedCardForSettings = {
+					...selectedCardForSettings,
+					last_manual_check: checkedIso
+				};
+			}
+			nowTick = Date.now();
+			showStockCheckFeedback('success', `Queued live stock check for ${card.name}.`);
+		} catch (e) {
+			console.error('Error triggering manual stock check:', e);
+			showStockCheckFeedback('error', e.message || 'Could not queue stock check.');
+		} finally {
+			checkingStockCardKeys.delete(cardKey);
+			checkingStockCardKeys = new Set(checkingStockCardKeys);
+		}
+	}
 
 	async function fetchScryfallSets() {
 		try {
@@ -900,6 +1061,9 @@
 		}
 
 		fetchScryfallSets();
+		cooldownInterval = setInterval(() => {
+			nowTick = Date.now();
+		}, 15000);
 
 		// Wait for auth store to initialize if needed
 		unsubscribe = auth.subscribe((state) => {
@@ -922,6 +1086,12 @@
 	onDestroy(() => {
 		if (unsubscribe) {
 			unsubscribe();
+		}
+		if (cooldownInterval) {
+			clearInterval(cooldownInterval);
+		}
+		if (stockCheckToastTimer) {
+			clearTimeout(stockCheckToastTimer);
 		}
 	});
 
@@ -953,6 +1123,14 @@
 
 			const data = await response.json();
 			cards = data.cards;
+			if (data.lastChecked) {
+				lastChecked = {
+					cardtrader: data.lastChecked.cardtrader || null,
+					tcgplayer: data.lastChecked.tcgplayer || null,
+					ebay: data.lastChecked.ebay || null,
+					manapool: data.lastChecked.manapool || null
+				};
+			}
 		} catch (e) {
 			error = e.message;
 			console.error('Error fetching cards:', e);
@@ -1676,6 +1854,27 @@
 	</div>
 </div>
 
+{#if stockCheckToast}
+	<div class="stock-check-toast {stockCheckToast.type}" role="status">
+		<i
+			class="fa-solid {stockCheckToast.type === 'success'
+				? 'fa-circle-check'
+				: stockCheckToast.type === 'warning'
+					? 'fa-clock'
+					: 'fa-circle-exclamation'}"
+		></i>
+		<span>{stockCheckToast.message}</span>
+		<button
+			type="button"
+			class="toast-dismiss-btn"
+			aria-label="Dismiss notification"
+			on:click={() => (stockCheckToast = null)}
+		>
+			<i class="fa-solid fa-xmark"></i>
+		</button>
+	</div>
+{/if}
+
 {#if enlargedCardImage}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -1739,26 +1938,46 @@
 					<th
 						on:click={() => sortBy('cardtrader_low_price')}
 						class:active={sortKey === 'cardtrader_low_price'}
+						title={lastChecked.cardtrader ? `CardTrader last checked: ${formatExactTimestamp(lastChecked.cardtrader)}` : 'CardTrader stock & lowest price'}
 					>
-						CardTrader
-						{#if sortKey === 'cardtrader_low_price'}
-							<i
-								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-							></i>
-						{/if}
+						<div class="th-vendor-wrap">
+							<span class="th-vendor-title">
+								CardTrader
+								{#if sortKey === 'cardtrader_low_price'}
+									<i
+										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+									></i>
+								{/if}
+							</span>
+							{#if formatRelativeTime(lastChecked.cardtrader, nowTick)}
+								<span class="th-last-checked">
+									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.cardtrader, nowTick)}
+								</span>
+							{/if}
+						</div>
 					</th>
 					{/if}
 					{#if showTCGPlayer}
 					<th
 						on:click={() => sortBy('tcgplayer_low_price')}
 						class:active={sortKey === 'tcgplayer_low_price'}
+						title={lastChecked.tcgplayer ? `TCGPlayer last checked: ${formatExactTimestamp(lastChecked.tcgplayer)}` : 'TCGPlayer stock & lowest price'}
 					>
-						TCGPlayer
-						{#if sortKey === 'tcgplayer_low_price'}
-							<i
-								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-							></i>
-						{/if}
+						<div class="th-vendor-wrap">
+							<span class="th-vendor-title">
+								TCGPlayer
+								{#if sortKey === 'tcgplayer_low_price'}
+									<i
+										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+									></i>
+								{/if}
+							</span>
+							{#if formatRelativeTime(lastChecked.tcgplayer, nowTick)}
+								<span class="th-last-checked">
+									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.tcgplayer, nowTick)}
+								</span>
+							{/if}
+						</div>
 					</th>
 					{/if}
 					<th class="disabled-column display-none" title="CardMarket stock check coming soon">
@@ -1769,26 +1988,46 @@
 					<th
 						on:click={() => sortBy('ebay_low_price')}
 						class:active={sortKey === 'ebay_low_price'}
+						title={lastChecked.ebay ? `eBay last checked: ${formatExactTimestamp(lastChecked.ebay)}` : 'eBay stock & lowest price'}
 					>
-						EBay
-						{#if sortKey === 'ebay_low_price'}
-							<i
-								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-							></i>
-						{/if}
+						<div class="th-vendor-wrap">
+							<span class="th-vendor-title">
+								EBay
+								{#if sortKey === 'ebay_low_price'}
+									<i
+										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+									></i>
+								{/if}
+							</span>
+							{#if formatRelativeTime(lastChecked.ebay, nowTick)}
+								<span class="th-last-checked">
+									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.ebay, nowTick)}
+								</span>
+							{/if}
+						</div>
 					</th>
 					{/if}
 					{#if showManapool}
 					<th
 						on:click={() => sortBy('manapool_low_price')}
 						class:active={sortKey === 'manapool_low_price'}
+						title={lastChecked.manapool ? `Mana Pool last checked: ${formatExactTimestamp(lastChecked.manapool)}` : 'Mana Pool stock & lowest price'}
 					>
-						Mana Pool
-						{#if sortKey === 'manapool_low_price'}
-							<i
-								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-							></i>
-						{/if}
+						<div class="th-vendor-wrap">
+							<span class="th-vendor-title">
+								Mana Pool
+								{#if sortKey === 'manapool_low_price'}
+									<i
+										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+									></i>
+								{/if}
+							</span>
+							{#if formatRelativeTime(lastChecked.manapool, nowTick)}
+								<span class="th-last-checked">
+									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.manapool, nowTick)}
+								</span>
+							{/if}
+						</div>
 					</th>
 					{/if}
 					<th class="actions-header"></th>
@@ -2035,6 +2274,26 @@
 											<i class="fa-solid {selectedKeys.has(getCardKey(card)) ? 'fa-square-check' : 'fa-check-double'}"></i>
 											{selectedKeys.has(getCardKey(card)) ? 'Deselect' : 'Select'}
 										</button>
+										{#if canManualCheckStock}
+											{@const cooldownSec = getCardCooldownRemainingSec(card, nowTick)}
+											{@const isCheckingCard = checkingStockCardKeys.has(getCardKey(card))}
+											<button
+												class="dropdown-item"
+												disabled={isCheckingCard || cooldownSec > 0}
+												title={cooldownSec > 0
+													? `Checked recently (${formatExactTimestamp(card.last_manual_check)}). Available again in ${formatCooldownRemaining(cooldownSec)}.`
+													: 'Queue an on-demand stock check across enabled marketplaces'}
+												on:click={() => handleManualStockCheck(card)}
+											>
+												{#if isCheckingCard}
+													<i class="fa-solid fa-arrows-rotate fa-spin"></i> Checking...
+												{:else if cooldownSec > 0}
+													<i class="fa-regular fa-clock"></i> Checked ({formatCooldownRemaining(cooldownSec)})
+												{:else}
+													<i class="fa-solid fa-arrows-rotate"></i> Check Stock Now
+												{/if}
+											</button>
+										{/if}
 										<button class="dropdown-item" on:click={() => openSettings(card)}>
 											<i class="fa-solid fa-pen-to-square"></i> Edit Card
 										</button>
@@ -2173,6 +2432,44 @@
 						/>
 					</div>
 				</div>
+
+				{#if canManualCheckStock}
+					{@const modalCooldownSec = getCardCooldownRemainingSec(selectedCardForSettings, nowTick)}
+					{@const isModalChecking = checkingStockCardKeys.has(getCardKey(selectedCardForSettings))}
+					<div class="manual-check-box">
+						<div class="manual-check-info">
+							<span class="manual-check-title">
+								<i class="fa-solid fa-bolt"></i> On-Demand Stock Check
+							</span>
+							<span class="manual-check-sub">
+								{#if selectedCardForSettings.last_manual_check}
+									Last manual check: {formatRelativeTime(selectedCardForSettings.last_manual_check, nowTick) || 'Recently'}
+								{:else}
+									Queue an immediate check across your enabled marketplaces.
+								{/if}
+							</span>
+						</div>
+						<button
+							type="button"
+							class="manual-check-btn"
+							disabled={isSavingSettings || isModalChecking || modalCooldownSec > 0 || isEditVariantChanged}
+							title={isEditVariantChanged
+								? 'Save your language/finish changes to automatically queue a fresh check'
+								: modalCooldownSec > 0
+									? `Available again in ${formatCooldownRemaining(modalCooldownSec)}`
+									: 'Check stock now'}
+							on:click={() => handleManualStockCheck(selectedCardForSettings)}
+						>
+							{#if isModalChecking}
+								<i class="fa-solid fa-arrows-rotate fa-spin"></i> Checking...
+							{:else if modalCooldownSec > 0}
+								<i class="fa-regular fa-clock"></i> Cooldown ({formatCooldownRemaining(modalCooldownSec)})
+							{:else}
+								<i class="fa-solid fa-arrows-rotate"></i> Check Now
+							{/if}
+						</button>
+					</div>
+				{/if}
 			</div>
 			<div class="modal-footer">
 				<button
@@ -4269,6 +4566,154 @@
 		color: #10b981;
 		font-size: 0.78rem;
 		font-weight: 600;
+	}
+
+	/* Last Checked Column Header & Manual Stock Check Styles */
+	.th-vendor-wrap {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.12rem;
+		line-height: 1.15;
+	}
+
+	.th-vendor-title {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.th-last-checked {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.22rem;
+		font-size: 0.66rem;
+		font-weight: 500;
+		color: var(--color-text-secondary);
+		opacity: 0.85;
+		text-transform: none;
+		letter-spacing: 0;
+	}
+
+	.manual-check-box {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.85rem;
+		margin-top: 1.1rem;
+		padding: 0.75rem 0.9rem;
+		border-radius: 10px;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+	}
+
+	.manual-check-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.manual-check-title {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.manual-check-title i {
+		color: var(--color-primary);
+	}
+
+	.manual-check-sub {
+		font-size: 0.76rem;
+		color: var(--color-text-secondary);
+	}
+
+	.manual-check-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.48rem 0.85rem;
+		border-radius: 8px;
+		border: 1px solid rgba(99, 102, 241, 0.45);
+		background: rgba(99, 102, 241, 0.14);
+		color: var(--color-text-primary);
+		font-size: 0.8rem;
+		font-weight: 600;
+		white-space: nowrap;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+
+	.manual-check-btn:hover:not(:disabled) {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: #fff;
+	}
+
+	.manual-check-btn:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+	}
+
+	.stock-check-toast {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0 auto 0.85rem auto;
+		padding: 0.65rem 1rem;
+		border-radius: 10px;
+		font-size: 0.86rem;
+		font-weight: 500;
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		box-shadow: var(--shadow-md);
+	}
+
+	.stock-check-toast.success {
+		border-color: rgba(16, 185, 129, 0.45);
+		background: rgba(16, 185, 129, 0.1);
+		color: var(--color-text-primary);
+	}
+
+	.stock-check-toast.success > i {
+		color: #10b981;
+	}
+
+	.stock-check-toast.warning {
+		border-color: rgba(245, 158, 11, 0.45);
+		background: rgba(245, 158, 11, 0.1);
+		color: var(--color-text-primary);
+	}
+
+	.stock-check-toast.warning > i {
+		color: #f59e0b;
+	}
+
+	.stock-check-toast.error {
+		border-color: rgba(239, 68, 68, 0.45);
+		background: rgba(239, 68, 68, 0.1);
+		color: var(--color-text-primary);
+	}
+
+	.stock-check-toast.error > i {
+		color: #ef4444;
+	}
+
+	.toast-dismiss-btn {
+		margin-left: auto;
+		background: transparent;
+		border: none;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		padding: 0.2rem 0.35rem;
+		border-radius: 4px;
+	}
+
+	.toast-dismiss-btn:hover {
+		color: var(--color-text-primary);
 	}
 
 	@media (pointer: coarse), (max-width: 768px) {

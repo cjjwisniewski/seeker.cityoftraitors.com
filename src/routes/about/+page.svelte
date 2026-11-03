@@ -26,6 +26,7 @@
 				'Saved Cards': '25',
 				Marketplaces: 'CardTrader',
 				'Scan Frequency': 'Once per day',
+				'On-Demand Checks': '—',
 				'Max Price Caps': 'Included',
 				'Price Drop Alerts': 'Included'
 			}
@@ -40,6 +41,7 @@
 				'Saved Cards': 'Unlimited',
 				Marketplaces: 'CardTrader, TCGPlayer, eBay & Mana Pool',
 				'Scan Frequency': 'Every 6 hours',
+				'On-Demand Checks': 'Included',
 				'Max Price Caps': 'Included',
 				'Price Drop Alerts': 'Included'
 			}

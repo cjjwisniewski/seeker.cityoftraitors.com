@@ -85,6 +85,7 @@ jobs:
           PUBLIC_GET_BANNER_FUNCTION_URL: ${{ vars.PUBLIC_GET_BANNER_FUNCTION_URL }}
           PUBLIC_UPDATE_BANNER_FUNCTION_URL: ${{ vars.PUBLIC_UPDATE_BANNER_FUNCTION_URL }}
           PUBLIC_FETCH_MOXFIELD_DECK_FUNCTION_URL: ${{ vars.PUBLIC_FETCH_MOXFIELD_DECK_FUNCTION_URL || 'https://seeker.azure-api.net/seeker/fetchMoxfieldDeck' }}
+          PUBLIC_TRIGGER_STOCK_CHECK_FUNCTION_URL: ${{ vars.PUBLIC_TRIGGER_STOCK_CHECK_FUNCTION_URL || 'https://seeker.azure-api.net/seeker/triggerStockCheck' }}
         run: npm run build
 
       - name: Azure Login
