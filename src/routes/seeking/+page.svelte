@@ -35,6 +35,11 @@
 	// Multi-select & Bulk action state
 	let selectedKeys = new Set();
 	let lastSelectedIndex = -1;
+	let longPressTimer = null;
+	let longPressTriggered = false;
+	let touchStartPos = { x: 0, y: 0 };
+	const LONG_PRESS_DURATION_MS = 450;
+	const TOUCH_MOVE_THRESHOLD_PX = 10;
 	let showBulkDeleteModal = false;
 	let showBulkPriceCapModal = false;
 	let bulkPriceCapInput = '';
@@ -626,16 +631,94 @@
 		return `${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`;
 	}
 
-	function handleRowClick(card, index, event) {
-		// Ignore clicks on links, buttons, inputs, images with zoom, or kebab menu
-		const target = event.target;
-		if (
+	function isInteractiveRowTarget(target) {
+		if (!target || typeof target.closest !== 'function') return false;
+		return Boolean(
 			target.closest('a') ||
-			target.closest('button') ||
-			target.closest('input') ||
-			target.closest('.card-thumbnail') ||
-			target.closest('.kebab-dropdown')
-		) {
+				target.closest('button') ||
+				target.closest('input') ||
+				target.closest('.card-thumbnail') ||
+				target.closest('.kebab-dropdown')
+		);
+	}
+
+	function toggleCardSelection(card, index = -1) {
+		const key = getCardKey(card);
+		const newSelected = new Set(selectedKeys);
+		if (newSelected.has(key)) {
+			newSelected.delete(key);
+		} else {
+			newSelected.add(key);
+		}
+		selectedKeys = newSelected;
+		if (index >= 0) {
+			lastSelectedIndex = newSelected.size > 0 ? index : -1;
+		}
+	}
+
+	function cancelLongPressTimer() {
+		if (longPressTimer) {
+			clearTimeout(longPressTimer);
+			longPressTimer = null;
+		}
+	}
+
+	function handleRowTouchStart(card, index, event) {
+		if (!event.touches || event.touches.length !== 1) return;
+		if (isInteractiveRowTarget(event.target)) return;
+
+		const touch = event.touches[0];
+		touchStartPos = { x: touch.clientX, y: touch.clientY };
+		cancelLongPressTimer();
+		longPressTriggered = false;
+
+		longPressTimer = setTimeout(() => {
+			longPressTimer = null;
+			longPressTriggered = true;
+			const key = getCardKey(card);
+			const newSelected = new Set(selectedKeys);
+			newSelected.add(key);
+			selectedKeys = newSelected;
+			lastSelectedIndex = index;
+			if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+				try {
+					navigator.vibrate(15);
+				} catch (e) {
+					/* Ignore vibration errors on unsupported browsers */
+				}
+			}
+		}, LONG_PRESS_DURATION_MS);
+	}
+
+	function handleRowTouchMove(event) {
+		if (!longPressTimer || !event.touches || !event.touches[0]) return;
+		const touch = event.touches[0];
+		const dx = Math.abs(touch.clientX - touchStartPos.x);
+		const dy = Math.abs(touch.clientY - touchStartPos.y);
+		if (dx > TOUCH_MOVE_THRESHOLD_PX || dy > TOUCH_MOVE_THRESHOLD_PX) {
+			cancelLongPressTimer();
+		}
+	}
+
+	function handleRowTouchEnd() {
+		cancelLongPressTimer();
+	}
+
+	function handleRowContextMenu(event) {
+		if (longPressTriggered || longPressTimer) {
+			event.preventDefault();
+		}
+	}
+
+	function handleRowClick(card, index, event) {
+		if (longPressTriggered) {
+			longPressTriggered = false;
+			event.preventDefault();
+			return;
+		}
+
+		// Ignore clicks on links, buttons, inputs, images with zoom, or kebab menu
+		if (isInteractiveRowTarget(event.target)) {
 			return;
 		}
 
@@ -656,27 +739,14 @@
 			}
 			selectedKeys = newSelected;
 		} else if (isMultiModifier) {
-			// Toggle single item
+			// Toggle single item via Ctrl/Cmd + Click
 			event.preventDefault();
-			const newSelected = new Set(selectedKeys);
-			if (newSelected.has(key)) {
-				newSelected.delete(key);
-			} else {
-				newSelected.add(key);
-			}
-			selectedKeys = newSelected;
-			lastSelectedIndex = index;
-		} else {
-			// Regular click - if cards are already selected, clear or toggle
-			if (selectedKeys.size > 0) {
-				if (selectedKeys.has(key) && selectedKeys.size === 1) {
-					selectedKeys = new Set();
-					lastSelectedIndex = -1;
-				} else {
-					selectedKeys = new Set([key]);
-					lastSelectedIndex = index;
-				}
-			}
+			toggleCardSelection(card, index);
+		} else if (selectedKeys.size > 0) {
+			// When selection mode is already active (e.g. after long-press or Ctrl+Click),
+			// tapping/clicking additional rows toggles them in/out of the selection.
+			event.preventDefault();
+			toggleCardSelection(card, index);
 		}
 	}
 
@@ -1733,6 +1803,11 @@
 						class:condensed={isCondensed}
 						class:selected={selectedKeys.has(getCardKey(card))}
 						on:click={(e) => handleRowClick(card, index, e)}
+						on:touchstart={(e) => handleRowTouchStart(card, index, e)}
+						on:touchmove={handleRowTouchMove}
+						on:touchend={handleRowTouchEnd}
+						on:touchcancel={handleRowTouchEnd}
+						on:contextmenu={handleRowContextMenu}
 						style={activeMenuId ===
 						`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`
 							? 'z-index: 50; position: relative;'
@@ -1962,6 +2037,16 @@
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<!-- svelte-ignore a11y-no-static-element-interactions -->
 									<div class="kebab-dropdown" class:drop-up={index >= sortedCards.length - 2} on:click|stopPropagation>
+										<button
+											class="dropdown-item"
+											on:click={() => {
+												toggleCardSelection(card, index);
+												closeMenu();
+											}}
+										>
+											<i class="fa-solid {selectedKeys.has(getCardKey(card)) ? 'fa-square-check' : 'fa-check-double'}"></i>
+											{selectedKeys.has(getCardKey(card)) ? 'Deselect' : 'Select'}
+										</button>
 										<button class="dropdown-item" on:click={() => openSettings(card)}>
 											<i class="fa-solid fa-pen-to-square"></i> Edit Card
 										</button>
@@ -4208,5 +4293,12 @@
 		color: #10b981;
 		font-size: 0.78rem;
 		font-weight: 600;
+	}
+
+	@media (pointer: coarse), (max-width: 768px) {
+		tbody tr {
+			-webkit-touch-callout: none;
+			user-select: none;
+		}
 	}
 </style>
