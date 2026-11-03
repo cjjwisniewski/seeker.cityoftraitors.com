@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte'; // Import onDestroy
 	import { auth } from '$lib/stores/auth'; // Import auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
+	import { getLanguageName } from '$lib/utils/languageUtils';
 	import {
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
 		PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL,
@@ -22,6 +23,14 @@
 	let selectedCardForSettings = null;
 	let maxPriceInput = '';
 	let isSavingSettings = false;
+	let editLanguageInput = 'en';
+	let editFinishInput = 'nonfoil';
+	let editPreviewImageUri = '';
+	let editAvailableLanguages = ['en'];
+	let editLanguageImageMap = {};
+	let editAvailableFinishes = ['nonfoil', 'foil'];
+	let isLoadingCardPrintInfo = false;
+	let settingsModalError = null;
 
 	// Multi-select & Bulk action state
 	let selectedKeys = new Set();
@@ -922,23 +931,102 @@
 		}
 	}
 
+	$: isEditVariantChanged =
+		selectedCardForSettings !== null &&
+		(editLanguageInput.toLowerCase() !== String(selectedCardForSettings.language || 'en').toLowerCase() ||
+			editFinishInput.toLowerCase() !== String(selectedCardForSettings.finish || 'nonfoil').toLowerCase());
+
+	$: isEditVariantDuplicate =
+		isEditVariantChanged &&
+		selectedCardForSettings !== null &&
+		cards.some(
+			(c) =>
+				c.set_code.toLowerCase() === selectedCardForSettings.set_code.toLowerCase() &&
+				String(c.collector_number) === String(selectedCardForSettings.collector_number) &&
+				String(c.language || 'en').toLowerCase() === editLanguageInput.toLowerCase() &&
+				String(c.finish || 'nonfoil').toLowerCase() === editFinishInput.toLowerCase()
+		);
+
+	async function loadCardPrintVariants(card) {
+		if (!card || !card.set_code || !card.collector_number || card.collector_number === 'N/A') {
+			return;
+		}
+		isLoadingCardPrintInfo = true;
+		try {
+			const url = `https://api.scryfall.com/cards/search?q=cn%3A${encodeURIComponent(card.collector_number)}+set%3A${encodeURIComponent(card.set_code)}&include_multilingual=true&unique=prints`;
+			const res = await fetch(url);
+			if (!res.ok) return;
+			const data = await res.json();
+			const prints = data.data || [];
+			if (prints.length === 0) return;
+
+			const langs = [];
+			const imgMap = { ...editLanguageImageMap };
+			const finishesSet = new Set();
+
+			for (const p of prints) {
+				if (p.lang) {
+					const code = p.lang.toLowerCase();
+					if (!langs.includes(code)) {
+						langs.push(code);
+					}
+					const img = extractScryfallImage(p);
+					if (img) {
+						imgMap[code] = img;
+					}
+				}
+				if (Array.isArray(p.finishes)) {
+					if (p.finishes.includes('nonfoil')) finishesSet.add('nonfoil');
+					if (p.finishes.includes('foil') || p.finishes.includes('etched')) finishesSet.add('foil');
+				}
+			}
+
+			const currentLang = String(card.language || 'en').toLowerCase();
+			if (!langs.includes(currentLang)) {
+				langs.unshift(currentLang);
+			}
+			const currentFinish = String(card.finish || 'nonfoil').toLowerCase();
+			finishesSet.add(currentFinish);
+
+			editAvailableLanguages = langs;
+			editLanguageImageMap = imgMap;
+			editAvailableFinishes = Array.from(finishesSet);
+			if (imgMap[editLanguageInput]) {
+				editPreviewImageUri = imgMap[editLanguageInput];
+			}
+		} catch (e) {
+			console.warn('Could not load multilingual print variants from Scryfall:', e);
+		} finally {
+			isLoadingCardPrintInfo = false;
+		}
+	}
+
+	function handleEditLanguageChange() {
+		if (editLanguageImageMap[editLanguageInput]) {
+			editPreviewImageUri = editLanguageImageMap[editLanguageInput];
+		}
+	}
+
 	async function handleUpdateSettings() {
-		if (!selectedCardForSettings) return;
+		if (!selectedCardForSettings || isEditVariantDuplicate) return;
 		isSavingSettings = true;
-		error = null;
+		settingsModalError = null;
 
 		try {
 			// Convert input to cents. If empty, send null to clear.
 			let max_price_cap = null;
 			if (maxPriceInput !== null && maxPriceInput !== undefined && String(maxPriceInput).trim() !== '') {
 				max_price_cap = Math.round(parseFloat(maxPriceInput) * 100);
-				if (isNaN(max_price_cap)) throw new Error('Invalid price format');
+				if (isNaN(max_price_cap) || max_price_cap < 0) throw new Error('Invalid price cap format.');
 			}
 
 			const requestBody = {
 				partitionKey: selectedCardForSettings.set_code,
 				rowKey: `${selectedCardForSettings.collector_number}_${selectedCardForSettings.language}_${selectedCardForSettings.finish}`,
-				max_price_cap: max_price_cap
+				max_price_cap: max_price_cap,
+				new_language: editLanguageInput,
+				new_finish: editFinishInput,
+				new_image_uri: editPreviewImageUri || selectedCardForSettings.image_uri
 			};
 
 			const response = await fetchWithAuth(PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL, {
@@ -950,23 +1038,49 @@
 			});
 
 			if (!response) {
-				error = `Authentication failed while updating card settings.`;
+				settingsModalError = 'Authentication failed while updating card settings.';
 				return;
 			}
 
+			let result = null;
+			try {
+				result = await response.json();
+			} catch (e) {
+				result = null;
+			}
+
 			if (!response.ok) {
-				const text = await response.text();
-				throw new Error(`Failed to update settings: ${text}`);
+				throw new Error(result?.message || `Failed to update card (Status ${response.status})`);
 			}
 
 			// Update local state
+			const oldKey = getCardKey(selectedCardForSettings);
 			cards = cards.map((c) => {
-				if (
-					c.set_code === selectedCardForSettings.set_code &&
-					c.collector_number === selectedCardForSettings.collector_number &&
-					c.language === selectedCardForSettings.language &&
-					c.finish === selectedCardForSettings.finish
-				) {
+				if (getCardKey(c) === oldKey) {
+					if (result?.rekeyed) {
+						return {
+							...c,
+							id: result.new_row_key || `${c.collector_number}_${editLanguageInput}_${editFinishInput}`,
+							language: editLanguageInput,
+							finish: editFinishInput,
+							image_uri: result.image_uri || editPreviewImageUri || c.image_uri,
+							max_price_cap: max_price_cap,
+							cardtrader_stock: false,
+							cardtrader_low_price: null,
+							cardtrader_id: '',
+							tcgplayer_stock: false,
+							tcgplayer_low_price: null,
+							cardmarket_stock: false,
+							cardmarket_low_price: null,
+							ebay_stock: false,
+							ebay_low_price: null,
+							ebay_id: '',
+							manapool_stock: false,
+							manapool_low_price: null,
+							manapool_id: '',
+							manapool_url: ''
+						};
+					}
 					return { ...c, max_price_cap: max_price_cap };
 				}
 				return c;
@@ -974,8 +1088,8 @@
 
 			showSettingsModal = false;
 		} catch (e) {
-			error = `Update failed: ${e.message}`;
-			console.error('Error updating settings:', e);
+			settingsModalError = e.message;
+			console.error('Error updating card settings:', e);
 		} finally {
 			isSavingSettings = false;
 		}
@@ -983,6 +1097,15 @@
 
 	function openSettings(card) {
 		selectedCardForSettings = card;
+		const currentLang = String(card.language || 'en').toLowerCase();
+		const currentFinish = String(card.finish || 'nonfoil').toLowerCase();
+		editLanguageInput = currentLang;
+		editFinishInput = currentFinish;
+		editPreviewImageUri = card.image_uri || '';
+		editAvailableLanguages = [currentLang];
+		editLanguageImageMap = { [currentLang]: card.image_uri || '' };
+		editAvailableFinishes = ['nonfoil', 'foil'];
+		settingsModalError = null;
 		// Initialize input with current value (convert cents to dollars)
 		maxPriceInput =
 			card.max_price_cap !== null && card.max_price_cap !== undefined
@@ -990,6 +1113,7 @@
 				: '';
 		showSettingsModal = true;
 		closeMenu();
+		loadCardPrintVariants(card);
 	}
 
 	function getStockIcon(status) {
@@ -1578,8 +1702,27 @@
 								class="set-icon"
 							/>
 						</td>
-						<td data-label="Language" class="language-column">{card.language}</td>
-						<td data-label="Finish">{card.finish}</td>
+						<td data-label="Language" class="language-column">
+							<button
+								type="button"
+								class="inline-variant-btn"
+								title="Click to edit language or finish"
+								on:click|stopPropagation={() => openSettings(card)}
+							>
+								{card.language.toUpperCase()}
+							</button>
+						</td>
+						<td data-label="Finish">
+							<button
+								type="button"
+								class="inline-variant-btn"
+								class:foil-variant={card.finish.toLowerCase() === 'foil'}
+								title="Click to edit finish or language"
+								on:click|stopPropagation={() => openSettings(card)}
+							>
+								{card.finish.toLowerCase() === 'foil' ? '✦ Foil' : 'Nonfoil'}
+							</button>
+						</td>
 						{#if showCardTrader}
 						<td data-label="CardTrader" class="vendor-stock-cell">
 							{#if card.cardtrader_id}
@@ -1725,7 +1868,7 @@
 									<!-- svelte-ignore a11y-no-static-element-interactions -->
 									<div class="kebab-dropdown" class:drop-up={index >= sortedCards.length - 2} on:click|stopPropagation>
 										<button class="dropdown-item" on:click={() => openSettings(card)}>
-											<i class="fa-solid fa-gear"></i> Settings
+											<i class="fa-solid fa-pen-to-square"></i> Edit Card
 										</button>
 										<button
 											class="dropdown-item text-error"
@@ -1751,25 +1894,96 @@
 {#if showSettingsModal && selectedCardForSettings}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="overlay-backdrop" on:click={() => (showSettingsModal = false)}>
+	<div class="overlay-backdrop" on:click={() => !isSavingSettings && (showSettingsModal = false)}>
 		<div class="modal-content" on:click|stopPropagation>
 			<div class="modal-header">
-				<h2>Card Settings</h2>
-				<button class="close-modal-btn" on:click={() => (showSettingsModal = false)}>
+				<h2>Edit Card</h2>
+				<button class="close-modal-btn" on:click={() => !isSavingSettings && (showSettingsModal = false)}>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>
 			<div class="modal-body">
+				{#if settingsModalError}
+					<div class="import-alert error" style="margin-bottom: 1rem;">
+						<i class="fa-solid fa-circle-exclamation"></i>
+						<span>{settingsModalError}</span>
+					</div>
+				{/if}
+
 				<div class="card-details-mini">
-					<img src={getWebpImageUri(selectedCardForSettings.image_uri)} alt={selectedCardForSettings.name} />
+					<img
+						src={getWebpImageUri(editPreviewImageUri || selectedCardForSettings.image_uri)}
+						alt={selectedCardForSettings.name}
+					/>
 					<div>
 						<h3>{selectedCardForSettings.name}</h3>
 						<p>
-							{selectedCardForSettings.set_code.toUpperCase()} • {selectedCardForSettings.language.toUpperCase()}
-							• {selectedCardForSettings.finish}
+							{selectedCardForSettings.set_code.toUpperCase()} #{selectedCardForSettings.collector_number}
+							• {editLanguageInput.toUpperCase()}
+							• {editFinishInput === 'foil' ? '✦ Foil' : 'Nonfoil'}
 						</p>
 					</div>
 				</div>
+
+				<div class="edit-variant-grid">
+					<div class="settings-group">
+						<label for="edit-card-language">
+							Language
+							{#if isLoadingCardPrintInfo}
+								<i class="fa-solid fa-circle-notch fa-spin" style="font-size: 0.75rem; margin-left: 0.35rem;"></i>
+							{/if}
+						</label>
+						<select
+							id="edit-card-language"
+							bind:value={editLanguageInput}
+							on:change={handleEditLanguageChange}
+							class="modal-input edit-select-input"
+							disabled={isSavingSettings}
+						>
+							{#each editAvailableLanguages as langCode}
+								<option value={langCode}>
+									{getLanguageName(langCode)} ({langCode.toUpperCase()})
+								</option>
+							{/each}
+						</select>
+					</div>
+
+					<div class="settings-group">
+						<span class="edit-field-label">Finish</span>
+						<div class="edit-finish-segmented" role="group" aria-label="Card Finish">
+							<button
+								type="button"
+								class="edit-finish-option"
+								class:active={editFinishInput === 'nonfoil'}
+								disabled={isSavingSettings || !editAvailableFinishes.includes('nonfoil')}
+								on:click={() => (editFinishInput = 'nonfoil')}
+							>
+								Non-Foil
+							</button>
+							<button
+								type="button"
+								class="edit-finish-option foil"
+								class:active={editFinishInput === 'foil'}
+								disabled={isSavingSettings || !editAvailableFinishes.includes('foil')}
+								on:click={() => (editFinishInput = 'foil')}
+							>
+								✦ Foil
+							</button>
+						</div>
+					</div>
+				</div>
+
+				{#if isEditVariantDuplicate}
+					<div class="import-alert error" style="margin-bottom: 1rem;">
+						<i class="fa-solid fa-triangle-exclamation"></i>
+						<span>This language and finish combination is already in your Seeking list.</span>
+					</div>
+				{:else if isEditVariantChanged}
+					<div class="edit-rekey-notice">
+						<i class="fa-solid fa-arrows-rotate"></i>
+						<span>Switching language or finish will reset current stock statuses for this card and trigger a fresh stock check.</span>
+					</div>
+				{/if}
 
 				<div class="settings-group">
 					<label for="max-price-cap">Max Price Cap ($)</label>
@@ -1787,20 +2001,25 @@
 							bind:value={maxPriceInput}
 							placeholder="e.g. 50.00"
 							class="modal-input"
+							disabled={isSavingSettings}
 						/>
 					</div>
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button class="modal-btn secondary" on:click={() => (showSettingsModal = false)}
-					>Cancel</button
+				<button
+					class="modal-btn secondary"
+					on:click={() => (showSettingsModal = false)}
+					disabled={isSavingSettings}
 				>
+					Cancel
+				</button>
 				<button
 					class="modal-btn primary"
 					on:click={handleUpdateSettings}
-					disabled={isSavingSettings}
+					disabled={isSavingSettings || isEditVariantDuplicate}
 				>
-					{isSavingSettings ? 'Saving...' : 'Save Settings'}
+					{isSavingSettings ? 'Saving...' : 'Save Changes'}
 				</button>
 			</div>
 		</div>
@@ -3695,5 +3914,122 @@
 		height: 100%;
 		background: var(--color-primary);
 		transition: width 0.2s ease;
+	}
+
+	/* Inline Variant Pills & Card Edit Modal Controls */
+	.inline-variant-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.2rem 0.55rem;
+		border-radius: 999px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		font-size: 0.75rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.inline-variant-btn:hover {
+		border-color: var(--color-primary);
+		background: var(--color-bg-hover);
+		transform: translateY(-1px);
+	}
+
+	.inline-variant-btn.foil-variant {
+		border-color: rgba(245, 158, 11, 0.45);
+		background: rgba(245, 158, 11, 0.12);
+		color: #f59e0b;
+	}
+
+	.edit-variant-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.85rem;
+		margin-bottom: 0.5rem;
+	}
+
+	@media (max-width: 520px) {
+		.edit-variant-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.edit-select-input {
+		width: 100%;
+		box-sizing: border-box;
+		padding: 0.6rem 0.75rem;
+		border-radius: 8px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		font-size: 0.88rem;
+		height: 40px;
+	}
+
+	.edit-field-label {
+		display: block;
+		font-weight: 600;
+		margin-bottom: 0.5rem;
+		color: var(--color-text-primary);
+	}
+
+	.edit-finish-segmented {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.35rem;
+		background: var(--color-bg-secondary);
+		padding: 0.25rem;
+		border-radius: 8px;
+		border: 1px solid var(--color-border);
+		height: 40px;
+		box-sizing: border-box;
+	}
+
+	.edit-finish-option {
+		border: none;
+		border-radius: 6px;
+		background: transparent;
+		color: var(--color-text-secondary);
+		font-size: 0.82rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+
+	.edit-finish-option.active {
+		background: var(--color-primary);
+		color: #fff;
+	}
+
+	.edit-finish-option.foil.active {
+		background: #f59e0b;
+		color: #111827;
+	}
+
+	.edit-finish-option:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.edit-rekey-notice {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.55rem;
+		padding: 0.65rem 0.85rem;
+		border-radius: 8px;
+		background: rgba(99, 102, 241, 0.1);
+		border: 1px solid rgba(99, 102, 241, 0.3);
+		color: var(--color-text-secondary);
+		font-size: 0.8rem;
+		line-height: 1.4;
+		margin-bottom: 1rem;
+	}
+
+	.edit-rekey-notice i {
+		color: var(--color-primary);
+		margin-top: 0.15rem;
 	}
 </style>
