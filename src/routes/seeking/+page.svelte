@@ -1890,9 +1890,6 @@
 										{#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
 											<span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
 										{/if}
-										{#if isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool)}
-											<span class="best-price-tag" title="Lowest available price across in-stock marketplaces">BEST</span>
-										{/if}
 									</div>
 								</a>
 							{:else}
@@ -1927,9 +1924,6 @@
 										></i>
 										{#if card.tcgplayer_low_price > 0 && getStockStatus(card.tcgplayer_stock) === 'available'}
 											<span class="price-text">{formatDollarPrice(card.tcgplayer_low_price)}</span>
-										{/if}
-										{#if isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool)}
-											<span class="best-price-tag" title="Lowest available price across in-stock marketplaces">BEST</span>
 										{/if}
 									</div>
 								</a>
@@ -1977,9 +1971,6 @@
 									{#if card.ebay_low_price !== null && card.ebay_low_price !== undefined && getStockStatus(card.ebay_stock) === 'available'}
 										<span class="price-text">{formatPrice(card.ebay_low_price)}</span>
 									{/if}
-									{#if isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool)}
-										<span class="best-price-tag" title="Lowest available price across in-stock marketplaces">BEST</span>
-									{/if}
 								</div>
 							</a>
 						</td>
@@ -2004,9 +1995,6 @@
 										></i>
 										{#if card.manapool_low_price !== null && card.manapool_low_price !== undefined && getStockStatus(card.manapool_stock) === 'available'}
 											<span class="price-text">{formatPrice(card.manapool_low_price)}</span>
-										{/if}
-										{#if isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool)}
-											<span class="best-price-tag" title="Lowest available price across in-stock marketplaces">BEST</span>
 										{/if}
 									</div>
 								</a>
@@ -4268,18 +4256,6 @@
 	.stock-indicator.best-price .price-text {
 		color: #10b981;
 		font-weight: 700;
-	}
-
-	.best-price-tag {
-		font-size: 0.6rem;
-		font-weight: 800;
-		letter-spacing: 0.04em;
-		padding: 1px 5px;
-		border-radius: 999px;
-		background: #10b981;
-		color: #06281e;
-		margin-left: 0.2rem;
-		line-height: 1.2;
 	}
 
 	.bulk-cost-pill {
