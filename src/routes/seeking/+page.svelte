@@ -533,6 +533,13 @@
 	}
 
 	function getEbayUrl(card, map) {
+		if (card.ebay_id && getStockStatus(card.ebay_stock) === 'available') {
+			const rawId = String(card.ebay_id);
+			const cleanId = rawId.includes('|') ? rawId.split('|')[1] : rawId;
+			if (/^\d+$/.test(cleanId)) {
+				return `https://www.ebay.com/itm/${cleanId}`;
+			}
+		}
 		let lang = card.language !== 'en' && languageMap[card.language] ? languageMap[card.language] : '';
 		if (card.language === 'zhs') lang = 'Simplified Chinese';
 		if (card.language === 'zht') lang = 'Traditional Chinese';
