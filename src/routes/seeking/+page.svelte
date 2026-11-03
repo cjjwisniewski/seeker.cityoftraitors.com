@@ -1258,6 +1258,35 @@
 	// Derive all unique set codes present in the cards list for the set filter dropdown
 	$: availableSetCodes = [...new Set(cards.map((c) => c.set_code.toUpperCase()))].sort();
 
+	function getLowestOffer(card, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool) {
+		const offers = [];
+		if (ctEnabled && getStockStatus(card.cardtrader_stock) === 'available' && card.cardtrader_low_price > 0) {
+			offers.push({ vendor: 'cardtrader', cents: Math.round(card.cardtrader_low_price) });
+		}
+		if (tcgEnabled && getStockStatus(card.tcgplayer_stock) === 'available' && card.tcgplayer_low_price > 0) {
+			offers.push({ vendor: 'tcgplayer', cents: Math.round(Number(card.tcgplayer_low_price) * 100) });
+		}
+		if (ebayEnabled && getStockStatus(card.ebay_stock) === 'available' && card.ebay_low_price > 0) {
+			offers.push({ vendor: 'ebay', cents: Math.round(card.ebay_low_price) });
+		}
+		if (mpEnabled && getStockStatus(card.manapool_stock) === 'available' && card.manapool_low_price > 0) {
+			offers.push({ vendor: 'manapool', cents: Math.round(card.manapool_low_price) });
+		}
+
+		if (offers.length === 0) {
+			return { minPriceCents: null, bestVendors: new Set(), offerCount: 0 };
+		}
+
+		const minPriceCents = Math.min(...offers.map((o) => o.cents));
+		const bestVendors = new Set(offers.filter((o) => o.cents === minPriceCents).map((o) => o.vendor));
+		return { minPriceCents, bestVendors, offerCount: offers.length };
+	}
+
+	function isBestVendorPrice(card, vendor, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool) {
+		const info = getLowestOffer(card, ctEnabled, tcgEnabled, ebayEnabled, mpEnabled);
+		return info.offerCount >= 2 && info.bestVendors.has(vendor);
+	}
+
 	// Reactive sorted & filtered list
 	$: filteredCards = cards.filter((card) => {
 		if (searchQuery) {
@@ -1347,6 +1376,32 @@
 
 		return sortDirection === 'asc' ? comparison : comparison * -1;
 	});
+
+	$: inStockSummary = filteredCards.reduce(
+		(acc, card) => {
+			const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool);
+			if (offer.minPriceCents !== null) {
+				acc.inStockCount += 1;
+				acc.totalLowestCents += offer.minPriceCents;
+			}
+			return acc;
+		},
+		{ inStockCount: 0, totalLowestCents: 0 }
+	);
+
+	$: selectedCostSummary = cards
+		.filter((c) => selectedKeys.has(getCardKey(c)))
+		.reduce(
+			(acc, card) => {
+				const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool);
+				if (offer.minPriceCents !== null) {
+					acc.inStockCount += 1;
+					acc.totalLowestCents += offer.minPriceCents;
+				}
+				return acc;
+			},
+			{ inStockCount: 0, totalLowestCents: 0 }
+		);
 
 	function downloadCSV() {
 		if (!cards || cards.length === 0) return;
@@ -1496,6 +1551,22 @@
 	</div>
 
 	<div class="toolbar-right">
+		{#if inStockSummary.inStockCount > 0}
+			<button
+				type="button"
+				class="cost-summary-badge"
+				class:active={filterInStockOnly}
+				on:click={() => (filterInStockOnly = !filterInStockOnly)}
+				title="Estimated lowest total across {inStockSummary.inStockCount} in-stock card(s) in current view. Click to toggle In Stock filter."
+			>
+				<i class="fa-solid fa-sack-dollar"></i>
+				<span>
+					Est. <strong>{formatPrice(inStockSummary.totalLowestCents)}</strong>
+					<small>({inStockSummary.inStockCount} in stock)</small>
+				</span>
+			</button>
+		{/if}
+
 		<div class="card-counter" title="Total sought cards">
 			<i class="fa-solid fa-layer-group"></i>
 			<span>
@@ -1732,7 +1803,10 @@
 									rel="noopener noreferrer"
 									class="vendor-link"
 								>
-									<div class="stock-indicator">
+									<div
+										class="stock-indicator"
+										class:best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool)}
+									>
 										<i
 											class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(
 												getStockStatus(card.cardtrader_stock)
@@ -1740,6 +1814,9 @@
 										></i>
 										{#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
 											<span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
+										{/if}
+										{#if isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool)}
+											<span class="best-price-tag" title="Lowest available price across in-stock marketplaces">BEST</span>
 										{/if}
 									</div>
 								</a>
@@ -1764,7 +1841,10 @@
 									rel="noopener noreferrer"
 									class="vendor-link"
 								>
-									<div class="stock-indicator">
+									<div
+										class="stock-indicator"
+										class:best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool)}
+									>
 										<i
 											class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(
 												getStockStatus(card.tcgplayer_stock)
@@ -1772,6 +1852,9 @@
 										></i>
 										{#if card.tcgplayer_low_price > 0 && getStockStatus(card.tcgplayer_stock) === 'available'}
 											<span class="price-text">{formatDollarPrice(card.tcgplayer_low_price)}</span>
+										{/if}
+										{#if isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool)}
+											<span class="best-price-tag" title="Lowest available price across in-stock marketplaces">BEST</span>
 										{/if}
 									</div>
 								</a>
@@ -1807,7 +1890,10 @@
 								rel="noopener noreferrer"
 								class="vendor-link"
 							>
-								<div class="stock-indicator">
+								<div
+									class="stock-indicator"
+									class:best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool)}
+								>
 									<i
 										class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(
 											getStockStatus(card.ebay_stock)
@@ -1815,6 +1901,9 @@
 									></i>
 									{#if card.ebay_low_price !== null && card.ebay_low_price !== undefined && getStockStatus(card.ebay_stock) === 'available'}
 										<span class="price-text">{formatPrice(card.ebay_low_price)}</span>
+									{/if}
+									{#if isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool)}
+										<span class="best-price-tag" title="Lowest available price across in-stock marketplaces">BEST</span>
 									{/if}
 								</div>
 							</a>
@@ -1829,7 +1918,10 @@
 									rel="noopener noreferrer"
 									class="vendor-link"
 								>
-									<div class="stock-indicator">
+									<div
+										class="stock-indicator"
+										class:best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool)}
+									>
 										<i
 											class="{getStockIcon(getStockStatus(card.manapool_stock))} {getStockColor(
 												getStockStatus(card.manapool_stock)
@@ -1837,6 +1929,9 @@
 										></i>
 										{#if card.manapool_low_price !== null && card.manapool_low_price !== undefined && getStockStatus(card.manapool_stock) === 'available'}
 											<span class="price-text">{formatPrice(card.manapool_low_price)}</span>
+										{/if}
+										{#if isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool)}
+											<span class="best-price-tag" title="Lowest available price across in-stock marketplaces">BEST</span>
 										{/if}
 									</div>
 								</a>
@@ -2434,6 +2529,12 @@
 	<aside class="floating-bulk-bar" aria-label="Bulk actions toolbar">
 		<div class="bulk-info">
 			<span class="bulk-count"><strong>{selectedKeys.size}</strong> card{selectedKeys.size === 1 ? '' : 's'} selected</span>
+			{#if selectedCostSummary.inStockCount > 0}
+				<span class="bulk-cost-pill" title="Estimated lowest total for {selectedCostSummary.inStockCount} in-stock selected card(s)">
+					<i class="fa-solid fa-sack-dollar"></i>
+					Est. {formatPrice(selectedCostSummary.totalLowestCents)} ({selectedCostSummary.inStockCount} in stock)
+				</span>
+			{/if}
 			<span class="bulk-hint desktop-only">(Shift/Ctrl to multi-select)</span>
 		</div>
 		<div class="bulk-actions">
@@ -4031,5 +4132,81 @@
 	.edit-rekey-notice i {
 		color: var(--color-primary);
 		margin-top: 0.15rem;
+	}
+
+	/* Lowest Available Price Highlight & Cost Summary */
+	.cost-summary-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		height: 36px;
+		padding: 0 0.75rem;
+		border-radius: 8px;
+		border: 1px solid rgba(16, 185, 129, 0.4);
+		background: rgba(16, 185, 129, 0.1);
+		color: var(--color-text-primary);
+		font-size: 0.82rem;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.cost-summary-badge i {
+		color: #10b981;
+	}
+
+	.cost-summary-badge strong {
+		color: #10b981;
+		font-weight: 700;
+	}
+
+	.cost-summary-badge small {
+		color: var(--color-text-secondary);
+		font-size: 0.74rem;
+		margin-left: 0.15rem;
+	}
+
+	.cost-summary-badge:hover,
+	.cost-summary-badge.active {
+		border-color: #10b981;
+		background: rgba(16, 185, 129, 0.18);
+		transform: translateY(-1px);
+	}
+
+	.stock-indicator.best-price {
+		background: rgba(16, 185, 129, 0.12);
+		border: 1px solid rgba(16, 185, 129, 0.45);
+		border-radius: 999px;
+		padding: 0.18rem 0.55rem;
+		box-shadow: 0 0 10px rgba(16, 185, 129, 0.12);
+	}
+
+	.stock-indicator.best-price .price-text {
+		color: #10b981;
+		font-weight: 700;
+	}
+
+	.best-price-tag {
+		font-size: 0.6rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		padding: 1px 5px;
+		border-radius: 999px;
+		background: #10b981;
+		color: #06281e;
+		margin-left: 0.2rem;
+		line-height: 1.2;
+	}
+
+	.bulk-cost-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.2rem 0.6rem;
+		border-radius: 999px;
+		background: rgba(16, 185, 129, 0.15);
+		border: 1px solid rgba(16, 185, 129, 0.4);
+		color: #10b981;
+		font-size: 0.78rem;
+		font-weight: 600;
 	}
 </style>
