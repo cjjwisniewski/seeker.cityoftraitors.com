@@ -12,6 +12,7 @@
 		PUBLIC_UPDATE_BANNER_FUNCTION_URL,
 		PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL
 	} from '$env/static/public';
+	import * as publicEnv from '$env/static/public';
 
 	// Define Role ID
 	const ADMIN_ROLE_ID = '1352632325640294411';
@@ -179,6 +180,48 @@
 	let showDeleteModal = false;
 	let userToDelete = null;
 	let isDeletingUser = false;
+
+	// Requeue stock checks state
+	let requeuingUser = null; // userId currently being requeued
+	let requeueFeedback = null; // { userId, text, type }
+
+	async function handleRequeueChecks(targetUserId, username) {
+		if (requeuingUser || !isAuthorized) return;
+		requeuingUser = targetUserId;
+		requeueFeedback = null;
+		try {
+			const requeueUrl = publicEnv.PUBLIC_REQUEUE_USER_STOCK_CHECKS_FUNCTION_URL || 'https://seeker.azure-api.net/seeker/requeueUserStockChecks';
+			const response = await fetchWithAuth(requeueUrl, {
+				method: 'POST',
+				body: JSON.stringify({ targetUserId })
+			});
+
+			if (!response || !response.ok) {
+				const errText = response ? await response.text() : 'Network error';
+				throw new Error(errText || 'Failed to requeue stock checks');
+			}
+
+			const data = await response.json();
+			requeueFeedback = {
+				userId: targetUserId,
+				text: `Queued ${data.cards_queued ?? 0} cards (${data.total_messages ?? 0} checks) across ${data.marketplaces?.join(', ') || 'all marketplaces'}.`,
+				type: 'success'
+			};
+		} catch (err) {
+			requeueFeedback = {
+				userId: targetUserId,
+				text: err.message || 'Error requeuing checks.',
+				type: 'error'
+			};
+		} finally {
+			requeuingUser = null;
+			setTimeout(() => {
+				if (requeueFeedback && requeueFeedback.userId === targetUserId) {
+					requeueFeedback = null;
+				}
+			}, 6000);
+		}
+	}
 
 	function promptDeleteAccount(targetUserId) {
 		userToDelete = targetUserId;
@@ -1092,6 +1135,20 @@
 											{table.itemCount} items
 										</span>
 										<button
+											class="requeue-user-btn"
+											on:click={() => handleRequeueChecks(table.userId, table.username)}
+											disabled={!token || requeuingUser === table.userId}
+											title="Requeue all stock checks for this user"
+										>
+											{#if requeuingUser === table.userId}
+												<i class="fa-solid fa-spinner fa-spin"></i>
+												<span>Queuing...</span>
+											{:else}
+												<i class="fa-solid fa-rotate"></i>
+												<span>Recheck All</span>
+											{/if}
+										</button>
+										<button
 											class="expand-btn"
 											on:click={() => {
 												if (expandedTable === table.userId) {
@@ -1117,6 +1174,13 @@
 										</button>
 									</div>
 								</div>
+
+								{#if requeueFeedback && requeueFeedback.userId === table.userId}
+									<div class="requeue-feedback-banner {requeueFeedback.type}">
+										<i class="fa-solid {requeueFeedback.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
+										<span>{requeueFeedback.text}</span>
+									</div>
+								{/if}
 
 								<!-- Expanded Seeking Table -->
 								{#if expandedTable === table.userId}
@@ -2643,6 +2707,50 @@
 		border-color: var(--color-primary);
 		color: var(--color-primary);
 		background: var(--color-bg-hover);
+	}
+
+	.requeue-user-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.35rem 0.75rem;
+		background: rgba(16, 185, 129, 0.1);
+		border: 1px solid rgba(16, 185, 129, 0.25);
+		color: #10b981;
+		border-radius: 8px;
+		font-size: 0.825rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.requeue-user-btn:hover:not(:disabled) {
+		background: #10b981;
+		color: #ffffff;
+		transform: translateY(-1px);
+	}
+
+	.requeue-feedback-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		margin: 0.5rem 1rem;
+		border-radius: 8px;
+		font-size: 0.825rem;
+		font-weight: 500;
+	}
+
+	.requeue-feedback-banner.success {
+		background: rgba(16, 185, 129, 0.1);
+		border: 1px solid rgba(16, 185, 129, 0.3);
+		color: #10b981;
+	}
+
+	.requeue-feedback-banner.error {
+		background: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		color: var(--color-error);
 	}
 
 	.delete-user-btn {
