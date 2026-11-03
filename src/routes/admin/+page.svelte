@@ -91,6 +91,7 @@
 			const q = userSearchQuery.toLowerCase();
 			return (
 				(table.username && table.username.toLowerCase().includes(q)) ||
+				(table.globalName && table.globalName.toLowerCase().includes(q)) ||
 				(table.userId && table.userId.toLowerCase().includes(q)) ||
 				(table.membershipTier && table.membershipTier.toLowerCase().includes(q))
 			);
@@ -98,7 +99,9 @@
 		.sort((a, b) => {
 			let cmp = 0;
 			if (sortBy === 'username') {
-				cmp = (a.username || '').localeCompare(b.username || '');
+				const nameA = a.globalName || a.username || '';
+				const nameB = b.globalName || b.username || '';
+				cmp = nameA.localeCompare(nameB);
 			} else if (sortBy === 'userId') {
 				cmp = (a.userId || '').localeCompare(b.userId || '');
 			} else if (sortBy === 'itemCount') {
@@ -1088,11 +1091,25 @@
 								<div class="user-card-header">
 									<div class="user-main-info">
 										<div class="user-avatar-badge">
-											<i class="fa-solid fa-user"></i>
+											{#if table.avatarUrl}
+												<img
+													src={table.avatarUrl}
+													alt={table.username}
+													class="user-avatar-img"
+													loading="lazy"
+													on:error={(e) => {
+														e.currentTarget.style.display = 'none';
+													}}
+												/>
+											{/if}
+											<i class="fa-solid fa-user" class:hidden={!!table.avatarUrl}></i>
 										</div>
 										<div class="user-titles">
 											<div class="user-name-line">
-												<span class="user-name">{table.username}</span>
+												<span class="user-name">{table.globalName || table.username}</span>
+												{#if table.globalName && table.username && table.globalName !== table.username}
+													<span class="user-handle">@{table.username}</span>
+												{/if}
 												<span class="tier-badge tier-{(table.membershipTier || 'Basic').toLowerCase()}">
 													<i
 														class="fa-solid {table.membershipTier === 'Premium' ||
@@ -2589,6 +2606,19 @@
 		justify-content: center;
 		font-size: 1.1rem;
 		flex-shrink: 0;
+		overflow: hidden;
+		position: relative;
+	}
+
+	.user-avatar-img {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+
+	.user-avatar-badge i.hidden {
+		display: none;
 	}
 
 	.user-titles {
@@ -2642,6 +2672,12 @@
 		font-size: 1rem;
 		font-weight: 700;
 		color: var(--color-text-primary);
+	}
+
+	.user-handle {
+		font-size: 0.825rem;
+		font-weight: 500;
+		color: var(--color-text-secondary);
 	}
 
 	.user-id-chip {
