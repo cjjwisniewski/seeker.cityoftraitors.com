@@ -1139,13 +1139,12 @@
 											on:click={() => handleRequeueChecks(table.userId, table.username)}
 											disabled={!token || requeuingUser === table.userId}
 											title="Requeue all stock checks for this user"
+											aria-label="Requeue all stock checks for this user"
 										>
 											{#if requeuingUser === table.userId}
 												<i class="fa-solid fa-spinner fa-spin"></i>
-												<span>Queuing...</span>
 											{:else}
-												<i class="fa-solid fa-rotate"></i>
-												<span>Recheck All</span>
+												<i class="fa-solid fa-paper-plane"></i>
 											{/if}
 										</button>
 										<button
@@ -2710,16 +2709,16 @@
 	}
 
 	.requeue-user-btn {
+		width: 34px;
+		height: 34px;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
-		padding: 0.35rem 0.75rem;
+		justify-content: center;
 		background: rgba(16, 185, 129, 0.1);
 		border: 1px solid rgba(16, 185, 129, 0.25);
 		color: #10b981;
 		border-radius: 8px;
-		font-size: 0.825rem;
-		font-weight: 600;
+		font-size: 0.85rem;
 		cursor: pointer;
 		transition: all var(--transition-fast);
 	}
