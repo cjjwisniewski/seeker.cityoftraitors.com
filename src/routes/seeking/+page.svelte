@@ -1323,18 +1323,32 @@
 							max_price_cap: max_price_cap,
 							cardtrader_stock: false,
 							cardtrader_low_price: null,
+							cardtrader_condition: null,
 							cardtrader_id: '',
 							tcgplayer_stock: false,
 							tcgplayer_low_price: null,
+							tcgplayer_condition: null,
 							cardmarket_stock: false,
 							cardmarket_low_price: null,
 							ebay_stock: false,
 							ebay_low_price: null,
+							ebay_condition: null,
 							ebay_id: '',
 							manapool_stock: false,
 							manapool_low_price: null,
+							manapool_condition: null,
 							manapool_id: '',
-							manapool_url: ''
+							manapool_url: '',
+							himarket_stock: false,
+							himarket_low_price: null,
+							himarket_price_hkd: null,
+							himarket_condition: null,
+							himarket_url: '',
+							hareruya_stock: false,
+							hareruya_low_price: null,
+							hareruya_price_jpy: null,
+							hareruya_condition: null,
+							hareruya_url: ''
 						};
 					}
 					return { ...c, max_price_cap: max_price_cap };
@@ -1684,17 +1698,22 @@
 			'Finish',
 			'CardTrader Stock',
 			'CardTrader Price',
+			'CardTrader Condition',
 			'TCGPlayer Stock',
 			'TCGPlayer Price',
+			'TCGPlayer Condition',
 			// 'CardMarket Stock',
 			// 'CardMarket Price',
 			'eBay Stock',
 			'eBay Price',
+			'eBay Condition',
 			'Mana Pool Stock',
 			'Mana Pool Price',
+			'Mana Pool Condition',
 			'HiMarket Stock',
 			'HiMarket Price (USD)',
 			'HiMarket Price (HKD)',
+			'HiMarket Condition',
 			'Hareruya Stock',
 			'Hareruya Price (USD)',
 			'Hareruya Price (JPY)',
@@ -1714,18 +1733,22 @@
 				card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined
 					? (card.cardtrader_low_price / 100).toFixed(2)
 					: '',
+				card.cardtrader_condition || '',
 				getStockStatus(card.tcgplayer_stock),
 				card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined
 					? Number(card.tcgplayer_low_price).toFixed(2)
 					: '',
+				card.tcgplayer_condition || '',
 				getStockStatus(card.ebay_stock),
 				card.ebay_low_price !== null && card.ebay_low_price !== undefined
 					? (card.ebay_low_price / 100).toFixed(2)
 					: '',
+				card.ebay_condition || '',
 				getStockStatus(card.manapool_stock),
 				card.manapool_low_price !== null && card.manapool_low_price !== undefined
 					? (card.manapool_low_price / 100).toFixed(2)
 					: '',
+				card.manapool_condition || '',
 				getStockStatus(card.himarket_stock),
 				card.himarket_low_price !== null && card.himarket_low_price !== undefined
 					? (card.himarket_low_price / 100).toFixed(2)
@@ -1733,6 +1756,7 @@
 				card.himarket_price_hkd !== null && card.himarket_price_hkd !== undefined
 					? Number(card.himarket_price_hkd).toFixed(2)
 					: '',
+				card.himarket_condition || '',
 				getStockStatus(card.hareruya_stock),
 				card.hareruya_low_price !== null && card.hareruya_low_price !== undefined
 					? (card.hareruya_low_price / 100).toFixed(2)
@@ -2217,7 +2241,17 @@
 											)}"
 										></i>
 										{#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
-											<span class="price-text">{formatPrice(card.cardtrader_low_price)}</span>
+											<span class="price-text">
+												{formatPrice(card.cardtrader_low_price)}
+												{#if card.cardtrader_condition && getStockStatus(card.cardtrader_stock) === 'available'}
+													<span
+														class="condition-bubble cond-{card.cardtrader_condition.toLowerCase()}"
+														title="Condition: {card.cardtrader_condition}"
+													>
+														{card.cardtrader_condition}
+													</span>
+												{/if}
+											</span>
 										{/if}
 									</div>
 								</a>
@@ -2252,7 +2286,17 @@
 											)}"
 										></i>
 										{#if card.tcgplayer_low_price > 0 && getStockStatus(card.tcgplayer_stock) === 'available'}
-											<span class="price-text">{formatDollarPrice(card.tcgplayer_low_price)}</span>
+											<span class="price-text">
+												{formatDollarPrice(card.tcgplayer_low_price)}
+												{#if card.tcgplayer_condition}
+													<span
+														class="condition-bubble cond-{card.tcgplayer_condition.toLowerCase()}"
+														title="Condition: {card.tcgplayer_condition}"
+													>
+														{card.tcgplayer_condition}
+													</span>
+												{/if}
+											</span>
 										{/if}
 									</div>
 								</a>
@@ -2298,7 +2342,17 @@
 										)}"
 									></i>
 									{#if card.ebay_low_price !== null && card.ebay_low_price !== undefined && getStockStatus(card.ebay_stock) === 'available'}
-										<span class="price-text">{formatPrice(card.ebay_low_price)}</span>
+										<span class="price-text">
+											{formatPrice(card.ebay_low_price)}
+											{#if card.ebay_condition}
+												<span
+													class="condition-bubble cond-{card.ebay_condition.toLowerCase()}"
+													title="Condition: {card.ebay_condition}"
+												>
+													{card.ebay_condition}
+												</span>
+											{/if}
+										</span>
 									{/if}
 								</div>
 							</a>
@@ -2323,7 +2377,17 @@
 											)}"
 										></i>
 										{#if card.manapool_low_price !== null && card.manapool_low_price !== undefined && getStockStatus(card.manapool_stock) === 'available'}
-											<span class="price-text">{formatPrice(card.manapool_low_price)}</span>
+											<span class="price-text">
+												{formatPrice(card.manapool_low_price)}
+												{#if card.manapool_condition}
+													<span
+														class="condition-bubble cond-{card.manapool_condition.toLowerCase()}"
+														title="Condition: {card.manapool_condition}"
+													>
+														{card.manapool_condition}
+													</span>
+												{/if}
+											</span>
 										{/if}
 									</div>
 								</a>
@@ -2358,6 +2422,14 @@
 										{#if card.himarket_low_price !== null && card.himarket_low_price !== undefined && getStockStatus(card.himarket_stock) === 'available'}
 											<span class="price-text" title={formatHkdPrice(card.himarket_price_hkd)}>
 												{formatPrice(card.himarket_low_price)}
+												{#if card.himarket_condition}
+													<span
+														class="condition-bubble cond-{card.himarket_condition.toLowerCase()}"
+														title="Condition: {card.himarket_condition}{card.himarket_price_hkd ? ` (${formatHkdPrice(card.himarket_price_hkd)})` : ''}"
+													>
+														{card.himarket_condition}
+													</span>
+												{/if}
 												{#if card.himarket_price_hkd}
 													<span class="currency-tag">HKD</span>
 												{/if}

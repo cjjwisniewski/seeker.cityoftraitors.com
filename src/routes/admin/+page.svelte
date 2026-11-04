@@ -1297,6 +1297,9 @@
 																		<span class="stock-pill in-stock">
 																			<i class="fa-solid fa-check"></i>
 																			{formatCents(card.cardtrader_low_price)}
+																			{#if card.cardtrader_condition}
+																				<span class="cond-pill">{card.cardtrader_condition}</span>
+																			{/if}
 																		</span>
 																	{:else}
 																		<span class="stock-pill out-of-stock">Out of Stock</span>
@@ -1307,6 +1310,9 @@
 																		<span class="stock-pill in-stock">
 																			<i class="fa-solid fa-check"></i>
 																			{formatDollars(card.tcgplayer_low_price)}
+																			{#if card.tcgplayer_condition}
+																				<span class="cond-pill">{card.tcgplayer_condition}</span>
+																			{/if}
 																		</span>
 																	{:else}
 																		<span class="stock-pill out-of-stock">Out of Stock</span>
@@ -1317,6 +1323,9 @@
 																		<span class="stock-pill in-stock">
 																			<i class="fa-solid fa-check"></i>
 																			{formatCents(card.ebay_low_price)}
+																			{#if card.ebay_condition}
+																				<span class="cond-pill">{card.ebay_condition}</span>
+																			{/if}
 																		</span>
 																	{:else}
 																		<span class="stock-pill out-of-stock">Out of Stock</span>
@@ -1327,6 +1336,9 @@
 																		<span class="stock-pill in-stock">
 																			<i class="fa-solid fa-check"></i>
 																			{formatCents(card.manapool_low_price)}
+																			{#if card.manapool_condition}
+																				<span class="cond-pill">{card.manapool_condition}</span>
+																			{/if}
 																		</span>
 																	{:else}
 																		<span class="stock-pill out-of-stock">Out of Stock</span>
@@ -1334,9 +1346,12 @@
 																</td>
 																<td class="col-vendor" data-label="HiMarket">
 																	{#if card.himarket_stock}
-																		<span class="stock-pill in-stock" title={card.himarket_price_hkd ? `HK$ ${Number(card.himarket_price_hkd).toFixed(2)}` : ''}>
+																		<span class="stock-pill in-stock" title={card.himarket_price_hkd ? `HK$ ${Number(card.himarket_price_hkd).toFixed(2)}${card.himarket_condition ? ` (${card.himarket_condition})` : ''}` : ''}>
 																			<i class="fa-solid fa-check"></i>
 																			{formatCents(card.himarket_low_price)}
+																			{#if card.himarket_condition}
+																				<span class="cond-pill">{card.himarket_condition}</span>
+																			{/if}
 																		</span>
 																	{:else}
 																		<span class="stock-pill out-of-stock">Out of Stock</span>
