@@ -4198,6 +4198,7 @@
 			display: block;
 			margin-top: 0.5rem;
 			width: 100%;
+			table-layout: auto;
 		}
 
 		thead {
@@ -4342,6 +4343,7 @@
 		td[data-label='CardTrader'],
 		td[data-label='TCGPlayer'],
 		td[data-label='EBay'],
+		td[data-label='eBay'],
 		td[data-label='Mana Pool'],
 		td[data-label='HiMarket'],
 		td[data-label='Hareruya'] {
@@ -4349,56 +4351,58 @@
 			background: var(--color-bg-secondary);
 			border: 1px solid var(--color-border);
 			border-radius: 10px;
-			padding: 0.45rem 0.55rem;
+			padding: 0.5rem 0.6rem;
 			display: flex;
-			flex-direction: row;
-			align-items: center;
+			flex-direction: column;
+			align-items: stretch;
 			justify-content: space-between;
 			gap: 0.35rem;
 			min-width: 0;
-			overflow: hidden;
+			box-sizing: border-box;
 		}
 
 		td[data-label='CardTrader']::before,
 		td[data-label='TCGPlayer']::before,
 		td[data-label='EBay']::before,
+		td[data-label='eBay']::before,
 		td[data-label='Mana Pool']::before,
 		td[data-label='HiMarket']::before,
 		td[data-label='Hareruya']::before {
 			content: attr(data-label);
-			font-weight: 600;
+			font-weight: 700;
 			color: var(--color-text-secondary);
 			display: block;
-			margin-bottom: 0;
 			font-size: 0.68rem;
 			text-transform: uppercase;
-			letter-spacing: 0.03em;
+			letter-spacing: 0.04em;
 			text-align: left;
 			white-space: nowrap;
-			flex-shrink: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			line-height: 1.2;
 		}
 
 		td.vendor-stock-cell .vendor-link {
-			display: inline-flex;
+			display: flex;
 			align-items: center;
 			min-width: 0;
-			max-width: 100%;
-			justify-content: flex-end;
+			width: 100%;
+			justify-content: flex-start;
 		}
 
 		td.vendor-stock-cell .stock-indicator {
-			display: inline-flex;
+			display: flex;
 			align-items: center;
-			gap: 0.25rem;
+			gap: 0.35rem;
 			min-width: 0;
-			max-width: 100%;
+			width: 100%;
 			flex-wrap: wrap;
-			justify-content: flex-end;
+			justify-content: flex-start;
 		}
 
 		td.vendor-stock-cell .stock-indicator i {
 			display: inline-block;
-			font-size: 0.88rem;
+			font-size: 0.95rem;
 			margin-bottom: 0;
 			flex-shrink: 0;
 		}
@@ -4406,28 +4410,30 @@
 		td.vendor-stock-cell .price-text {
 			display: inline-flex;
 			align-items: center;
-			gap: 0.2rem;
-			font-size: 0.74rem;
-			font-weight: 600;
+			gap: 0.25rem;
+			font-size: 0.8rem;
+			font-weight: 700;
 			white-space: nowrap;
-			flex-shrink: 1;
 			min-width: 0;
+			flex-wrap: wrap;
 		}
 
 		td.vendor-stock-cell .currency-tag {
-			font-size: 0.58rem;
-			padding: 0.04rem 0.2rem;
-			margin-left: 0;
+			font-size: 0.62rem;
+			padding: 0.04rem 0.22rem;
+			margin-left: 0.1rem;
 		}
 
 		td.vendor-stock-cell .condition-bubble {
-			font-size: 0.58rem;
-			padding: 0.05rem 0.28rem;
-			margin-left: 0;
+			font-size: 0.62rem;
+			padding: 0.06rem 0.3rem;
+			margin-left: 0.1rem;
 		}
 
 		td.vendor-stock-cell .stock-indicator.best-price {
-			padding: 0.12rem 0.4rem;
+			padding: 0.15rem 0.45rem;
+			border-radius: 999px;
+			width: fit-content;
 		}
 
 		.desktop-only {
@@ -5467,32 +5473,6 @@
 	}
 
 	@media (max-width: 520px) {
-		tbody tr {
-			grid-template-columns: 1fr;
-			gap: 0.45rem;
-			padding: 0.75rem;
-		}
-
-		td[data-label='Card'] {
-			padding: 0 2rem 0.55rem 0;
-		}
-
-		td[data-label='Set'],
-		td[data-label='Language'],
-		td[data-label='Finish'] {
-			grid-column: span 1;
-		}
-
-		td[data-label='CardTrader'],
-		td[data-label='TCGPlayer'],
-		td[data-label='EBay'],
-		td[data-label='Mana Pool'],
-		td[data-label='HiMarket'],
-		td[data-label='Hareruya'] {
-			grid-column: span 1;
-			padding: 0.4rem 0.55rem;
-		}
-
 		.manual-check-box {
 			flex-direction: column;
 			align-items: stretch;
