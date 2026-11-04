@@ -889,7 +889,7 @@
 	$: showTCGPlayer = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
 	$: showEbay = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
 	$: showManapool = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
-	$: showHimarket = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? true) : false;
+	$: showHimarket = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 
 	function showStockCheckFeedback(type, message) {
 		stockCheckToast = { type, message };

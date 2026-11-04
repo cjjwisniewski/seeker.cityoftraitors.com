@@ -35,7 +35,7 @@
 	$: marketplaceTcgplayerEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
 	$: marketplaceEbayEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
 	$: marketplaceManapoolEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
-	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? true) : false;
+	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 
 	async function copyUserId() {
 		if (!user?.id) return;
@@ -641,7 +641,7 @@
 										</span>
 									{/if}
 								</div>
-								<span class="setting-desc">Enable/disable stock checks on HiMarket (Hong Kong). Primarily intended for <strong>English</strong>, <strong>Japanese</strong>, and <strong>Chinese (Traditional &amp; Simplified)</strong> printings, while also scanning for rare foreign collector copies.</span>
+								<span class="setting-desc">Enable/disable stock checks on HiMarket (Hong Kong). Primarily intended for <strong>English</strong>, <strong>Japanese</strong>, and <strong>Chinese (Traditional &amp; Simplified)</strong> printings.</span>
 							</div>
 						</div>
 						<label class="toggle-switch">

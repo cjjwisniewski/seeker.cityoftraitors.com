@@ -522,6 +522,7 @@
 	$: estimatedTCGTimeSeconds = totalItems * 20;
 	$: estimatedEbayTimeSeconds = totalItems * 1;
 	$: estimatedManapoolTimeSeconds = totalItems * 1;
+	$: estimatedHimarketTimeSeconds = totalItems * 1;
 
 	function formatCents(cents) {
 		if (cents === null || cents === undefined || cents <= 0) return '—';
@@ -703,6 +704,17 @@
 								</div>
 							</div>
 							<div class="stat-value">{formatDuration(estimatedManapoolTimeSeconds)}</div>
+							<div class="stat-sub">Est. @ 1s / card</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="stat-card-header">
+								<span class="stat-title">HiMarket Time</span>
+								<div class="stat-icon-badge himarket">
+									<i class="fa-solid fa-earth-asia"></i>
+								</div>
+							</div>
+							<div class="stat-value">{formatDuration(estimatedHimarketTimeSeconds)}</div>
 							<div class="stat-sub">Est. @ 1s / card</div>
 						</div>
 					</div>
@@ -1176,9 +1188,10 @@
 												}
 											}}
 											disabled={!token}
+											title={expandedTable === table.userId ? 'Collapse card list' : 'Expand card list'}
+											aria-label={expandedTable === table.userId ? 'Collapse card list' : 'Expand card list'}
 										>
 											<i class="fa-solid {expandedTable === table.userId ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
-											<span>{expandedTable === table.userId ? 'Collapse' : 'Expand'}</span>
 										</button>
 										<button
 											class="delete-user-btn"
@@ -1924,6 +1937,11 @@
 	.stat-icon-badge.manapool {
 		background: rgba(139, 92, 246, 0.12);
 		color: #8b5cf6;
+	}
+
+	.stat-icon-badge.himarket {
+		background: rgba(14, 165, 233, 0.12);
+		color: #0ea5e9;
 	}
 
 	.stat-value {
@@ -2735,16 +2753,16 @@
 	}
 
 	.expand-btn {
+		width: 34px;
+		height: 34px;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
+		justify-content: center;
 		background: var(--color-bg-elevated);
 		border: 1px solid var(--color-border);
-		color: var(--color-text-primary);
-		padding: 0.4rem 0.85rem;
+		color: var(--color-text-secondary);
 		border-radius: 8px;
-		font-size: 0.825rem;
-		font-weight: 600;
+		font-size: 0.85rem;
 		cursor: pointer;
 		transition: all var(--transition-fast);
 	}
@@ -2753,6 +2771,7 @@
 		border-color: var(--color-primary);
 		color: var(--color-primary);
 		background: var(--color-bg-hover);
+		transform: translateY(-1px);
 	}
 
 	.requeue-user-btn {
