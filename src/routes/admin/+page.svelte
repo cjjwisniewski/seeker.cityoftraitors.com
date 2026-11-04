@@ -519,11 +519,12 @@
 	$: totalItems = userTables.reduce((sum, table) => sum + (table.itemCount || 0), 0);
 
 	$: estimatedCTTimeSeconds = totalItems * 2;
-	$: estimatedTCGTimeSeconds = totalItems * 20;
+	$: estimatedTCGTimeSeconds = totalItems * 2;
 	$: estimatedEbayTimeSeconds = totalItems * 1;
 	$: estimatedManapoolTimeSeconds = totalItems * 1;
 	$: estimatedHimarketTimeSeconds = totalItems * 1;
 	$: estimatedHareruyaTimeSeconds = totalItems * 2;
+	$: estimatedRutenTimeSeconds = totalItems * 2;
 
 	function formatCents(cents) {
 		if (cents === null || cents === undefined || cents <= 0) return '—';
@@ -683,7 +684,7 @@
 								</div>
 							</div>
 							<div class="stat-value">{formatDuration(estimatedTCGTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 20s / card</div>
+							<div class="stat-sub">Est. @ 2s / card</div>
 						</div>
 
 						<div class="stat-card">
@@ -728,6 +729,17 @@
 							</div>
 							<div class="stat-value">{formatDuration(estimatedHareruyaTimeSeconds)}</div>
 							<div class="stat-sub">Est. @ 2s / card</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="stat-card-header">
+								<span class="stat-title">Ruten Time</span>
+								<div class="stat-icon-badge ruten">
+									<i class="fa-solid fa-Torii-gate fa-shop"></i>
+								</div>
+							</div>
+							<div class="stat-value">{formatDuration(estimatedRutenTimeSeconds)}</div>
+							<div class="stat-sub">Est. @ 2s / card (ZHT/EN)</div>
 						</div>
 					</div>
 				{/if}
@@ -1257,6 +1269,7 @@
 															<th class="col-vendor">Mana Pool</th>
 															<th class="col-vendor">HiMarket</th>
 															<th class="col-vendor">Hareruya</th>
+															<th class="col-vendor">Ruten</th>
 															<th class="col-cap">Price Cap</th>
 														</tr>
 													</thead>
@@ -1364,6 +1377,21 @@
 																			{formatCents(card.hareruya_low_price)}
 																			{#if card.hareruya_condition}
 																				<span class="cond-pill">{card.hareruya_condition}</span>
+																			{/if}
+																		</span>
+																	{:else}
+																		<span class="stock-pill out-of-stock">Out of Stock</span>
+																	{/if}
+																</td>
+																<td class="col-vendor" data-label="Ruten">
+																	{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
+																		<span class="stock-pill out-of-stock" title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards">—</span>
+																	{:else if card.ruten_stock}
+																		<span class="stock-pill in-stock" title={card.ruten_price_twd ? `NT$ ${Number(card.ruten_price_twd).toLocaleString()}${card.ruten_condition ? ` (${card.ruten_condition})` : ''}` : ''}>
+																			<i class="fa-solid fa-check"></i>
+																			{formatCents(card.ruten_low_price)}
+																			{#if card.ruten_condition}
+																				<span class="cond-pill">{card.ruten_condition}</span>
 																			{/if}
 																		</span>
 																	{:else}
@@ -1988,6 +2016,11 @@
 	.stat-icon-badge.hareruya {
 		background: rgba(249, 115, 22, 0.12);
 		color: #f97316;
+	}
+
+	.stat-icon-badge.ruten {
+		background: rgba(249, 115, 22, 0.14);
+		color: #ea580c;
 	}
 
 	.stat-value {

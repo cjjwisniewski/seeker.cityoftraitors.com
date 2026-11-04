@@ -37,6 +37,7 @@
 	$: marketplaceManapoolEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
 	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 	$: marketplaceHareruyaEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
+	$: marketplaceRutenEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceRutenEnabled ?? false) : false;
 
 	async function copyUserId() {
 		if (!user?.id) return;
@@ -72,6 +73,7 @@
 		if (settingName === 'marketplaceManapoolEnabled') oldValue = marketplaceManapoolEnabled;
 		if (settingName === 'marketplaceHimarketEnabled') oldValue = marketplaceHimarketEnabled;
 		if (settingName === 'marketplaceHareruyaEnabled') oldValue = marketplaceHareruyaEnabled;
+		if (settingName === 'marketplaceRutenEnabled') oldValue = marketplaceRutenEnabled;
 
 		// Optimistic UI update
 		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
@@ -86,6 +88,7 @@
 		if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = newValue;
 		if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = newValue;
 		if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = newValue;
+		if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = newValue;
 
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
@@ -115,6 +118,7 @@
 				if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
 				if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
 				if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = oldValue;
+				if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = oldValue;
 				settingsError = 'Error updating setting. Please try again.';
 				return;
 			}
@@ -135,6 +139,7 @@
 			if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
 			if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
 			if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = oldValue;
+			if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = oldValue;
 			settingsError = 'Error updating setting. Please try again.';
 		} finally {
 			isUpdatingSetting = false;
@@ -686,6 +691,38 @@
 								type="checkbox"
 								checked={marketplaceHareruyaEnabled}
 								on:change={() => updateSetting('marketplaceHareruyaEnabled', !marketplaceHareruyaEnabled)}
+								disabled={isUpdatingSetting || !isPremiumOrLegacy}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-item-left">
+							<div class="vendor-avatar ruten-badge">
+								<i class="fa-solid fa-shop"></i>
+							</div>
+							<div class="setting-info">
+								<div class="label-with-tier">
+									<span class="setting-title">Ruten</span>
+									<span class="lang-scope-badge">ZHT · EN ONLY</span>
+									<span class="ebay-warn-badge">
+										<i class="fa-solid fa-triangle-exclamation"></i> High False-Positive Rate
+									</span>
+									{#if !isPremiumOrLegacy}
+										<span class="tier-pill-locked">
+											<i class="fa-solid fa-lock"></i> Premium
+										</span>
+									{/if}
+								</div>
+								<span class="setting-desc">Enable/disable stock checks on Ruten (Taiwan). Restricted strictly to <strong>Traditional Chinese (ZHT)</strong> and <strong>English (EN)</strong> printings. <em>Note: Due to seller-authored listing titles on Ruten, automated matching has a higher rate of false positives.</em></span>
+							</div>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceRutenEnabled}
+								on:change={() => updateSetting('marketplaceRutenEnabled', !marketplaceRutenEnabled)}
 								disabled={isUpdatingSetting || !isPremiumOrLegacy}
 							/>
 							<span class="slider round"></span>
@@ -1270,6 +1307,12 @@
 		background: rgba(249, 115, 22, 0.12);
 		border: 1px solid rgba(249, 115, 22, 0.25);
 		color: #f97316;
+	}
+
+	.ruten-badge {
+		background: rgba(20, 184, 166, 0.12);
+		border: 1px solid rgba(20, 184, 166, 0.25);
+		color: #14b8a6;
 	}
 
 	.lang-scope-badge {

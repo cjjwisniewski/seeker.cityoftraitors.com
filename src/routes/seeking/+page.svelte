@@ -3,7 +3,7 @@
 	import { auth } from '$lib/stores/auth'; // Import auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
 	import { getLanguageName } from '$lib/utils/languageUtils';
-	import { initExchangeRates, formatHkdPrice, formatJpyPrice } from '$lib/stores/exchangeRate';
+	import { initExchangeRates, formatHkdPrice, formatJpyPrice, formatTwdPrice } from '$lib/stores/exchangeRate';
 	import {
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
 		PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL,
@@ -20,7 +20,8 @@
 		ebay: null,
 		manapool: null,
 		himarket: null,
-		hareruya: null
+		hareruya: null,
+		ruten: null
 	};
 	let checkingStockCardKeys = new Set();
 	let stockCheckToast = null; // { type: 'success' | 'warning' | 'error', message: string }
@@ -892,6 +893,7 @@
 	$: showManapool = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
 	$: showHimarket = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 	$: showHareruya = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
+	$: showRuten = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceRutenEnabled ?? false) : false;
 
 	function showStockCheckFeedback(type, message) {
 		stockCheckToast = { type, message };
@@ -1136,7 +1138,8 @@
 					ebay: data.lastChecked.ebay || null,
 					manapool: data.lastChecked.manapool || null,
 					himarket: data.lastChecked.himarket || null,
-					hareruya: data.lastChecked.hareruya || null
+					hareruya: data.lastChecked.hareruya || null,
+					ruten: data.lastChecked.ruten || null
 				};
 			}
 		} catch (e) {
@@ -1348,7 +1351,12 @@
 							hareruya_low_price: null,
 							hareruya_price_jpy: null,
 							hareruya_condition: null,
-							hareruya_url: ''
+							hareruya_url: '',
+							ruten_stock: false,
+							ruten_low_price: null,
+							ruten_price_twd: null,
+							ruten_condition: null,
+							ruten_url: ''
 						};
 					}
 					return { ...c, max_price_cap: max_price_cap };
@@ -1528,7 +1536,7 @@
 	// Derive all unique set codes present in the cards list for the set filter dropdown
 	$: availableSetCodes = [...new Set(cards.map((c) => c.set_code.toUpperCase()))].sort();
 
-	function getLowestOffer(card, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya) {
+	function getLowestOffer(card, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya, rtEnabled = showRuten) {
 		const offers = [];
 		if (ctEnabled && getStockStatus(card.cardtrader_stock) === 'available' && card.cardtrader_low_price > 0) {
 			offers.push({ vendor: 'cardtrader', cents: Math.round(card.cardtrader_low_price) });
@@ -1548,6 +1556,9 @@
 		if (hrEnabled && getStockStatus(card.hareruya_stock) === 'available' && card.hareruya_low_price > 0) {
 			offers.push({ vendor: 'hareruya', cents: Math.round(card.hareruya_low_price) });
 		}
+		if (rtEnabled && ['zht', 'en'].includes((card.language || '').toLowerCase()) && getStockStatus(card.ruten_stock) === 'available' && card.ruten_low_price > 0) {
+			offers.push({ vendor: 'ruten', cents: Math.round(card.ruten_low_price) });
+		}
 
 		if (offers.length === 0) {
 			return { minPriceCents: null, bestVendors: new Set(), offerCount: 0 };
@@ -1558,8 +1569,8 @@
 		return { minPriceCents, bestVendors, offerCount: offers.length };
 	}
 
-	function isBestVendorPrice(card, vendor, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya) {
-		const info = getLowestOffer(card, ctEnabled, tcgEnabled, ebayEnabled, mpEnabled, hmEnabled, hrEnabled);
+	function isBestVendorPrice(card, vendor, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya, rtEnabled = showRuten) {
+		const info = getLowestOffer(card, ctEnabled, tcgEnabled, ebayEnabled, mpEnabled, hmEnabled, hrEnabled, rtEnabled);
 		return info.offerCount >= 2 && info.bestVendors.has(vendor);
 	}
 
@@ -1592,7 +1603,8 @@
 				(showEbay && card.ebay_stock === true) ||
 				(showManapool && card.manapool_stock === true) ||
 				(showHimarket && card.himarket_stock === true) ||
-				(showHareruya && card.hareruya_stock === true)
+				(showHareruya && card.hareruya_stock === true) ||
+				(showRuten && ['zht', 'en'].includes((card.language || '').toLowerCase()) && card.ruten_stock === true)
 			);
 			if (!hasStock) return false;
 		}
@@ -1616,6 +1628,9 @@
 			}
 			if (showHareruya && card.hareruya_low_price > 0 && getStockStatus(card.hareruya_stock) === 'available') {
 				prices.push(card.hareruya_low_price);
+			}
+			if (showRuten && ['zht', 'en'].includes((card.language || '').toLowerCase()) && card.ruten_low_price > 0 && getStockStatus(card.ruten_stock) === 'available') {
+				prices.push(card.ruten_low_price);
 			}
 			const hasPriceUnderCap = prices.some((p) => p <= cap);
 			if (!hasPriceUnderCap) return false;
@@ -1696,7 +1711,7 @@
 
 	$: inStockSummary = filteredCards.reduce(
 		(acc, card) => {
-			const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya);
+			const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten);
 			if (offer.minPriceCents !== null) {
 				acc.inStockCount += 1;
 				acc.totalLowestCents += offer.minPriceCents;
@@ -1710,7 +1725,7 @@
 		.filter((c) => selectedKeys.has(getCardKey(c)))
 		.reduce(
 			(acc, card) => {
-				const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya);
+				const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten);
 				if (offer.minPriceCents !== null) {
 					acc.inStockCount += 1;
 					acc.totalLowestCents += offer.minPriceCents;
@@ -1751,6 +1766,10 @@
 			'Hareruya Price (USD)',
 			'Hareruya Price (JPY)',
 			'Hareruya Condition',
+			'Ruten Stock',
+			'Ruten Price (USD)',
+			'Ruten Price (TWD)',
+			'Ruten Condition',
 			'Max Price Cap'
 		];
 		const csvRows = [headers.join(',')];
@@ -1798,6 +1817,14 @@
 					? Math.round(Number(card.hareruya_price_jpy))
 					: '',
 				card.hareruya_condition || '',
+				['zht', 'en'].includes((card.language || '').toLowerCase()) ? getStockStatus(card.ruten_stock) : 'unsupported',
+				card.ruten_low_price !== null && card.ruten_low_price !== undefined
+					? (card.ruten_low_price / 100).toFixed(2)
+					: '',
+				card.ruten_price_twd !== null && card.ruten_price_twd !== undefined
+					? Math.round(Number(card.ruten_price_twd))
+					: '',
+				card.ruten_condition || '',
 				card.max_price_cap !== null && card.max_price_cap !== undefined
 					? (card.max_price_cap / 100).toFixed(2)
 					: ''
@@ -2192,6 +2219,30 @@
 							</div>
 						</th>
 						{/if}
+						{#if showRuten}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('ruten_low_price')}
+							class:active={sortKey === 'ruten_low_price'}
+							title={lastChecked.ruten ? `Ruten last checked: ${formatExactTimestamp(lastChecked.ruten)}` : 'Ruten stock & lowest price (ZHT & EN only)'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									Ruten
+									{#if sortKey === 'ruten_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
+								{#if formatRelativeTime(lastChecked.ruten, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.ruten, nowTick)}
+									</span>
+								{/if}
+							</div>
+						</th>
+						{/if}
 						<th class="actions-header col-actions"></th>
 						<!-- Not sortable -->
 					</tr>
@@ -2285,7 +2336,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
+										class:best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(
@@ -2330,7 +2381,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
+										class:best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(
@@ -2386,7 +2437,7 @@
 							>
 								<div
 									class="stock-indicator"
-									class:best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
+									class:best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
 								>
 									<i
 										class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(
@@ -2421,7 +2472,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
+										class:best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.manapool_stock))} {getStockColor(
@@ -2464,7 +2515,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'himarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
+										class:best-price={isBestVendorPrice(card, 'himarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.himarket_stock))} {getStockColor(
@@ -2512,7 +2563,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'hareruya', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
+										class:best-price={isBestVendorPrice(card, 'hareruya', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.hareruya_stock))} {getStockColor(
@@ -2544,6 +2595,61 @@
 											getStockStatus(card.hareruya_stock)
 										)}"
 										title={getStockStatus(card.hareruya_stock) === 'unavailable' ? 'Out of stock on Hareruya' : 'Not searched on Hareruya'}
+									></i>
+								</div>
+							{/if}
+						</td>
+						{/if}
+						{#if showRuten}
+						<td data-label="Ruten" class="vendor-stock-cell col-vendor">
+							{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
+								<div class="stock-indicator">
+									<span
+										class="unsupported-lang-dash"
+										title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards"
+									>—</span>
+								</div>
+							{:else if card.ruten_url}
+								<a
+									href={card.ruten_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="vendor-link"
+								>
+									<div
+										class="stock-indicator"
+										class:best-price={isBestVendorPrice(card, 'ruten', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
+									>
+										<i
+											class="{getStockIcon(getStockStatus(card.ruten_stock))} {getStockColor(
+												getStockStatus(card.ruten_stock)
+											)}"
+										></i>
+										{#if card.ruten_low_price !== null && card.ruten_low_price !== undefined && getStockStatus(card.ruten_stock) === 'available'}
+											<span class="price-text" title={formatTwdPrice(card.ruten_price_twd)}>
+												{formatPrice(card.ruten_low_price)}
+												{#if card.ruten_condition}
+													<span
+														class="condition-bubble cond-{card.ruten_condition.toLowerCase()}"
+														title="Condition: {card.ruten_condition}{card.ruten_price_twd ? ` (${formatTwdPrice(card.ruten_price_twd)})` : ''}"
+													>
+														{card.ruten_condition}
+													</span>
+												{/if}
+												{#if card.ruten_price_twd}
+													<span class="currency-tag">TWD</span>
+												{/if}
+											</span>
+										{/if}
+									</div>
+								</a>
+							{:else}
+								<div class="stock-indicator">
+									<i
+										class="{getStockIcon(getStockStatus(card.ruten_stock))} {getStockColor(
+											getStockStatus(card.ruten_stock)
+										)}"
+										title={getStockStatus(card.ruten_stock) === 'unavailable' ? 'Out of stock on Ruten' : 'Not searched on Ruten'}
 									></i>
 								</div>
 							{/if}
@@ -3976,6 +4082,15 @@
 		line-height: 1.1;
 	}
 
+	.unsupported-lang-dash {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		opacity: 0.45;
+		cursor: help;
+		user-select: none;
+	}
+
 	.condition-bubble {
 		font-size: 0.6rem;
 		font-weight: 700;
@@ -4346,7 +4461,8 @@
 		td[data-label='eBay'],
 		td[data-label='Mana Pool'],
 		td[data-label='HiMarket'],
-		td[data-label='Hareruya'] {
+		td[data-label='Hareruya'],
+		td[data-label='Ruten'] {
 			grid-column: span 3;
 			background: var(--color-bg-secondary);
 			border: 1px solid var(--color-border);
@@ -4367,7 +4483,8 @@
 		td[data-label='eBay']::before,
 		td[data-label='Mana Pool']::before,
 		td[data-label='HiMarket']::before,
-		td[data-label='Hareruya']::before {
+		td[data-label='Hareruya']::before,
+		td[data-label='Ruten']::before {
 			content: attr(data-label);
 			font-weight: 700;
 			color: var(--color-text-secondary);
