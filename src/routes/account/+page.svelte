@@ -33,7 +33,7 @@
 	$: preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
 	$: marketplaceCardtraderEnabled = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
 	$: marketplaceTcgplayerEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
-	$: marketplaceEbayEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
+	$: marketplaceEbayEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? false) : false;
 	$: marketplaceManapoolEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
 	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 	$: marketplaceHareruyaEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
@@ -583,13 +583,16 @@
 							<div class="setting-info">
 								<div class="label-with-tier">
 									<span class="setting-title">eBay</span>
+									<span class="ebay-warn-badge">
+										<i class="fa-solid fa-triangle-exclamation"></i> High False-Positive Rate
+									</span>
 									{#if !isPremiumOrLegacy}
 										<span class="tier-pill-locked">
 											<i class="fa-solid fa-lock"></i> Premium
 										</span>
 									{/if}
 								</div>
-								<span class="setting-desc">Enable/disable stock checks and price tracking on eBay.</span>
+								<span class="setting-desc">Enable/disable stock checks and price tracking on eBay. <em>Note: Due to seller-authored listing titles on eBay, automated matching has a higher rate of false positives.</em></span>
 							</div>
 						</div>
 						<label class="toggle-switch">
@@ -1280,6 +1283,20 @@
 		font-size: 0.68rem;
 		font-weight: 700;
 		letter-spacing: 0.04em;
+	}
+
+	.ebay-warn-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		background: rgba(245, 158, 11, 0.14);
+		border: 1px solid rgba(245, 158, 11, 0.35);
+		color: #d97706;
+		padding: 0.12rem 0.45rem;
+		border-radius: 6px;
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.02em;
 	}
 
 	.label-with-tier {

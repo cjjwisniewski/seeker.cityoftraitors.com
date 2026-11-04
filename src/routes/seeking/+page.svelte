@@ -888,7 +888,7 @@
 	$: canManualCheckStock = isPremiumOrLegacy || Boolean($auth.user?.isAdmin);
 	$: showCardTrader = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
 	$: showTCGPlayer = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
-	$: showEbay = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
+	$: showEbay = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? false) : false;
 	$: showManapool = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
 	$: showHimarket = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 	$: showHareruya = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
@@ -4078,52 +4078,91 @@
 		td[data-label='TCGPlayer'],
 		td[data-label='EBay'],
 		td[data-label='Mana Pool'],
-		td[data-label='HiMarket'] {
+		td[data-label='HiMarket'],
+		td[data-label='Hareruya'] {
 			grid-column: span 3;
 			background: var(--color-bg-secondary);
 			border: 1px solid var(--color-border);
 			border-radius: 10px;
-			padding: 0.5rem 0.65rem;
+			padding: 0.45rem 0.55rem;
 			display: flex;
 			flex-direction: row;
 			align-items: center;
 			justify-content: space-between;
 			gap: 0.35rem;
+			min-width: 0;
+			overflow: hidden;
 		}
 
 		td[data-label='CardTrader']::before,
 		td[data-label='TCGPlayer']::before,
 		td[data-label='EBay']::before,
 		td[data-label='Mana Pool']::before,
-		td[data-label='HiMarket']::before {
+		td[data-label='HiMarket']::before,
+		td[data-label='Hareruya']::before {
 			content: attr(data-label);
 			font-weight: 600;
 			color: var(--color-text-secondary);
 			display: block;
 			margin-bottom: 0;
-			font-size: 0.7rem;
+			font-size: 0.68rem;
 			text-transform: uppercase;
 			letter-spacing: 0.03em;
 			text-align: left;
 			white-space: nowrap;
+			flex-shrink: 0;
+		}
+
+		td.vendor-stock-cell .vendor-link {
+			display: inline-flex;
+			align-items: center;
+			min-width: 0;
+			max-width: 100%;
+			justify-content: flex-end;
 		}
 
 		td.vendor-stock-cell .stock-indicator {
 			display: inline-flex;
 			align-items: center;
-			gap: 0.32rem;
+			gap: 0.25rem;
+			min-width: 0;
+			max-width: 100%;
+			flex-wrap: wrap;
+			justify-content: flex-end;
 		}
 
 		td.vendor-stock-cell .stock-indicator i {
 			display: inline-block;
-			font-size: 0.95rem;
+			font-size: 0.88rem;
 			margin-bottom: 0;
+			flex-shrink: 0;
 		}
 
 		td.vendor-stock-cell .price-text {
-			display: inline-block;
-			font-size: 0.78rem;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.2rem;
+			font-size: 0.74rem;
 			font-weight: 600;
+			white-space: nowrap;
+			flex-shrink: 1;
+			min-width: 0;
+		}
+
+		td.vendor-stock-cell .currency-tag {
+			font-size: 0.58rem;
+			padding: 0.04rem 0.2rem;
+			margin-left: 0;
+		}
+
+		td.vendor-stock-cell .condition-bubble {
+			font-size: 0.58rem;
+			padding: 0.05rem 0.28rem;
+			margin-left: 0;
+		}
+
+		td.vendor-stock-cell .stock-indicator.best-price {
+			padding: 0.12rem 0.4rem;
 		}
 
 		.desktop-only {
@@ -5096,6 +5135,32 @@
 	}
 
 	@media (max-width: 520px) {
+		tbody tr {
+			grid-template-columns: 1fr;
+			gap: 0.45rem;
+			padding: 0.75rem;
+		}
+
+		td[data-label='Card'] {
+			padding: 0 2rem 0.55rem 0;
+		}
+
+		td[data-label='Set'],
+		td[data-label='Language'],
+		td[data-label='Finish'] {
+			grid-column: span 1;
+		}
+
+		td[data-label='CardTrader'],
+		td[data-label='TCGPlayer'],
+		td[data-label='EBay'],
+		td[data-label='Mana Pool'],
+		td[data-label='HiMarket'],
+		td[data-label='Hareruya'] {
+			grid-column: span 1;
+			padding: 0.4rem 0.55rem;
+		}
+
 		.manual-check-box {
 			flex-direction: column;
 			align-items: stretch;
