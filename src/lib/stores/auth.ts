@@ -17,6 +17,7 @@ interface User {
         marketplaceTcgplayerEnabled?: boolean;
         marketplaceEbayEnabled?: boolean;
         marketplaceManapoolEnabled?: boolean;
+        marketplaceHimarketEnabled?: boolean;
     };
 }
 

@@ -39,7 +39,7 @@
 			premium: true,
 			features: {
 				'Saved Cards': 'Unlimited',
-				Marketplaces: 'CardTrader, TCGPlayer, eBay & Mana Pool',
+				Marketplaces: 'CardTrader, TCGPlayer, eBay, Mana Pool & HiMarket',
 				'Scan Frequency': 'Every 6 hours',
 				'On-Demand Checks': 'Included',
 				'Max Price Caps': 'Included',

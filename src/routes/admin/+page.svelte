@@ -1230,6 +1230,7 @@
 															<th class="col-vendor">TCGPlayer</th>
 															<th class="col-vendor">eBay</th>
 															<th class="col-vendor">Mana Pool</th>
+															<th class="col-vendor">HiMarket</th>
 															<th class="col-cap">Price Cap</th>
 														</tr>
 													</thead>
@@ -1300,6 +1301,16 @@
 																		<span class="stock-pill in-stock">
 																			<i class="fa-solid fa-check"></i>
 																			{formatCents(card.manapool_low_price)}
+																		</span>
+																	{:else}
+																		<span class="stock-pill out-of-stock">Out of Stock</span>
+																	{/if}
+																</td>
+																<td class="col-vendor" data-label="HiMarket">
+																	{#if card.himarket_stock}
+																		<span class="stock-pill in-stock" title={card.himarket_price_hkd ? `HK$ ${Number(card.himarket_price_hkd).toFixed(2)}` : ''}>
+																			<i class="fa-solid fa-check"></i>
+																			{formatCents(card.himarket_low_price)}
 																		</span>
 																	{:else}
 																		<span class="stock-pill out-of-stock">Out of Stock</span>

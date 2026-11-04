@@ -35,6 +35,7 @@
 	$: marketplaceTcgplayerEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
 	$: marketplaceEbayEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
 	$: marketplaceManapoolEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
+	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? true) : false;
 
 	async function copyUserId() {
 		if (!user?.id) return;
@@ -68,6 +69,7 @@
 		if (settingName === 'marketplaceTcgplayerEnabled') oldValue = marketplaceTcgplayerEnabled;
 		if (settingName === 'marketplaceEbayEnabled') oldValue = marketplaceEbayEnabled;
 		if (settingName === 'marketplaceManapoolEnabled') oldValue = marketplaceManapoolEnabled;
+		if (settingName === 'marketplaceHimarketEnabled') oldValue = marketplaceHimarketEnabled;
 
 		// Optimistic UI update
 		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
@@ -80,6 +82,7 @@
 		if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = newValue;
 		if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = newValue;
 		if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = newValue;
+		if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = newValue;
 
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
@@ -107,6 +110,7 @@
 				if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = oldValue;
 				if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
 				if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
+				if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
 				settingsError = 'Error updating setting. Please try again.';
 				return;
 			}
@@ -125,6 +129,7 @@
 			if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = oldValue;
 			if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
 			if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
+			if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
 			settingsError = 'Error updating setting. Please try again.';
 		} finally {
 			isUpdatingSetting = false;
@@ -615,6 +620,35 @@
 								type="checkbox"
 								checked={marketplaceManapoolEnabled}
 								on:change={() => updateSetting('marketplaceManapoolEnabled', !marketplaceManapoolEnabled)}
+								disabled={isUpdatingSetting || !isPremiumOrLegacy}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-item-left">
+							<div class="vendor-avatar himarket-badge">
+								<i class="fa-solid fa-earth-asia"></i>
+							</div>
+							<div class="setting-info">
+								<div class="label-with-tier">
+									<span class="setting-title">HiMarket</span>
+									<span class="lang-scope-badge">EN · JA · ZHT · ZHS</span>
+									{#if !isPremiumOrLegacy}
+										<span class="tier-pill-locked">
+											<i class="fa-solid fa-lock"></i> Premium
+										</span>
+									{/if}
+								</div>
+								<span class="setting-desc">Enable/disable stock checks on HiMarket (Hong Kong). Primarily intended for <strong>English</strong>, <strong>Japanese</strong>, and <strong>Chinese (Traditional &amp; Simplified)</strong> printings, while also scanning for rare foreign collector copies.</span>
+							</div>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceHimarketEnabled}
+								on:change={() => updateSetting('marketplaceHimarketEnabled', !marketplaceHimarketEnabled)}
 								disabled={isUpdatingSetting || !isPremiumOrLegacy}
 							/>
 							<span class="slider round"></span>
@@ -1187,6 +1221,25 @@
 		background: rgba(139, 92, 246, 0.12);
 		border: 1px solid rgba(139, 92, 246, 0.25);
 		color: #8b5cf6;
+	}
+
+	.himarket-badge {
+		background: rgba(236, 72, 153, 0.12);
+		border: 1px solid rgba(236, 72, 153, 0.25);
+		color: #ec4899;
+	}
+
+	.lang-scope-badge {
+		display: inline-flex;
+		align-items: center;
+		background: rgba(99, 102, 241, 0.12);
+		border: 1px solid rgba(99, 102, 241, 0.25);
+		color: var(--color-primary, #6366f1);
+		padding: 0.12rem 0.45rem;
+		border-radius: 6px;
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
 	}
 
 	.label-with-tier {
