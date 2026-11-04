@@ -1661,6 +1661,39 @@
 		return sortDirection === 'asc' ? comparison : comparison * -1;
 	});
 
+	let displayLimit = 100;
+	let scrollY = 0;
+	$: showBackToTop = scrollY > 400;
+
+	// Reset display limit when filter, query, or sort order changes
+	$: if (searchQuery || filterInStockOnly || filterUnderPriceCap || filterFoilOnly || filterSetCode || sortKey || sortDirection) {
+		displayLimit = 100;
+	}
+
+	$: displayedCards = sortedCards.slice(0, displayLimit);
+
+	function loadAllCards() {
+		displayLimit = sortedCards.length;
+	}
+
+	function setupObserver(node) {
+		if (typeof IntersectionObserver === 'undefined') return;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && displayLimit < sortedCards.length) {
+					displayLimit = Math.min(displayLimit + 100, sortedCards.length);
+				}
+			},
+			{ rootMargin: '400px' }
+		);
+		observer.observe(node);
+		return {
+			destroy() {
+				observer.disconnect();
+			}
+		};
+	}
+
 	$: inStockSummary = filteredCards.reduce(
 		(acc, card) => {
 			const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya);
@@ -1785,7 +1818,7 @@
 	}
 </script>
 
-<svelte:window on:click={closeMenu} on:keydown={handleGlobalKeyDown} />
+<svelte:window on:click={closeMenu} on:keydown={handleGlobalKeyDown} bind:scrollY={scrollY} />
 
 {#if ($auth.user?.membershipTier || '').toLowerCase() === 'banned'}
 	<div class="seeking-suspended-banner">
@@ -1967,189 +2000,204 @@
 	<div class="empty">No cards in seeking list</div>
 {:else}
 	<div class="seeking-list">
-		<table>
-			<thead>
-				<tr>
-					<th on:click={() => sortBy('name')} class:active={sortKey === 'name'}>
-						Card
-						{#if sortKey === 'name'}
-							<i
-								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-							></i>
+		<div class="table-scroll-container">
+			<table>
+				<thead>
+					<tr>
+						<th class="col-card" on:click={() => sortBy('name')} class:active={sortKey === 'name'}>
+							<span class="th-header-wrap">
+								Card
+								{#if sortKey === 'name'}
+									<i
+										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+									></i>
+								{/if}
+							</span>
+						</th>
+						<th class="col-set" on:click={() => sortBy('set_code')} class:active={sortKey === 'set_code'} title="Set">
+							<span class="th-header-wrap">
+								Set
+								{#if sortKey === 'set_code'}
+									<i
+										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+									></i>
+								{/if}
+							</span>
+						</th>
+						<th class="col-lang" on:click={() => sortBy('language')} class:active={sortKey === 'language'} title="Language">
+							<span class="th-header-wrap">
+								Lang
+								{#if sortKey === 'language'}
+									<i
+										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+									></i>
+								{/if}
+							</span>
+						</th>
+						<th class="col-finish" on:click={() => sortBy('finish')} class:active={sortKey === 'finish'} title="Finish">
+							<span class="th-header-wrap">
+								Finish
+								{#if sortKey === 'finish'}
+									<i
+										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+									></i>
+								{/if}
+							</span>
+						</th>
+						{#if showCardTrader}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('cardtrader_low_price')}
+							class:active={sortKey === 'cardtrader_low_price'}
+							title={lastChecked.cardtrader ? `CardTrader last checked: ${formatExactTimestamp(lastChecked.cardtrader)}` : 'CardTrader stock & lowest price'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									CardTrader
+									{#if sortKey === 'cardtrader_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
+								{#if formatRelativeTime(lastChecked.cardtrader, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.cardtrader, nowTick)}
+									</span>
+								{/if}
+							</div>
+						</th>
 						{/if}
-					</th>
-					<th on:click={() => sortBy('set_code')} class:active={sortKey === 'set_code'}>
-						Set
-						{#if sortKey === 'set_code'}
-							<i
-								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-							></i>
+						{#if showTCGPlayer}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('tcgplayer_low_price')}
+							class:active={sortKey === 'tcgplayer_low_price'}
+							title={lastChecked.tcgplayer ? `TCGPlayer last checked: ${formatExactTimestamp(lastChecked.tcgplayer)}` : 'TCGPlayer stock & lowest price'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									TCGPlayer
+									{#if sortKey === 'tcgplayer_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
+								{#if formatRelativeTime(lastChecked.tcgplayer, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.tcgplayer, nowTick)}
+									</span>
+								{/if}
+							</div>
+						</th>
 						{/if}
-					</th>
-					<th on:click={() => sortBy('language')} class:active={sortKey === 'language'}>
-						Language
-						{#if sortKey === 'language'}
-							<i
-								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-							></i>
+						<th class="disabled-column display-none" title="CardMarket stock check coming soon">
+							CardMarket
+							<!-- Add sorting later if needed -->
+						</th>
+						{#if showEbay}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('ebay_low_price')}
+							class:active={sortKey === 'ebay_low_price'}
+							title={lastChecked.ebay ? `eBay last checked: ${formatExactTimestamp(lastChecked.ebay)}` : 'eBay stock & lowest price'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									eBay
+									{#if sortKey === 'ebay_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
+								{#if formatRelativeTime(lastChecked.ebay, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.ebay, nowTick)}
+									</span>
+								{/if}
+							</div>
+						</th>
 						{/if}
-					</th>
-					<th on:click={() => sortBy('finish')} class:active={sortKey === 'finish'}>
-						Finish
-						{#if sortKey === 'finish'}
-							<i
-								class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-							></i>
+						{#if showManapool}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('manapool_low_price')}
+							class:active={sortKey === 'manapool_low_price'}
+							title={lastChecked.manapool ? `Mana Pool last checked: ${formatExactTimestamp(lastChecked.manapool)}` : 'Mana Pool stock & lowest price'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									Mana Pool
+									{#if sortKey === 'manapool_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
+								{#if formatRelativeTime(lastChecked.manapool, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.manapool, nowTick)}
+									</span>
+								{/if}
+							</div>
+						</th>
 						{/if}
-					</th>
-					{#if showCardTrader}
-					<th
-						on:click={() => sortBy('cardtrader_low_price')}
-						class:active={sortKey === 'cardtrader_low_price'}
-						title={lastChecked.cardtrader ? `CardTrader last checked: ${formatExactTimestamp(lastChecked.cardtrader)}` : 'CardTrader stock & lowest price'}
-					>
-						<div class="th-vendor-wrap">
-							<span class="th-vendor-title">
-								CardTrader
-								{#if sortKey === 'cardtrader_low_price'}
-									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-									></i>
-								{/if}
-							</span>
-							{#if formatRelativeTime(lastChecked.cardtrader, nowTick)}
-								<span class="th-last-checked">
-									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.cardtrader, nowTick)}
+						{#if showHimarket}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('himarket_low_price')}
+							class:active={sortKey === 'himarket_low_price'}
+							title={lastChecked.himarket ? `HiMarket last checked: ${formatExactTimestamp(lastChecked.himarket)}` : 'HiMarket stock & lowest price'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									HiMarket
+									{#if sortKey === 'himarket_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
 								</span>
-							{/if}
-						</div>
-					</th>
-					{/if}
-					{#if showTCGPlayer}
-					<th
-						on:click={() => sortBy('tcgplayer_low_price')}
-						class:active={sortKey === 'tcgplayer_low_price'}
-						title={lastChecked.tcgplayer ? `TCGPlayer last checked: ${formatExactTimestamp(lastChecked.tcgplayer)}` : 'TCGPlayer stock & lowest price'}
-					>
-						<div class="th-vendor-wrap">
-							<span class="th-vendor-title">
-								TCGPlayer
-								{#if sortKey === 'tcgplayer_low_price'}
-									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-									></i>
+								{#if formatRelativeTime(lastChecked.himarket, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.himarket, nowTick)}
+									</span>
 								{/if}
-							</span>
-							{#if formatRelativeTime(lastChecked.tcgplayer, nowTick)}
-								<span class="th-last-checked">
-									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.tcgplayer, nowTick)}
+							</div>
+						</th>
+						{/if}
+						{#if showHareruya}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('hareruya_low_price')}
+							class:active={sortKey === 'hareruya_low_price'}
+							title={lastChecked.hareruya ? `Hareruya last checked: ${formatExactTimestamp(lastChecked.hareruya)}` : 'Hareruya stock & lowest price'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									Hareruya
+									{#if sortKey === 'hareruya_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
 								</span>
-							{/if}
-						</div>
-					</th>
-					{/if}
-					<th class="disabled-column display-none" title="CardMarket stock check coming soon">
-						CardMarket
-						<!-- Add sorting later if needed -->
-					</th>
-					{#if showEbay}
-					<th
-						on:click={() => sortBy('ebay_low_price')}
-						class:active={sortKey === 'ebay_low_price'}
-						title={lastChecked.ebay ? `eBay last checked: ${formatExactTimestamp(lastChecked.ebay)}` : 'eBay stock & lowest price'}
-					>
-						<div class="th-vendor-wrap">
-							<span class="th-vendor-title">
-								EBay
-								{#if sortKey === 'ebay_low_price'}
-									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-									></i>
+								{#if formatRelativeTime(lastChecked.hareruya, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.hareruya, nowTick)}
+									</span>
 								{/if}
-							</span>
-							{#if formatRelativeTime(lastChecked.ebay, nowTick)}
-								<span class="th-last-checked">
-									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.ebay, nowTick)}
-								</span>
-							{/if}
-						</div>
-					</th>
-					{/if}
-					{#if showManapool}
-					<th
-						on:click={() => sortBy('manapool_low_price')}
-						class:active={sortKey === 'manapool_low_price'}
-						title={lastChecked.manapool ? `Mana Pool last checked: ${formatExactTimestamp(lastChecked.manapool)}` : 'Mana Pool stock & lowest price'}
-					>
-						<div class="th-vendor-wrap">
-							<span class="th-vendor-title">
-								Mana Pool
-								{#if sortKey === 'manapool_low_price'}
-									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-									></i>
-								{/if}
-							</span>
-							{#if formatRelativeTime(lastChecked.manapool, nowTick)}
-								<span class="th-last-checked">
-									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.manapool, nowTick)}
-								</span>
-							{/if}
-						</div>
-					</th>
-					{/if}
-					{#if showHimarket}
-					<th
-						on:click={() => sortBy('himarket_low_price')}
-						class:active={sortKey === 'himarket_low_price'}
-						title={lastChecked.himarket ? `HiMarket last checked: ${formatExactTimestamp(lastChecked.himarket)}` : 'HiMarket stock & lowest price'}
-					>
-						<div class="th-vendor-wrap">
-							<span class="th-vendor-title">
-								HiMarket
-								{#if sortKey === 'himarket_low_price'}
-									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-									></i>
-								{/if}
-							</span>
-							{#if formatRelativeTime(lastChecked.himarket, nowTick)}
-								<span class="th-last-checked">
-									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.himarket, nowTick)}
-								</span>
-							{/if}
-						</div>
-					</th>
-					{/if}
-					{#if showHareruya}
-					<th
-						on:click={() => sortBy('hareruya_low_price')}
-						class:active={sortKey === 'hareruya_low_price'}
-						title={lastChecked.hareruya ? `Hareruya last checked: ${formatExactTimestamp(lastChecked.hareruya)}` : 'Hareruya stock & lowest price'}
-					>
-						<div class="th-vendor-wrap">
-							<span class="th-vendor-title">
-								Hareruya
-								{#if sortKey === 'hareruya_low_price'}
-									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-									></i>
-								{/if}
-							</span>
-							{#if formatRelativeTime(lastChecked.hareruya, nowTick)}
-								<span class="th-last-checked">
-									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.hareruya, nowTick)}
-								</span>
-							{/if}
-						</div>
-					</th>
-					{/if}
-					<th class="actions-header"></th>
-					<!-- Not sortable -->
-				</tr>
-			</thead>
-			<tbody>
-				{#each sortedCards as card, index (`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`)}
+							</div>
+						</th>
+						{/if}
+						<th class="actions-header col-actions"></th>
+						<!-- Not sortable -->
+					</tr>
+				</thead>
+				<tbody>
+					{#each displayedCards as card, index (`${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`)}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 					<tr
@@ -2166,7 +2214,7 @@
 							? 'z-index: 50; position: relative;'
 							: ''}
 					>
-						<td data-label="Card">
+						<td data-label="Card" class="col-card">
 							<div class="card-info">
 								{#if !isCondensed}
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -2175,6 +2223,8 @@
 										src={getWebpImageUri(card.image_uri)}
 										alt={card.name}
 										class="card-thumbnail"
+										loading="lazy"
+										decoding="async"
 										on:click={() => (enlargedCardImage = getWebpImageUri(card.image_uri))}
 									/>
 								{/if}
@@ -2193,15 +2243,17 @@
 								</div>
 							</div>
 						</td>
-						<td data-label="Set" class="set-column">
+						<td data-label="Set" class="set-column col-set">
 							<img
 								src="https://svgs.scryfall.io/sets/{getSetIconCode(card.set_code)}.svg"
 								alt="{card.set_code} set icon"
 								title={card.set_code.toUpperCase()}
 								class="set-icon"
+								loading="lazy"
+								decoding="async"
 							/>
 						</td>
-						<td data-label="Language" class="language-column">
+						<td data-label="Language" class="language-column col-lang">
 							<button
 								type="button"
 								class="inline-variant-btn"
@@ -2211,7 +2263,7 @@
 								{card.language.toUpperCase()}
 							</button>
 						</td>
-						<td data-label="Finish">
+						<td data-label="Finish" class="finish-column col-finish">
 							<button
 								type="button"
 								class="inline-variant-btn"
@@ -2223,7 +2275,7 @@
 							</button>
 						</td>
 						{#if showCardTrader}
-						<td data-label="CardTrader" class="vendor-stock-cell">
+						<td data-label="CardTrader" class="vendor-stock-cell col-vendor">
 							{#if card.cardtrader_id}
 								<a
 									href="https://www.cardtrader.com/cards/{card.cardtrader_id}"
@@ -2268,7 +2320,7 @@
 						</td>
 						{/if}
 						{#if showTCGPlayer}
-						<td data-label="TCGPlayer" class="vendor-stock-cell">
+						<td data-label="TCGPlayer" class="vendor-stock-cell col-vendor">
 							{#if card.tcgplayer_id}
 								<a
 									href={getTCGPlayerUrl(card)}
@@ -2312,7 +2364,7 @@
 							{/if}
 						</td>
 						{/if}
-						<td data-label="CardMarket" class="vendor-stock-cell disabled-column display-none">
+						<td data-label="CardMarket" class="vendor-stock-cell col-vendor disabled-column display-none">
 							<div class="stock-indicator">
 								<i
 									class="{getStockIcon(getStockStatus(card.cardmarket_stock))} {getStockColor(
@@ -2325,7 +2377,7 @@
 							</div>
 						</td>
 						{#if showEbay}
-						<td data-label="EBay" class="vendor-stock-cell">
+						<td data-label="EBay" class="vendor-stock-cell col-vendor">
 							<a
 								href={getEbayUrl(card, setCodeToNameMap)}
 								target="_blank"
@@ -2359,7 +2411,7 @@
 						</td>
 						{/if}
 						{#if showManapool}
-						<td data-label="Mana Pool" class="vendor-stock-cell">
+						<td data-label="Mana Pool" class="vendor-stock-cell col-vendor">
 							{#if card.manapool_url}
 								<a
 									href={card.manapool_url}
@@ -2402,7 +2454,7 @@
 						</td>
 						{/if}
 						{#if showHimarket}
-						<td data-label="HiMarket" class="vendor-stock-cell">
+						<td data-label="HiMarket" class="vendor-stock-cell col-vendor">
 							{#if card.himarket_url}
 								<a
 									href={card.himarket_url}
@@ -2450,7 +2502,7 @@
 						</td>
 						{/if}
 						{#if showHareruya}
-						<td data-label="Hareruya" class="vendor-stock-cell">
+						<td data-label="Hareruya" class="vendor-stock-cell col-vendor">
 							{#if card.hareruya_url}
 								<a
 									href={card.hareruya_url}
@@ -2497,7 +2549,7 @@
 							{/if}
 						</td>
 						{/if}
-						<td data-label="Actions" class="actions-column">
+						<td data-label="Actions" class="actions-column col-actions">
 							<div class="kebab-menu-container">
 								<button
 									class="kebab-button"
@@ -2513,7 +2565,7 @@
 								{#if activeMenuId === `${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`}
 									<!-- svelte-ignore a11y-click-events-have-key-events -->
 									<!-- svelte-ignore a11y-no-static-element-interactions -->
-									<div class="kebab-dropdown" class:drop-up={index >= sortedCards.length - 2} on:click|stopPropagation>
+									<div class="kebab-dropdown" class:drop-up={index >= displayedCards.length - 2} on:click|stopPropagation>
 										<button
 											class="dropdown-item"
 											on:click={() => {
@@ -2565,7 +2617,30 @@
 				{/each}
 			</tbody>
 		</table>
+		{#if displayedCards.length < sortedCards.length}
+			<div class="list-load-trigger" use:setupObserver>
+				<span class="load-status-text">
+					Showing <strong>{displayedCards.length}</strong> of <strong>{sortedCards.length}</strong> cards
+				</span>
+				<button type="button" class="load-all-btn" on:click={loadAllCards}>
+					Load all ({sortedCards.length})
+				</button>
+			</div>
+		{/if}
 	</div>
+</div>
+{/if}
+
+{#if showBackToTop}
+	<button
+		type="button"
+		class="scroll-top-btn"
+		on:click={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+		title="Scroll to top"
+		aria-label="Scroll to top"
+	>
+		<i class="fa-solid fa-arrow-up"></i>
+	</button>
 {/if}
 
 {#if showSettingsModal && selectedCardForSettings}
@@ -3177,7 +3252,7 @@
 <style>
 	.seeking-list {
 		margin: 1rem auto 2.5rem auto;
-		max-width: 1200px;
+		max-width: 1540px;
 		padding: 0 1rem;
 		box-sizing: border-box;
 		width: 100%;
@@ -3187,7 +3262,7 @@
 	.seeking-suspended-banner {
 		margin: 1.25rem auto 0.5rem auto;
 		width: calc(100% - 2rem);
-		max-width: calc(1200px - 2rem);
+		max-width: calc(1540px - 2rem);
 		box-sizing: border-box;
 		padding: 0.85rem 1.25rem;
 		background: rgba(239, 68, 68, 0.12);
@@ -3229,7 +3304,7 @@
 	.workspace-toolbar {
 		margin: 1.25rem auto 1rem auto;
 		width: calc(100% - 2rem);
-		max-width: calc(1200px - 2rem);
+		max-width: calc(1540px - 2rem);
 		box-sizing: border-box;
 		padding: 0.65rem 1rem;
 		background: var(--glass-bg);
@@ -3518,20 +3593,33 @@
 		}
 	}
 
-	table {
+	.table-scroll-container {
 		width: 100%;
-		border-collapse: separate;
-		border-spacing: 0;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		border-radius: 12px;
 		background: var(--glass-bg);
 		backdrop-filter: blur(var(--backdrop-blur));
 		-webkit-backdrop-filter: blur(var(--backdrop-blur));
-		border-radius: 12px;
-		margin-top: 1rem;
-		box-shadow: var(--glass-shadow);
 		border: 1px solid var(--glass-border);
+		box-shadow: var(--glass-shadow);
+		margin-top: 1rem;
+		position: relative;
 	}
 
-	/* Keep rounded corners on the table headers and footers since overflow: hidden was removed to allow kebab menu dropdowns */
+	table {
+		width: 100%;
+		min-width: 100%;
+		border-collapse: separate;
+		border-spacing: 0;
+		background: transparent;
+		border: none;
+		margin-top: 0;
+		box-shadow: none;
+		table-layout: fixed;
+	}
+
+	/* Keep rounded corners on the table headers and footers */
 	table thead tr:first-child th:first-child {
 		border-top-left-radius: 11px;
 	}
@@ -3548,9 +3636,92 @@
 		border-bottom-right-radius: 11px;
 	}
 
+	/* Column Sizing for Scalable Multi-Provider Support */
+	.col-card {
+		width: 24%;
+		min-width: 195px;
+		text-align: left;
+	}
+
+	.col-set {
+		width: 48px;
+		min-width: 44px;
+		max-width: 52px;
+		text-align: center;
+		padding: 0.6rem 0.2rem;
+	}
+
+	.col-lang {
+		width: 56px;
+		min-width: 52px;
+		max-width: 60px;
+		text-align: center;
+		padding: 0.6rem 0.2rem;
+	}
+
+	.col-finish {
+		width: 78px;
+		min-width: 72px;
+		max-width: 84px;
+		text-align: center;
+		padding: 0.6rem 0.2rem;
+	}
+
+	.col-vendor {
+		min-width: 96px;
+		max-width: 135px;
+		text-align: center;
+		padding: 0.55rem 0.35rem;
+	}
+
+	.col-actions {
+		width: 46px;
+		min-width: 42px;
+		max-width: 48px;
+		text-align: center;
+		padding: 0.6rem 0.2rem;
+	}
+
+	/* Sticky Card Column on Desktop Horizontal Scroll */
+	@media (min-width: 769px) {
+		th.col-card {
+			position: sticky;
+			left: 0;
+			z-index: 15;
+			background: var(--color-bg-secondary);
+		}
+
+		td.col-card {
+			position: sticky;
+			left: 0;
+			z-index: 5;
+			background: var(--color-bg-primary);
+		}
+
+		tbody tr:hover td.col-card {
+			background: var(--color-bg-hover);
+		}
+
+		tbody tr.selected td.col-card {
+			background: var(--color-primary-alpha, rgba(99, 102, 241, 0.15)) !important;
+		}
+
+		th.col-card::after,
+		td.col-card::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			width: 1px;
+			background: var(--color-border);
+			pointer-events: none;
+		}
+	}
+
 	th,
 	td {
-		padding: 1rem;
+		padding: 0.6rem 0.4rem;
 		text-align: center;
 		border-bottom: 1px solid var(--color-border);
 		transition: background-color var(--transition-fast);
@@ -3564,11 +3735,10 @@
 		cursor: pointer;
 		position: relative;
 		user-select: none;
-		padding-right: 1.5em;
 		white-space: nowrap;
 		text-transform: uppercase;
-		font-size: 0.85rem;
-		letter-spacing: 0.05em;
+		font-size: 0.78rem;
+		letter-spacing: 0.04em;
 	}
 
 	th.active {
@@ -3697,18 +3867,24 @@
 		}
 	}
 
+	.th-header-wrap {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.25rem;
+	}
+
 	.sort-icon {
-		position: absolute;
-		right: 0.5em;
-		top: 50%;
-		transform: translateY(-50%);
-		font-size: 0.8em;
+		font-size: 0.72rem;
+		color: var(--color-primary);
+		display: inline-block;
+		vertical-align: middle;
 	}
 
 	th.disabled-column {
 		cursor: not-allowed;
 		pointer-events: none;
-		padding-right: 1rem;
+		padding-right: 0.5rem;
 	}
 	th.disabled-column:hover {
 		background-color: var(--color-bg-secondary);
@@ -3721,23 +3897,25 @@
 	.card-info {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.65rem;
 		text-align: left;
+		min-width: 0;
 	}
 
 	.card-info img {
-		width: 40px;
+		width: 36px;
 		height: auto;
 		border-radius: 4px;
-		transition: all var(--transition-normal);
+		transition: transform var(--transition-normal);
 		opacity: 1;
-		margin-right: 1rem;
+		margin-right: 0;
 		box-shadow: var(--shadow-sm);
+		flex-shrink: 0;
 	}
 
 	.card-info img:hover {
-		transform: scale(1.5);
-		z-index: 10;
+		transform: scale(1.55);
+		z-index: 20;
 		box-shadow: var(--shadow-md);
 	}
 
@@ -3751,52 +3929,57 @@
 	.vendor-stock-cell {
 		text-align: center;
 		vertical-align: middle;
-		padding-top: 1rem;
-		padding-bottom: 1rem;
+		padding: 0.55rem 0.35rem;
 	}
 
 	.stock-indicator {
-		display: inline-block;
-		text-align: center;
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.18rem;
+		min-width: 0;
 	}
 
 	.stock-indicator i {
-		display: block;
-		font-size: 1.1rem;
-		margin-bottom: 0.25rem;
+		font-size: 1.05rem;
 		transition: transform var(--transition-fast);
+		line-height: 1;
 	}
 
 	.vendor-link:hover .stock-indicator i {
-		transform: scale(1.1);
+		transform: scale(1.15);
 	}
 
 	.price-text {
-		display: block;
-		font-size: 0.75rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.2rem;
+		font-size: 0.76rem;
 		color: var(--color-text-muted);
-		line-height: 1;
+		line-height: 1.15;
 		font-weight: 500;
+		white-space: nowrap;
 	}
 
 	.currency-tag {
-		font-size: 0.65rem;
+		font-size: 0.6rem;
 		font-weight: 700;
 		color: var(--color-text-muted);
-		margin-left: 0.2rem;
-		padding: 0.05rem 0.25rem;
+		padding: 0.04rem 0.22rem;
 		background: rgba(255, 255, 255, 0.08);
 		border-radius: 4px;
 		letter-spacing: 0.02em;
 		display: inline-block;
 		vertical-align: middle;
+		line-height: 1.1;
 	}
 
 	.condition-bubble {
-		font-size: 0.62rem;
+		font-size: 0.6rem;
 		font-weight: 700;
-		margin-left: 0.22rem;
-		padding: 0.08rem 0.34rem;
+		padding: 0.05rem 0.3rem;
 		border-radius: 999px;
 		letter-spacing: 0.03em;
 		display: inline-block;
@@ -3997,6 +4180,16 @@
 	}
 
 	@media (max-width: 768px) {
+		.table-scroll-container {
+			background: transparent;
+			border: none;
+			box-shadow: none;
+			overflow-x: visible;
+			margin-top: 0.5rem;
+			border-radius: 0;
+			min-height: auto;
+		}
+
 		table {
 			background: transparent;
 			box-shadow: none;
@@ -5143,7 +5336,7 @@
 		align-items: center;
 		gap: 0.6rem;
 		width: calc(100% - 2rem);
-		max-width: calc(1200px - 2rem);
+		max-width: calc(1540px - 2rem);
 		box-sizing: border-box;
 		margin: 0 auto 0.85rem auto;
 		padding: 0.65rem 1rem;
@@ -5197,6 +5390,73 @@
 
 	.toast-dismiss-btn:hover {
 		color: var(--color-text-primary);
+	}
+
+	/* Long List Performance & Progressive Loading Trigger */
+	.list-load-trigger {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		padding: 1.1rem;
+		color: var(--color-text-secondary);
+		font-size: 0.85rem;
+		border-top: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+		border-bottom-left-radius: 11px;
+		border-bottom-right-radius: 11px;
+	}
+
+	.load-status-text strong {
+		color: var(--color-text-primary);
+	}
+
+	.load-all-btn {
+		background: var(--color-bg-primary);
+		border: 1px solid var(--color-border);
+		color: var(--color-primary);
+		padding: 0.35rem 0.75rem;
+		border-radius: 6px;
+		font-size: 0.8rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.load-all-btn:hover {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: white;
+	}
+
+	/* Floating Scroll-to-Top Button for Long Lists */
+	.scroll-top-btn {
+		position: fixed;
+		bottom: 1.5rem;
+		right: 1.5rem;
+		width: 42px;
+		height: 42px;
+		border-radius: 50%;
+		background: var(--color-bg-elevated, #1e1e2d);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-primary);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1rem;
+		box-shadow: var(--shadow-md);
+		cursor: pointer;
+		z-index: 850;
+		transition: all var(--transition-fast);
+		opacity: 0.85;
+	}
+
+	.scroll-top-btn:hover {
+		opacity: 1;
+		transform: translateY(-2px);
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+		box-shadow: var(--shadow-lg);
 	}
 
 	@media (pointer: coarse), (max-width: 768px) {
