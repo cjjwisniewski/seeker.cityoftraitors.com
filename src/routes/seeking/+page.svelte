@@ -3,7 +3,7 @@
 	import { auth } from '$lib/stores/auth'; // Import auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
 	import { getLanguageName } from '$lib/utils/languageUtils';
-	import { initExchangeRates, formatHkdPrice } from '$lib/stores/exchangeRate';
+	import { initExchangeRates, formatHkdPrice, formatJpyPrice } from '$lib/stores/exchangeRate';
 	import {
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
 		PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL,
@@ -19,7 +19,8 @@
 		tcgplayer: null,
 		ebay: null,
 		manapool: null,
-		himarket: null
+		himarket: null,
+		hareruya: null
 	};
 	let checkingStockCardKeys = new Set();
 	let stockCheckToast = null; // { type: 'success' | 'warning' | 'error', message: string }
@@ -890,6 +891,7 @@
 	$: showEbay = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
 	$: showManapool = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
 	$: showHimarket = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
+	$: showHareruya = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
 
 	function showStockCheckFeedback(type, message) {
 		stockCheckToast = { type, message };
@@ -1133,7 +1135,8 @@
 					tcgplayer: data.lastChecked.tcgplayer || null,
 					ebay: data.lastChecked.ebay || null,
 					manapool: data.lastChecked.manapool || null,
-					himarket: data.lastChecked.himarket || null
+					himarket: data.lastChecked.himarket || null,
+					hareruya: data.lastChecked.hareruya || null
 				};
 			}
 		} catch (e) {
@@ -1511,7 +1514,7 @@
 	// Derive all unique set codes present in the cards list for the set filter dropdown
 	$: availableSetCodes = [...new Set(cards.map((c) => c.set_code.toUpperCase()))].sort();
 
-	function getLowestOffer(card, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket) {
+	function getLowestOffer(card, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya) {
 		const offers = [];
 		if (ctEnabled && getStockStatus(card.cardtrader_stock) === 'available' && card.cardtrader_low_price > 0) {
 			offers.push({ vendor: 'cardtrader', cents: Math.round(card.cardtrader_low_price) });
@@ -1528,6 +1531,9 @@
 		if (hmEnabled && getStockStatus(card.himarket_stock) === 'available' && card.himarket_low_price > 0) {
 			offers.push({ vendor: 'himarket', cents: Math.round(card.himarket_low_price) });
 		}
+		if (hrEnabled && getStockStatus(card.hareruya_stock) === 'available' && card.hareruya_low_price > 0) {
+			offers.push({ vendor: 'hareruya', cents: Math.round(card.hareruya_low_price) });
+		}
 
 		if (offers.length === 0) {
 			return { minPriceCents: null, bestVendors: new Set(), offerCount: 0 };
@@ -1538,8 +1544,8 @@
 		return { minPriceCents, bestVendors, offerCount: offers.length };
 	}
 
-	function isBestVendorPrice(card, vendor, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket) {
-		const info = getLowestOffer(card, ctEnabled, tcgEnabled, ebayEnabled, mpEnabled, hmEnabled);
+	function isBestVendorPrice(card, vendor, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya) {
+		const info = getLowestOffer(card, ctEnabled, tcgEnabled, ebayEnabled, mpEnabled, hmEnabled, hrEnabled);
 		return info.offerCount >= 2 && info.bestVendors.has(vendor);
 	}
 
@@ -1571,7 +1577,8 @@
 				(showTCGPlayer && card.tcgplayer_stock === true) ||
 				(showEbay && card.ebay_stock === true) ||
 				(showManapool && card.manapool_stock === true) ||
-				(showHimarket && card.himarket_stock === true)
+				(showHimarket && card.himarket_stock === true) ||
+				(showHareruya && card.hareruya_stock === true)
 			);
 			if (!hasStock) return false;
 		}
@@ -1592,6 +1599,9 @@
 			}
 			if (showHimarket && card.himarket_low_price > 0 && getStockStatus(card.himarket_stock) === 'available') {
 				prices.push(card.himarket_low_price);
+			}
+			if (showHareruya && card.hareruya_low_price > 0 && getStockStatus(card.hareruya_stock) === 'available') {
+				prices.push(card.hareruya_low_price);
 			}
 			const hasPriceUnderCap = prices.some((p) => p <= cap);
 			if (!hasPriceUnderCap) return false;
@@ -1639,7 +1649,7 @@
 
 	$: inStockSummary = filteredCards.reduce(
 		(acc, card) => {
-			const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket);
+			const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya);
 			if (offer.minPriceCents !== null) {
 				acc.inStockCount += 1;
 				acc.totalLowestCents += offer.minPriceCents;
@@ -1653,7 +1663,7 @@
 		.filter((c) => selectedKeys.has(getCardKey(c)))
 		.reduce(
 			(acc, card) => {
-				const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket);
+				const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya);
 				if (offer.minPriceCents !== null) {
 					acc.inStockCount += 1;
 					acc.totalLowestCents += offer.minPriceCents;
@@ -1685,6 +1695,10 @@
 			'HiMarket Stock',
 			'HiMarket Price (USD)',
 			'HiMarket Price (HKD)',
+			'Hareruya Stock',
+			'Hareruya Price (USD)',
+			'Hareruya Price (JPY)',
+			'Hareruya Condition',
 			'Max Price Cap'
 		];
 		const csvRows = [headers.join(',')];
@@ -1719,6 +1733,14 @@
 				card.himarket_price_hkd !== null && card.himarket_price_hkd !== undefined
 					? Number(card.himarket_price_hkd).toFixed(2)
 					: '',
+				getStockStatus(card.hareruya_stock),
+				card.hareruya_low_price !== null && card.hareruya_low_price !== undefined
+					? (card.hareruya_low_price / 100).toFixed(2)
+					: '',
+				card.hareruya_price_jpy !== null && card.hareruya_price_jpy !== undefined
+					? Math.round(Number(card.hareruya_price_jpy))
+					: '',
+				card.hareruya_condition || '',
 				card.max_price_cap !== null && card.max_price_cap !== undefined
 					? (card.max_price_cap / 100).toFixed(2)
 					: ''
@@ -2075,6 +2097,29 @@
 						</div>
 					</th>
 					{/if}
+					{#if showHareruya}
+					<th
+						on:click={() => sortBy('hareruya_low_price')}
+						class:active={sortKey === 'hareruya_low_price'}
+						title={lastChecked.hareruya ? `Hareruya last checked: ${formatExactTimestamp(lastChecked.hareruya)}` : 'Hareruya stock & lowest price'}
+					>
+						<div class="th-vendor-wrap">
+							<span class="th-vendor-title">
+								Hareruya
+								{#if sortKey === 'hareruya_low_price'}
+									<i
+										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+									></i>
+								{/if}
+							</span>
+							{#if formatRelativeTime(lastChecked.hareruya, nowTick)}
+								<span class="th-last-checked">
+									<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.hareruya, nowTick)}
+								</span>
+							{/if}
+						</div>
+					</th>
+					{/if}
 					<th class="actions-header"></th>
 					<!-- Not sortable -->
 				</tr>
@@ -2164,7 +2209,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket)}
+										class:best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(
@@ -2199,7 +2244,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket)}
+										class:best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(
@@ -2245,7 +2290,7 @@
 							>
 								<div
 									class="stock-indicator"
-									class:best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket)}
+									class:best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
 								>
 									<i
 										class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(
@@ -2270,7 +2315,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket)}
+										class:best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.manapool_stock))} {getStockColor(
@@ -2303,7 +2348,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'himarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket)}
+										class:best-price={isBestVendorPrice(card, 'himarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.himarket_stock))} {getStockColor(
@@ -2327,6 +2372,54 @@
 											getStockStatus(card.himarket_stock)
 										)}"
 										title={getStockStatus(card.himarket_stock) === 'unavailable' ? 'Out of stock on HiMarket' : 'Not searched on HiMarket'}
+									></i>
+								</div>
+							{/if}
+						</td>
+						{/if}
+						{#if showHareruya}
+						<td data-label="Hareruya" class="vendor-stock-cell">
+							{#if card.hareruya_url}
+								<a
+									href={card.hareruya_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="vendor-link"
+								>
+									<div
+										class="stock-indicator"
+										class:best-price={isBestVendorPrice(card, 'hareruya', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya)}
+									>
+										<i
+											class="{getStockIcon(getStockStatus(card.hareruya_stock))} {getStockColor(
+												getStockStatus(card.hareruya_stock)
+											)}"
+										></i>
+										{#if card.hareruya_low_price !== null && card.hareruya_low_price !== undefined && getStockStatus(card.hareruya_stock) === 'available'}
+											<span class="price-text" title={formatJpyPrice(card.hareruya_price_jpy)}>
+												{formatPrice(card.hareruya_low_price)}
+												{#if card.hareruya_condition}
+													<span
+														class="condition-bubble cond-{card.hareruya_condition.toLowerCase()}"
+														title="Condition: {card.hareruya_condition}{card.hareruya_price_jpy ? ` (${formatJpyPrice(card.hareruya_price_jpy)})` : ''}"
+													>
+														{card.hareruya_condition}
+													</span>
+												{/if}
+												{#if card.hareruya_price_jpy}
+													<span class="currency-tag">JPY</span>
+												{/if}
+											</span>
+										{/if}
+									</div>
+								</a>
+							{:else}
+								<div class="stock-indicator">
+									<i
+										class="{getStockIcon(getStockStatus(card.hareruya_stock))} {getStockColor(
+											getStockStatus(card.hareruya_stock)
+										)}"
+										title={getStockStatus(card.hareruya_stock) === 'unavailable' ? 'Out of stock on Hareruya' : 'Not searched on Hareruya'}
 									></i>
 								</div>
 							{/if}
@@ -3625,6 +3718,46 @@
 		letter-spacing: 0.02em;
 		display: inline-block;
 		vertical-align: middle;
+	}
+
+	.condition-bubble {
+		font-size: 0.62rem;
+		font-weight: 700;
+		margin-left: 0.22rem;
+		padding: 0.08rem 0.34rem;
+		border-radius: 999px;
+		letter-spacing: 0.03em;
+		display: inline-block;
+		vertical-align: middle;
+		line-height: 1.1;
+		background: rgba(148, 163, 184, 0.16);
+		color: #cbd5e1;
+		border: 1px solid rgba(148, 163, 184, 0.3);
+	}
+
+	.condition-bubble.cond-nm {
+		background: rgba(16, 185, 129, 0.16);
+		color: #34d399;
+		border-color: rgba(16, 185, 129, 0.35);
+	}
+
+	.condition-bubble.cond-sp {
+		background: rgba(56, 189, 248, 0.16);
+		color: #38bdf8;
+		border-color: rgba(56, 189, 248, 0.35);
+	}
+
+	.condition-bubble.cond-mp {
+		background: rgba(245, 158, 11, 0.16);
+		color: #fbbf24;
+		border-color: rgba(245, 158, 11, 0.35);
+	}
+
+	.condition-bubble.cond-hp,
+	.condition-bubble.cond-po {
+		background: rgba(249, 115, 22, 0.16);
+		color: #fb923c;
+		border-color: rgba(249, 115, 22, 0.35);
 	}
 
 	.set-column {

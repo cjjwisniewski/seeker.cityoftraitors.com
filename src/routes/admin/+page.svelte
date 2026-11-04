@@ -523,6 +523,7 @@
 	$: estimatedEbayTimeSeconds = totalItems * 1;
 	$: estimatedManapoolTimeSeconds = totalItems * 1;
 	$: estimatedHimarketTimeSeconds = totalItems * 1;
+	$: estimatedHareruyaTimeSeconds = totalItems * 2;
 
 	function formatCents(cents) {
 		if (cents === null || cents === undefined || cents <= 0) return '—';
@@ -716,6 +717,17 @@
 							</div>
 							<div class="stat-value">{formatDuration(estimatedHimarketTimeSeconds)}</div>
 							<div class="stat-sub">Est. @ 1s / card</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="stat-card-header">
+								<span class="stat-title">Hareruya Time</span>
+								<div class="stat-icon-badge hareruya">
+									<i class="fa-solid fa-sun"></i>
+								</div>
+							</div>
+							<div class="stat-value">{formatDuration(estimatedHareruyaTimeSeconds)}</div>
+							<div class="stat-sub">Est. @ 2s / card</div>
 						</div>
 					</div>
 				{/if}
@@ -1244,6 +1256,7 @@
 															<th class="col-vendor">eBay</th>
 															<th class="col-vendor">Mana Pool</th>
 															<th class="col-vendor">HiMarket</th>
+															<th class="col-vendor">Hareruya</th>
 															<th class="col-cap">Price Cap</th>
 														</tr>
 													</thead>
@@ -1324,6 +1337,19 @@
 																		<span class="stock-pill in-stock" title={card.himarket_price_hkd ? `HK$ ${Number(card.himarket_price_hkd).toFixed(2)}` : ''}>
 																			<i class="fa-solid fa-check"></i>
 																			{formatCents(card.himarket_low_price)}
+																		</span>
+																	{:else}
+																		<span class="stock-pill out-of-stock">Out of Stock</span>
+																	{/if}
+																</td>
+																<td class="col-vendor" data-label="Hareruya">
+																	{#if card.hareruya_stock}
+																		<span class="stock-pill in-stock" title={card.hareruya_price_jpy ? `¥${Number(card.hareruya_price_jpy).toLocaleString()}${card.hareruya_condition ? ` (${card.hareruya_condition})` : ''}` : ''}>
+																			<i class="fa-solid fa-check"></i>
+																			{formatCents(card.hareruya_low_price)}
+																			{#if card.hareruya_condition}
+																				<span class="cond-pill">{card.hareruya_condition}</span>
+																			{/if}
 																		</span>
 																	{:else}
 																		<span class="stock-pill out-of-stock">Out of Stock</span>
@@ -1942,6 +1968,11 @@
 	.stat-icon-badge.himarket {
 		background: rgba(14, 165, 233, 0.12);
 		color: #0ea5e9;
+	}
+
+	.stat-icon-badge.hareruya {
+		background: rgba(249, 115, 22, 0.12);
+		color: #f97316;
 	}
 
 	.stat-value {
@@ -2975,6 +3006,19 @@
 		color: var(--color-text-muted);
 		font-weight: 500;
 		font-size: 0.75rem;
+	}
+
+	.cond-pill {
+		display: inline-flex;
+		align-items: center;
+		font-size: 0.65rem;
+		font-weight: 700;
+		padding: 0.08rem 0.35rem;
+		border-radius: 999px;
+		background: rgba(16, 185, 129, 0.14);
+		border: 1px solid rgba(16, 185, 129, 0.35);
+		color: #10b981;
+		letter-spacing: 0.03em;
 	}
 
 	.price-cap-value {

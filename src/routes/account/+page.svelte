@@ -36,6 +36,7 @@
 	$: marketplaceEbayEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? true) : false;
 	$: marketplaceManapoolEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
 	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
+	$: marketplaceHareruyaEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
 
 	async function copyUserId() {
 		if (!user?.id) return;
@@ -70,6 +71,7 @@
 		if (settingName === 'marketplaceEbayEnabled') oldValue = marketplaceEbayEnabled;
 		if (settingName === 'marketplaceManapoolEnabled') oldValue = marketplaceManapoolEnabled;
 		if (settingName === 'marketplaceHimarketEnabled') oldValue = marketplaceHimarketEnabled;
+		if (settingName === 'marketplaceHareruyaEnabled') oldValue = marketplaceHareruyaEnabled;
 
 		// Optimistic UI update
 		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
@@ -83,6 +85,7 @@
 		if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = newValue;
 		if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = newValue;
 		if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = newValue;
+		if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = newValue;
 
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
@@ -111,6 +114,7 @@
 				if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
 				if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
 				if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
+				if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = oldValue;
 				settingsError = 'Error updating setting. Please try again.';
 				return;
 			}
@@ -130,6 +134,7 @@
 			if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
 			if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
 			if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
+			if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = oldValue;
 			settingsError = 'Error updating setting. Please try again.';
 		} finally {
 			isUpdatingSetting = false;
@@ -649,6 +654,35 @@
 								type="checkbox"
 								checked={marketplaceHimarketEnabled}
 								on:change={() => updateSetting('marketplaceHimarketEnabled', !marketplaceHimarketEnabled)}
+								disabled={isUpdatingSetting || !isPremiumOrLegacy}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-item-left">
+							<div class="vendor-avatar hareruya-badge">
+								<i class="fa-solid fa-sun"></i>
+							</div>
+							<div class="setting-info">
+								<div class="label-with-tier">
+									<span class="setting-title">Hareruya</span>
+									<span class="lang-scope-badge">JA · EN</span>
+									{#if !isPremiumOrLegacy}
+										<span class="tier-pill-locked">
+											<i class="fa-solid fa-lock"></i> Premium
+										</span>
+									{/if}
+								</div>
+								<span class="setting-desc">Enable/disable stock checks on Hareruya (Japan). Primarily intended for <strong>Japanese</strong> and <strong>English</strong> printings.</span>
+							</div>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceHareruyaEnabled}
+								on:change={() => updateSetting('marketplaceHareruyaEnabled', !marketplaceHareruyaEnabled)}
 								disabled={isUpdatingSetting || !isPremiumOrLegacy}
 							/>
 							<span class="slider round"></span>
@@ -1227,6 +1261,12 @@
 		background: rgba(236, 72, 153, 0.12);
 		border: 1px solid rgba(236, 72, 153, 0.25);
 		color: #ec4899;
+	}
+
+	.hareruya-badge {
+		background: rgba(249, 115, 22, 0.12);
+		border: 1px solid rgba(249, 115, 22, 0.25);
+		color: #f97316;
 	}
 
 	.lang-scope-badge {

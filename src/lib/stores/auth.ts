@@ -18,6 +18,7 @@ interface User {
         marketplaceEbayEnabled?: boolean;
         marketplaceManapoolEnabled?: boolean;
         marketplaceHimarketEnabled?: boolean;
+        marketplaceHareruyaEnabled?: boolean;
     };
 }
 
