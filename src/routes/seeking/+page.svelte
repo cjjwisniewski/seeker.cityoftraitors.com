@@ -360,7 +360,7 @@
 			const set_code = (scry.set || item.set_code || '').toLowerCase();
 			const set_name = scry.set_name || item.set_name || setCodeToNameMap[set_code] || set_code.toUpperCase();
 			const collector_number = String(scry.collector_number || item.collector_number || 'N/A');
-			const language = (item.language || importDefaultLanguage || 'en').toLowerCase();
+			const language = (importMode === 'moxfield' ? (importDefaultLanguage || 'en') : (item.language || importDefaultLanguage || 'en')).toLowerCase();
 			const finish = item.finish === 'foil' ? 'foil' : 'nonfoil';
 			const name = scry.name || item.name;
 			const type_line = scry.type_line || item.type_line || '';
@@ -547,6 +547,26 @@
 				return {
 					...c,
 					finish: newFinish,
+					previewKey: newKey,
+					alreadyExists: exists,
+					selected: exists ? false : c.selected
+				};
+			}
+			return c;
+		});
+	}
+
+	function updateImportCardLanguage(cardItem, newLang) {
+		const existingKeySet = new Set(cards.map(getCardKey));
+		const normLang = String(newLang || 'en').toLowerCase();
+		const newKey = `${cardItem.set_code}-${cardItem.collector_number}-${normLang}-${cardItem.finish}`;
+		const exists = existingKeySet.has(newKey);
+
+		importPreviewCards = importPreviewCards.map((c) => {
+			if (c.previewKey === cardItem.previewKey) {
+				return {
+					...c,
+					language: normLang,
 					previewKey: newKey,
 					alreadyExists: exists,
 					selected: exists ? false : c.selected
@@ -2338,14 +2358,22 @@
 							</div>
 						</td>
 						<td data-label="Set" class="set-column col-set">
-							<img
-								src="https://svgs.scryfall.io/sets/{getSetIconCode(card.set_code)}.svg"
-								alt="{card.set_code} set icon"
-								title={card.set_code.toUpperCase()}
-								class="set-icon"
-								loading="lazy"
-								decoding="async"
-							/>
+							<button
+								type="button"
+								class="inline-variant-btn set-variant-btn"
+								title="Set: {card.set_code.toUpperCase()} (Click to edit)"
+								on:click|stopPropagation={() => openSettings(card)}
+							>
+								<img
+									src="https://svgs.scryfall.io/sets/{getSetIconCode(card.set_code)}.svg"
+									alt="{card.set_code} set icon"
+									title={card.set_code.toUpperCase()}
+									class="set-icon"
+									loading="lazy"
+									decoding="async"
+								/>
+								<span class="set-code-text">{card.set_code.toUpperCase()}</span>
+							</button>
 						</td>
 						<td data-label="Language" class="language-column col-lang">
 							<button
@@ -3158,6 +3186,19 @@
 								disabled={isResolvingImport}
 								on:keydown={(e) => e.key === 'Enter' && handlePreviewImport()}
 							/>
+
+							<div class="import-defaults-row" style="margin-top: 0.75rem;">
+								<div class="import-default-field">
+									<label for="moxfield-default-lang">Language</label>
+									<select id="moxfield-default-lang" bind:value={importDefaultLanguage} class="import-select" disabled={isResolvingImport}>
+										{#each Object.entries(languageMap) as [code, label]}
+											{#if code !== 'jp' && code !== 'kr'}
+												<option value={code}>{label}</option>
+											{/if}
+										{/each}
+									</select>
+								</div>
+							</div>
 						</div>
 					{:else}
 						<div class="settings-group">
@@ -3296,7 +3337,19 @@
 										/>
 										<span>{item.set_code.toUpperCase()} #{item.collector_number}</span>
 										<span>•</span>
-										<span>{item.language.toUpperCase()}</span>
+										<select
+											class="import-lang-mini-select"
+											value={item.language}
+											on:change={(e) => updateImportCardLanguage(item, e.currentTarget.value)}
+											disabled={isImportingCards}
+											title="Change card language"
+										>
+											{#each Object.entries(languageMap) as [code, label]}
+												{#if code !== 'jp' && code !== 'kr'}
+													<option value={code}>{code.toUpperCase()}</option>
+												{/if}
+											{/each}
+										</select>
 									</div>
 								</div>
 
@@ -4208,6 +4261,20 @@
 		filter: invert(1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 	}
 
+	.set-variant-btn {
+		background: transparent;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.set-code-text {
+		display: none;
+	}
+
 	.language-column {
 		text-transform: uppercase;
 		font-weight: 500;
@@ -4469,38 +4536,71 @@
 			overflow-wrap: anywhere;
 		}
 
+		.set-code-text {
+			display: inline-block;
+			font-weight: 700;
+			font-size: 0.72rem;
+		}
+
 		td[data-label='Set'],
 		td[data-label='Language'],
 		td[data-label='Finish'] {
 			grid-column: span 2;
 			background: var(--color-bg-secondary);
 			border: 1px solid var(--color-border);
-			border-radius: 8px;
-			padding: 0.32rem 0.35rem;
+			border-radius: 10px;
+			padding: 0.42rem 0.45rem;
 			display: flex;
 			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			gap: 0.15rem;
+			align-items: stretch;
+			justify-content: space-between;
+			gap: 0.25rem;
+			min-width: 0;
+			box-sizing: border-box;
 		}
 
 		td[data-label='Set']::before,
 		td[data-label='Language']::before,
 		td[data-label='Finish']::before {
 			content: attr(data-label);
-			font-size: 0.6rem;
-			font-weight: 600;
+			font-weight: 700;
+			color: var(--color-text-secondary);
+			display: block;
+			font-size: 0.68rem;
 			text-transform: uppercase;
-			letter-spacing: 0.05em;
-			color: var(--color-text-muted);
-			line-height: 1;
+			letter-spacing: 0.04em;
+			text-align: left;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			line-height: 1.2;
 		}
 
+		td[data-label='Set'] .inline-variant-btn,
 		td[data-label='Language'] .inline-variant-btn,
 		td[data-label='Finish'] .inline-variant-btn {
-			padding: 0.15rem 0.5rem;
+			width: 100%;
+			height: 28px;
+			padding: 0 0.35rem;
 			font-size: 0.72rem;
-			max-width: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 0.35rem;
+			box-sizing: border-box;
+			border-radius: 6px;
+			background: var(--color-bg-elevated);
+			border: 1px solid var(--color-border);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		td[data-label='Set'] .set-icon {
+			height: 1.15em;
+			width: 1.15em;
+			margin: 0;
+			flex-shrink: 0;
 		}
 
 		td[data-label='CardMarket'] {
@@ -5254,6 +5354,24 @@
 		border-color: #f59e0b;
 		background: rgba(245, 158, 11, 0.15);
 		color: #f59e0b;
+	}
+
+	.import-lang-mini-select {
+		background: var(--color-bg-secondary);
+		color: var(--color-text-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		font-size: 0.7rem;
+		font-weight: 600;
+		padding: 0.05rem 0.25rem;
+		cursor: pointer;
+		outline: none;
+		transition: all var(--transition-fast);
+	}
+
+	.import-lang-mini-select:hover:not(:disabled) {
+		border-color: var(--color-primary);
+		color: var(--color-text-primary);
 	}
 
 	.import-progress-box {
