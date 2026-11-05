@@ -464,6 +464,7 @@
 	let bannerMessage = '';
 	let bannerType = 'info';
 	let bannerEnabled = false;
+	let bannerSendDm = false;
 	let bannerLoading = false;
 	let bannerSaving = false;
 	let bannerStatusMessage = null;
@@ -497,12 +498,23 @@
 				body: JSON.stringify({
 					message: bannerMessage,
 					type: bannerType,
-					enabled: bannerEnabled
+					enabled: bannerEnabled,
+					send_dm: bannerSendDm
 				})
 			});
 			if (response && response.ok) {
+				const resData = await response.json().catch(() => ({}));
 				bannerStatusType = 'success';
-				bannerStatusMessage = 'Banner settings updated successfully.';
+				let msg = 'Banner settings updated successfully.';
+				if (resData.dm_stats && resData.dm_stats.attempted) {
+					if (resData.dm_stats.error) {
+						msg += ` (DM broadcast failed: ${resData.dm_stats.error})`;
+					} else {
+						msg += ` (Broadcast DM sent to ${resData.dm_stats.sent} users, ${resData.dm_stats.failed} failed)`;
+					}
+					bannerSendDm = false; // Reset toggle after broadcast
+				}
+				bannerStatusMessage = msg;
 			} else {
 				throw new Error('Failed to update banner');
 			}
@@ -794,6 +806,19 @@
 									</label>
 									<span class="toggle-status-text {bannerEnabled ? 'active' : ''}">
 										{bannerEnabled ? 'Visible' : 'Hidden'}
+									</span>
+								</div>
+							</div>
+
+							<div class="form-group toggle-group">
+								<label class="toggle-control-label" for="banner-dm-switch">Broadcast Discord DM</label>
+								<div class="toggle-wrapper">
+									<label class="toggle-switch" id="banner-dm-switch">
+										<input type="checkbox" bind:checked={bannerSendDm} />
+										<span class="slider round"></span>
+									</label>
+									<span class="toggle-status-text {bannerSendDm ? 'active' : ''}">
+										{bannerSendDm ? 'Send to All Users' : 'Off'}
 									</span>
 								</div>
 							</div>
