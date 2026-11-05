@@ -11,6 +11,7 @@ interface User {
     settings?: {
         stockAlertEnabled?: boolean;
         stockDigestEnabled?: boolean;
+        stockDigestHourUtc?: number;
         preferredLanguage?: string;
         preferredFinish?: string;
         minCondition?: string;

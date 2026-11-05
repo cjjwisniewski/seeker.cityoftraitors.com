@@ -27,6 +27,7 @@
 	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
 	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
 	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
+	$: stockDigestHourUtc = $auth.user?.settings?.stockDigestHourUtc ?? 13;
 	$: priceDropAlertEnabled = $auth.user?.settings?.priceDropAlertEnabled ?? true;
 	$: priceDropThreshold = $auth.user?.settings?.priceDropThreshold ?? 5;
 	$: preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
@@ -53,6 +54,22 @@
 		}
 	}
 
+	function getDigestTimeOptions() {
+		const options = [];
+		const now = new Date();
+		for (let utcHour = 0; utcHour < 24; utcHour++) {
+			const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), utcHour, 0, 0));
+			const localTimeStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+			const isDefault = (utcHour === 13);
+			const label = isDefault ? `${localTimeStr} (Default)` : localTimeStr;
+			options.push({ utcHour, localHour: d.getHours(), label });
+		}
+		options.sort((a, b) => a.localHour - b.localHour);
+		return options;
+	}
+
+	const digestTimeOptions = getDigestTimeOptions();
+
 	// --- Update Setting Logic ---
 	async function updateSetting(settingName, newValue) {
 		if (!token) return;
@@ -64,6 +81,7 @@
 		let oldValue;
 		if (settingName === 'stockAlertEnabled') oldValue = stockAlertEnabled;
 		if (settingName === 'stockDigestEnabled') oldValue = stockDigestEnabled;
+		if (settingName === 'stockDigestHourUtc') oldValue = stockDigestHourUtc;
 		if (settingName === 'priceDropAlertEnabled') oldValue = priceDropAlertEnabled;
 		if (settingName === 'priceDropThreshold') oldValue = priceDropThreshold;
 		if (settingName === 'preferredLanguage') oldValue = preferredLanguage;
@@ -80,6 +98,7 @@
 		// Optimistic UI update
 		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
 		if (settingName === 'stockDigestEnabled') stockDigestEnabled = newValue;
+		if (settingName === 'stockDigestHourUtc') stockDigestHourUtc = newValue;
 		if (settingName === 'priceDropAlertEnabled') priceDropAlertEnabled = newValue;
 		if (settingName === 'priceDropThreshold') priceDropThreshold = newValue;
 		if (settingName === 'preferredLanguage') preferredLanguage = newValue;
@@ -111,6 +130,7 @@
 				// Revert optimistic UI update on failure
 				if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
 				if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
+				if (settingName === 'stockDigestHourUtc') stockDigestHourUtc = oldValue;
 				if (settingName === 'priceDropAlertEnabled') priceDropAlertEnabled = oldValue;
 				if (settingName === 'priceDropThreshold') priceDropThreshold = oldValue;
 				if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
@@ -133,6 +153,7 @@
 			// Revert on error
 			if (settingName === 'stockAlertEnabled') stockAlertEnabled = oldValue;
 			if (settingName === 'stockDigestEnabled') stockDigestEnabled = oldValue;
+			if (settingName === 'stockDigestHourUtc') stockDigestHourUtc = oldValue;
 			if (settingName === 'priceDropAlertEnabled') priceDropAlertEnabled = oldValue;
 			if (settingName === 'priceDropThreshold') priceDropThreshold = oldValue;
 			if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
@@ -416,6 +437,33 @@
 							/>
 							<span class="slider round"></span>
 						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-item-left">
+							<div class="setting-icon-pill">
+								<i class="fa-solid fa-clock"></i>
+							</div>
+							<div class="setting-info">
+								<span class="setting-title">Daily Digest Time</span>
+								<span class="setting-desc"
+									>Choose the time of day your in-stock summary is delivered to Discord DMs (displayed in your local time).</span
+								>
+							</div>
+						</div>
+						<div class="select-wrapper">
+							<select
+								class="custom-select"
+								value={stockDigestHourUtc}
+								on:change={(e) => updateSetting('stockDigestHourUtc', parseInt(e.target.value))}
+								disabled={isUpdatingSetting || !stockDigestEnabled}
+							>
+								{#each digestTimeOptions as opt}
+									<option value={opt.utcHour}>{opt.label}</option>
+								{/each}
+							</select>
+							<i class="fa-solid fa-chevron-down select-chevron"></i>
+						</div>
 					</div>
 
 					<div class="setting-item">
