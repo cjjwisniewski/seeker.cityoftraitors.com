@@ -3410,51 +3410,53 @@
 									loading="lazy"
 								/>
 
-								<div class="import-row-info">
-									<div class="import-row-name">{item.name}</div>
-									<div class="import-row-meta">
-										<img
-											src="https://svgs.scryfall.io/sets/{getSetIconCode(item.set_code)}.svg"
-											alt={item.set_code}
-											class="import-set-icon"
-										/>
-										<span>{item.set_code.toUpperCase()} #{item.collector_number}</span>
+								<div class="import-row-content">
+									<div class="import-row-info">
+										<div class="import-row-name" title={item.name}>{item.name}</div>
+										<div class="import-row-meta">
+											<img
+												src="https://svgs.scryfall.io/sets/{getSetIconCode(item.set_code)}.svg"
+												alt={item.set_code}
+												class="import-set-icon"
+											/>
+											<span>{item.set_code.toUpperCase()} #{item.collector_number}</span>
+										</div>
 									</div>
-								</div>
 
-								<div class="import-row-right">
-									{#if item.alreadyExists}
-										<span class="import-exists-badge">Already in Seeking</span>
-									{:else}
-										{#if item.availableLanguages && item.availableLanguages.length > 1}
-											<select
-												class="import-lang-mini-select"
-												value={item.language}
-												on:change={(e) => updateImportCardLanguage(item, e.currentTarget.value)}
-												disabled={isImportingCards}
-												title="Change card language"
-											>
-												{#each item.availableLanguages as code}
-													<option value={code}>{code.toUpperCase()}</option>
-												{/each}
-											</select>
+									<div class="import-row-right">
+										{#if item.alreadyExists}
+											<span class="import-exists-badge">Already in Seeking</span>
 										{:else}
-											<span class="import-lang-static-badge" title="Card printing is {item.language.toUpperCase()} only">
-												{item.language.toUpperCase()}
-											</span>
-										{/if}
+											{#if item.availableLanguages && item.availableLanguages.length > 1}
+												<select
+													class="import-lang-mini-select"
+													value={item.language}
+													on:change={(e) => updateImportCardLanguage(item, e.currentTarget.value)}
+													disabled={isImportingCards}
+													title="Change card language"
+												>
+													{#each item.availableLanguages as code}
+														<option value={code}>{code.toUpperCase()}</option>
+													{/each}
+												</select>
+											{:else}
+												<span class="import-lang-static-badge" title="Card printing is {item.language.toUpperCase()} only">
+													{item.language.toUpperCase()}
+												</span>
+											{/if}
 
-										<button
-											type="button"
-											class="import-finish-pill"
-											class:foil={item.finish === 'foil'}
-											on:click={() => toggleImportCardFinish(item)}
-											disabled={isImportingCards}
-											title="Click to toggle Foil / Nonfoil"
-										>
-											{item.finish === 'foil' ? '✦ Foil' : 'Nonfoil'}
-										</button>
-									{/if}
+											<button
+												type="button"
+												class="import-finish-pill"
+												class:foil={item.finish === 'foil'}
+												on:click={() => toggleImportCardFinish(item)}
+												disabled={isImportingCards}
+												title="Click to toggle Foil / Nonfoil"
+											>
+												{item.finish === 'foil' ? '✦ Foil' : 'Nonfoil'}
+											</button>
+										{/if}
+									</div>
 								</div>
 							</div>
 						{/each}
@@ -5395,6 +5397,15 @@
 		flex-shrink: 0;
 	}
 
+	.import-row-content {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.65rem;
+		flex: 1;
+		min-width: 0;
+	}
+
 	.import-row-info {
 		flex: 1;
 		min-width: 0;
@@ -5930,7 +5941,7 @@
 		}
 	}
 
-	@media (max-width: 520px) {
+	@media (max-width: 580px) {
 		.manual-check-box {
 			flex-direction: column;
 			align-items: stretch;
@@ -5942,16 +5953,83 @@
 			width: 100%;
 		}
 
+		.import-modal-content {
+			width: 96%;
+			padding: 1rem;
+		}
+
+		.import-modal-title-group h2 {
+			font-size: 1.15rem;
+		}
+
+		.import-preview-row {
+			align-items: flex-start;
+			padding: 0.55rem 0.65rem;
+		}
+
+		.import-row-check {
+			margin-top: 0.25rem;
+		}
+
+		.import-row-thumb {
+			width: 36px;
+			height: 50px;
+		}
+
+		.import-row-content {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.35rem;
+		}
+
+		.import-row-name {
+			white-space: normal;
+			font-size: 0.88rem;
+			line-height: 1.3;
+		}
+
+		.import-row-right {
+			width: 100%;
+			justify-content: flex-start;
+			gap: 0.4rem;
+			flex-wrap: wrap;
+		}
+
+		.import-lang-mini-select,
+		.import-finish-pill {
+			height: 30px;
+			padding: 0.25rem 0.6rem;
+			font-size: 0.78rem;
+		}
+
+		.import-preview-list {
+			max-height: min(48vh, 340px);
+		}
+
+		.import-preview-toolbar {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.5rem;
+		}
+
+		.import-preview-actions {
+			width: 100%;
+			justify-content: flex-end;
+		}
+
 		.import-defaults-row {
 			grid-template-columns: 1fr;
 		}
 
 		.modal-footer {
+			margin-top: 1.25rem;
+			padding-top: 1rem;
 			gap: 0.6rem;
 		}
 
 		.modal-btn {
 			flex: 1;
+			min-height: 44px;
 			padding: 0.7rem 1rem;
 			text-align: center;
 		}

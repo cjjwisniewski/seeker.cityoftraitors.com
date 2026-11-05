@@ -1204,52 +1204,65 @@
 													<span>Edit Tier</span>
 												</button>
 											</div>
-											<div class="user-meta-line">
-												<span class="user-id-chip" title="User ID: {table.userId}">
-													<i class="fa-solid fa-id-badge"></i>
-													{table.userId}
-												</span>
-												<div class="user-marketplaces-row">
-													{#if isMarketplaceEnabled(table, 'cardtrader')}
-														<span class="mk-icon-badge ct" title="CardTrader: Enabled">
-															<i class="fa-solid fa-cube"></i> CT
-														</span>
-													{/if}
-													{#if isMarketplaceEnabled(table, 'tcgplayer')}
-														<span class="mk-icon-badge tcg" title="TCGPlayer: Enabled">
-															<i class="fa-solid fa-store"></i> TCG
-														</span>
-													{/if}
-													{#if isMarketplaceEnabled(table, 'manapool')}
-														<span class="mk-icon-badge manapool" title="Mana Pool: Enabled">
-															<i class="fa-solid fa-droplet"></i> MP
-														</span>
-													{/if}
-													{#if isMarketplaceEnabled(table, 'ebay')}
-														<span class="mk-icon-badge ebay" title="eBay: Enabled">
-															<i class="fa-brands fa-ebay"></i> EB
-														</span>
-													{/if}
-													{#if isMarketplaceEnabled(table, 'himarket')}
-														<span class="mk-icon-badge himarket" title="HiMarket: Enabled">
-															<i class="fa-solid fa-earth-asia"></i> HM
-														</span>
-													{/if}
-													{#if isMarketplaceEnabled(table, 'hareruya')}
-														<span class="mk-icon-badge hareruya" title="Hareruya: Enabled">
-															<i class="fa-solid fa-sun"></i> HR
-														</span>
-													{/if}
-													{#if isMarketplaceEnabled(table, 'ruten')}
-														<span class="mk-icon-badge ruten" title="Ruten: Enabled">
-															<i class="fa-solid fa-shop"></i> RT
-														</span>
-													{/if}
+											<div class="user-meta-column">
+												<div class="user-meta-line">
+													<span class="user-id-chip" title="User ID: {table.userId}">
+														<i class="fa-solid fa-id-badge"></i>
+														{table.userId}
+													</span>
+													<div class="user-marketplaces-row">
+														{#if isMarketplaceEnabled(table, 'cardtrader')}
+															<span class="mk-icon-badge ct" title="CardTrader: Enabled">
+																<i class="fa-solid fa-cube"></i> CT
+															</span>
+														{/if}
+														{#if isMarketplaceEnabled(table, 'tcgplayer')}
+															<span class="mk-icon-badge tcg" title="TCGPlayer: Enabled">
+																<i class="fa-solid fa-store"></i> TCG
+															</span>
+														{/if}
+														{#if isMarketplaceEnabled(table, 'manapool')}
+															<span class="mk-icon-badge manapool" title="Mana Pool: Enabled">
+																<i class="fa-solid fa-droplet"></i> MP
+															</span>
+														{/if}
+														{#if isMarketplaceEnabled(table, 'ebay')}
+															<span class="mk-icon-badge ebay" title="eBay: Enabled">
+																<i class="fa-brands fa-ebay"></i> EB
+															</span>
+														{/if}
+														{#if isMarketplaceEnabled(table, 'himarket')}
+															<span class="mk-icon-badge himarket" title="HiMarket: Enabled">
+																<i class="fa-solid fa-earth-asia"></i> HM
+															</span>
+														{/if}
+														{#if isMarketplaceEnabled(table, 'hareruya')}
+															<span class="mk-icon-badge hareruya" title="Hareruya: Enabled">
+																<i class="fa-solid fa-sun"></i> HR
+															</span>
+														{/if}
+														{#if isMarketplaceEnabled(table, 'ruten')}
+															<span class="mk-icon-badge ruten" title="Ruten: Enabled">
+																<i class="fa-solid fa-shop"></i> RT
+															</span>
+														{/if}
+														{#if table.minCondition && table.minCondition !== 'ANY'}
+															<span class="user-cond-badge" title="Account Default Minimum Condition: {table.minCondition}+">
+																<i class="fa-solid fa-shield-halved"></i> {table.minCondition === 'NM' ? 'NM' : `${table.minCondition}+`}
+															</span>
+														{:else if table.minCondition === 'ANY'}
+															<span class="user-cond-badge any" title="Account Default Minimum Condition: Any Condition">
+																<i class="fa-solid fa-shield-halved"></i> ANY
+															</span>
+														{/if}
+													</div>
 												</div>
-												<span class="user-activity-timestamp">
-													<i class="fa-regular fa-clock"></i>
-													Last Activity: {formatLocalDate(table.lastAccessed)}
-												</span>
+												<div class="user-meta-subline">
+													<span class="user-activity-timestamp">
+														<i class="fa-regular fa-clock"></i>
+														Last Login: {formatLocalDate(table.lastAccessed)}
+													</span>
+												</div>
 											</div>
 										</div>
 									</div>
@@ -1356,7 +1369,7 @@
 															{#if isMarketplaceEnabled(table, 'ruten')}
 																<th class="col-vendor">Ruten</th>
 															{/if}
-															<th class="col-cap">Price Cap</th>
+															<th class="col-cond">Min Cond</th>
 														</tr>
 													</thead>
 													<tbody>
@@ -1498,10 +1511,20 @@
 																		{/if}
 																	</td>
 																{/if}
-																<td class="col-cap" data-label="Price Cap">
-																	<span class="price-cap-value">
-																		{formatCents(card.max_price_cap)}
-																	</span>
+																<td class="col-cond" data-label="Min Cond">
+																	{#if card.min_condition && card.min_condition !== 'ANY'}
+																		<span class="cond-req-pill cond-{card.min_condition.toLowerCase()}" title="Card Condition Override: {card.min_condition}+">
+																			{card.min_condition === 'NM' ? 'NM ONLY' : `MIN ${card.min_condition}+`}
+																		</span>
+																	{:else if card.min_condition === 'ANY'}
+																		<span class="cond-req-pill cond-any" title="Card Condition Override: Any Condition">ANY COND</span>
+																	{:else if table.minCondition && table.minCondition !== 'ANY'}
+																		<span class="cond-req-pill inherited cond-{table.minCondition.toLowerCase()}" title="Inherited Account Condition: {table.minCondition}+">
+																			{table.minCondition === 'NM' ? 'NM (Acct)' : `${table.minCondition}+ (Acct)`}
+																		</span>
+																	{:else}
+																		<span class="cond-req-pill cond-any inherited" title="Default: Any Condition">ANY</span>
+																	{/if}
 																</td>
 															</tr>
 														{/each}
@@ -2901,6 +2924,13 @@
 		border-radius: 6px;
 	}
 
+	.user-meta-column {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		margin-top: 0.2rem;
+	}
+
 	.user-meta-line {
 		font-size: 0.8rem;
 		color: var(--color-text-secondary);
@@ -2908,7 +2938,12 @@
 		align-items: center;
 		gap: 0.65rem;
 		flex-wrap: wrap;
-		margin-top: 0.15rem;
+	}
+
+	.user-meta-subline {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.user-marketplaces-row {
@@ -2979,6 +3014,27 @@
 		color: #14b8a6;
 		border-color: rgba(20, 184, 166, 0.35);
 		background: rgba(20, 184, 166, 0.1);
+	}
+
+	.user-cond-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.68rem;
+		font-weight: 700;
+		padding: 0.1rem 0.45rem;
+		border-radius: 999px;
+		background: rgba(99, 102, 241, 0.12);
+		border: 1px solid rgba(99, 102, 241, 0.35);
+		color: #818cf8;
+		cursor: help;
+		line-height: 1.2;
+	}
+
+	.user-cond-badge.any {
+		background: rgba(255, 255, 255, 0.05);
+		border-color: var(--color-border);
+		color: var(--color-text-secondary);
 	}
 
 	.user-activity-timestamp {
@@ -3106,20 +3162,40 @@
 		border-top: 1px solid var(--color-border);
 		background: var(--color-bg-elevated);
 		padding: 1.25rem;
+		overflow: hidden;
 	}
 
 	.table-scroll-container {
+		width: 100%;
+		max-width: 100%;
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
+		touch-action: pan-x pan-y;
+		overscroll-behavior-x: contain;
+		padding-bottom: 0.5rem;
+	}
+
+	.table-scroll-container::-webkit-scrollbar {
+		height: 6px;
+	}
+
+	.table-scroll-container::-webkit-scrollbar-track {
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 4px;
+	}
+
+	.table-scroll-container::-webkit-scrollbar-thumb {
+		background: var(--color-primary);
+		border-radius: 4px;
 	}
 
 	.modern-table {
 		width: 100%;
+		min-width: max-content;
 		border-collapse: separate;
 		border-spacing: 0;
 		border-radius: 10px;
 		border: 1px solid var(--color-border);
-		overflow: hidden;
 		font-size: 0.875rem;
 	}
 
@@ -3252,10 +3328,62 @@
 		letter-spacing: 0.03em;
 	}
 
-	.price-cap-value {
+	th.col-cond {
+		text-align: center;
+		width: 100px;
+	}
+
+	td.col-cond {
+		text-align: center;
+	}
+
+	.cond-req-pill {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.68rem;
 		font-weight: 700;
-		color: var(--color-text-primary);
-		font-size: 0.85rem;
+		padding: 0.15rem 0.45rem;
+		border-radius: 6px;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+
+	.cond-req-pill.cond-nm {
+		background: rgba(16, 185, 129, 0.15);
+		border: 1px solid rgba(16, 185, 129, 0.4);
+		color: #10b981;
+	}
+
+	.cond-req-pill.cond-sp,
+	.cond-req-pill.cond-lp {
+		background: rgba(59, 130, 246, 0.15);
+		border: 1px solid rgba(59, 130, 246, 0.4);
+		color: #3b82f6;
+	}
+
+	.cond-req-pill.cond-mp {
+		background: rgba(245, 158, 11, 0.15);
+		border: 1px solid rgba(245, 158, 11, 0.4);
+		color: #f59e0b;
+	}
+
+	.cond-req-pill.cond-hp {
+		background: rgba(239, 68, 68, 0.15);
+		border: 1px solid rgba(239, 68, 68, 0.4);
+		color: #ef4444;
+	}
+
+	.cond-req-pill.cond-any {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+	}
+
+	.cond-req-pill.inherited {
+		opacity: 0.85;
+		font-style: italic;
 	}
 
 	.error-banner {
@@ -3784,6 +3912,10 @@
 		.user-actions {
 			width: 100%;
 			justify-content: flex-end;
+		}
+
+		.user-table-wrapper {
+			padding: 0.75rem 0.5rem;
 		}
 
 		.modal-buttons {
