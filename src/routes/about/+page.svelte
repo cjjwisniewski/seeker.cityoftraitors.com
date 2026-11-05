@@ -39,8 +39,8 @@
 			premium: true,
 			features: {
 				'Saved Cards': 'Unlimited',
-				Marketplaces: 'CardTrader, TCGPlayer, eBay, Mana Pool, HiMarket & Hareruya',
-				'Scan Frequency': 'Every 6 hours',
+				Marketplaces: 'CardTrader, TCGPlayer, eBay, Mana Pool, HiMarket, Hareruya & Ruten',
+				'Scan Frequency': 'Every 3 hours (24h for eBay)',
 				'On-Demand Checks': 'Included',
 				'Max Price Caps': 'Included',
 				'Price Drop Alerts': 'Included'

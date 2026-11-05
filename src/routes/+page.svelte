@@ -45,7 +45,7 @@
 					</div>
 					<div class="card-body">
 						<h3>Automated Scanning</h3>
-						<p>Seeker continuously polls CardTrader, TCGPlayer, eBay, and Mana Pool around the clock.</p>
+						<p>Seeker continuously polls CardTrader, TCGPlayer, eBay, Mana Pool, HiMarket, Hareruya, and Ruten around the clock.</p>
 					</div>
 				</div>
 				<div class="instruction-card">
