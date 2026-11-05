@@ -708,23 +708,23 @@
 
 						<div class="stat-card">
 							<div class="stat-card-header">
-								<span class="stat-title">eBay Time</span>
-								<div class="stat-icon-badge ebay">
-									<i class="fa-brands fa-ebay"></i>
-								</div>
-							</div>
-							<div class="stat-value">{formatDuration(estimatedEbayTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 1s / card</div>
-						</div>
-
-						<div class="stat-card">
-							<div class="stat-card-header">
 								<span class="stat-title">Mana Pool Time</span>
 								<div class="stat-icon-badge manapool">
 									<i class="fa-solid fa-droplet"></i>
 								</div>
 							</div>
 							<div class="stat-value">{formatDuration(estimatedManapoolTimeSeconds)}</div>
+							<div class="stat-sub">Est. @ 1s / card</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="stat-card-header">
+								<span class="stat-title">eBay Time</span>
+								<div class="stat-icon-badge ebay">
+									<i class="fa-brands fa-ebay"></i>
+								</div>
+							</div>
+							<div class="stat-value">{formatDuration(estimatedEbayTimeSeconds)}</div>
 							<div class="stat-sub">Est. @ 1s / card</div>
 						</div>
 
@@ -754,7 +754,7 @@
 							<div class="stat-card-header">
 								<span class="stat-title">Ruten Time</span>
 								<div class="stat-icon-badge ruten">
-									<i class="fa-solid fa-Torii-gate fa-shop"></i>
+									<i class="fa-solid fa-shop"></i>
 								</div>
 							</div>
 							<div class="stat-value">{formatDuration(estimatedRutenTimeSeconds)}</div>
@@ -1212,17 +1212,17 @@
 												<div class="user-marketplaces-row">
 													{#if isMarketplaceEnabled(table, 'cardtrader')}
 														<span class="mk-icon-badge ct" title="CardTrader: Enabled">
-															<i class="fa-solid fa-store"></i> CT
+															<i class="fa-solid fa-cube"></i> CT
 														</span>
 													{/if}
 													{#if isMarketplaceEnabled(table, 'tcgplayer')}
 														<span class="mk-icon-badge tcg" title="TCGPlayer: Enabled">
-															<i class="fa-solid fa-bolt"></i> TCG
+															<i class="fa-solid fa-store"></i> TCG
 														</span>
 													{/if}
 													{#if isMarketplaceEnabled(table, 'manapool')}
 														<span class="mk-icon-badge manapool" title="Mana Pool: Enabled">
-															<i class="fa-solid fa-water"></i> MP
+															<i class="fa-solid fa-droplet"></i> MP
 														</span>
 													{/if}
 													{#if isMarketplaceEnabled(table, 'ebay')}
@@ -1232,7 +1232,7 @@
 													{/if}
 													{#if isMarketplaceEnabled(table, 'himarket')}
 														<span class="mk-icon-badge himarket" title="HiMarket: Enabled">
-															<i class="fa-solid fa-h"></i> HM
+															<i class="fa-solid fa-earth-asia"></i> HM
 														</span>
 													{/if}
 													{#if isMarketplaceEnabled(table, 'hareruya')}
@@ -1242,7 +1242,7 @@
 													{/if}
 													{#if isMarketplaceEnabled(table, 'ruten')}
 														<span class="mk-icon-badge ruten" title="Ruten: Enabled">
-															<i class="fa-solid fa-globe"></i> RT
+															<i class="fa-solid fa-shop"></i> RT
 														</span>
 													{/if}
 												</div>
@@ -2098,19 +2098,19 @@
 		color: #10b981;
 	}
 
-	.stat-icon-badge.ebay {
-		background: rgba(245, 158, 11, 0.12);
-		color: #f59e0b;
-	}
-
 	.stat-icon-badge.manapool {
 		background: rgba(139, 92, 246, 0.12);
 		color: #8b5cf6;
 	}
 
+	.stat-icon-badge.ebay {
+		background: rgba(245, 158, 11, 0.12);
+		color: #f59e0b;
+	}
+
 	.stat-icon-badge.himarket {
-		background: rgba(14, 165, 233, 0.12);
-		color: #0ea5e9;
+		background: rgba(236, 72, 153, 0.12);
+		color: #ec4899;
 	}
 
 	.stat-icon-badge.hareruya {
@@ -2119,8 +2119,8 @@
 	}
 
 	.stat-icon-badge.ruten {
-		background: rgba(249, 115, 22, 0.14);
-		color: #ea580c;
+		background: rgba(20, 184, 166, 0.12);
+		color: #14b8a6;
 	}
 
 	.stat-value {
@@ -2951,34 +2951,34 @@
 		background: rgba(16, 185, 129, 0.1);
 	}
 
-	.mk-icon-badge.ebay {
-		color: #eab308;
-		border-color: rgba(234, 179, 8, 0.35);
-		background: rgba(234, 179, 8, 0.1);
+	.mk-icon-badge.manapool {
+		color: #8b5cf6;
+		border-color: rgba(139, 92, 246, 0.35);
+		background: rgba(139, 92, 246, 0.1);
 	}
 
-	.mk-icon-badge.manapool {
-		color: #06b6d4;
-		border-color: rgba(6, 182, 212, 0.35);
-		background: rgba(6, 182, 212, 0.1);
+	.mk-icon-badge.ebay {
+		color: #f59e0b;
+		border-color: rgba(245, 158, 11, 0.35);
+		background: rgba(245, 158, 11, 0.1);
 	}
 
 	.mk-icon-badge.himarket {
-		color: #f97316;
-		border-color: rgba(249, 115, 22, 0.35);
-		background: rgba(249, 115, 22, 0.1);
-	}
-
-	.mk-icon-badge.hareruya {
 		color: #ec4899;
 		border-color: rgba(236, 72, 153, 0.35);
 		background: rgba(236, 72, 153, 0.1);
 	}
 
+	.mk-icon-badge.hareruya {
+		color: #f97316;
+		border-color: rgba(249, 115, 22, 0.35);
+		background: rgba(249, 115, 22, 0.1);
+	}
+
 	.mk-icon-badge.ruten {
-		color: #a855f7;
-		border-color: rgba(168, 85, 247, 0.35);
-		background: rgba(168, 85, 247, 0.1);
+		color: #14b8a6;
+		border-color: rgba(20, 184, 166, 0.35);
+		background: rgba(20, 184, 166, 0.1);
 	}
 
 	.user-activity-timestamp {
