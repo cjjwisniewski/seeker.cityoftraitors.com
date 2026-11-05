@@ -1773,14 +1773,14 @@
 			'TCGPlayer Stock',
 			'TCGPlayer Price',
 			'TCGPlayer Condition',
+			'Mana Pool Stock',
+			'Mana Pool Price',
+			'Mana Pool Condition',
 			// 'CardMarket Stock',
 			// 'CardMarket Price',
 			'eBay Stock',
 			'eBay Price',
 			'eBay Condition',
-			'Mana Pool Stock',
-			'Mana Pool Price',
-			'Mana Pool Condition',
 			'HiMarket Stock',
 			'HiMarket Price (USD)',
 			'HiMarket Price (HKD)',
@@ -1815,16 +1815,16 @@
 					? Number(card.tcgplayer_low_price).toFixed(2)
 					: '',
 				card.tcgplayer_condition || '',
-				getStockStatus(card.ebay_stock),
-				card.ebay_low_price !== null && card.ebay_low_price !== undefined
-					? (card.ebay_low_price / 100).toFixed(2)
-					: '',
-				card.ebay_condition || '',
 				getStockStatus(card.manapool_stock),
 				card.manapool_low_price !== null && card.manapool_low_price !== undefined
 					? (card.manapool_low_price / 100).toFixed(2)
 					: '',
 				card.manapool_condition || '',
+				getStockStatus(card.ebay_stock),
+				card.ebay_low_price !== null && card.ebay_low_price !== undefined
+					? (card.ebay_low_price / 100).toFixed(2)
+					: '',
+				card.ebay_condition || '',
 				getStockStatus(card.himarket_stock),
 				card.himarket_low_price !== null && card.himarket_low_price !== undefined
 					? (card.himarket_low_price / 100).toFixed(2)
@@ -2144,6 +2144,30 @@
 							</div>
 						</th>
 						{/if}
+						{#if showManapool}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('manapool_low_price')}
+							class:active={sortKey === 'manapool_low_price'}
+							title={lastChecked.manapool ? `Mana Pool last checked: ${formatExactTimestamp(lastChecked.manapool)}` : 'Mana Pool stock & lowest price'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									Mana Pool
+									{#if sortKey === 'manapool_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
+								{#if formatRelativeTime(lastChecked.manapool, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.manapool, nowTick)}
+									</span>
+								{/if}
+							</div>
+						</th>
+						{/if}
 						<th class="disabled-column display-none" title="CardMarket stock check coming soon">
 							CardMarket
 							<!-- Add sorting later if needed -->
@@ -2167,30 +2191,6 @@
 								{#if formatRelativeTime(lastChecked.ebay, nowTick)}
 									<span class="th-last-checked">
 										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.ebay, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
-						{#if showManapool}
-						<th
-							class="th-vendor col-vendor"
-							on:click={() => sortBy('manapool_low_price')}
-							class:active={sortKey === 'manapool_low_price'}
-							title={lastChecked.manapool ? `Mana Pool last checked: ${formatExactTimestamp(lastChecked.manapool)}` : 'Mana Pool stock & lowest price'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									Mana Pool
-									{#if sortKey === 'manapool_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.manapool, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.manapool, nowTick)}
 									</span>
 								{/if}
 							</div>
@@ -2458,6 +2458,49 @@
 							{/if}
 						</td>
 						{/if}
+						{#if showManapool}
+						<td data-label="Mana Pool" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
+							{#if card.manapool_url}
+								<a
+									href={card.manapool_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="vendor-link"
+								>
+									<div
+										class="stock-indicator"
+										class:best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
+									>
+										<i
+											class="{getStockIcon(getStockStatus(card.manapool_stock))} {getStockColor(
+												getStockStatus(card.manapool_stock)
+											)}"
+										></i>
+										{#if card.manapool_low_price !== null && card.manapool_low_price !== undefined && getStockStatus(card.manapool_stock) === 'available'}
+											<span class="price-text">
+												{formatPrice(card.manapool_low_price)}
+												{#if card.manapool_condition}
+													<span
+														class="condition-bubble cond-{card.manapool_condition.toLowerCase()}"
+														title="Condition: {card.manapool_condition}"
+													>
+														{card.manapool_condition}
+													</span>
+												{/if}
+											</span>
+										{/if}
+									</div>
+								</a>
+							{:else}
+								<div class="stock-indicator">
+									<i
+										class="fa-solid fa-circle-question text-muted"
+										title="Card not found on Mana Pool"
+									></i>
+								</div>
+							{/if}
+						</td>
+						{/if}
 						<td data-label="CardMarket" class="vendor-stock-cell col-vendor disabled-column display-none">
 							<div class="stock-indicator">
 								<i
@@ -2502,49 +2545,6 @@
 									{/if}
 								</div>
 							</a>
-						</td>
-						{/if}
-						{#if showManapool}
-						<td data-label="Mana Pool" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
-							{#if card.manapool_url}
-								<a
-									href={card.manapool_url}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="vendor-link"
-								>
-									<div
-										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
-									>
-										<i
-											class="{getStockIcon(getStockStatus(card.manapool_stock))} {getStockColor(
-												getStockStatus(card.manapool_stock)
-											)}"
-										></i>
-										{#if card.manapool_low_price !== null && card.manapool_low_price !== undefined && getStockStatus(card.manapool_stock) === 'available'}
-											<span class="price-text">
-												{formatPrice(card.manapool_low_price)}
-												{#if card.manapool_condition}
-													<span
-														class="condition-bubble cond-{card.manapool_condition.toLowerCase()}"
-														title="Condition: {card.manapool_condition}"
-													>
-														{card.manapool_condition}
-													</span>
-												{/if}
-											</span>
-										{/if}
-									</div>
-								</a>
-							{:else}
-								<div class="stock-indicator">
-									<i
-										class="fa-solid fa-circle-question text-muted"
-										title="Card not found on Mana Pool"
-									></i>
-								</div>
-							{/if}
 						</td>
 						{/if}
 						{#if showHimarket}

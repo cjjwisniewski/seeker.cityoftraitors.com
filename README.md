@@ -8,8 +8,8 @@
 
 This repository houses the frontend client application. The complete Seeker platform is divided across several sister projects:
 
-*   **[seeker_functions](https://github.com/cjjwisniewski/seeker_functions)**: The Azure Functions Python backend. Handles Discord OAuth2 authentication, signs and verifies custom JWTs, manages user account settings, and runs background timers/queues to monitor card availability across CardTrader, eBay, and Mana Pool.
-*   **[seeker_checkTCGPlayerStock](https://github.com/cjjwisniewski/seeker_checkTCGPlayerStock)**: A queue-driven containerized Python worker using Selenium and `undetected-chromedriver`. It processes TCGPlayer check requests from Azure Storage Queues without triggering bot detection, updating stock records and dispatching alerts.
+*   **[seeker_functions](https://github.com/cjjwisniewski/seeker_functions)**: The Azure Functions Python backend. Handles Discord OAuth2 authentication, signs and verifies custom JWTs, manages user account settings, and runs background timers/queues to monitor card availability across CardTrader, TCGPlayer (native marketplace API), Mana Pool, eBay, HiMarket, Hareruya, and Ruten.
+*   **[seeker_checkTCGPlayerStock](https://github.com/cjjwisniewski/seeker_checkTCGPlayerStock)**: *(Deprecated / Legacy)* The original containerized Selenium/Chromium worker, now superseded by the native serverless `checkTCGPlayerStock` Azure Function.
 *   **[seeker_infra](https://github.com/cjjwisniewski/seeker_infra)**: The Terraform infrastructure configurations. Manages the Azure API Management (APIM) gateway proxy, Function App IP firewalls, storage tables, queue configurations, and DNS settings.
 *   **[seeker.cityoftraitors.com](https://github.com/cjjwisniewski/seeker.cityoftraitors.com)**: The SvelteKit frontend client application (this repository).
 
@@ -31,18 +31,26 @@ This repository houses the frontend client application. The complete Seeker plat
 ### 📋 Sought Cards Workspace
 *   **Unified Glassmorphic Toolbar**: Real-time card search, sorting controls (Name, Date Added, Stock Status, Price), and instant filter pills (All, In Stock, Out of Stock, Tracking Enabled/Disabled).
 *   **Tracking Limit Indicator**: Live capacity pill showing currently tracked cards against the user's membership tier limit (e.g., `12 / 25 Cards`).
-*   **Multi-Card Selection & Bulk Actions**: Select individual cards, use `Shift + Click` for range selection, or `Ctrl/Cmd + Click` for toggling items. Floating action bar provides one-click bulk removal and notification toggles.
-*   **Per-Card Management**: Set maximum target price caps, toggle individual marketplace tracking, view current in-stock prices, and jump straight to marketplace listings via direct links.
+*   **Decklist Import**: Paste raw card lists or import directly from Moxfield URLs (`fetchMoxfieldDeck`) to batch-add dozens of cards at once.
+*   **Multi-Card Selection & Bulk Actions**: Select individual cards, use `Shift + Click` for range selection, or long-press on mobile. Floating action bar provides one-click bulk removal and bulk price cap updates.
+*   **Per-Card Management**: Set target price caps, override minimum acceptable condition (`NM`, `SP+`, `MP+`, `HP+`, `ANY`), toggle individual marketplace tracking, switch languages/finishes inline, trigger on-demand stock checks, and jump straight to vendor listings.
+*   **Best Price Glow**: Instant emerald border and ambient glow highlighting the lowest available price across enabled marketplaces.
 
 ### 👤 Account & Preferences
 *   **Discord OAuth2 Authentication**: Secure Discord sign-in with cached user profile details and automatic JWT session renewal.
 *   **Monospace User ID Pill**: Formats Discord User IDs into 4-character visual segments inside a single styled pill with one-click clipboard copying.
 *   **Tier Status**: Visual membership badges highlighting user tiers (Basic, Premium, Legacy).
-*   **Granular Notification Toggles**: Enable or disable alerts per marketplace:
-    *   **CardTrader** (Standard user tier)
-    *   **TCGPlayer** (Premium/Legacy tier)
-    *   **eBay** (Premium/Legacy tier)
-    *   **Mana Pool** (Premium/Legacy tier)
+*   **Minimum Card Condition**: Account-wide preference to ignore listings graded worse than your threshold (`NM Only`, `SP+`, `MP+`, `HP+`, or `Any Condition`), overridable per card.
+*   **Granular Marketplace Toggles**: Enable or disable alerts and checks per vendor:
+    *   **Default-Enabled**:
+        *   **CardTrader** (All tiers)
+        *   **TCGPlayer** (Premium/Legacy)
+        *   **Mana Pool** (Premium/Legacy)
+    *   **Default-Disabled (Opt-In)**:
+        *   **eBay** (Browse API, with title false-positive filter warning)
+        *   **HiMarket** (Hong Kong, EN · JA · ZHT · ZHS, live HKD conversion)
+        *   **Hareruya** (Japan, JA · EN, live JPY conversion)
+        *   **Ruten** (Taiwan, ZHT · EN, live TWD conversion)
 *   **Alert Configuration**: Customize percentage thresholds for price drop alerts and default card finishes/languages.
 *   **Account Deletion**: Self-service account removal with safety confirmation modal.
 

@@ -617,6 +617,34 @@
 
 					<div class="setting-item">
 						<div class="setting-item-left">
+							<div class="vendor-avatar manapool-badge">
+								<i class="fa-solid fa-droplet"></i>
+							</div>
+							<div class="setting-info">
+								<div class="label-with-tier">
+									<span class="setting-title">Mana Pool</span>
+									{#if !isPremiumOrLegacy}
+										<span class="tier-pill-locked">
+											<i class="fa-solid fa-lock"></i> Premium
+										</span>
+									{/if}
+								</div>
+								<span class="setting-desc">Enable/disable stock checks and price tracking on Mana Pool.</span>
+							</div>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceManapoolEnabled}
+								on:change={() => updateSetting('marketplaceManapoolEnabled', !marketplaceManapoolEnabled)}
+								disabled={isUpdatingSetting || !isPremiumOrLegacy}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-item-left">
 							<div class="vendor-avatar ebay-badge">
 								<i class="fa-brands fa-ebay"></i>
 							</div>
@@ -640,34 +668,6 @@
 								type="checkbox"
 								checked={marketplaceEbayEnabled}
 								on:change={() => updateSetting('marketplaceEbayEnabled', !marketplaceEbayEnabled)}
-								disabled={isUpdatingSetting || !isPremiumOrLegacy}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar manapool-badge">
-								<i class="fa-solid fa-droplet"></i>
-							</div>
-							<div class="setting-info">
-								<div class="label-with-tier">
-									<span class="setting-title">Mana Pool</span>
-									{#if !isPremiumOrLegacy}
-										<span class="tier-pill-locked">
-											<i class="fa-solid fa-lock"></i> Premium
-										</span>
-									{/if}
-								</div>
-								<span class="setting-desc">Enable/disable stock checks and price tracking on Mana Pool.</span>
-							</div>
-						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceManapoolEnabled}
-								on:change={() => updateSetting('marketplaceManapoolEnabled', !marketplaceManapoolEnabled)}
 								disabled={isUpdatingSetting || !isPremiumOrLegacy}
 							/>
 							<span class="slider round"></span>

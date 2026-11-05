@@ -1220,14 +1220,14 @@
 															<i class="fa-solid fa-bolt"></i> TCG
 														</span>
 													{/if}
-													{#if isMarketplaceEnabled(table, 'ebay')}
-														<span class="mk-icon-badge ebay" title="eBay: Enabled">
-															<i class="fa-brands fa-ebay"></i> EB
-														</span>
-													{/if}
 													{#if isMarketplaceEnabled(table, 'manapool')}
 														<span class="mk-icon-badge manapool" title="Mana Pool: Enabled">
 															<i class="fa-solid fa-water"></i> MP
+														</span>
+													{/if}
+													{#if isMarketplaceEnabled(table, 'ebay')}
+														<span class="mk-icon-badge ebay" title="eBay: Enabled">
+															<i class="fa-brands fa-ebay"></i> EB
 														</span>
 													{/if}
 													{#if isMarketplaceEnabled(table, 'himarket')}
@@ -1341,11 +1341,11 @@
 															{#if isMarketplaceEnabled(table, 'tcgplayer')}
 																<th class="col-vendor">TCGPlayer</th>
 															{/if}
-															{#if isMarketplaceEnabled(table, 'ebay')}
-																<th class="col-vendor">eBay</th>
-															{/if}
 															{#if isMarketplaceEnabled(table, 'manapool')}
 																<th class="col-vendor">Mana Pool</th>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'ebay')}
+																<th class="col-vendor">eBay</th>
 															{/if}
 															{#if isMarketplaceEnabled(table, 'himarket')}
 																<th class="col-vendor">HiMarket</th>
@@ -1421,21 +1421,6 @@
 																		{/if}
 																	</td>
 																{/if}
-																{#if isMarketplaceEnabled(table, 'ebay')}
-																	<td class="col-vendor" data-label="eBay">
-																		{#if card.ebay_stock}
-																			<span class="stock-pill in-stock">
-																				<i class="fa-solid fa-check"></i>
-																				{formatCents(card.ebay_low_price)}
-																				{#if card.ebay_condition}
-																					<span class="cond-pill">{card.ebay_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
-																		{/if}
-																	</td>
-																{/if}
 																{#if isMarketplaceEnabled(table, 'manapool')}
 																	<td class="col-vendor" data-label="Mana Pool">
 																		{#if card.manapool_stock}
@@ -1444,6 +1429,21 @@
 																				{formatCents(card.manapool_low_price)}
 																				{#if card.manapool_condition}
 																					<span class="cond-pill">{card.manapool_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'ebay')}
+																	<td class="col-vendor" data-label="eBay">
+																		{#if card.ebay_stock}
+																			<span class="stock-pill in-stock">
+																				<i class="fa-solid fa-check"></i>
+																				{formatCents(card.ebay_low_price)}
+																				{#if card.ebay_condition}
+																					<span class="cond-pill">{card.ebay_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
