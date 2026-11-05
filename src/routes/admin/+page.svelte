@@ -76,6 +76,13 @@
 		});
 	}
 
+	function isMarketplaceEnabled(tableObj, mk) {
+		if (!tableObj || !tableObj.marketplaces) {
+			return mk === 'cardtrader';
+		}
+		return Boolean(tableObj.marketplaces[mk]);
+	}
+
 	// Filtered & sorted users for admin management
 	$: filteredUserTables = userTables
 		.filter((table) => {
@@ -1196,10 +1203,50 @@
 													<i class="fa-solid fa-pen-to-square"></i>
 													<span>Edit Tier</span>
 												</button>
-												<span class="user-id-chip">{table.userId}</span>
 											</div>
 											<div class="user-meta-line">
-												<span>
+												<span class="user-id-chip" title="User ID: {table.userId}">
+													<i class="fa-solid fa-id-badge"></i>
+													{table.userId}
+												</span>
+												<div class="user-marketplaces-row">
+													{#if isMarketplaceEnabled(table, 'cardtrader')}
+														<span class="mk-icon-badge ct" title="CardTrader: Enabled">
+															<i class="fa-solid fa-store"></i> CT
+														</span>
+													{/if}
+													{#if isMarketplaceEnabled(table, 'tcgplayer')}
+														<span class="mk-icon-badge tcg" title="TCGPlayer: Enabled">
+															<i class="fa-solid fa-bolt"></i> TCG
+														</span>
+													{/if}
+													{#if isMarketplaceEnabled(table, 'ebay')}
+														<span class="mk-icon-badge ebay" title="eBay: Enabled">
+															<i class="fa-brands fa-ebay"></i> EB
+														</span>
+													{/if}
+													{#if isMarketplaceEnabled(table, 'manapool')}
+														<span class="mk-icon-badge manapool" title="Mana Pool: Enabled">
+															<i class="fa-solid fa-water"></i> MP
+														</span>
+													{/if}
+													{#if isMarketplaceEnabled(table, 'himarket')}
+														<span class="mk-icon-badge himarket" title="HiMarket: Enabled">
+															<i class="fa-solid fa-h"></i> HM
+														</span>
+													{/if}
+													{#if isMarketplaceEnabled(table, 'hareruya')}
+														<span class="mk-icon-badge hareruya" title="Hareruya: Enabled">
+															<i class="fa-solid fa-sun"></i> HR
+														</span>
+													{/if}
+													{#if isMarketplaceEnabled(table, 'ruten')}
+														<span class="mk-icon-badge ruten" title="Ruten: Enabled">
+															<i class="fa-solid fa-globe"></i> RT
+														</span>
+													{/if}
+												</div>
+												<span class="user-activity-timestamp">
 													<i class="fa-regular fa-clock"></i>
 													Last Activity: {formatLocalDate(table.lastAccessed)}
 												</span>
@@ -1288,13 +1335,27 @@
 															<th class="col-num">#</th>
 															<th class="col-lang">Lang</th>
 															<th class="col-finish">Finish</th>
-															<th class="col-vendor">CardTrader</th>
-															<th class="col-vendor">TCGPlayer</th>
-															<th class="col-vendor">eBay</th>
-															<th class="col-vendor">Mana Pool</th>
-															<th class="col-vendor">HiMarket</th>
-															<th class="col-vendor">Hareruya</th>
-															<th class="col-vendor">Ruten</th>
+															{#if isMarketplaceEnabled(table, 'cardtrader')}
+																<th class="col-vendor">CardTrader</th>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'tcgplayer')}
+																<th class="col-vendor">TCGPlayer</th>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'ebay')}
+																<th class="col-vendor">eBay</th>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'manapool')}
+																<th class="col-vendor">Mana Pool</th>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'himarket')}
+																<th class="col-vendor">HiMarket</th>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'hareruya')}
+																<th class="col-vendor">Hareruya</th>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'ruten')}
+																<th class="col-vendor">Ruten</th>
+															{/if}
 															<th class="col-cap">Price Cap</th>
 														</tr>
 													</thead>
@@ -1330,99 +1391,113 @@
 																		<span class="finish-pill nonfoil">Nonfoil</span>
 																	{/if}
 																</td>
-																<td class="col-vendor" data-label="CardTrader">
-																	{#if card.cardtrader_stock}
-																		<span class="stock-pill in-stock">
-																			<i class="fa-solid fa-check"></i>
-																			{formatCents(card.cardtrader_low_price)}
-																			{#if card.cardtrader_condition}
-																				<span class="cond-pill">{card.cardtrader_condition}</span>
-																			{/if}
-																		</span>
-																	{:else}
-																		<span class="stock-pill out-of-stock">Out of Stock</span>
-																	{/if}
-																</td>
-																<td class="col-vendor" data-label="TCGPlayer">
-																	{#if card.tcgplayer_stock}
-																		<span class="stock-pill in-stock">
-																			<i class="fa-solid fa-check"></i>
-																			{formatDollars(card.tcgplayer_low_price)}
-																			{#if card.tcgplayer_condition}
-																				<span class="cond-pill">{card.tcgplayer_condition}</span>
-																			{/if}
-																		</span>
-																	{:else}
-																		<span class="stock-pill out-of-stock">Out of Stock</span>
-																	{/if}
-																</td>
-																<td class="col-vendor" data-label="eBay">
-																	{#if card.ebay_stock}
-																		<span class="stock-pill in-stock">
-																			<i class="fa-solid fa-check"></i>
-																			{formatCents(card.ebay_low_price)}
-																			{#if card.ebay_condition}
-																				<span class="cond-pill">{card.ebay_condition}</span>
-																			{/if}
-																		</span>
-																	{:else}
-																		<span class="stock-pill out-of-stock">Out of Stock</span>
-																	{/if}
-																</td>
-																<td class="col-vendor" data-label="Mana Pool">
-																	{#if card.manapool_stock}
-																		<span class="stock-pill in-stock">
-																			<i class="fa-solid fa-check"></i>
-																			{formatCents(card.manapool_low_price)}
-																			{#if card.manapool_condition}
-																				<span class="cond-pill">{card.manapool_condition}</span>
-																			{/if}
-																		</span>
-																	{:else}
-																		<span class="stock-pill out-of-stock">Out of Stock</span>
-																	{/if}
-																</td>
-																<td class="col-vendor" data-label="HiMarket">
-																	{#if card.himarket_stock}
-																		<span class="stock-pill in-stock" title={card.himarket_price_hkd ? `HK$ ${Number(card.himarket_price_hkd).toFixed(2)}${card.himarket_condition ? ` (${card.himarket_condition})` : ''}` : ''}>
-																			<i class="fa-solid fa-check"></i>
-																			{formatCents(card.himarket_low_price)}
-																			{#if card.himarket_condition}
-																				<span class="cond-pill">{card.himarket_condition}</span>
-																			{/if}
-																		</span>
-																	{:else}
-																		<span class="stock-pill out-of-stock">Out of Stock</span>
-																	{/if}
-																</td>
-																<td class="col-vendor" data-label="Hareruya">
-																	{#if card.hareruya_stock}
-																		<span class="stock-pill in-stock" title={card.hareruya_price_jpy ? `¥${Number(card.hareruya_price_jpy).toLocaleString()}${card.hareruya_condition ? ` (${card.hareruya_condition})` : ''}` : ''}>
-																			<i class="fa-solid fa-check"></i>
-																			{formatCents(card.hareruya_low_price)}
-																			{#if card.hareruya_condition}
-																				<span class="cond-pill">{card.hareruya_condition}</span>
-																			{/if}
-																		</span>
-																	{:else}
-																		<span class="stock-pill out-of-stock">Out of Stock</span>
-																	{/if}
-																</td>
-																<td class="col-vendor" data-label="Ruten">
-																	{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
-																		<span class="stock-pill out-of-stock" title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards">—</span>
-																	{:else if card.ruten_stock}
-																		<span class="stock-pill in-stock" title={card.ruten_price_twd ? `NT$ ${Number(card.ruten_price_twd).toLocaleString()}${card.ruten_condition ? ` (${card.ruten_condition})` : ''}` : ''}>
-																			<i class="fa-solid fa-check"></i>
-																			{formatCents(card.ruten_low_price)}
-																			{#if card.ruten_condition}
-																				<span class="cond-pill">{card.ruten_condition}</span>
-																			{/if}
-																		</span>
-																	{:else}
-																		<span class="stock-pill out-of-stock">Out of Stock</span>
-																	{/if}
-																</td>
+																{#if isMarketplaceEnabled(table, 'cardtrader')}
+																	<td class="col-vendor" data-label="CardTrader">
+																		{#if card.cardtrader_stock}
+																			<span class="stock-pill in-stock">
+																				<i class="fa-solid fa-check"></i>
+																				{formatCents(card.cardtrader_low_price)}
+																				{#if card.cardtrader_condition}
+																					<span class="cond-pill">{card.cardtrader_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'tcgplayer')}
+																	<td class="col-vendor" data-label="TCGPlayer">
+																		{#if card.tcgplayer_stock}
+																			<span class="stock-pill in-stock">
+																				<i class="fa-solid fa-check"></i>
+																				{formatDollars(card.tcgplayer_low_price)}
+																				{#if card.tcgplayer_condition}
+																					<span class="cond-pill">{card.tcgplayer_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'ebay')}
+																	<td class="col-vendor" data-label="eBay">
+																		{#if card.ebay_stock}
+																			<span class="stock-pill in-stock">
+																				<i class="fa-solid fa-check"></i>
+																				{formatCents(card.ebay_low_price)}
+																				{#if card.ebay_condition}
+																					<span class="cond-pill">{card.ebay_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'manapool')}
+																	<td class="col-vendor" data-label="Mana Pool">
+																		{#if card.manapool_stock}
+																			<span class="stock-pill in-stock">
+																				<i class="fa-solid fa-check"></i>
+																				{formatCents(card.manapool_low_price)}
+																				{#if card.manapool_condition}
+																					<span class="cond-pill">{card.manapool_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'himarket')}
+																	<td class="col-vendor" data-label="HiMarket">
+																		{#if card.himarket_stock}
+																			<span class="stock-pill in-stock" title={card.himarket_price_hkd ? `HK$ ${Number(card.himarket_price_hkd).toFixed(2)}${card.himarket_condition ? ` (${card.himarket_condition})` : ''}` : ''}>
+																				<i class="fa-solid fa-check"></i>
+																				{formatCents(card.himarket_low_price)}
+																				{#if card.himarket_condition}
+																					<span class="cond-pill">{card.himarket_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'hareruya')}
+																	<td class="col-vendor" data-label="Hareruya">
+																		{#if card.hareruya_stock}
+																			<span class="stock-pill in-stock" title={card.hareruya_price_jpy ? `¥${Number(card.hareruya_price_jpy).toLocaleString()}${card.hareruya_condition ? ` (${card.hareruya_condition})` : ''}` : ''}>
+																				<i class="fa-solid fa-check"></i>
+																				{formatCents(card.hareruya_low_price)}
+																				{#if card.hareruya_condition}
+																					<span class="cond-pill">{card.hareruya_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'ruten')}
+																	<td class="col-vendor" data-label="Ruten">
+																		{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
+																			<span class="stock-pill out-of-stock" title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards">—</span>
+																		{:else if card.ruten_stock}
+																			<span class="stock-pill in-stock" title={card.ruten_price_twd ? `NT$ ${Number(card.ruten_price_twd).toLocaleString()}${card.ruten_condition ? ` (${card.ruten_condition})` : ''}` : ''}>
+																				<i class="fa-solid fa-check"></i>
+																				{formatCents(card.ruten_low_price)}
+																				{#if card.ruten_condition}
+																					<span class="cond-pill">{card.ruten_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
 																<td class="col-cap" data-label="Price Cap">
 																	<span class="price-cap-value">
 																		{formatCents(card.max_price_cap)}
@@ -2814,12 +2889,15 @@
 	}
 
 	.user-id-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
 		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-		font-size: 0.775rem;
+		font-size: 0.75rem;
 		color: var(--color-text-muted);
 		background: var(--color-bg-elevated);
 		border: 1px solid var(--color-border);
-		padding: 0.1rem 0.45rem;
+		padding: 0.12rem 0.5rem;
 		border-radius: 6px;
 	}
 
@@ -2828,7 +2906,87 @@
 		color: var(--color-text-secondary);
 		display: flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: 0.65rem;
+		flex-wrap: wrap;
+		margin-top: 0.15rem;
+	}
+
+	.user-marketplaces-row {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		flex-wrap: wrap;
+	}
+
+	.mk-icon-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.68rem;
+		font-weight: 700;
+		padding: 0.1rem 0.45rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		cursor: help;
+		transition: all 0.15s ease;
+		line-height: 1.2;
+	}
+
+	.mk-icon-badge:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+	}
+
+	.mk-icon-badge.ct {
+		color: #3b82f6;
+		border-color: rgba(59, 130, 246, 0.35);
+		background: rgba(59, 130, 246, 0.1);
+	}
+
+	.mk-icon-badge.tcg {
+		color: #10b981;
+		border-color: rgba(16, 185, 129, 0.35);
+		background: rgba(16, 185, 129, 0.1);
+	}
+
+	.mk-icon-badge.ebay {
+		color: #eab308;
+		border-color: rgba(234, 179, 8, 0.35);
+		background: rgba(234, 179, 8, 0.1);
+	}
+
+	.mk-icon-badge.manapool {
+		color: #06b6d4;
+		border-color: rgba(6, 182, 212, 0.35);
+		background: rgba(6, 182, 212, 0.1);
+	}
+
+	.mk-icon-badge.himarket {
+		color: #f97316;
+		border-color: rgba(249, 115, 22, 0.35);
+		background: rgba(249, 115, 22, 0.1);
+	}
+
+	.mk-icon-badge.hareruya {
+		color: #ec4899;
+		border-color: rgba(236, 72, 153, 0.35);
+		background: rgba(236, 72, 153, 0.1);
+	}
+
+	.mk-icon-badge.ruten {
+		color: #a855f7;
+		border-color: rgba(168, 85, 247, 0.35);
+		background: rgba(168, 85, 247, 0.1);
+	}
+
+	.user-activity-timestamp {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.775rem;
+		color: var(--color-text-muted);
 	}
 
 	.user-actions {
