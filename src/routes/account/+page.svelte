@@ -1518,6 +1518,7 @@
 		display: inline-flex;
 		align-items: center;
 		flex-shrink: 0;
+		max-width: 100%;
 	}
 
 	.custom-select {
@@ -1531,6 +1532,9 @@
 		cursor: pointer;
 		appearance: none;
 		transition: all var(--transition-fast);
+		max-width: 100%;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.custom-select:hover:not(:disabled) {
@@ -1777,9 +1781,17 @@
 		}
 
 		.setting-item > label.toggle-switch,
-		.setting-item > .threshold-input-wrapper,
-		.setting-item > .select-wrapper {
+		.setting-item > .threshold-input-wrapper {
 			align-self: flex-end;
+		}
+
+		.setting-item > .select-wrapper {
+			align-self: stretch;
+			width: 100%;
+		}
+
+		.setting-item > .select-wrapper .custom-select {
+			width: 100%;
 		}
 
 		.modal-buttons {
