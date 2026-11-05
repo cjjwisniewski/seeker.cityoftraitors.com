@@ -350,23 +350,105 @@
 			}
 		}
 
-		const finalPreview = [];
-		const previewDedup = new Set();
-
+		const candidates = [];
 		rawItems.forEach((item, idx) => {
 			const scry = resolvedByIndex.get(idx);
 			if (!scry) return;
 
 			const set_code = (scry.set || item.set_code || '').toLowerCase();
-			const set_name = scry.set_name || item.set_name || setCodeToNameMap[set_code] || set_code.toUpperCase();
 			const collector_number = String(scry.collector_number || item.collector_number || 'N/A');
-			const language = (importMode === 'moxfield' ? (importDefaultLanguage || 'en') : (item.language || importDefaultLanguage || 'en')).toLowerCase();
 			const finish = item.finish === 'foil' ? 'foil' : 'nonfoil';
 			const name = scry.name || item.name;
 			const type_line = scry.type_line || item.type_line || '';
 			const oracle_id = scry.oracle_id || item.oracle_id || scry.id;
 			const image_uri = extractScryfallImage(scry);
 			if (!image_uri || !set_code) return;
+
+			candidates.push({
+				item,
+				scry,
+				set_code,
+				collector_number,
+				finish,
+				name,
+				type_line,
+				oracle_id,
+				image_uri
+			});
+		});
+
+		// Collect unique printings to batch-validate their printed languages via Scryfall search
+		importResolveStatus = 'Validating available card languages...';
+		const printingsMap = new Map();
+		const uniquePrints = [];
+		const seenPrints = new Set();
+
+		for (const cand of candidates) {
+			const pKey = `${cand.set_code}-${cand.collector_number.toLowerCase()}`;
+			if (!seenPrints.has(pKey) && cand.collector_number !== 'N/A') {
+				seenPrints.add(pKey);
+				uniquePrints.push({ set_code: cand.set_code, collector_number: cand.collector_number });
+			}
+		}
+
+		const LANG_BATCH_SIZE = 15;
+		for (let i = 0; i < uniquePrints.length; i += LANG_BATCH_SIZE) {
+			const chunk = uniquePrints.slice(i, i + LANG_BATCH_SIZE);
+			const query = chunk
+				.map((p) => `(cn:${encodeURIComponent(p.collector_number)}+set:${encodeURIComponent(p.set_code)})`)
+				.join('+OR+');
+			try {
+				const res = await fetch(`https://api.scryfall.com/cards/search?q=${query}&include_multilingual=true&unique=prints`);
+				if (res.ok) {
+					const data = await res.json();
+					if (Array.isArray(data?.data)) {
+						for (const card of data.data) {
+							const key = `${(card.set || '').toLowerCase()}-${String(card.collector_number || '').toLowerCase()}`;
+							if (!printingsMap.has(key)) {
+								printingsMap.set(key, new Set());
+							}
+							if (card.lang) {
+								printingsMap.get(key).add(card.lang.toLowerCase());
+							}
+						}
+					}
+				}
+			} catch (e) {
+				console.warn('Failed to batch resolve languages for printings:', e);
+			}
+			if (i + LANG_BATCH_SIZE < uniquePrints.length) {
+				await new Promise((r) => setTimeout(r, 80));
+			}
+		}
+
+		const finalPreview = [];
+		const previewDedup = new Set();
+
+		candidates.forEach(({ item, scry, set_code, collector_number, finish, name, type_line, oracle_id, image_uri }) => {
+			const set_name = scry.set_name || item.set_name || setCodeToNameMap[set_code] || set_code.toUpperCase();
+			const pKey = `${set_code}-${collector_number.toLowerCase()}`;
+			const langsSet = printingsMap.get(pKey);
+
+			let availableLanguages = [];
+			if (langsSet && langsSet.size > 0) {
+				availableLanguages = Array.from(langsSet).filter((l) => languageMap[l] && l !== 'jp' && l !== 'kr');
+			}
+			if (availableLanguages.length === 0) {
+				availableLanguages = ['en'];
+			}
+			if (!availableLanguages.includes('en') && (langsSet?.has('en') || availableLanguages.length === 0)) {
+				availableLanguages.unshift('en');
+			}
+
+			const requestedLang = (importMode === 'moxfield'
+				? (importDefaultLanguage || 'en')
+				: (item.language || importDefaultLanguage || 'en')
+			).toLowerCase();
+
+			// Fallback: if requestedLang was not printed for this card, fallback to 'en', or first available
+			const language = availableLanguages.includes(requestedLang)
+				? requestedLang
+				: (availableLanguages.includes('en') ? 'en' : (availableLanguages[0] || 'en'));
 
 			const cardKey = `${set_code}-${collector_number}-${language}-${finish}`;
 			if (previewDedup.has(cardKey)) return;
@@ -383,6 +465,7 @@
 				set_name,
 				collector_number,
 				language,
+				availableLanguages,
 				finish,
 				oracle_id,
 				image_uri,
@@ -3336,20 +3419,6 @@
 											class="import-set-icon"
 										/>
 										<span>{item.set_code.toUpperCase()} #{item.collector_number}</span>
-										<span>•</span>
-										<select
-											class="import-lang-mini-select"
-											value={item.language}
-											on:change={(e) => updateImportCardLanguage(item, e.currentTarget.value)}
-											disabled={isImportingCards}
-											title="Change card language"
-										>
-											{#each Object.entries(languageMap) as [code, label]}
-												{#if code !== 'jp' && code !== 'kr'}
-													<option value={code}>{code.toUpperCase()}</option>
-												{/if}
-											{/each}
-										</select>
 									</div>
 								</div>
 
@@ -3357,6 +3426,24 @@
 									{#if item.alreadyExists}
 										<span class="import-exists-badge">Already in Seeking</span>
 									{:else}
+										{#if item.availableLanguages && item.availableLanguages.length > 1}
+											<select
+												class="import-lang-mini-select"
+												value={item.language}
+												on:change={(e) => updateImportCardLanguage(item, e.currentTarget.value)}
+												disabled={isImportingCards}
+												title="Change card language"
+											>
+												{#each item.availableLanguages as code}
+													<option value={code}>{code.toUpperCase()}</option>
+												{/each}
+											</select>
+										{:else}
+											<span class="import-lang-static-badge" title="Card printing is {item.language.toUpperCase()} only">
+												{item.language.toUpperCase()}
+											</span>
+										{/if}
+
 										<button
 											type="button"
 											class="import-finish-pill"
@@ -4478,11 +4565,19 @@
 			background-color: transparent;
 		}
 
-		td {
+		td,
+		td.col-set,
+		td.col-lang,
+		td.col-finish,
+		td.col-vendor,
+		td.col-card,
+		td.col-actions {
 			border: none;
 			padding: 0.35rem;
 			text-align: center;
-			min-width: 0;
+			min-width: 0 !important;
+			max-width: none !important;
+			width: 100% !important;
 			box-sizing: border-box;
 		}
 
@@ -4546,6 +4641,9 @@
 		td[data-label='Language'],
 		td[data-label='Finish'] {
 			grid-column: span 2;
+			width: 100% !important;
+			max-width: none !important;
+			min-width: 0 !important;
 			background: var(--color-bg-secondary);
 			border: 1px solid var(--color-border);
 			border-radius: 10px;
@@ -4555,7 +4653,6 @@
 			align-items: stretch;
 			justify-content: space-between;
 			gap: 0.25rem;
-			min-width: 0;
 			box-sizing: border-box;
 		}
 
@@ -4615,7 +4712,8 @@
 			padding: 0;
 			margin: 0;
 			background: none;
-			width: auto;
+			width: auto !important;
+			max-width: none !important;
 		}
 
 		td[data-label='CardTrader'],
@@ -4627,6 +4725,9 @@
 		td[data-label='Hareruya'],
 		td[data-label='Ruten'] {
 			grid-column: span 3;
+			width: 100% !important;
+			max-width: none !important;
+			min-width: 0 !important;
 			background: var(--color-bg-secondary);
 			border: 1px solid var(--color-border);
 			border-radius: 10px;
@@ -4636,7 +4737,6 @@
 			align-items: stretch;
 			justify-content: flex-start;
 			gap: 0.25rem;
-			min-width: 0;
 			box-sizing: border-box;
 			transition: all var(--transition-fast);
 		}
@@ -5327,6 +5427,9 @@
 	}
 
 	.import-row-right {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
 		flex-shrink: 0;
 	}
 
@@ -5339,6 +5442,38 @@
 		font-weight: 600;
 	}
 
+	.import-lang-static-badge {
+		font-size: 0.72rem;
+		font-weight: 700;
+		padding: 0.18rem 0.4rem;
+		border-radius: 6px;
+		background: var(--color-bg-hover);
+		color: var(--color-text-secondary);
+		border: 1px solid var(--color-border);
+		line-height: 1.2;
+		white-space: nowrap;
+	}
+
+	.import-lang-mini-select {
+		background: var(--color-bg-hover);
+		color: var(--color-text-primary);
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		font-size: 0.72rem;
+		font-weight: 700;
+		padding: 0.18rem 0.35rem;
+		cursor: pointer;
+		outline: none;
+		transition: all var(--transition-fast);
+		height: 27px;
+		line-height: 1.2;
+		white-space: nowrap;
+	}
+
+	.import-lang-mini-select:hover:not(:disabled) {
+		border-color: var(--color-primary);
+	}
+
 	.import-finish-pill {
 		font-size: 0.74rem;
 		padding: 0.22rem 0.55rem;
@@ -5348,30 +5483,18 @@
 		color: var(--color-text-secondary);
 		font-weight: 600;
 		cursor: pointer;
+		height: 27px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
+		white-space: nowrap;
 	}
 
 	.import-finish-pill.foil {
 		border-color: #f59e0b;
 		background: rgba(245, 158, 11, 0.15);
 		color: #f59e0b;
-	}
-
-	.import-lang-mini-select {
-		background: var(--color-bg-secondary);
-		color: var(--color-text-secondary);
-		border: 1px solid var(--color-border);
-		border-radius: 4px;
-		font-size: 0.7rem;
-		font-weight: 600;
-		padding: 0.05rem 0.25rem;
-		cursor: pointer;
-		outline: none;
-		transition: all var(--transition-fast);
-	}
-
-	.import-lang-mini-select:hover:not(:disabled) {
-		border-color: var(--color-primary);
-		color: var(--color-text-primary);
 	}
 
 	.import-progress-box {
