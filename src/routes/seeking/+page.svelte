@@ -2326,7 +2326,7 @@
 							</button>
 						</td>
 						{#if showCardTrader}
-						<td data-label="CardTrader" class="vendor-stock-cell col-vendor">
+						<td data-label="CardTrader" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
 							{#if card.cardtrader_id}
 								<a
 									href="https://www.cardtrader.com/cards/{card.cardtrader_id}"
@@ -2371,7 +2371,7 @@
 						</td>
 						{/if}
 						{#if showTCGPlayer}
-						<td data-label="TCGPlayer" class="vendor-stock-cell col-vendor">
+						<td data-label="TCGPlayer" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
 							{#if card.tcgplayer_id}
 								<a
 									href={getTCGPlayerUrl(card)}
@@ -2428,7 +2428,7 @@
 							</div>
 						</td>
 						{#if showEbay}
-						<td data-label="EBay" class="vendor-stock-cell col-vendor">
+						<td data-label="EBay" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
 							<a
 								href={getEbayUrl(card, setCodeToNameMap)}
 								target="_blank"
@@ -2462,7 +2462,7 @@
 						</td>
 						{/if}
 						{#if showManapool}
-						<td data-label="Mana Pool" class="vendor-stock-cell col-vendor">
+						<td data-label="Mana Pool" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
 							{#if card.manapool_url}
 								<a
 									href={card.manapool_url}
@@ -2505,7 +2505,7 @@
 						</td>
 						{/if}
 						{#if showHimarket}
-						<td data-label="HiMarket" class="vendor-stock-cell col-vendor">
+						<td data-label="HiMarket" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'himarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
 							{#if card.himarket_url}
 								<a
 									href={card.himarket_url}
@@ -2553,7 +2553,7 @@
 						</td>
 						{/if}
 						{#if showHareruya}
-						<td data-label="Hareruya" class="vendor-stock-cell col-vendor">
+						<td data-label="Hareruya" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'hareruya', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
 							{#if card.hareruya_url}
 								<a
 									href={card.hareruya_url}
@@ -2601,7 +2601,7 @@
 						</td>
 						{/if}
 						{#if showRuten}
-						<td data-label="Ruten" class="vendor-stock-cell col-vendor">
+						<td data-label="Ruten" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'ruten', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
 							{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
 								<div class="stock-indicator">
 									<span
@@ -4335,11 +4335,11 @@
 			-webkit-backdrop-filter: blur(var(--backdrop-blur));
 			border: 1px solid var(--glass-border);
 			border-radius: 14px;
-			padding: 0.85rem;
+			padding: 0.75rem;
 			box-shadow: var(--shadow-sm);
 			margin-bottom: 0;
 			position: relative;
-			gap: 0.5rem;
+			gap: 0.45rem;
 			width: 100%;
 			box-sizing: border-box;
 		}
@@ -4359,8 +4359,8 @@
 		td[data-label='Card'] {
 			grid-column: 1 / -1;
 			border-bottom: 1px solid var(--color-border);
-			margin-bottom: 0.15rem;
-			padding: 0 2.15rem 0.7rem 0;
+			margin-bottom: 0.1rem;
+			padding: 0 2rem 0.55rem 0;
 			text-align: left;
 		}
 
@@ -4413,12 +4413,12 @@
 			background: var(--color-bg-secondary);
 			border: 1px solid var(--color-border);
 			border-radius: 8px;
-			padding: 0.38rem 0.3rem;
+			padding: 0.32rem 0.35rem;
 			display: flex;
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
-			gap: 0.2rem;
+			gap: 0.15rem;
 		}
 
 		td[data-label='Set']::before,
@@ -4467,14 +4467,44 @@
 			background: var(--color-bg-secondary);
 			border: 1px solid var(--color-border);
 			border-radius: 10px;
-			padding: 0.5rem 0.6rem;
+			padding: 0.42rem 0.55rem;
 			display: flex;
 			flex-direction: column;
 			align-items: stretch;
-			justify-content: space-between;
-			gap: 0.35rem;
+			justify-content: flex-start;
+			gap: 0.25rem;
 			min-width: 0;
 			box-sizing: border-box;
+			transition: all var(--transition-fast);
+		}
+
+		/* Highlight entire vendor tile green for best price on mobile */
+		td.vendor-stock-cell.is-best-price,
+		td.vendor-stock-cell:has(.best-price) {
+			border-color: rgba(16, 185, 129, 0.7) !important;
+			background: rgba(16, 185, 129, 0.14) !important;
+			box-shadow: 0 0 12px rgba(16, 185, 129, 0.18);
+		}
+
+		td.vendor-stock-cell.is-best-price::before,
+		td.vendor-stock-cell:has(.best-price)::before {
+			color: #10b981 !important;
+		}
+
+		td.vendor-stock-cell.is-best-price .price-text,
+		td.vendor-stock-cell:has(.best-price) .price-text {
+			color: #10b981;
+			font-weight: 700;
+		}
+
+		/* Reset inner price circling on mobile so only the tile is highlighted */
+		td.vendor-stock-cell .stock-indicator.best-price {
+			background: transparent !important;
+			border: none !important;
+			box-shadow: none !important;
+			padding: 0 !important;
+			border-radius: 0 !important;
+			width: 100% !important;
 		}
 
 		td[data-label='CardTrader']::before,
@@ -4545,12 +4575,6 @@
 			font-size: 0.62rem;
 			padding: 0.06rem 0.3rem;
 			margin-left: 0.1rem;
-		}
-
-		td.vendor-stock-cell .stock-indicator.best-price {
-			padding: 0.15rem 0.45rem;
-			border-radius: 999px;
-			width: fit-content;
 		}
 
 		.desktop-only {
