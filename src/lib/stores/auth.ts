@@ -12,6 +12,8 @@ interface User {
         stockAlertEnabled?: boolean;
         stockDigestEnabled?: boolean;
         preferredLanguage?: string;
+        preferredFinish?: string;
+        minCondition?: string;
         membershipTier?: string;
         marketplaceCardtraderEnabled?: boolean;
         marketplaceTcgplayerEnabled?: boolean;
@@ -19,6 +21,7 @@ interface User {
         marketplaceManapoolEnabled?: boolean;
         marketplaceHimarketEnabled?: boolean;
         marketplaceHareruyaEnabled?: boolean;
+        marketplaceRutenEnabled?: boolean;
     };
 }
 

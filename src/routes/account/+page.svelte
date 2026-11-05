@@ -31,6 +31,7 @@
 	$: priceDropThreshold = $auth.user?.settings?.priceDropThreshold ?? 5;
 	$: preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
 	$: preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
+	$: minCondition = $auth.user?.settings?.minCondition || 'ANY';
 	$: marketplaceCardtraderEnabled = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
 	$: marketplaceTcgplayerEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
 	$: marketplaceEbayEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? false) : false;
@@ -67,6 +68,7 @@
 		if (settingName === 'priceDropThreshold') oldValue = priceDropThreshold;
 		if (settingName === 'preferredLanguage') oldValue = preferredLanguage;
 		if (settingName === 'preferredFinish') oldValue = preferredFinish;
+		if (settingName === 'minCondition') oldValue = minCondition;
 		if (settingName === 'marketplaceCardtraderEnabled') oldValue = marketplaceCardtraderEnabled;
 		if (settingName === 'marketplaceTcgplayerEnabled') oldValue = marketplaceTcgplayerEnabled;
 		if (settingName === 'marketplaceEbayEnabled') oldValue = marketplaceEbayEnabled;
@@ -82,6 +84,7 @@
 		if (settingName === 'priceDropThreshold') priceDropThreshold = newValue;
 		if (settingName === 'preferredLanguage') preferredLanguage = newValue;
 		if (settingName === 'preferredFinish') preferredFinish = newValue;
+		if (settingName === 'minCondition') minCondition = newValue;
 		if (settingName === 'marketplaceCardtraderEnabled') marketplaceCardtraderEnabled = newValue;
 		if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = newValue;
 		if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = newValue;
@@ -112,6 +115,7 @@
 				if (settingName === 'priceDropThreshold') priceDropThreshold = oldValue;
 				if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
 				if (settingName === 'preferredFinish') preferredFinish = oldValue;
+				if (settingName === 'minCondition') minCondition = oldValue;
 				if (settingName === 'marketplaceCardtraderEnabled') marketplaceCardtraderEnabled = oldValue;
 				if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = oldValue;
 				if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
@@ -133,6 +137,7 @@
 			if (settingName === 'priceDropThreshold') priceDropThreshold = oldValue;
 			if (settingName === 'preferredLanguage') preferredLanguage = oldValue;
 			if (settingName === 'preferredFinish') preferredFinish = oldValue;
+			if (settingName === 'minCondition') minCondition = oldValue;
 			if (settingName === 'marketplaceCardtraderEnabled') marketplaceCardtraderEnabled = oldValue;
 			if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = oldValue;
 			if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
@@ -515,6 +520,36 @@
 							>
 								<option value="nonfoil">Nonfoil</option>
 								<option value="foil">Foil</option>
+							</select>
+							<i class="fa-solid fa-chevron-down select-chevron"></i>
+						</div>
+					</div>
+
+					<!-- Minimum Condition Setting -->
+					<div class="setting-item">
+						<div class="setting-item-left">
+							<div class="setting-icon-pill">
+								<i class="fa-solid fa-shield-halved"></i>
+							</div>
+							<div class="setting-info">
+								<span class="setting-title">Minimum Card Condition</span>
+								<span class="setting-desc"
+									>Set the default minimum condition required for stock checks and alerts across all marketplaces (can be overridden per card).</span
+								>
+							</div>
+						</div>
+						<div class="select-wrapper">
+							<select
+								class="custom-select"
+								value={minCondition}
+								on:change={(e) => updateSetting('minCondition', e.target.value)}
+								disabled={isUpdatingSetting}
+							>
+								<option value="ANY">Any Condition</option>
+								<option value="HP">Heavily Played or Better (HP+)</option>
+								<option value="MP">Moderately Played or Better (MP+)</option>
+								<option value="SP">Slightly / Lightly Played or Better (SP+)</option>
+								<option value="NM">Near Mint Only (NM)</option>
 							</select>
 							<i class="fa-solid fa-chevron-down select-chevron"></i>
 						</div>

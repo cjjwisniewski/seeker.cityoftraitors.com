@@ -40,7 +40,25 @@
 	let showSettingsModal = false;
 	let selectedCardForSettings = null;
 	let maxPriceInput = '';
+	let minConditionInput = '';
 	let isSavingSettings = false;
+	$: accountMinCondition = ($auth.user?.settings?.minCondition || 'ANY').toUpperCase();
+
+	function formatMinConditionLabel(cond) {
+		const normalized = String(cond || 'ANY').toUpperCase();
+		switch (normalized) {
+			case 'NM':
+				return 'NM Only';
+			case 'SP':
+				return 'SP+';
+			case 'MP':
+				return 'MP+';
+			case 'HP':
+				return 'HP+';
+			default:
+				return 'Any Condition';
+		}
+	}
 	let editLanguageInput = 'en';
 	let editFinishInput = 'nonfoil';
 	let editPreviewImageUri = '';
@@ -1279,10 +1297,13 @@
 				if (isNaN(max_price_cap) || max_price_cap < 0) throw new Error('Invalid price cap format.');
 			}
 
+			const min_condition = minConditionInput ? minConditionInput : null;
+
 			const requestBody = {
 				partitionKey: selectedCardForSettings.set_code,
 				rowKey: `${selectedCardForSettings.collector_number}_${selectedCardForSettings.language}_${selectedCardForSettings.finish}`,
 				max_price_cap: max_price_cap,
+				min_condition: min_condition,
 				new_language: editLanguageInput,
 				new_finish: editFinishInput,
 				new_image_uri: editPreviewImageUri || selectedCardForSettings.image_uri
@@ -1324,6 +1345,7 @@
 							finish: editFinishInput,
 							image_uri: result.image_uri || editPreviewImageUri || c.image_uri,
 							max_price_cap: max_price_cap,
+							min_condition: min_condition,
 							cardtrader_stock: false,
 							cardtrader_low_price: null,
 							cardtrader_condition: null,
@@ -1359,7 +1381,7 @@
 							ruten_url: ''
 						};
 					}
-					return { ...c, max_price_cap: max_price_cap };
+					return { ...c, max_price_cap: max_price_cap, min_condition: min_condition };
 				}
 				return c;
 			});
@@ -1389,6 +1411,7 @@
 			card.max_price_cap !== null && card.max_price_cap !== undefined
 				? (card.max_price_cap / 100).toFixed(2)
 				: '';
+		minConditionInput = card.min_condition ? String(card.min_condition).toUpperCase() : '';
 		showSettingsModal = true;
 		closeMenu();
 		loadCardPrintVariants(card);
@@ -1770,7 +1793,8 @@
 			'Ruten Price (USD)',
 			'Ruten Price (TWD)',
 			'Ruten Condition',
-			'Max Price Cap'
+			'Max Price Cap',
+			'Min Condition'
 		];
 		const csvRows = [headers.join(',')];
 
@@ -1827,7 +1851,8 @@
 				card.ruten_condition || '',
 				card.max_price_cap !== null && card.max_price_cap !== undefined
 					? (card.max_price_cap / 100).toFixed(2)
-					: ''
+					: '',
+				card.min_condition || ''
 			];
 			csvRows.push(row.join(','));
 		}
@@ -2281,15 +2306,33 @@
 								{/if}
 								<div class="card-name-group">
 									<span>{card.name}</span>
-									{#if card.max_price_cap !== null && card.max_price_cap !== undefined}
-										<button
-											type="button"
-											class="cap-badge"
-											title="Click to edit Max Price Cap"
-											on:click|stopPropagation={() => openSettings(card)}
-										>
-											MAX {formatPrice(card.max_price_cap)}
-										</button>
+									{#if (card.max_price_cap !== null && card.max_price_cap !== undefined) || card.min_condition}
+										<div class="card-badges-row">
+											{#if card.max_price_cap !== null && card.max_price_cap !== undefined}
+												<button
+													type="button"
+													class="cap-badge"
+													title="Click to edit Max Price Cap"
+													on:click|stopPropagation={() => openSettings(card)}
+												>
+													MAX {formatPrice(card.max_price_cap)}
+												</button>
+											{/if}
+											{#if card.min_condition}
+												<button
+													type="button"
+													class="cap-badge cond-override-badge"
+													title="Minimum Condition Override: {formatMinConditionLabel(card.min_condition)} (Click to edit)"
+													on:click|stopPropagation={() => openSettings(card)}
+												>
+													{card.min_condition === 'NM'
+														? 'NM ONLY'
+														: card.min_condition === 'ANY'
+															? 'ANY COND'
+															: `MIN ${card.min_condition}+`}
+												</button>
+											{/if}
+										</div>
 									{/if}
 								</div>
 							</div>
@@ -2862,6 +2905,26 @@
 							disabled={isSavingSettings}
 						/>
 					</div>
+				</div>
+
+				<div class="settings-group">
+					<label for="edit-min-condition">Minimum Condition</label>
+					<p class="setting-description">
+						Ignore listings graded worse than this condition. Defaults to your account-wide setting.
+					</p>
+					<select
+						id="edit-min-condition"
+						bind:value={minConditionInput}
+						class="modal-input edit-select-input"
+						disabled={isSavingSettings}
+					>
+						<option value="">Account Default ({formatMinConditionLabel(accountMinCondition)})</option>
+						<option value="ANY">Any Condition</option>
+						<option value="HP">Heavily Played or Better (HP+)</option>
+						<option value="MP">Moderately Played or Better (MP+)</option>
+						<option value="SP">Slightly / Lightly Played or Better (SP+)</option>
+						<option value="NM">Near Mint Only (NM)</option>
+					</select>
 				</div>
 
 				{#if canManualCheckStock}
@@ -4827,6 +4890,13 @@
 		align-items: center;
 	}
 
+	.card-badges-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		align-items: center;
+	}
+
 	.cap-badge {
 		display: inline-block;
 		font-size: 0.65rem;
@@ -4838,6 +4908,12 @@
 		border: 1px solid var(--color-accent);
 		cursor: pointer;
 		transition: transform var(--transition-fast), opacity var(--transition-fast);
+	}
+
+	.cap-badge.cond-override-badge {
+		color: var(--color-primary);
+		border-color: var(--color-primary);
+		background: rgba(99, 102, 241, 0.1);
 	}
 
 	.cap-badge:hover {
