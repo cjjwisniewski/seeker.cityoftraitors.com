@@ -997,6 +997,14 @@
 	let showFilter = false; // State for filter search bar visibility
 	let searchQuery = ''; // State for search query input
 
+	function resetFilters() {
+		filterInStockOnly = false;
+		filterUnderPriceCap = false;
+		filterFoilOnly = false;
+		filterSetCode = '';
+		searchQuery = '';
+	}
+
 	// Sorting state
 	let sortKey = 'name'; // Default sort key
 	let sortDirection = 'asc'; // Default sort direction ('asc' or 'desc')
@@ -2134,13 +2142,7 @@
 				<button
 					type="button"
 					class="filter-pill reset"
-					on:click={() => {
-						filterInStockOnly = false;
-						filterUnderPriceCap = false;
-						filterFoilOnly = false;
-						filterSetCode = '';
-						searchQuery = '';
-					}}
+					on:click={resetFilters}
 					title="Reset all filters"
 				>
 					<i class="fa-solid fa-xmark"></i>
@@ -2271,6 +2273,19 @@
 	<div class="empty">Please log in to view your seeking list.</div>
 {:else if cards.length === 0}
 	<div class="empty">No cards in seeking list</div>
+{:else if sortedCards.length === 0}
+	<div class="seeking-list">
+		<div class="empty-filter-state">
+			<div class="empty-filter-icon">
+				<i class="fa-solid fa-filter-circle-xmark"></i>
+			</div>
+			<h3>No matching cards found</h3>
+			<p>No cards on your seeking list match your active search or filter settings.</p>
+			<button type="button" class="clear-filters-btn" on:click={resetFilters}>
+				<i class="fa-solid fa-rotate-left"></i> Reset Filters
+			</button>
+		</div>
+	</div>
 {:else}
 	<div class="seeking-list">
 		<div class="table-scroll-container">
@@ -4635,6 +4650,63 @@
 		border: 1px solid var(--glass-border);
 		margin: 2rem auto;
 		max-width: 600px;
+	}
+
+	.empty-filter-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 3.5rem 1.5rem;
+		text-align: center;
+		background: var(--glass-bg, rgba(255, 255, 255, 0.03));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border: 1px dashed var(--color-border);
+		border-radius: 12px;
+		margin: 1.5rem auto;
+		max-width: 640px;
+		animation: fadeIn 0.3s ease-out;
+	}
+
+	.empty-filter-icon {
+		font-size: 2.25rem;
+		color: var(--color-text-muted);
+		margin-bottom: 0.85rem;
+	}
+
+	.empty-filter-state h3 {
+		font-size: 1.15rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		margin: 0 0 0.4rem 0;
+	}
+
+	.empty-filter-state p {
+		font-size: 0.9rem;
+		color: var(--color-text-secondary);
+		margin: 0 0 1.25rem 0;
+		max-width: 420px;
+		line-height: 1.45;
+	}
+
+	.clear-filters-btn {
+		background: var(--color-primary);
+		color: white;
+		border: none;
+		padding: 0.55rem 1.25rem;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		transition: opacity var(--transition-fast), transform var(--transition-fast);
+	}
+
+	.clear-filters-btn:hover {
+		opacity: 0.9;
+		transform: translateY(-1px);
 	}
 
 	.error {
