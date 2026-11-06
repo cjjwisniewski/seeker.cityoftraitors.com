@@ -23,6 +23,7 @@ interface User {
         marketplaceHimarketEnabled?: boolean;
         marketplaceHareruyaEnabled?: boolean;
         marketplaceRutenEnabled?: boolean;
+        marketplaceCardmarketEnabled?: boolean;
     };
 }
 

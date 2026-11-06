@@ -1246,6 +1246,11 @@
 																<i class="fa-solid fa-shop"></i> RT
 															</span>
 														{/if}
+														{#if isMarketplaceEnabled(table, 'cardmarket')}
+															<span class="mk-icon-badge cardmarket" title="CardMarket: Enabled">
+																<i class="fa-solid fa-euro-sign"></i> CM
+															</span>
+														{/if}
 														{#if table.minCondition && table.minCondition !== 'ANY'}
 															<span class="user-cond-badge" title="Account Default Minimum Condition: {table.minCondition}+">
 																<i class="fa-solid fa-shield-halved"></i> {table.minCondition === 'NM' ? 'NM' : `${table.minCondition}+`}
@@ -1368,6 +1373,9 @@
 															{/if}
 															{#if isMarketplaceEnabled(table, 'ruten')}
 																<th class="col-vendor">Ruten</th>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'cardmarket')}
+																<th class="col-vendor">CardMarket</th>
 															{/if}
 															<th class="col-cond">Min Cond</th>
 														</tr>
@@ -1504,6 +1512,21 @@
 																				{formatCents(card.ruten_low_price)}
 																				{#if card.ruten_condition}
 																					<span class="cond-pill">{card.ruten_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'cardmarket')}
+																	<td class="col-vendor" data-label="CardMarket">
+																		{#if card.cardmarket_stock}
+																			<span class="stock-pill in-stock" title={card.cardmarket_price_eur ? `€${Number(card.cardmarket_price_eur).toFixed(2)}${card.cardmarket_condition ? ` (${card.cardmarket_condition})` : ''}` : ''}>
+																				<i class="fa-solid fa-check"></i>
+																				{formatCents(card.cardmarket_low_price)}
+																				{#if card.cardmarket_condition}
+																					<span class="cond-pill">{card.cardmarket_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
@@ -3014,6 +3037,12 @@
 		color: #14b8a6;
 		border-color: rgba(20, 184, 166, 0.35);
 		background: rgba(20, 184, 166, 0.1);
+	}
+
+	.mk-icon-badge.cardmarket {
+		color: #38bdf8;
+		border-color: rgba(56, 189, 248, 0.35);
+		background: rgba(56, 189, 248, 0.1);
 	}
 
 	.user-cond-badge {

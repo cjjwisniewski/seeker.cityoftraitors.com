@@ -3,7 +3,7 @@
 	import { auth } from '$lib/stores/auth'; // Import auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
 	import { getLanguageName } from '$lib/utils/languageUtils';
-	import { initExchangeRates, formatHkdPrice, formatJpyPrice, formatTwdPrice } from '$lib/stores/exchangeRate';
+	import { initExchangeRates, formatHkdPrice, formatJpyPrice, formatTwdPrice, formatEurPrice } from '$lib/stores/exchangeRate';
 	import {
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
 		PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL,
@@ -21,7 +21,8 @@
 		manapool: null,
 		himarket: null,
 		hareruya: null,
-		ruten: null
+		ruten: null,
+		cardmarket: null
 	};
 	let checkingStockCardKeys = new Set();
 	let stockCheckToast = null; // { type: 'success' | 'warning' | 'error', message: string }
@@ -1023,6 +1024,7 @@
 	$: showHimarket = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 	$: showHareruya = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
 	$: showRuten = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceRutenEnabled ?? false) : false;
+	$: showCardmarket = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceCardmarketEnabled ?? false) : false;
 
 	function showStockCheckFeedback(type, message) {
 		stockCheckToast = { type, message };
@@ -1268,7 +1270,8 @@
 					manapool: data.lastChecked.manapool || null,
 					himarket: data.lastChecked.himarket || null,
 					hareruya: data.lastChecked.hareruya || null,
-					ruten: data.lastChecked.ruten || null
+					ruten: data.lastChecked.ruten || null,
+					cardmarket: data.lastChecked.cardmarket || null
 				};
 			}
 		} catch (e) {
@@ -1655,6 +1658,37 @@
 		return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keywords)}&_sop=15`;
 	}
 
+	function getCardmarketUrl(card) {
+		if (card.cardmarket_url) return card.cardmarket_url;
+		if (!card.cardmarket_id) return 'https://www.cardmarket.com';
+		let url = `https://www.cardmarket.com/en/Magic/Products?idProduct=${card.cardmarket_id}`;
+		const params = [];
+		const langMap = {
+			en: 1, fr: 2, de: 3, es: 4, it: 5, zhs: 6, ja: 7, jp: 7, pt: 8, ru: 9, ko: 10, kr: 10, zht: 11
+		};
+		if (card.language && langMap[card.language.toLowerCase()]) {
+			params.push(`language=${langMap[card.language.toLowerCase()]}`);
+		}
+		if (card.finish) {
+			params.push(`isFoil=${card.finish.toLowerCase() === 'foil' ? 'Y' : 'N'}`);
+		}
+		if (params.length > 0) {
+			url += (url.includes('?') ? '&' : '?') + params.join('&');
+		}
+		return url;
+	}
+
+	function getCardmarketConditionClass(cond) {
+		if (!cond) return 'nm';
+		const c = cond.toUpperCase();
+		if (c === 'MT' || c === 'NM') return 'nm';
+		if (c === 'EX') return 'sp';
+		if (c === 'GD') return 'mp';
+		if (c === 'LP') return 'hp';
+		if (c === 'PL' || c === 'PO') return 'po';
+		return 'sp';
+	}
+
 	// Function to handle sorting
 	function sortBy(key) {
 		if (sortKey === key) {
@@ -1670,7 +1704,7 @@
 	// Derive all unique set codes present in the cards list for the set filter dropdown
 	$: availableSetCodes = [...new Set(cards.map((c) => c.set_code.toUpperCase()))].sort();
 
-	function getLowestOffer(card, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya, rtEnabled = showRuten) {
+	function getLowestOffer(card, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya, rtEnabled = showRuten, cmEnabled = showCardmarket) {
 		const offers = [];
 		if (ctEnabled && getStockStatus(card.cardtrader_stock) === 'available' && card.cardtrader_low_price > 0) {
 			offers.push({ vendor: 'cardtrader', cents: Math.round(card.cardtrader_low_price) });
@@ -1693,6 +1727,9 @@
 		if (rtEnabled && ['zht', 'en'].includes((card.language || '').toLowerCase()) && getStockStatus(card.ruten_stock) === 'available' && card.ruten_low_price > 0) {
 			offers.push({ vendor: 'ruten', cents: Math.round(card.ruten_low_price) });
 		}
+		if (cmEnabled && getStockStatus(card.cardmarket_stock) === 'available' && card.cardmarket_low_price > 0) {
+			offers.push({ vendor: 'cardmarket', cents: Math.round(card.cardmarket_low_price) });
+		}
 
 		if (offers.length === 0) {
 			return { minPriceCents: null, bestVendors: new Set(), offerCount: 0 };
@@ -1703,8 +1740,8 @@
 		return { minPriceCents, bestVendors, offerCount: offers.length };
 	}
 
-	function isBestVendorPrice(card, vendor, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya, rtEnabled = showRuten) {
-		const info = getLowestOffer(card, ctEnabled, tcgEnabled, ebayEnabled, mpEnabled, hmEnabled, hrEnabled, rtEnabled);
+	function isBestVendorPrice(card, vendor, ctEnabled = showCardTrader, tcgEnabled = showTCGPlayer, ebayEnabled = showEbay, mpEnabled = showManapool, hmEnabled = showHimarket, hrEnabled = showHareruya, rtEnabled = showRuten, cmEnabled = showCardmarket) {
+		const info = getLowestOffer(card, ctEnabled, tcgEnabled, ebayEnabled, mpEnabled, hmEnabled, hrEnabled, rtEnabled, cmEnabled);
 		return info.offerCount >= 2 && info.bestVendors.has(vendor);
 	}
 
@@ -1738,7 +1775,8 @@
 				(showManapool && card.manapool_stock === true) ||
 				(showHimarket && card.himarket_stock === true) ||
 				(showHareruya && card.hareruya_stock === true) ||
-				(showRuten && ['zht', 'en'].includes((card.language || '').toLowerCase()) && card.ruten_stock === true)
+				(showRuten && ['zht', 'en'].includes((card.language || '').toLowerCase()) && card.ruten_stock === true) ||
+				(showCardmarket && card.cardmarket_stock === true)
 			);
 			if (!hasStock) return false;
 		}
@@ -1765,6 +1803,9 @@
 			}
 			if (showRuten && ['zht', 'en'].includes((card.language || '').toLowerCase()) && card.ruten_low_price > 0 && getStockStatus(card.ruten_stock) === 'available') {
 				prices.push(card.ruten_low_price);
+			}
+			if (showCardmarket && card.cardmarket_low_price > 0 && getStockStatus(card.cardmarket_stock) === 'available') {
+				prices.push(card.cardmarket_low_price);
 			}
 			const hasPriceUnderCap = prices.some((p) => p <= cap);
 			if (!hasPriceUnderCap) return false;
@@ -1845,7 +1886,7 @@
 
 	$: inStockSummary = filteredCards.reduce(
 		(acc, card) => {
-			const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten);
+			const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket);
 			if (offer.minPriceCents !== null) {
 				acc.inStockCount += 1;
 				acc.totalLowestCents += offer.minPriceCents;
@@ -1859,7 +1900,7 @@
 		.filter((c) => selectedKeys.has(getCardKey(c)))
 		.reduce(
 			(acc, card) => {
-				const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten);
+				const offer = getLowestOffer(card, showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket);
 				if (offer.minPriceCents !== null) {
 					acc.inStockCount += 1;
 					acc.totalLowestCents += offer.minPriceCents;
@@ -1896,8 +1937,10 @@
 			'Mana Pool Stock',
 			'Mana Pool Price',
 			'Mana Pool Condition',
-			// 'CardMarket Stock',
-			// 'CardMarket Price',
+			'CardMarket Stock',
+			'CardMarket Price (USD)',
+			'CardMarket Price (EUR)',
+			'CardMarket Condition',
 			'eBay Stock',
 			'eBay Price',
 			'eBay Condition',
@@ -1940,6 +1983,14 @@
 					? (card.manapool_low_price / 100).toFixed(2)
 					: '',
 				card.manapool_condition || '',
+				getStockStatus(card.cardmarket_stock),
+				card.cardmarket_low_price !== null && card.cardmarket_low_price !== undefined
+					? (card.cardmarket_low_price / 100).toFixed(2)
+					: '',
+				card.cardmarket_price_eur !== null && card.cardmarket_price_eur !== undefined
+					? Number(card.cardmarket_price_eur).toFixed(2)
+					: '',
+				card.cardmarket_condition || '',
 				getStockStatus(card.ebay_stock),
 				card.ebay_low_price !== null && card.ebay_low_price !== undefined
 					? (card.ebay_low_price / 100).toFixed(2)
@@ -2404,10 +2455,30 @@
 							</div>
 						</th>
 						{/if}
-						<th class="disabled-column display-none" title="CardMarket stock check coming soon">
-							CardMarket
-							<!-- Add sorting later if needed -->
+						{#if showCardmarket}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('cardmarket_low_price')}
+							class:active={sortKey === 'cardmarket_low_price'}
+							title={lastChecked.cardmarket ? `CardMarket last checked: ${formatExactTimestamp(lastChecked.cardmarket)}` : 'CardMarket stock & lowest price'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									CardMarket
+									{#if sortKey === 'cardmarket_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
+								{#if formatRelativeTime(lastChecked.cardmarket, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.cardmarket, nowTick)}
+									</span>
+								{/if}
+							</div>
 						</th>
+						{/if}
 						{#if showEbay}
 						<th
 							class="th-vendor col-vendor"
@@ -2613,7 +2684,7 @@
 							</button>
 						</td>
 						{#if showCardTrader}
-						<td data-label="CardTrader" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
+						<td data-label="CardTrader" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}>
 							{#if card.cardtrader_id}
 								<a
 									href="https://www.cardtrader.com/cards/{card.cardtrader_id}"
@@ -2623,7 +2694,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
+										class:best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(
@@ -2658,7 +2729,7 @@
 						</td>
 						{/if}
 						{#if showTCGPlayer}
-						<td data-label="TCGPlayer" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
+						<td data-label="TCGPlayer" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}>
 							{#if card.tcgplayer_id}
 								<a
 									href={getTCGPlayerUrl(card)}
@@ -2668,7 +2739,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
+										class:best-price={isBestVendorPrice(card, 'tcgplayer', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(
@@ -2703,7 +2774,7 @@
 						</td>
 						{/if}
 						{#if showManapool}
-						<td data-label="Mana Pool" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
+						<td data-label="Mana Pool" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}>
 							{#if card.manapool_url}
 								<a
 									href={card.manapool_url}
@@ -2713,7 +2784,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
+										class:best-price={isBestVendorPrice(card, 'manapool', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.manapool_stock))} {getStockColor(
@@ -2745,20 +2816,54 @@
 							{/if}
 						</td>
 						{/if}
-						<td data-label="CardMarket" class="vendor-stock-cell col-vendor disabled-column display-none">
-							<div class="stock-indicator">
-								<i
-									class="{getStockIcon(getStockStatus(card.cardmarket_stock))} {getStockColor(
-										getStockStatus(card.cardmarket_stock)
-									)}"
-								></i>
-								{#if card.cardmarket_low_price !== null && card.cardmarket_low_price !== undefined}
-									<span class="price-text">{formatPrice(card.cardmarket_low_price)}</span>
-								{/if}
-							</div>
+						{#if showCardmarket}
+						<td data-label="CardMarket" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'cardmarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}>
+							{#if card.cardmarket_id}
+								<a
+									href={getCardmarketUrl(card)}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="vendor-link"
+								>
+									<div
+										class="stock-indicator"
+										class:best-price={isBestVendorPrice(card, 'cardmarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}
+									>
+										<i
+											class="{getStockIcon(getStockStatus(card.cardmarket_stock))} {getStockColor(
+												getStockStatus(card.cardmarket_stock)
+											)}"
+										></i>
+										{#if card.cardmarket_low_price !== null && card.cardmarket_low_price !== undefined && getStockStatus(card.cardmarket_stock) === 'available'}
+											<span class="price-text" title={formatEurPrice(card.cardmarket_price_eur)}>
+												{formatPrice(card.cardmarket_low_price)}
+												{#if card.cardmarket_condition}
+													<span
+														class="condition-bubble cond-{getCardmarketConditionClass(card.cardmarket_condition)}"
+														title="Condition: {card.cardmarket_condition}{card.cardmarket_price_eur ? ` (${formatEurPrice(card.cardmarket_price_eur)})` : ''}"
+													>
+														{card.cardmarket_condition}
+													</span>
+												{/if}
+												{#if card.cardmarket_price_eur}
+													<span class="currency-tag">EUR</span>
+												{/if}
+											</span>
+										{/if}
+									</div>
+								</a>
+							{:else}
+								<div class="stock-indicator">
+									<i
+										class="fa-solid fa-circle-question text-muted"
+										title="Card not found on CardMarket"
+									></i>
+								</div>
+							{/if}
 						</td>
+						{/if}
 						{#if showEbay}
-						<td data-label="EBay" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
+						<td data-label="EBay" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}>
 							<a
 								href={getEbayUrl(card, setCodeToNameMap)}
 								target="_blank"
@@ -2767,7 +2872,7 @@
 							>
 								<div
 									class="stock-indicator"
-									class:best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
+									class:best-price={isBestVendorPrice(card, 'ebay', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}
 								>
 									<i
 										class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(
@@ -2792,7 +2897,7 @@
 						</td>
 						{/if}
 						{#if showHimarket}
-						<td data-label="HiMarket" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'himarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
+						<td data-label="HiMarket" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'himarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}>
 							{#if card.himarket_url}
 								<a
 									href={card.himarket_url}
@@ -2802,7 +2907,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'himarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
+										class:best-price={isBestVendorPrice(card, 'himarket', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.himarket_stock))} {getStockColor(
@@ -2840,7 +2945,7 @@
 						</td>
 						{/if}
 						{#if showHareruya}
-						<td data-label="Hareruya" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'hareruya', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
+						<td data-label="Hareruya" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'hareruya', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}>
 							{#if card.hareruya_url}
 								<a
 									href={card.hareruya_url}
@@ -2850,7 +2955,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'hareruya', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
+										class:best-price={isBestVendorPrice(card, 'hareruya', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.hareruya_stock))} {getStockColor(
@@ -2888,7 +2993,7 @@
 						</td>
 						{/if}
 						{#if showRuten}
-						<td data-label="Ruten" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'ruten', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}>
+						<td data-label="Ruten" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'ruten', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}>
 							{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
 								<div class="stock-indicator">
 									<span
@@ -2905,7 +3010,7 @@
 								>
 									<div
 										class="stock-indicator"
-										class:best-price={isBestVendorPrice(card, 'ruten', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten)}
+										class:best-price={isBestVendorPrice(card, 'ruten', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}
 									>
 										<i
 											class="{getStockIcon(getStockStatus(card.ruten_stock))} {getStockColor(
@@ -4913,10 +5018,6 @@
 			flex-shrink: 0;
 		}
 
-		td[data-label='CardMarket'] {
-			display: none;
-		}
-
 		td[data-label='Actions'] {
 			position: absolute;
 			top: 0.65rem;
@@ -4934,6 +5035,7 @@
 		td[data-label='EBay'],
 		td[data-label='eBay'],
 		td[data-label='Mana Pool'],
+		td[data-label='CardMarket'],
 		td[data-label='HiMarket'],
 		td[data-label='Hareruya'],
 		td[data-label='Ruten'] {
