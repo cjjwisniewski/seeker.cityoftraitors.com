@@ -1861,8 +1861,17 @@
 			{ inStockCount: 0, totalLowestCents: 0 }
 		);
 
-	function downloadCSV() {
-		if (!cards || cards.length === 0) return;
+	function downloadCSV(customCards = null) {
+		const targetCards = customCards || (
+			selectedKeys.size > 0
+				? sortedCards.filter((c) => selectedKeys.has(getCardKey(c)))
+				: sortedCards
+		);
+
+		if (!targetCards || targetCards.length === 0) {
+			showStockCheckFeedback('warning', 'No cards to export.');
+			return;
+		}
 
 		const headers = [
 			'Name',
@@ -1901,7 +1910,7 @@
 		];
 		const csvRows = [headers.join(',')];
 
-		for (const card of cards) {
+		for (const card of targetCards) {
 			const row = [
 				`"${card.name.replace(/"/g, '""')}"`, // Escape quotes
 				card.set_code,
@@ -1970,6 +1979,92 @@
 		a.click();
 		document.body.removeChild(a);
 		URL.revokeObjectURL(url);
+		showStockCheckFeedback(
+			'success',
+			`Exported ${targetCards.length} card${targetCards.length === 1 ? '' : 's'} to CSV`
+		);
+	}
+
+	let isCopiedDecklist = false;
+	let copyDecklistTimer = null;
+
+	function formatCardAsDecklistLine(card) {
+		if (!card || !card.name) return '';
+		const setCode = (card.set_code || '').toUpperCase();
+		const cn = card.collector_number || '';
+		const isFoil = String(card.finish || '').toLowerCase() === 'foil';
+		const isEtched = String(card.finish || '').toLowerCase() === 'etched';
+
+		let line = `1 ${card.name}`;
+		if (setCode && cn) {
+			line += ` (${setCode}) ${cn}`;
+		} else if (setCode) {
+			line += ` (${setCode})`;
+		}
+
+		if (isFoil) {
+			line += ' *F*';
+		} else if (isEtched) {
+			line += ' *E*';
+		}
+
+		return line;
+	}
+
+	async function copyDecklistToClipboard(customCards = null) {
+		const targetCards = customCards || (
+			selectedKeys.size > 0
+				? sortedCards.filter((c) => selectedKeys.has(getCardKey(c)))
+				: sortedCards
+		);
+
+		if (!targetCards || targetCards.length === 0) {
+			showStockCheckFeedback('warning', 'No cards to copy.');
+			return;
+		}
+
+		const text = targetCards.map(formatCardAsDecklistLine).filter(Boolean).join('\n');
+
+		let success = false;
+		if (navigator?.clipboard?.writeText) {
+			try {
+				await navigator.clipboard.writeText(text);
+				success = true;
+			} catch (err) {
+				console.warn('navigator.clipboard.writeText failed, falling back:', err);
+			}
+		}
+
+		if (!success) {
+			try {
+				const textarea = document.createElement('textarea');
+				textarea.value = text;
+				textarea.style.position = 'fixed';
+				textarea.style.opacity = '0';
+				document.body.appendChild(textarea);
+				textarea.focus();
+				textarea.select();
+				success = document.execCommand('copy');
+				document.body.removeChild(textarea);
+			} catch (fallbackErr) {
+				console.error('Fallback clipboard copy failed:', fallbackErr);
+			}
+		}
+
+		if (success) {
+			isCopiedDecklist = true;
+			if (copyDecklistTimer) clearTimeout(copyDecklistTimer);
+			copyDecklistTimer = setTimeout(() => {
+				isCopiedDecklist = false;
+			}, 2500);
+
+			showStockCheckFeedback(
+				'success',
+				`Copied ${targetCards.length} card${targetCards.length === 1 ? '' : 's'} to clipboard as decklist!`
+			);
+		} else {
+			showStockCheckFeedback('error', 'Failed to copy decklist to clipboard.');
+		}
 	}
 </script>
 
@@ -2095,14 +2190,37 @@
 				<i class="fa-solid fa-file-import"></i>
 				<span>Import</span>
 			</button>
-			<button class="toolbar-icon-btn" on:click={downloadCSV} title="Export CSV">
+			<button
+				type="button"
+				class="toolbar-icon-btn"
+				on:click={() => copyDecklistToClipboard()}
+				class:copied={isCopiedDecklist}
+				title={selectedKeys.size > 0
+					? `Copy ${selectedKeys.size} selected cards as Decklist (Moxfield / Text format)`
+					: sortedCards.length < cards.length
+						? `Copy ${sortedCards.length} filtered cards as Decklist (Moxfield / Text format)`
+						: 'Copy as Decklist (Moxfield / Text format)'}
+			>
+				<i class="fa-solid {isCopiedDecklist ? 'fa-check' : 'fa-copy'}"></i>
+			</button>
+			<button
+				type="button"
+				class="toolbar-icon-btn"
+				on:click={() => downloadCSV()}
+				title={selectedKeys.size > 0
+					? `Export ${selectedKeys.size} selected cards as CSV`
+					: sortedCards.length < cards.length
+						? `Export ${sortedCards.length} filtered cards as CSV`
+						: 'Export CSV'}
+			>
 				<i class="fa-solid fa-file-csv"></i>
 			</button>
 			<button
+				type="button"
 				on:click={toggleCondensed}
 				class="toolbar-icon-btn"
 				class:active={isCondensed}
-				title={isCondensed ? "Expanded view" : "Compact view"}
+				title={isCondensed ? 'Expanded view' : 'Compact view'}
 			>
 				<i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
 			</button>
@@ -2856,6 +2974,15 @@
 												{/if}
 											</button>
 										{/if}
+										<button
+											class="dropdown-item"
+											on:click={() => {
+												copyDecklistToClipboard([card]);
+												closeMenu();
+											}}
+										>
+											<i class="fa-solid fa-copy"></i> Copy Line
+										</button>
 										<button class="dropdown-item" on:click={() => openSettings(card)}>
 											<i class="fa-solid fa-pen-to-square"></i> Edit Card
 										</button>
@@ -3544,6 +3671,12 @@
 			<span class="bulk-hint desktop-only">(Shift/Ctrl to multi-select)</span>
 		</div>
 		<div class="bulk-actions">
+			<button class="bulk-btn secondary" on:click={() => copyDecklistToClipboard()} title="Copy selected cards as Decklist (Moxfield / Text format)">
+				<i class="fa-solid fa-copy"></i> Copy ({selectedKeys.size})
+			</button>
+			<button class="bulk-btn secondary" on:click={() => downloadCSV()} title="Export selected cards as CSV">
+				<i class="fa-solid fa-file-csv"></i> CSV ({selectedKeys.size})
+			</button>
 			<button class="bulk-btn" on:click={() => (showBulkPriceCapModal = true)}>
 				<i class="fa-solid fa-tag"></i> Set Price Cap
 			</button>
@@ -3816,6 +3949,12 @@
 		background: var(--color-primary-alpha, rgba(99, 102, 241, 0.15));
 		border-color: var(--color-primary);
 		color: var(--color-primary);
+	}
+
+	.toolbar-icon-btn.copied {
+		background: rgba(16, 185, 129, 0.15);
+		border-color: #10b981;
+		color: #10b981;
 	}
 
 	@media (max-width: 768px) {
