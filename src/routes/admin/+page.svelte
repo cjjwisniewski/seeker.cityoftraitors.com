@@ -544,6 +544,7 @@
 	$: estimatedHimarketTimeSeconds = totalItems * 1;
 	$: estimatedHareruyaTimeSeconds = totalItems * 2;
 	$: estimatedRutenTimeSeconds = totalItems * 2;
+	$: estimatedCardmarketTimeSeconds = totalItems * 12;
 
 	function formatCents(cents) {
 		if (cents === null || cents === undefined || cents <= 0) return '—';
@@ -759,6 +760,17 @@
 							</div>
 							<div class="stat-value">{formatDuration(estimatedRutenTimeSeconds)}</div>
 							<div class="stat-sub">Est. @ 2s / card (ZHT/EN)</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="stat-card-header">
+								<span class="stat-title">CardMarket Time</span>
+								<div class="stat-icon-badge cardmarket">
+									<i class="fa-solid fa-euro-sign"></i>
+								</div>
+							</div>
+							<div class="stat-value">{formatDuration(estimatedCardmarketTimeSeconds)}</div>
+							<div class="stat-sub">Est. @ 12s / card (EU VPN)</div>
 						</div>
 					</div>
 				{/if}
@@ -2167,6 +2179,11 @@
 	.stat-icon-badge.ruten {
 		background: rgba(20, 184, 166, 0.12);
 		color: #14b8a6;
+	}
+
+	.stat-icon-badge.cardmarket {
+		background: rgba(56, 189, 248, 0.12);
+		color: #38bdf8;
 	}
 
 	.stat-value {
