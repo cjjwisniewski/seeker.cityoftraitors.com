@@ -88,6 +88,7 @@
 	let bulkPriceCapInput = '';
 	let isProcessingBulkAction = false;
 	let bulkActionProgress = { current: 0, total: 0 };
+	let autoPollTimers = [];
 
 	// Quick filter pills & search state
 	let filterInStockOnly = false;
@@ -484,6 +485,7 @@
 			}
 			nowTick = Date.now();
 			showStockCheckFeedback('success', `Queued live stock check for ${card.name}.`);
+			scheduleAutoPoll();
 		} catch (e) {
 			console.error('Error triggering manual stock check:', e);
 			showStockCheckFeedback('error', e.message || 'Could not queue stock check.');
@@ -535,6 +537,23 @@
 		});
 	});
 
+	function clearAutoPollTimers() {
+		autoPollTimers.forEach((timerId) => clearTimeout(timerId));
+		autoPollTimers = [];
+	}
+
+	function scheduleAutoPoll() {
+		clearAutoPollTimers();
+		// Automatically refresh cards at t+6s, t+15s, and t+30s in the background
+		const pollDelays = [6000, 15000, 30000];
+		pollDelays.forEach((delay) => {
+			const timerId = setTimeout(async () => {
+				await fetchSeekingList(true);
+			}, delay);
+			autoPollTimers.push(timerId);
+		});
+	}
+
 	onDestroy(() => {
 		if (unsubscribe) {
 			unsubscribe();
@@ -545,18 +564,23 @@
 		if (stockCheckToastTimer) {
 			clearTimeout(stockCheckToastTimer);
 		}
+		clearAutoPollTimers();
 	});
 
-	async function fetchSeekingList() {
-		loading = true;
+	async function fetchSeekingList(silent = false) {
+		if (!silent) {
+			loading = true;
+		}
 		error = null;
 
 		try {
 			const response = await fetchWithAuth(PUBLIC_GET_SEEKING_LIST_FUNCTION_URL);
 
 			if (!response) {
-				error = 'Authentication failed while fetching seeking list.';
-				console.error(error);
+				if (!silent) {
+					error = 'Authentication failed while fetching seeking list.';
+				}
+				console.error('Authentication failed while fetching seeking list.');
 				return;
 			}
 
@@ -586,10 +610,14 @@
 				};
 			}
 		} catch (e) {
-			error = e.message;
+			if (!silent) {
+				error = e.message;
+			}
 			console.error('Error fetching cards:', e);
 		} finally {
-			loading = false;
+			if (!silent) {
+				loading = false;
+			}
 		}
 	}
 
@@ -2031,6 +2059,7 @@
 	onClose={() => (showImportModal = false)}
 	onCardsAdded={(addedCards) => {
 		cards = [...cards, ...addedCards];
+		scheduleAutoPoll();
 	}}
 />
 

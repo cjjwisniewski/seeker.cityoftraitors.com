@@ -573,6 +573,7 @@ export function buildSeekingCsvString(targetCards) {
 		'CardMarket Price (USD)',
 		'CardMarket Price (EUR)',
 		'CardMarket Condition',
+		'CardMarket URL',
 		'eBay Stock',
 		'eBay Price',
 		'eBay Condition',
@@ -627,6 +628,7 @@ export function buildSeekingCsvString(targetCards) {
 				? Number(card.cardmarket_price_eur).toFixed(2)
 				: '',
 			card.cardmarket_condition || '',
+			`"${(getCardmarketUrl(card) || '').replace(/"/g, '""')}"`,
 			getStockStatus(card.ebay_stock),
 			card.ebay_low_price !== null && card.ebay_low_price !== undefined
 				? (card.ebay_low_price / 100).toFixed(2)
