@@ -364,18 +364,31 @@
 		}
 	}
 
+	let showClearPoisonModal = false;
+	let poisonQueueToClear = null;
+
+	function requestClearPoison(queueName) {
+		poisonQueueToClear = queueName;
+		showClearPoisonModal = true;
+	}
+
+	function closeClearPoisonModal() {
+		showClearPoisonModal = false;
+		poisonQueueToClear = null;
+	}
+
 	async function handleClearPoison(queueName) {
-		if (!confirm(`Are you sure you want to permanently clear all poison messages for ${queueName}?`)) {
-			return;
-		}
+		const targetQueue = queueName || poisonQueueToClear;
+		if (!targetQueue) return;
 		poisonActionLoading = true;
 		poisonFeedback = null;
 		try {
-			const url = `${PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL}?action=clear_poison&queue=${encodeURIComponent(queueName)}`;
+			const url = `${PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL}?action=clear_poison&queue=${encodeURIComponent(targetQueue)}`;
 			const response = await fetchWithAuth(url);
 			if (response && response.ok) {
 				const data = await response.json();
 				poisonFeedback = { type: 'success', text: data.message || 'Poison queue cleared.' };
+				closeClearPoisonModal();
 				await loadSystemStatus();
 				if (showPoisonModal && activePoisonQueue) {
 					const refreshQ = activePoisonQueue;
@@ -395,6 +408,10 @@
 
 	function handleKeydown(event) {
 		if (event.key === 'Escape') {
+			if (showClearPoisonModal) {
+				closeClearPoisonModal();
+				return;
+			}
 			if (showDeleteModal) closeDeleteModal();
 			if (showTierModal) closeTierModal();
 			if (showPoisonModal) closePoisonModal();
@@ -1002,7 +1019,7 @@
 												<button
 													type="button"
 													class="queue-action-btn clear-btn"
-													on:click={() => handleClearPoison(q.name)}
+													on:click={() => requestClearPoison(q.name)}
 													disabled={poisonActionLoading}
 													title="Permanently purge poison messages"
 												>
@@ -1771,7 +1788,7 @@
 					<div class="poison-actions-group">
 						<button
 							class="purge-action-btn"
-							on:click={() => handleClearPoison(activePoisonQueue.name)}
+							on:click={() => requestClearPoison(activePoisonQueue.name)}
 							disabled={poisonActionLoading || poisonMessages.length === 0}
 							title="Permanently remove all poison messages"
 						>
@@ -1788,6 +1805,51 @@
 							<span>Replay All</span>
 						</button>
 					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Confirm Poison Queue Purge Modal -->
+	{#if showClearPoisonModal && poisonQueueToClear}
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div
+			class="modal-overlay"
+			on:click={closeClearPoisonModal}
+			on:keydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') closeClearPoisonModal();
+			}}
+			role="button"
+			tabindex="0"
+			aria-label="Close poison purge confirmation"
+		>
+			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+			<div
+				class="modal"
+				on:click|stopPropagation
+				on:keydown|stopPropagation
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="admin-clear-poison-dialog-title"
+				tabindex="-1"
+			>
+				<div class="modal-icon-badge danger">
+					<i class="fa-solid fa-trash-can"></i>
+				</div>
+				<h3 id="admin-clear-poison-dialog-title">Purge Poison Queue</h3>
+				<p>
+					Are you sure you want to permanently clear all poison messages for <strong class="delete-user-id">{poisonQueueToClear}-poison</strong>?
+				</p>
+				<p class="modal-subtext">This action is irreversible and discards all dead-letter messages in this queue.</p>
+
+				<div class="modal-buttons">
+					<button class="cancel-btn" on:click={closeClearPoisonModal} disabled={poisonActionLoading}>
+						Cancel
+					</button>
+					<button class="confirm-btn" on:click={() => handleClearPoison(poisonQueueToClear)} disabled={poisonActionLoading}>
+						<i class="fa-solid {poisonActionLoading ? 'fa-spinner fa-spin' : 'fa-trash-can'}"></i>
+						<span>{poisonActionLoading ? 'Purging...' : 'Yes, Purge Queue'}</span>
+					</button>
 				</div>
 			</div>
 		</div>
