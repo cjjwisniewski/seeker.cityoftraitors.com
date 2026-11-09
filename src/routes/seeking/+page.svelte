@@ -86,8 +86,149 @@
 	// Quick filter pills state
 	let filterInStockOnly = false;
 	let filterUnderPriceCap = false;
+	let filterAtHistoricalLow = false;
 	let filterFoilOnly = false;
 	let filterSetCode = '';
+
+	// Historical Pricing Modal state
+	let showHistoricalModal = false;
+	let selectedCardForHistory = null;
+
+	function openHistoricalModal(card) {
+		selectedCardForHistory = card;
+		showHistoricalModal = true;
+	}
+
+	function formatVendorDisplayName(vendor) {
+		if (!vendor) return 'Unknown';
+		const map = {
+			cardtrader: 'CardTrader',
+			tcgplayer: 'TCGPlayer',
+			manapool: 'Mana Pool',
+			cardmarket: 'CardMarket',
+			himarket: 'HiMarket',
+			hareruya: 'Hareruya',
+			ebay: 'eBay',
+			ruten: 'Ruten'
+		};
+		return map[String(vendor).toLowerCase()] || vendor;
+	}
+
+	function getCardHistoricalBadgeInfo(
+		card,
+		ctEnabled = showCardTrader,
+		tcgEnabled = showTCGPlayer,
+		ebayEnabled = showEbay,
+		mpEnabled = showManapool,
+		hmEnabled = showHimarket,
+		hrEnabled = showHareruya,
+		rtEnabled = showRuten,
+		cmEnabled = showCardmarket,
+		acctMinCond = accountMinCondition,
+		tick = nowTick
+	) {
+		const hp = card?.historical_pricing;
+		if (!hp) return null;
+
+		const effCond = String(card.min_condition || acctMinCond || 'ANY').toUpperCase();
+		const preferCleanOnly = effCond === 'NM' || effCond === 'SP' || effCond === 'LP';
+
+		let relevantLowCents = null;
+		let relevantVendor = null;
+		let relevantCond = null;
+		let relevantTierShort = 'NM/LP';
+
+		if (preferCleanOnly) {
+			if (hp.nm_low_cents > 0) {
+				relevantLowCents = hp.nm_low_cents;
+				relevantVendor = hp.nm_low_vendor;
+				relevantCond = hp.nm_low_condition || 'NM';
+				relevantTierShort = 'NM/LP';
+			} else if (hp.played_low_cents > 0) {
+				relevantLowCents = hp.played_low_cents;
+				relevantVendor = hp.played_low_vendor;
+				relevantCond = hp.played_low_condition || 'MP';
+				relevantTierShort = 'Played';
+			}
+		} else {
+			if (hp.nm_low_cents > 0 && hp.played_low_cents > 0) {
+				if (hp.played_low_cents <= hp.nm_low_cents) {
+					relevantLowCents = hp.played_low_cents;
+					relevantVendor = hp.played_low_vendor;
+					relevantCond = hp.played_low_condition || 'MP';
+					relevantTierShort = 'Played';
+				} else {
+					relevantLowCents = hp.nm_low_cents;
+					relevantVendor = hp.nm_low_vendor;
+					relevantCond = hp.nm_low_condition || 'NM';
+					relevantTierShort = 'NM/LP';
+				}
+			} else if (hp.nm_low_cents > 0) {
+				relevantLowCents = hp.nm_low_cents;
+				relevantVendor = hp.nm_low_vendor;
+				relevantCond = hp.nm_low_condition || 'NM';
+				relevantTierShort = 'NM/LP';
+			} else if (hp.played_low_cents > 0) {
+				relevantLowCents = hp.played_low_cents;
+				relevantVendor = hp.played_low_vendor;
+				relevantCond = hp.played_low_condition || 'MP';
+				relevantTierShort = 'Played';
+			}
+		}
+
+		const lowestOffer = getLowestOffer(
+			card,
+			ctEnabled,
+			tcgEnabled,
+			ebayEnabled,
+			mpEnabled,
+			hmEnabled,
+			hrEnabled,
+			rtEnabled,
+			cmEnabled
+		);
+
+		if (lowestOffer.minPriceCents !== null && relevantLowCents !== null) {
+			const isAtOrBelowFloor = lowestOffer.minPriceCents <= Math.round(relevantLowCents * 1.02);
+			if (isAtOrBelowFloor && hp.is_calibrated) {
+				return {
+					type: 'at-low',
+					isAtLow: true,
+					label: `🔥 Low ${formatPrice(relevantLowCents)}`,
+					title: `At or below ${relevantTierShort} Historical Floor (${formatPrice(relevantLowCents)} [${relevantCond}] on ${formatVendorDisplayName(relevantVendor)}) — Click for price history`
+				};
+			}
+			return {
+				type: 'floor',
+				isAtLow: isAtOrBelowFloor,
+				label: `Low ${formatPrice(relevantLowCents)} (${relevantCond})`,
+				title: `Historical ${relevantTierShort} Floor: ${formatPrice(relevantLowCents)} [${relevantCond}] on ${formatVendorDisplayName(relevantVendor)} — Click for price history`
+			};
+		}
+
+		// Out of stock everywhere: surface Last Seen intelligence for scarce cards
+		if (lowestOffer.minPriceCents === null && hp.last_seen_cents > 0) {
+			const relAge = formatRelativeTime(hp.last_seen_at, tick) || 'Previously';
+			const condTag = hp.last_seen_condition || 'NM';
+			return {
+				type: 'last-seen',
+				isAtLow: false,
+				label: `Last ${formatPrice(hp.last_seen_cents)} (${condTag} · ${relAge})`,
+				title: `Out of stock now. Last seen at ${formatPrice(hp.last_seen_cents)} [${condTag}] on ${formatVendorDisplayName(hp.last_seen_vendor)} (${relAge}) — Click for price history`
+			};
+		}
+
+		if (relevantLowCents !== null) {
+			return {
+				type: 'floor',
+				isAtLow: false,
+				label: `Low ${formatPrice(relevantLowCents)} (${relevantCond})`,
+				title: `Historical ${relevantTierShort} Floor: ${formatPrice(relevantLowCents)} — Click for price history`
+			};
+		}
+
+		return null;
+	}
 
 	// Decklist Import (Moxfield URL & Text/Clipboard) state
 	let showImportModal = false;
@@ -976,7 +1117,9 @@
 
 	function handleGlobalKeyDown(event) {
 		if (event.key === 'Escape') {
-			if (showImportModal && !isResolvingImport && !isImportingCards) {
+			if (showHistoricalModal) {
+				showHistoricalModal = false;
+			} else if (showImportModal && !isResolvingImport && !isImportingCards) {
 				showImportModal = false;
 			} else if (showBulkDeleteModal) {
 				showBulkDeleteModal = false;
@@ -1001,6 +1144,7 @@
 	function resetFilters() {
 		filterInStockOnly = false;
 		filterUnderPriceCap = false;
+		filterAtHistoricalLow = false;
 		filterFoilOnly = false;
 		filterSetCode = '';
 		searchQuery = '';
@@ -1811,6 +1955,23 @@
 			if (!hasPriceUnderCap) return false;
 		}
 
+		if (filterAtHistoricalLow) {
+			const badgeInfo = getCardHistoricalBadgeInfo(
+				card,
+				showCardTrader,
+				showTCGPlayer,
+				showEbay,
+				showManapool,
+				showHimarket,
+				showHareruya,
+				showRuten,
+				showCardmarket,
+				accountMinCondition,
+				nowTick
+			);
+			if (!badgeInfo || !badgeInfo.isAtLow) return false;
+		}
+
 		return true;
 	});
 
@@ -1856,7 +2017,7 @@
 	$: showBackToTop = scrollY > 400;
 
 	// Reset display limit when filter, query, or sort order changes
-	$: if (searchQuery || filterInStockOnly || filterUnderPriceCap || filterFoilOnly || filterSetCode || sortKey || sortDirection) {
+	$: if (searchQuery || filterInStockOnly || filterUnderPriceCap || filterAtHistoricalLow || filterFoilOnly || filterSetCode || sortKey || sortDirection) {
 		displayLimit = 100;
 	}
 
@@ -1956,12 +2117,16 @@
 			'Ruten Price (USD)',
 			'Ruten Price (TWD)',
 			'Ruten Condition',
+			'Historical Low NM/LP (USD)',
+			'Historical Low Played (USD)',
+			'Last Seen Price (USD)',
 			'Max Price Cap',
 			'Min Condition'
 		];
 		const csvRows = [headers.join(',')];
 
 		for (const card of targetCards) {
+			const hp = card.historical_pricing;
 			const row = [
 				`"${card.name.replace(/"/g, '""')}"`, // Escape quotes
 				card.set_code,
@@ -2020,6 +2185,9 @@
 					? Math.round(Number(card.ruten_price_twd))
 					: '',
 				card.ruten_condition || '',
+				hp?.nm_low_cents ? (hp.nm_low_cents / 100).toFixed(2) : '',
+				hp?.played_low_cents ? (hp.played_low_cents / 100).toFixed(2) : '',
+				hp?.last_seen_cents ? (hp.last_seen_cents / 100).toFixed(2) : '',
 				card.max_price_cap !== null && card.max_price_cap !== undefined
 					? (card.max_price_cap / 100).toFixed(2)
 					: '',
@@ -2175,6 +2343,15 @@
 			</button>
 			<button
 				type="button"
+				class="filter-pill filter-pill-low"
+				class:active={filterAtHistoricalLow}
+				on:click={() => (filterAtHistoricalLow = !filterAtHistoricalLow)}
+				title="Show cards currently in stock at or near their Historical Low"
+			>
+				<i class="fa-solid fa-fire"></i> At Low
+			</button>
+			<button
+				type="button"
 				class="filter-pill"
 				class:active={filterFoilOnly}
 				on:click={() => (filterFoilOnly = !filterFoilOnly)}
@@ -2189,7 +2366,7 @@
 					{/each}
 				</select>
 			{/if}
-			{#if filterInStockOnly || filterUnderPriceCap || filterFoilOnly || filterSetCode || searchQuery}
+			{#if filterInStockOnly || filterUnderPriceCap || filterAtHistoricalLow || filterFoilOnly || filterSetCode || searchQuery}
 				<button
 					type="button"
 					class="filter-pill reset"
@@ -2613,8 +2790,31 @@
 								{/if}
 								<div class="card-name-group">
 									<span>{card.name}</span>
-									{#if (card.max_price_cap !== null && card.max_price_cap !== undefined) || card.min_condition}
+									{@const histBadge = getCardHistoricalBadgeInfo(
+										card,
+										showCardTrader,
+										showTCGPlayer,
+										showEbay,
+										showManapool,
+										showHimarket,
+										showHareruya,
+										showRuten,
+										showCardmarket,
+										accountMinCondition,
+										nowTick
+									)}
+									{#if (card.max_price_cap !== null && card.max_price_cap !== undefined) || card.min_condition || histBadge}
 										<div class="card-badges-row">
+											{#if histBadge}
+												<button
+													type="button"
+													class="cap-badge hist-badge hist-{histBadge.type}"
+													title={histBadge.title}
+													on:click|stopPropagation={() => openHistoricalModal(card)}
+												>
+													{histBadge.label}
+												</button>
+											{/if}
 											{#if card.max_price_cap !== null && card.max_price_cap !== undefined}
 												<button
 													type="button"
@@ -3103,6 +3303,15 @@
 										>
 											<i class="fa-solid fa-copy"></i> Copy Line
 										</button>
+										<button
+											class="dropdown-item"
+											on:click={() => {
+												openHistoricalModal(card);
+												closeMenu();
+											}}
+										>
+											<i class="fa-solid fa-chart-line"></i> Price History
+										</button>
 										<button class="dropdown-item" on:click={() => openSettings(card)}>
 											<i class="fa-solid fa-pen-to-square"></i> Edit Card
 										</button>
@@ -3148,6 +3357,184 @@
 	>
 		<i class="fa-solid fa-arrow-up"></i>
 	</button>
+{/if}
+
+{#if showHistoricalModal && selectedCardForHistory}
+	{@const hp = selectedCardForHistory.historical_pricing}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="overlay-backdrop" on:click={() => (showHistoricalModal = false)}>
+		<div class="modal-content hist-modal-content" on:click|stopPropagation>
+			<div class="modal-header">
+				<div class="hist-modal-title-group">
+					<h2>
+						<i class="fa-solid fa-chart-line"></i>
+						Historical Price Intelligence
+					</h2>
+					{#if hp}
+						<span class="hist-status-pill" class:calibrated={hp.is_calibrated}>
+							<i class="fa-solid {hp.is_calibrated ? 'fa-shield-halved' : 'fa-hourglass-half'}"></i>
+							{hp.is_calibrated ? 'Verified Baseline' : 'Initial 48h Baseline Sweep'}
+						</span>
+					{/if}
+				</div>
+				<button class="close-modal-btn" on:click={() => (showHistoricalModal = false)}>
+					<i class="fa-solid fa-times"></i>
+				</button>
+			</div>
+
+			<div class="modal-body">
+				<div class="card-details-mini">
+					<img
+						src={getWebpImageUri(selectedCardForHistory.image_uri)}
+						alt={selectedCardForHistory.name}
+					/>
+					<div>
+						<h3>{selectedCardForHistory.name}</h3>
+						<p>
+							{selectedCardForHistory.set_code.toUpperCase()} #{selectedCardForHistory.collector_number}
+							• {selectedCardForHistory.language.toUpperCase()}
+							• {selectedCardForHistory.finish.toLowerCase() === 'foil' ? '✦ Foil' : 'Nonfoil'}
+						</p>
+						{#if hp?.first_observed_at}
+							<span class="hist-tracked-since">
+								Tracked since {formatExactTimestamp(hp.first_observed_at)} ({hp.observation_count || 1} observation{hp.observation_count === 1 ? '' : 's'})
+							</span>
+						{/if}
+					</div>
+				</div>
+
+				{#if !hp || (!hp.nm_low_cents && !hp.played_low_cents && !hp.last_seen_cents)}
+					<div class="hist-empty-box">
+						<i class="fa-solid fa-Satellite-dish"></i>
+						<h4>No Verified In-Stock History Yet</h4>
+						<p>
+							This printing has not yet been observed in stock on a catalog-verified marketplace (CardTrader, TCGPlayer, Mana Pool, CardMarket, HiMarket, or Hareruya). As soon as a copy appears during any user's scan, Seeker will permanently record its price and date here.
+						</p>
+					</div>
+				{:else}
+					<div class="hist-tiers-grid">
+						<div class="hist-tier-card clean-tier">
+							<div class="hist-tier-header">
+								<span class="hist-tier-title">Clean Tier (NM / LP)</span>
+								<span class="hist-tier-sub">Near Mint &amp; Lightly Played</span>
+							</div>
+							{#if hp.nm_low_cents > 0}
+								<div class="hist-tier-main-price">
+									{formatPrice(hp.nm_low_cents)}
+									{#if hp.nm_low_condition}
+										<span class="condition-bubble cond-{hp.nm_low_condition.toLowerCase()}">
+											{hp.nm_low_condition}
+										</span>
+									{/if}
+								</div>
+								<div class="hist-tier-meta">
+									<span>
+										Floor on <strong>{formatVendorDisplayName(hp.nm_low_vendor)}</strong>
+									</span>
+									{#if hp.nm_low_at}
+										<span>• {formatRelativeTime(hp.nm_low_at, nowTick) || 'Recently'}</span>
+									{/if}
+								</div>
+								{#if hp.nm_last_seen_cents > 0}
+									<div class="hist-tier-foot">
+										Last seen: <strong>{formatPrice(hp.nm_last_seen_cents)}</strong> ({hp.nm_last_seen_condition || 'NM'} on {formatVendorDisplayName(hp.nm_last_seen_vendor)}, {formatRelativeTime(hp.nm_last_seen_at, nowTick) || 'Recently'})
+									</div>
+								{/if}
+							{:else}
+								<div class="hist-tier-empty">No NM/LP copies recorded yet</div>
+							{/if}
+						</div>
+
+						<div class="hist-tier-card played-tier">
+							<div class="hist-tier-header">
+								<span class="hist-tier-title">Played Tier (MP / HP)</span>
+								<span class="hist-tier-sub">Moderately &amp; Heavily Played</span>
+							</div>
+							{#if hp.played_low_cents > 0}
+								<div class="hist-tier-main-price">
+									{formatPrice(hp.played_low_cents)}
+									{#if hp.played_low_condition}
+										<span class="condition-bubble cond-{hp.played_low_condition.toLowerCase()}">
+											{hp.played_low_condition}
+										</span>
+									{/if}
+								</div>
+								<div class="hist-tier-meta">
+									<span>
+										Floor on <strong>{formatVendorDisplayName(hp.played_low_vendor)}</strong>
+									</span>
+									{#if hp.played_low_at}
+										<span>• {formatRelativeTime(hp.played_low_at, nowTick) || 'Recently'}</span>
+									{/if}
+								</div>
+								{#if hp.played_last_seen_cents > 0}
+									<div class="hist-tier-foot">
+										Last seen: <strong>{formatPrice(hp.played_last_seen_cents)}</strong> ({hp.played_last_seen_condition || 'MP'} on {formatVendorDisplayName(hp.played_last_seen_vendor)}, {formatRelativeTime(hp.played_last_seen_at, nowTick) || 'Recently'})
+									</div>
+								{/if}
+							{:else}
+								<div class="hist-tier-empty">No MP/HP copies recorded yet</div>
+							{/if}
+						</div>
+					</div>
+
+					{#if hp.vendor_lows && Object.keys(hp.vendor_lows).length > 0}
+						<div class="hist-vendors-section">
+							<h4>Verified Marketplace History</h4>
+							<div class="hist-vendors-list">
+								{#each ['cardtrader', 'tcgplayer', 'manapool', 'cardmarket', 'himarket', 'hareruya'] as vKey}
+									{@const vData = hp.vendor_lows[vKey]}
+									{#if vData && vData.low_cents > 0}
+										<div class="hist-vendor-row">
+											<span class="hist-vendor-name">{formatVendorDisplayName(vKey)}</span>
+											<div class="hist-vendor-stats">
+												<span class="hist-vendor-stat">
+													Floor: <strong>{formatPrice(vData.low_cents)}</strong>
+													{#if vData.low_cond}
+														<small>[{vData.low_cond}]</small>
+													{/if}
+												</span>
+												{#if vData.last_cents > 0}
+													<span class="hist-vendor-stat muted">
+														Last: {formatPrice(vData.last_cents)} ({formatRelativeTime(vData.last_at, nowTick) || 'Recently'})
+													</span>
+												{/if}
+											</div>
+										</div>
+									{/if}
+								{/each}
+							</div>
+						</div>
+					{/if}
+				{/if}
+
+				<div class="hist-footnote">
+					<i class="fa-solid fa-circle-info"></i>
+					<span>
+						Out-of-stock scarce cards never lose their historical memory. Only deterministic catalog stores contribute to floors (eBay &amp; Ruten are excluded to prevent keyword noise).
+					</span>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<button
+					type="button"
+					class="modal-btn secondary"
+					on:click={() => {
+						const target = selectedCardForHistory;
+						showHistoricalModal = false;
+						openSettings(target);
+					}}
+				>
+					<i class="fa-solid fa-sliders"></i> Edit Card Settings
+				</button>
+				<button type="button" class="modal-btn primary" on:click={() => (showHistoricalModal = false)}>
+					Done
+				</button>
+			</div>
+		</div>
+	</div>
 {/if}
 
 {#if showSettingsModal && selectedCardForSettings}
@@ -6251,6 +6638,235 @@
 		tbody tr {
 			-webkit-touch-callout: none;
 			user-select: none;
+		}
+	}
+
+	/* Historical Price Intelligence Badges & Modal */
+	.filter-pill-low.active {
+		background: rgba(249, 115, 22, 0.18);
+		border-color: rgba(249, 115, 22, 0.55);
+		color: #fb923c;
+	}
+
+	.hist-badge.hist-at-low {
+		background: rgba(249, 115, 22, 0.16);
+		border-color: rgba(249, 115, 22, 0.5);
+		color: #fdba74;
+		font-weight: 700;
+	}
+
+	.hist-badge.hist-floor {
+		background: rgba(16, 185, 129, 0.12);
+		border-color: rgba(16, 185, 129, 0.35);
+		color: #6ee7b7;
+	}
+
+	.hist-badge.hist-last-seen {
+		background: rgba(148, 163, 184, 0.12);
+		border-color: rgba(148, 163, 184, 0.32);
+		color: #cbd5e1;
+	}
+
+	.hist-modal-content {
+		max-width: 560px;
+	}
+
+	.hist-modal-title-group {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		flex-wrap: wrap;
+	}
+
+	.hist-modal-title-group h2 {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 1.15rem;
+		margin: 0;
+	}
+
+	.hist-status-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.2rem 0.55rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 600;
+		background: rgba(245, 158, 11, 0.14);
+		border: 1px solid rgba(245, 158, 11, 0.35);
+		color: #fcd34d;
+	}
+
+	.hist-status-pill.calibrated {
+		background: rgba(16, 185, 129, 0.14);
+		border-color: rgba(16, 185, 129, 0.38);
+		color: #6ee7b7;
+	}
+
+	.hist-tracked-since {
+		display: block;
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+		margin-top: 0.2rem;
+	}
+
+	.hist-tiers-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+	}
+
+	.hist-tier-card {
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+		padding: 0.85rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.hist-tier-header {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.hist-tier-title {
+		font-size: 0.82rem;
+		font-weight: 700;
+		color: var(--color-text-primary);
+	}
+
+	.hist-tier-sub {
+		font-size: 0.7rem;
+		color: var(--color-text-muted);
+	}
+
+	.hist-tier-main-price {
+		font-size: 1.35rem;
+		font-weight: 800;
+		color: #34d399;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-top: 0.2rem;
+	}
+
+	.hist-tier-meta {
+		font-size: 0.78rem;
+		color: var(--color-text-secondary);
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+	}
+
+	.hist-tier-foot {
+		margin-top: 0.25rem;
+		padding-top: 0.35rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.06);
+		font-size: 0.73rem;
+		color: var(--color-text-muted);
+	}
+
+	.hist-tier-empty {
+		font-size: 0.8rem;
+		color: var(--color-text-muted);
+		padding: 0.65rem 0;
+		font-style: italic;
+	}
+
+	.hist-vendors-section {
+		background: rgba(255, 255, 255, 0.02);
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+		padding: 0.75rem 0.9rem;
+		margin-bottom: 0.9rem;
+	}
+
+	.hist-vendors-section h4 {
+		margin: 0 0 0.5rem 0;
+		font-size: 0.8rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--color-text-muted);
+	}
+
+	.hist-vendors-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.hist-vendor-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 0.82rem;
+		padding: 0.3rem 0;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+	}
+
+	.hist-vendor-row:last-child {
+		border-bottom: none;
+	}
+
+	.hist-vendor-name {
+		font-weight: 600;
+		color: var(--color-text-primary);
+	}
+
+	.hist-vendor-stats {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+
+	.hist-vendor-stat.muted {
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+	}
+
+	.hist-empty-box {
+		text-align: center;
+		padding: 1.5rem 1rem;
+		background: rgba(255, 255, 255, 0.02);
+		border: 1px dashed var(--color-border);
+		border-radius: 10px;
+		margin-bottom: 0.9rem;
+	}
+
+	.hist-empty-box h4 {
+		margin: 0.4rem 0;
+		font-size: 0.95rem;
+	}
+
+	.hist-empty-box p {
+		margin: 0;
+		font-size: 0.82rem;
+		color: var(--color-text-secondary);
+		line-height: 1.45;
+	}
+
+	.hist-footnote {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+		line-height: 1.4;
+		background: rgba(255, 255, 255, 0.02);
+		padding: 0.6rem 0.75rem;
+		border-radius: 8px;
+	}
+
+	@media (max-width: 580px) {
+		.hist-tiers-grid {
+			grid-template-columns: 1fr;
 		}
 	}
 

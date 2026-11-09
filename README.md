@@ -35,6 +35,7 @@ This repository houses the frontend client application. The complete Seeker plat
 *   **Decklist Import**: Paste raw card lists or import directly from Moxfield URLs (`fetchMoxfieldDeck`) to batch-add dozens of cards at once.
 *   **Multi-Card Selection & Bulk Actions**: Select individual cards, use `Shift + Click` for range selection, or long-press on mobile. Floating action bar provides one-click bulk removal and bulk price cap updates.
 *   **Per-Card Management**: Set target price caps, override minimum acceptable condition (`NM`, `SP+`, `MP+`, `HP+`, `ANY`), toggle individual marketplace tracking, switch languages/finishes inline, trigger on-demand stock checks, and jump straight to vendor listings.
+*   **Historical Price Intelligence & Scarce Card Memory**: Inline badges displaying **🔥 Historical Low** deals, condition-tiered historical floors (`NM/LP` vs. `Played`), and **Last Seen In-Stock** prices/dates for out-of-stock scarce printings, backed by a detailed per-marketplace price history modal and toolbar filter (`At Low`).
 *   **Best Price Glow**: Instant emerald border and ambient glow highlighting the lowest available price across enabled marketplaces.
 
 ### 👤 Account & Preferences
