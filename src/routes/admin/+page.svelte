@@ -1674,8 +1674,8 @@
 				<div class="tier-select-options">
 					{#each [
 						{ id: 'Basic', label: 'Basic', desc: 'Standard free tier (25 cards)', icon: 'fa-certificate' },
-						{ id: 'Premium', label: 'Premium', desc: 'Premium tier (enhanced limits)', icon: 'fa-gem' },
-						{ id: 'Legacy', label: 'Legacy', desc: 'Legacy supporter (unlimited alerts)', icon: 'fa-wand-magic-sparkles' },
+						{ id: 'Premium', label: 'Premium', desc: 'Premium tier (150 cards, all marketplaces)', icon: 'fa-gem' },
+						{ id: 'Legacy', label: 'Legacy', desc: 'Legacy supporter (unlimited cards)', icon: 'fa-wand-magic-sparkles' },
 						{ id: 'Banned', label: 'Banned', desc: 'Suspended (cannot add cards, checks disabled)', icon: 'fa-ban' },
 						{ id: 'None', label: 'Reset (Discord Sync)', desc: 'Remove manual override, sync with Discord roles', icon: 'fa-rotate' }
 					] as opt}

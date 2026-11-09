@@ -18,6 +18,7 @@
 	export let cards = [];
 	export let setCodeToNameMap = {};
 	export let isPremiumOrLegacy = false;
+	export let membershipTier = 'Basic';
 	export let preferredFinish = 'nonfoil';
 	export let preferredLanguage = 'en';
 	export let isBusy = false;
@@ -402,8 +403,8 @@
 				throw new Error('None of the cards could be matched on Scryfall. Please check your card names or format.');
 			}
 
-			if (!isPremiumOrLegacy) {
-				let remaining = Math.max(0, 25 - cards.length);
+			if (isCapped) {
+				let remaining = remainingSlots;
 				for (const item of resolved) {
 					if (item.selected) {
 						if (remaining > 0) {
@@ -489,10 +490,12 @@
 
 	$: selectedImportCards = visibleImportPreviewCards.filter((c) => c.selected && !c.alreadyExists);
 
-	$: remainingBasicSlots = isPremiumOrLegacy ? Infinity : Math.max(0, 25 - cards.length);
+	$: tierLimit = membershipTier === 'Legacy' ? Infinity : (membershipTier === 'Premium' ? 150 : 25);
+	$: isCapped = tierLimit !== Infinity;
+	$: remainingSlots = isCapped ? Math.max(0, tierLimit - cards.length) : Infinity;
 
 	function selectAllImportPreview() {
-		let budget = remainingBasicSlots;
+		let budget = remainingSlots;
 		importPreviewCards = importPreviewCards.map((c) => {
 			if (c.alreadyExists || (excludeBasicLands && c.isBasicLand)) {
 				return { ...c, selected: false };
@@ -514,9 +517,9 @@
 		isImportingCards = true;
 		importError = null;
 
-		const toImport = isPremiumOrLegacy
-			? selectedImportCards
-			: selectedImportCards.slice(0, remainingBasicSlots);
+		const toImport = isCapped
+			? selectedImportCards.slice(0, remainingSlots)
+			: selectedImportCards;
 
 		importProgress = { current: 0, total: toImport.length, added: 0, skipped: 0 };
 		const batchSize = 20;
@@ -758,13 +761,13 @@
 						</div>
 					</div>
 
-					{#if !isPremiumOrLegacy}
-						<div class="import-slot-notice" class:warning={remainingBasicSlots === 0 || selectedImportCards.length >= remainingBasicSlots}>
+					{#if isCapped}
+						<div class="import-slot-notice" class:warning={remainingSlots === 0 || selectedImportCards.length >= remainingSlots}>
 							<i class="fa-solid fa-circle-info"></i>
 							<span>
-								Basic Tier: <strong>{cards.length} / 25</strong> slots used ({remainingBasicSlots} remaining).
+								{membershipTier} Tier: <strong>{cards.length} / {tierLimit}</strong> slots used ({remainingSlots} remaining).
 								{#if selectedImportCards.length > 0}
-									Importing <strong>{Math.min(selectedImportCards.length, remainingBasicSlots)}</strong> card{Math.min(selectedImportCards.length, remainingBasicSlots) === 1 ? '' : 's'}.
+									Importing <strong>{Math.min(selectedImportCards.length, remainingSlots)}</strong> card{Math.min(selectedImportCards.length, remainingSlots) === 1 ? '' : 's'}.
 								{/if}
 							</span>
 						</div>
@@ -781,7 +784,7 @@
 									<input
 										type="checkbox"
 										checked={item.selected && !item.alreadyExists}
-										disabled={item.alreadyExists || isImportingCards || (!item.selected && !isPremiumOrLegacy && selectedImportCards.length >= remainingBasicSlots)}
+										disabled={item.alreadyExists || isImportingCards || (!item.selected && isCapped && selectedImportCards.length >= remainingSlots)}
 										on:change={(e) => {
 											item.selected = e.currentTarget.checked;
 											importPreviewCards = [...importPreviewCards];
@@ -882,12 +885,12 @@
 						type="button"
 						class="modal-btn primary"
 						on:click={handleConfirmImport}
-						disabled={isImportingCards || selectedImportCards.length === 0 || (!isPremiumOrLegacy && remainingBasicSlots === 0)}
+						disabled={isImportingCards || selectedImportCards.length === 0 || (isCapped && remainingSlots === 0)}
 					>
 						{#if isImportingCards}
 							<i class="fa-solid fa-circle-notch fa-spin"></i> Importing...
 						{:else}
-							Import {Math.min(selectedImportCards.length, remainingBasicSlots)} Card{Math.min(selectedImportCards.length, remainingBasicSlots) === 1 ? '' : 's'}
+							Import {isCapped ? Math.min(selectedImportCards.length, remainingSlots) : selectedImportCards.length} Card{(isCapped ? Math.min(selectedImportCards.length, remainingSlots) : selectedImportCards.length) === 1 ? '' : 's'}
 						{/if}
 					</button>
 				{:else}

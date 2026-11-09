@@ -38,7 +38,7 @@
 			icon: 'fa-crown',
 			premium: true,
 			features: {
-				'Saved Cards': 'Unlimited',
+				'Saved Cards': '150',
 				Marketplaces: 'All supported domestic & international marketplaces',
 				'Scan Frequency': 'Every 3 hours (24h for eBay)',
 				'On-Demand Checks': 'Included',

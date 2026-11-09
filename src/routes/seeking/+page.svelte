@@ -107,8 +107,10 @@
 	$: isAuthenticated = $auth.isAuthenticated;
 	$: authLoading = $auth.isLoading;
 	$: accountMinCondition = ($auth.user?.settings?.minCondition || 'ANY').toUpperCase();
-	$: isPremiumOrLegacy =
-		$auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
+	$: membershipTier = $auth.user?.membershipTier || 'Basic';
+	$: isLegacy = membershipTier === 'Legacy';
+	$: isPremium = membershipTier === 'Premium';
+	$: isPremiumOrLegacy = isPremium || isLegacy;
 	$: isAdmin = Boolean($auth.user?.isAdmin);
 	$: canManualCheckStock = isPremiumOrLegacy || isAdmin;
 	$: showCardTrader = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
@@ -1089,8 +1091,10 @@
 			<span>
 				{#if ($auth.user?.membershipTier || '').toLowerCase() === 'banned'}
 					<span class="suspended-tag">Suspended</span>
-				{:else if isPremiumOrLegacy}
+				{:else if isLegacy}
 					<strong>{cards.length}</strong> cards
+				{:else if isPremium}
+					<strong>{cards.length}</strong> / 150 cards
 				{:else}
 					<strong>{cards.length}</strong> / 25 cards
 				{/if}
@@ -2176,6 +2180,7 @@
 	{cards}
 	{setCodeToNameMap}
 	{isPremiumOrLegacy}
+	{membershipTier}
 	preferredFinish={$auth.user?.settings?.preferredFinish || 'nonfoil'}
 	preferredLanguage={$auth.user?.settings?.preferredLanguage || 'en'}
 	bind:isBusy={isImportBusy}
