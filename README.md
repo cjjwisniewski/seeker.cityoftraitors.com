@@ -144,20 +144,20 @@ PUBLIC_VERSION=1.0.0-dev
 # Discord OAuth2
 PUBLIC_DISCORD_CLIENT_ID=your_discord_client_id
 PUBLIC_DISCORD_REDIRECT_URI=http://localhost:5173/callback
-VITE_LOGIN_URL=https://seeker-api.cityoftraitors.com/api/login
-VITE_USER_INFO_URL=https://seeker-api.cityoftraitors.com/api/userinfo
+VITE_LOGIN_URL=https://seeker.azure-api.net/api/login
+VITE_USER_INFO_URL=https://seeker.azure-api.net/api/userinfo
 
-# Backend Azure APIM / Function Endpoints (Custom Domain or https://seeker.azure-api.net)
-PUBLIC_GET_BANNER_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/getBanner
-PUBLIC_UPDATE_BANNER_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/updateBanner
-PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/updateUserSetting
-PUBLIC_ADD_TO_SEEKING_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/addToSeeking
-PUBLIC_GET_SEEKING_LIST_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/getSeekingList
-PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/updateSeekingCard
-PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/deleteFromSeeking
-PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/deleteUserAccount
-PUBLIC_GET_USER_TABLES_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/getUserTables
-PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL=https://seeker-api.cityoftraitors.com/api/getSystemStatus
+# Backend Azure APIM / Function Endpoints
+PUBLIC_GET_BANNER_FUNCTION_URL=https://seeker.azure-api.net/api/getBanner
+PUBLIC_UPDATE_BANNER_FUNCTION_URL=https://seeker.azure-api.net/api/updateBanner
+PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL=https://seeker.azure-api.net/api/updateUserSetting
+PUBLIC_ADD_TO_SEEKING_FUNCTION_URL=https://seeker.azure-api.net/api/addToSeeking
+PUBLIC_GET_SEEKING_LIST_FUNCTION_URL=https://seeker.azure-api.net/api/getSeekingList
+PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL=https://seeker.azure-api.net/api/updateSeekingCard
+PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL=https://seeker.azure-api.net/api/deleteFromSeeking
+PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL=https://seeker.azure-api.net/api/deleteUserAccount
+PUBLIC_GET_USER_TABLES_FUNCTION_URL=https://seeker.azure-api.net/api/getUserTables
+PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL=https://seeker.azure-api.net/api/getSystemStatus
 ```
 
 > [!NOTE]
