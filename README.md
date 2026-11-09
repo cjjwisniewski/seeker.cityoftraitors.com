@@ -8,7 +8,8 @@
 
 This repository houses the frontend client application. The complete Seeker platform is divided across several sister projects:
 
-*   **[seeker_functions](https://github.com/cjjwisniewski/seeker_functions)**: The Azure Functions Python backend. Handles Discord OAuth2 authentication, signs and verifies custom JWTs, manages user account settings, and runs background timers/queues to monitor card availability across CardTrader, TCGPlayer (native marketplace API), Mana Pool, eBay, HiMarket, Hareruya, and Ruten.
+*   **[seeker_functions](https://github.com/cjjwisniewski/seeker_functions)**: The Azure Functions Python backend. Handles Discord OAuth2 authentication, signs and verifies custom JWTs, manages user account settings, and runs background timers/queues to monitor card availability across CardTrader, TCGPlayer (native marketplace API), Mana Pool, eBay, HiMarket, Hareruya, Ruten, and Cardmarket.
+*   **[seeker_checkCardmarketStock](https://github.com/cjjwisniewski/seeker_checkCardmarketStock)**: The containerized European scraper worker operating behind a dedicated LinuxServer WireGuard EU VPN sidecar, processing `cardmarketstockcheck` queue messages with persistent Cloudflare clearance tokens and atomic ETag Table Storage updates.
 *   **[seeker_checkTCGPlayerStock](https://github.com/cjjwisniewski/seeker_checkTCGPlayerStock)**: *(Deprecated / Legacy)* The original containerized Selenium/Chromium worker, now superseded by the native serverless `checkTCGPlayerStock` Azure Function.
 *   **[seeker_infra](https://github.com/cjjwisniewski/seeker_infra)**: The Terraform infrastructure configurations. Manages the Azure API Management (APIM) gateway proxy, Function App IP firewalls, storage tables, queue configurations, and DNS settings.
 *   **[seeker.cityoftraitors.com](https://github.com/cjjwisniewski/seeker.cityoftraitors.com)**: The SvelteKit frontend client application (this repository).
@@ -51,11 +52,13 @@ This repository houses the frontend client application. The complete Seeker plat
         *   **HiMarket** (Hong Kong, EN · JA · ZHT · ZHS, live HKD conversion)
         *   **Hareruya** (Japan, JA · EN, live JPY conversion)
         *   **Ruten** (Taiwan, ZHT · EN, live TWD conversion)
+        *   **Cardmarket** (Europe, live EUR conversion, filtered product deep links)
 *   **Alert Configuration**: Customize percentage thresholds for price drop alerts and default card finishes/languages.
 *   **Account Deletion**: Self-service account removal with safety confirmation modal.
 
 ### 🛡️ Admin Operations
-*   **System & Queue Health**: Live health monitoring for Azure Storage queues, tracking message counts and processing rates.
+*   **System & Queue Health**: Live health monitoring for Azure Storage queues, tracking active and poison message counts.
+*   **Dead-Letter & Poison Queue Inspector**: Peek into poison messages, replay failed jobs back to active queues, and safely purge poison queues with confirmation modals.
 *   **User Management Table**: Searchable directory of all users with membership tier breakdowns, tracking counts, and marketplace activity.
 *   **CSV Data Export**: One-click complete CSV export of user and tracking data for reporting.
 *   **Announcement Banner Manager**: Create, preview, update, and clear system-wide notification banners across the site in real time.
