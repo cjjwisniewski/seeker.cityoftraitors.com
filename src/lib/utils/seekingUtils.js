@@ -327,6 +327,142 @@ export function isBestVendorPrice(
 	return info.offerCount >= 2 && info.bestVendors.has(vendor);
 }
 
+export function getNormalizedConditionClass(cond) {
+	if (!cond) return 'nm';
+	const c = cond.toUpperCase();
+	if (c === 'NM' || c === 'MT' || c === 'MINT' || c === 'NEAR MINT') return 'nm';
+	if (c === 'SP' || c === 'EX' || c === 'EXCELLENT') return 'sp';
+	if (c === 'LP' || c === 'LIGHT PLAY') return 'lp';
+	if (c === 'MP' || c === 'GD' || c === 'MODERATE PLAY' || c === 'GOOD') return 'mp';
+	if (c === 'HP' || c === 'HEAVY PLAY') return 'hp';
+	if (c === 'PO' || c === 'PL' || c === 'DMG' || c === 'DAMAGED' || c === 'POOR') return 'dmg';
+	return 'sp';
+}
+
+export function getBestOfferDetails(
+	card,
+	ctEnabled,
+	tcgEnabled,
+	ebayEnabled,
+	mpEnabled,
+	hmEnabled,
+	hrEnabled,
+	rtEnabled,
+	cmEnabled,
+	setCodeToNameMap = {}
+) {
+	const offers = [];
+
+	if (ctEnabled && getStockStatus(card.cardtrader_stock) === 'available' && card.cardtrader_low_price > 0) {
+		offers.push({
+			vendor: 'cardtrader',
+			displayName: 'CardTrader',
+			cents: Math.round(card.cardtrader_low_price),
+			condition: card.cardtrader_condition || '',
+			url: card.cardtrader_id ? `https://www.cardtrader.com/cards/${card.cardtrader_id}` : null
+		});
+	}
+	if (tcgEnabled && getStockStatus(card.tcgplayer_stock) === 'available' && card.tcgplayer_low_price > 0) {
+		offers.push({
+			vendor: 'tcgplayer',
+			displayName: 'TCGPlayer',
+			cents: Math.round(Number(card.tcgplayer_low_price) * 100),
+			condition: card.tcgplayer_condition || '',
+			url: getTCGPlayerUrl(card)
+		});
+	}
+	if (mpEnabled && getStockStatus(card.manapool_stock) === 'available' && card.manapool_low_price > 0) {
+		offers.push({
+			vendor: 'manapool',
+			displayName: 'Mana Pool',
+			cents: Math.round(card.manapool_low_price),
+			condition: card.manapool_condition || '',
+			url: card.manapool_url || 'https://manapool.com'
+		});
+	}
+	if (cmEnabled && getStockStatus(card.cardmarket_stock) === 'available' && card.cardmarket_low_price > 0) {
+		offers.push({
+			vendor: 'cardmarket',
+			displayName: 'Cardmarket',
+			cents: Math.round(card.cardmarket_low_price),
+			condition: card.cardmarket_condition || '',
+			url: getCardmarketUrl(card)
+		});
+	}
+	if (ebayEnabled && getStockStatus(card.ebay_stock) === 'available' && card.ebay_low_price > 0) {
+		offers.push({
+			vendor: 'ebay',
+			displayName: 'eBay',
+			cents: Math.round(card.ebay_low_price),
+			condition: card.ebay_condition || '',
+			url: getEbayUrl(card, setCodeToNameMap)
+		});
+	}
+	if (hmEnabled && getStockStatus(card.himarket_stock) === 'available' && card.himarket_low_price > 0) {
+		offers.push({
+			vendor: 'himarket',
+			displayName: 'HiMarket',
+			cents: Math.round(card.himarket_low_price),
+			condition: card.himarket_condition || '',
+			url: card.himarket_url || 'https://himarket.com.hk'
+		});
+	}
+	if (hrEnabled && getStockStatus(card.hareruya_stock) === 'available' && card.hareruya_low_price > 0) {
+		offers.push({
+			vendor: 'hareruya',
+			displayName: 'Hareruya',
+			cents: Math.round(card.hareruya_low_price),
+			condition: card.hareruya_condition || '',
+			url: card.hareruya_url || 'https://www.hareruyamtg.com'
+		});
+	}
+	if (
+		rtEnabled &&
+		['zht', 'en'].includes((card.language || '').toLowerCase()) &&
+		getStockStatus(card.ruten_stock) === 'available' &&
+		card.ruten_low_price > 0
+	) {
+		offers.push({
+			vendor: 'ruten',
+			displayName: 'Ruten',
+			cents: Math.round(card.ruten_low_price),
+			condition: card.ruten_condition || '',
+			url: card.ruten_url || 'https://www.ruten.com.tw'
+		});
+	}
+
+	if (offers.length === 0) {
+		return {
+			inStock: false,
+			cents: null,
+			priceFormatted: '',
+			vendor: null,
+			vendorDisplayName: '',
+			condition: '',
+			conditionClass: '',
+			url: null,
+			offerCount: 0,
+			otherOffersCount: 0
+		};
+	}
+
+	offers.sort((a, b) => a.cents - b.cents);
+	const best = offers[0];
+
+	return {
+		inStock: true,
+		cents: best.cents,
+		priceFormatted: `$${(best.cents / 100).toFixed(2)}`,
+		vendor: best.vendor,
+		vendorDisplayName: best.displayName,
+		condition: best.condition,
+		conditionClass: getNormalizedConditionClass(best.condition),
+		url: best.url,
+		offerCount: offers.length,
+		otherOffersCount: offers.length - 1
+	};
+}
+
 export function getCardHistoricalBadgeInfo(
 	card,
 	ctEnabled,

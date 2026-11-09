@@ -35,6 +35,7 @@
 		getCardmarketConditionClass,
 		getLowestOffer,
 		isBestVendorPrice,
+		getBestOfferDetails,
 		getCardHistoricalBadgeInfo,
 		formatCardAsDecklistLine,
 		buildSeekingCsvString
@@ -768,7 +769,24 @@
 		let aValue = a[sortKey];
 		let bValue = b[sortKey];
 
-		if (sortKey.includes('_price')) {
+		if (sortKey === 'best_price') {
+			const getBest = (card) => {
+				const info = getLowestOffer(
+					card,
+					showCardTrader,
+					showTCGPlayer,
+					showEbay,
+					showManapool,
+					showHimarket,
+					showHareruya,
+					showRuten,
+					showCardmarket
+				);
+				return info.minPriceCents;
+			};
+			aValue = getBest(a) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+			bValue = getBest(b) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+		} else if (sortKey.includes('_price')) {
 			const normalizePrice = (card, val) => {
 				if (val === null || val === undefined || val <= 0) return null;
 				if (
@@ -1120,9 +1138,9 @@
 				on:click={toggleCondensed}
 				class="toolbar-icon-btn"
 				class:active={isCondensed}
-				title={isCondensed ? 'Expanded view' : 'Compact view'}
+				title={isCondensed ? 'Switch to expanded view (all stores)' : 'Switch to compact view (best price)'}
 			>
-				<i class="fa-solid {isCondensed ? 'fa-maximize' : 'fa-minimize'}"></i>
+				<i class="fa-solid {isCondensed ? 'fa-table-columns' : 'fa-compress'}"></i>
 			</button>
 		</div>
 	</div>
@@ -1230,6 +1248,25 @@
 								{/if}
 							</span>
 						</th>
+						{#if isCondensed}
+						<th
+							class="th-vendor col-vendor col-best-price"
+							on:click={() => sortBy('best_price')}
+							class:active={sortKey === 'best_price'}
+							title="Sort by lowest price available across all enabled stores"
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									Best Price
+									{#if sortKey === 'best_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
+							</div>
+						</th>
+						{:else}
 						{#if showCardTrader}
 						<th
 							class="th-vendor col-vendor"
@@ -1422,6 +1459,7 @@
 							</div>
 						</th>
 						{/if}
+						{/if}
 						<th class="actions-header col-actions"></th>
 					</tr>
 				</thead>
@@ -1552,6 +1590,90 @@
 								{card.finish.toLowerCase() === 'foil' ? '✦ Foil' : 'Nonfoil'}
 							</button>
 						</td>
+						{#if isCondensed}
+						{@const bestOffer = getBestOfferDetails(
+							card,
+							showCardTrader,
+							showTCGPlayer,
+							showEbay,
+							showManapool,
+							showHimarket,
+							showHareruya,
+							showRuten,
+							showCardmarket,
+							setCodeToNameMap
+						)}
+						<td data-label="Best Price" class="vendor-stock-cell col-vendor col-best-price">
+							{#if bestOffer.inStock}
+								{#if bestOffer.url}
+									<a
+										href={bestOffer.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="vendor-link"
+										title="Buy on {bestOffer.vendorDisplayName}"
+									>
+										<div class="best-offer-row">
+											<span class="best-price-badge">{bestOffer.priceFormatted}</span>
+											<span class="best-vendor-pill">{bestOffer.vendorDisplayName}</span>
+											{#if bestOffer.condition}
+												<span
+													class="condition-bubble cond-{bestOffer.conditionClass}"
+													title="Condition: {bestOffer.condition}"
+												>
+													{bestOffer.condition}
+												</span>
+											{/if}
+											{#if bestOffer.otherOffersCount > 0}
+												<span
+													class="other-stores-chip"
+													title="{bestOffer.otherOffersCount} other store{bestOffer.otherOffersCount > 1 ? 's' : ''} in stock"
+												>
+													+{bestOffer.otherOffersCount}
+												</span>
+											{/if}
+										</div>
+									</a>
+								{:else}
+									<div class="best-offer-row">
+										<span class="best-price-badge">{bestOffer.priceFormatted}</span>
+										<span class="best-vendor-pill">{bestOffer.vendorDisplayName}</span>
+										{#if bestOffer.condition}
+											<span
+												class="condition-bubble cond-{bestOffer.conditionClass}"
+												title="Condition: {bestOffer.condition}"
+											>
+												{bestOffer.condition}
+											</span>
+										{/if}
+										{#if bestOffer.otherOffersCount > 0}
+											<span
+												class="other-stores-chip"
+												title="{bestOffer.otherOffersCount} other store{bestOffer.otherOffersCount > 1 ? 's' : ''} in stock"
+											>
+												+{bestOffer.otherOffersCount}
+											</span>
+										{/if}
+									</div>
+								{/if}
+							{:else if card.historical_pricing?.last_seen_cents}
+								<div
+									class="oos-compact"
+									title="Out of stock. Last seen on {card.historical_pricing.last_seen_vendor || 'vendor'} at ${(card.historical_pricing.last_seen_cents / 100).toFixed(2)}"
+								>
+									<i class="fa-solid fa-circle-xmark text-danger"></i>
+									<span class="last-seen-text">Last: ${(card.historical_pricing.last_seen_cents / 100).toFixed(2)}</span>
+								</div>
+							{:else}
+								<div class="stock-indicator">
+									<i
+										class="fa-solid fa-circle-xmark text-danger"
+										title="Out of stock across all enabled stores"
+									></i>
+								</div>
+							{/if}
+						</td>
+						{:else}
 						{#if showCardTrader}
 						<td data-label="CardTrader" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendorPrice(card, 'cardtrader', showCardTrader, showTCGPlayer, showEbay, showManapool, showHimarket, showHareruya, showRuten, showCardmarket)}>
 							{#if card.cardtrader_id}
@@ -1911,6 +2033,7 @@
 								</div>
 							{/if}
 						</td>
+						{/if}
 						{/if}
 						<td data-label="Actions" class="actions-column col-actions">
 							<div class="kebab-menu-container">
@@ -2573,6 +2696,11 @@
 		padding: 0.55rem 0.35rem;
 	}
 
+	.col-vendor.col-best-price {
+		min-width: 170px;
+		max-width: 250px;
+	}
+
 	.col-actions {
 		width: 46px;
 		min-width: 42px;
@@ -2880,6 +3008,65 @@
 		background: rgba(249, 115, 22, 0.16);
 		color: #fb923c;
 		border-color: rgba(249, 115, 22, 0.35);
+	}
+
+	.best-offer-row {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		padding: 0.22rem 0.6rem;
+		background: rgba(16, 185, 129, 0.08);
+		border: 1px solid rgba(16, 185, 129, 0.35);
+		border-radius: 999px;
+		transition: all var(--transition-fast);
+		cursor: pointer;
+	}
+
+	.vendor-link:hover .best-offer-row {
+		background: rgba(16, 185, 129, 0.18);
+		border-color: rgba(16, 185, 129, 0.65);
+		box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+		transform: translateY(-1px);
+	}
+
+	.best-price-badge {
+		font-weight: 700;
+		font-size: 0.85rem;
+		color: #10b981;
+		line-height: 1.1;
+	}
+
+	.best-vendor-pill {
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		line-height: 1.1;
+	}
+
+	.other-stores-chip {
+		font-size: 0.62rem;
+		font-weight: 700;
+		padding: 0.05rem 0.32rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.08);
+		color: var(--color-text-secondary);
+		border: 1px solid var(--color-border);
+		line-height: 1.1;
+	}
+
+	.oos-compact {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		color: var(--color-text-muted);
+		font-size: 0.75rem;
+	}
+
+	.oos-compact .last-seen-text {
+		font-size: 0.68rem;
+		opacity: 0.8;
 	}
 
 	.set-column {
@@ -3338,6 +3525,35 @@
 			max-width: none !important;
 		}
 
+		td[data-label='Best Price'] {
+			grid-column: 1 / -1;
+			width: 100% !important;
+			max-width: none !important;
+			min-width: 0 !important;
+			background: var(--color-bg-secondary);
+			border: 1px solid var(--color-border);
+			border-radius: 10px;
+			padding: 0.45rem 0.65rem;
+			display: flex;
+			flex-direction: column;
+			align-items: stretch;
+			justify-content: flex-start;
+			gap: 0.25rem;
+			box-sizing: border-box;
+			transition: all var(--transition-fast);
+		}
+
+		td[data-label='Best Price'] .best-offer-row {
+			justify-content: flex-start;
+			background: transparent;
+			border: none;
+			padding: 0;
+		}
+
+		td[data-label='Best Price'] .oos-compact {
+			justify-content: flex-start;
+		}
+
 		td[data-label='CardTrader'],
 		td[data-label='TCGPlayer'],
 		td[data-label='EBay'],
@@ -3391,6 +3607,7 @@
 			width: 100% !important;
 		}
 
+		td[data-label='Best Price']::before,
 		td[data-label='CardTrader']::before,
 		td[data-label='TCGPlayer']::before,
 		td[data-label='EBay']::before,
