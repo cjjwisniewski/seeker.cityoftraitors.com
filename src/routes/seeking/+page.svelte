@@ -824,6 +824,24 @@
 	let scrollY = 0;
 	$: showBackToTop = scrollY > 400;
 
+	let tableContainerEl;
+	let isHeaderPinned = false;
+
+	function checkHeaderPinned() {
+		if (!tableContainerEl || typeof window === 'undefined') {
+			isHeaderPinned = false;
+			return;
+		}
+		const rect = tableContainerEl.getBoundingClientRect();
+		const navEl = document.querySelector('nav');
+		const navHeight = navEl ? navEl.offsetHeight : 64;
+		isHeaderPinned = rect.top <= navHeight + 1 && rect.bottom > navHeight;
+	}
+
+	$: if (scrollY !== undefined || tableContainerEl) {
+		checkHeaderPinned();
+	}
+
 	$: if (
 		searchQuery ||
 		filterInStockOnly ||
@@ -994,7 +1012,12 @@
 	}
 </script>
 
-<svelte:window on:click={closeMenu} on:keydown={handleGlobalKeyDown} bind:scrollY={scrollY} />
+<svelte:window
+	on:click={closeMenu}
+	on:keydown={handleGlobalKeyDown}
+	on:resize={checkHeaderPinned}
+	bind:scrollY={scrollY}
+/>
 
 {#if ($auth.user?.membershipTier || '').toLowerCase() === 'banned'}
 	<div class="seeking-suspended-banner">
@@ -1208,7 +1231,7 @@
 	</div>
 {:else}
 	<div class="seeking-list">
-		<div class="table-scroll-container">
+		<div class="table-scroll-container" class:is-pinned={isHeaderPinned} bind:this={tableContainerEl}>
 			<table>
 				<thead>
 					<tr>
@@ -2650,12 +2673,23 @@
 		table-layout: fixed;
 	}
 
+	.table-scroll-container.is-pinned {
+		border-top-left-radius: 0;
+		border-top-right-radius: 0;
+	}
+
 	table thead tr:first-child th:first-child {
 		border-top-left-radius: 11px;
 	}
 
 	table thead tr:first-child th:last-child {
 		border-top-right-radius: 11px;
+	}
+
+	.table-scroll-container.is-pinned table thead tr:first-child th:first-child,
+	.table-scroll-container.is-pinned table thead tr:first-child th:last-child {
+		border-top-left-radius: 0;
+		border-top-right-radius: 0;
 	}
 
 	table tbody tr:last-child td:first-child {
