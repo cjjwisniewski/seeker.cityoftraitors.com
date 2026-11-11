@@ -2625,6 +2625,8 @@
 	.table-scroll-container {
 		width: 100%;
 		overflow-x: auto;
+		overflow-y: clip;
+		overflow: auto clip;
 		-webkit-overflow-scrolling: touch;
 		border-radius: 12px;
 		background: var(--glass-bg);
@@ -2715,11 +2717,24 @@
 	}
 
 	@media (min-width: 769px) {
+		thead th {
+			position: sticky;
+			top: var(--nav-height, 64px);
+			z-index: 60;
+			box-shadow: var(--shadow-sm);
+		}
+
 		th.col-card {
 			position: sticky;
+			top: var(--nav-height, 64px);
 			left: 0;
-			z-index: 15;
+			z-index: 70;
 			background: var(--color-bg-secondary);
+		}
+
+		th.col-card.active,
+		th.col-card:hover {
+			background-color: var(--color-bg-hover);
 		}
 
 		td.col-card {
