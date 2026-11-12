@@ -540,11 +540,23 @@ export function getCardHistoricalBadgeInfo(
 	if (lowestOffer.minPriceCents !== null && relevantLowCents !== null) {
 		const isAtOrBelowFloor = lowestOffer.minPriceCents <= Math.round(relevantLowCents * 1.02);
 		if (isAtOrBelowFloor && hp.is_calibrated) {
+			const isBreakthrough = lowestOffer.minPriceCents < relevantLowCents;
+			const isExactMatch = lowestOffer.minPriceCents === relevantLowCents;
+
+			let titleMsg = '';
+			if (isBreakthrough) {
+				titleMsg = `New all-time low breakthrough! Active in-stock offer (${formatPrice(lowestOffer.minPriceCents)}) is below previous ${relevantTierShort} historical floor (${formatPrice(relevantLowCents)} [${relevantCond}] on ${formatVendorDisplayName(relevantVendor)}) — Click for price history`;
+			} else if (isExactMatch) {
+				titleMsg = `Active in-stock offer (${formatPrice(lowestOffer.minPriceCents)}) matches ${relevantTierShort} historical floor (${formatPrice(relevantLowCents)} [${relevantCond}] on ${formatVendorDisplayName(relevantVendor)}) — Click for price history`;
+			} else {
+				titleMsg = `Active in-stock offer (${formatPrice(lowestOffer.minPriceCents)}) is within 2% of ${relevantTierShort} historical floor (${formatPrice(relevantLowCents)} [${relevantCond}] on ${formatVendorDisplayName(relevantVendor)}) — Click for price history`;
+			}
+
 			return {
-				type: 'at-low',
+				type: isBreakthrough ? 'breakthrough' : 'at-floor',
 				isAtLow: true,
-				label: `🔥 Low ${formatPrice(relevantLowCents)}`,
-				title: `At or below ${relevantTierShort} Historical Floor (${formatPrice(relevantLowCents)} [${relevantCond}] on ${formatVendorDisplayName(relevantVendor)}) — Click for price history`
+				label: `🔥 Low ${formatPrice(lowestOffer.minPriceCents)}`,
+				title: titleMsg
 			};
 		}
 		return {

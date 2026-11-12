@@ -932,16 +932,44 @@
 		color: #f87171;
 	}
 
-	.hist-badge.hist-at-floor {
+	.hist-badge.hist-breakthrough:hover {
+		background: rgba(239, 68, 68, 0.25);
+		border-color: rgba(239, 68, 68, 0.7);
+	}
+
+	.hist-badge.hist-at-floor,
+	.hist-badge.hist-at-low {
 		background: rgba(16, 185, 129, 0.14);
 		border-color: rgba(16, 185, 129, 0.45);
 		color: #6ee7b7;
+	}
+
+	.hist-badge.hist-at-floor:hover,
+	.hist-badge.hist-at-low:hover {
+		background: rgba(16, 185, 129, 0.25);
+		border-color: rgba(16, 185, 129, 0.7);
 	}
 
 	.hist-badge.hist-last-seen {
 		background: rgba(148, 163, 184, 0.12);
 		border-color: rgba(148, 163, 184, 0.32);
 		color: #cbd5e1;
+	}
+
+	.hist-badge.hist-last-seen:hover {
+		background: rgba(148, 163, 184, 0.22);
+		border-color: rgba(148, 163, 184, 0.55);
+	}
+
+	.hist-badge.hist-floor {
+		color: #3b82f6;
+		background: rgba(59, 130, 246, 0.12);
+		border-color: rgba(59, 130, 246, 0.35);
+	}
+
+	.hist-badge.hist-floor:hover {
+		background: rgba(59, 130, 246, 0.22);
+		border-color: rgba(59, 130, 246, 0.6);
 	}
 
 	.set-column {
