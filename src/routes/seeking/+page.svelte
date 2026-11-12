@@ -44,6 +44,7 @@
 	import EditCardModal from '$lib/components/seeking/EditCardModal.svelte';
 	import DecklistImportModal from '$lib/components/seeking/DecklistImportModal.svelte';
 	import BulkActionModals from '$lib/components/seeking/BulkActionModals.svelte';
+	import EmptySeekingState from '$lib/components/seeking/EmptySeekingState.svelte';
 
 	let cards = [];
 	let lastChecked = {
@@ -1215,7 +1216,7 @@
 {:else if !isAuthenticated}
 	<div class="empty">Please log in to view your seeking list.</div>
 {:else if cards.length === 0}
-	<div class="empty">No cards in seeking list</div>
+	<EmptySeekingState on:openImport={() => (showImportModal = true)} />
 {:else if sortedCards.length === 0}
 	<div class="seeking-list">
 		<div class="empty-filter-state">
