@@ -1033,6 +1033,67 @@
 							</div>
 						</div>
 					{/if}
+
+					{#if systemStatus.workers && systemStatus.workers.length > 0}
+						<div class="subsection">
+							<h3 class="subsection-title">Worker Nodes &amp; Scrapers</h3>
+							<div class="function-grid">
+								{#each systemStatus.workers as worker}
+									<div class="function-card">
+										<div class="func-header">
+											<span class="func-name">{worker.name}</span>
+											<span class="status-badge {worker.status?.toLowerCase() || 'unknown'}">
+												<span class="dot"></span>
+												{worker.status || 'unknown'}
+											</span>
+										</div>
+										<div class="func-details">
+											{#if worker.egress_ip}
+												<span class="metric-pill" title="VPN Egress Location">
+													<i class="fa-solid fa-shield-halved"></i>
+													{worker.egress_country ? `${worker.egress_country} • ` : ''}{worker.egress_ip}
+												</span>
+											{/if}
+											<span class="metric-pill" title="Last Heartbeat">
+												<i class="fa-regular fa-clock"></i>
+												{#if worker.minutes_since_heartbeat !== null && worker.minutes_since_heartbeat !== undefined}
+													Heartbeat: {worker.minutes_since_heartbeat}m ago
+												{:else if worker.last_heartbeat}
+													{formatLocalDate(worker.last_heartbeat)}
+												{:else}
+													No heartbeat
+												{/if}
+											</span>
+											{#if worker.total_processed !== undefined && worker.total_processed !== null}
+												<span class="metric-pill" title="Total processed cards this run">
+													<i class="fa-solid fa-check-double"></i>
+													Processed: {worker.total_processed}
+												</span>
+											{/if}
+											{#if worker.last_card_name}
+												<span class="metric-pill" title="Last processed card">
+													<i class="fa-solid fa-bullseye"></i>
+													Last: {worker.last_card_name}
+												</span>
+											{/if}
+											{#if worker.active_queue_messages > 0}
+												<span class="metric-pill" title="Active messages queued for this worker">
+													<i class="fa-solid fa-layer-group"></i>
+													Queued: {worker.active_queue_messages}
+												</span>
+											{/if}
+											{#if worker.details}
+												<span class="metric-pill" title={worker.details}>
+													<i class="fa-solid fa-circle-info"></i>
+													{worker.details}
+												</span>
+											{/if}
+										</div>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
 				{/if}
 			</section>
 
@@ -2543,25 +2604,40 @@
 		background-color: #22c55e;
 	}
 
+	.status-badge.idle {
+		background: rgba(59, 130, 246, 0.12);
+		border: 1px solid rgba(59, 130, 246, 0.25);
+		color: #3b82f6;
+	}
+	.status-badge.idle .dot {
+		background-color: #3b82f6;
+	}
+
 	.status-badge.limited,
-	.status-badge.degraded {
+	.status-badge.degraded,
+	.status-badge.stale,
+	.status-badge.paused {
 		background: rgba(245, 158, 11, 0.12);
 		border: 1px solid rgba(245, 158, 11, 0.25);
 		color: #f59e0b;
 	}
 	.status-badge.limited .dot,
-	.status-badge.degraded .dot {
+	.status-badge.degraded .dot,
+	.status-badge.stale .dot,
+	.status-badge.paused .dot {
 		background-color: #f59e0b;
 	}
 
 	.status-badge.stopped,
-	.status-badge.error {
+	.status-badge.error,
+	.status-badge.offline {
 		background: rgba(239, 68, 68, 0.12);
 		border: 1px solid rgba(239, 68, 68, 0.25);
 		color: var(--color-error);
 	}
 	.status-badge.stopped .dot,
-	.status-badge.error .dot {
+	.status-badge.error .dot,
+	.status-badge.offline .dot {
 		background-color: var(--color-error);
 	}
 
