@@ -285,6 +285,7 @@
 			finalPreview.push({
 				previewKey: cardKey,
 				id: crypto.randomUUID(),
+				scryfall_id: scry.id || item.scryfall_id || null,
 				name,
 				set_code,
 				set_name,
