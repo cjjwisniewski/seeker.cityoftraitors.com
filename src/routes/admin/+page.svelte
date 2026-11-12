@@ -1343,11 +1343,11 @@
 														{/if}
 														{#if table.minCondition && table.minCondition !== 'ANY'}
 															<span class="user-cond-badge" title="Account Default Minimum Condition: {table.minCondition}+">
-																<i class="fa-solid fa-shield-halved"></i> {table.minCondition === 'NM' ? 'NM' : `${table.minCondition}+`}
+																<i class="fa-solid fa-certificate"></i> {table.minCondition === 'NM' ? 'NM' : `${table.minCondition}+`}
 															</span>
 														{:else if table.minCondition === 'ANY'}
 															<span class="user-cond-badge any" title="Account Default Minimum Condition: Any Condition">
-																<i class="fa-solid fa-shield-halved"></i> ANY
+																<i class="fa-solid fa-certificate"></i> ANY
 															</span>
 														{/if}
 													</div>

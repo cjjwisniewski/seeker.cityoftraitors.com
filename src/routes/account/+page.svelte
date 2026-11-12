@@ -577,7 +577,7 @@
 					<div class="setting-item">
 						<div class="setting-item-left">
 							<div class="setting-icon-pill">
-								<i class="fa-solid fa-shield-halved"></i>
+								<i class="fa-solid fa-certificate"></i>
 							</div>
 							<div class="setting-info">
 								<span class="setting-title">Minimum Card Condition</span>
