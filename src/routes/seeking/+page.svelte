@@ -31,6 +31,7 @@
 	import BulkActionModals from '$lib/components/seeking/BulkActionModals.svelte';
 	import EmptySeekingState from '$lib/components/seeking/EmptySeekingState.svelte';
 	import SeekingCardRow from '$lib/components/seeking/SeekingCardRow.svelte';
+	import InlineQuickAdd from '$lib/components/seeking/InlineQuickAdd.svelte';
 
 	let cards = [];
 	let lastChecked = {
@@ -1060,6 +1061,17 @@
 			<span>Your account has been suspended by an administrator. Stock checks are disabled and you cannot add new cards.</span>
 		</div>
 	</div>
+{/if}
+
+{#if isAuthenticated && !authLoading && !loading}
+	<InlineQuickAdd
+		disabled={($auth.user?.membershipTier || '').toLowerCase() === 'banned'}
+		on:added={(e) => {
+			fetchSeekingList(true);
+			scheduleAutoPoll();
+			showStockCheckFeedback('success', `Added "${e.detail.cardName}" to your seeking list!`);
+		}}
+	/>
 {/if}
 
 <div class="workspace-toolbar">
