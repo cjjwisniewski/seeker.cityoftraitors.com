@@ -31,6 +31,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     // If still loading or not authenticated after waiting, trigger login
     if (authState.isLoading || !authState.isAuthenticated || !authState.token) {
         console.warn('fetchWithAuth: Not authenticated or token missing. Redirecting to login.');
+        auth.setIntendedPath(window.location.pathname + window.location.search);
         auth.login();
         return undefined;
     }
@@ -44,9 +45,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
             headers: headers,
         });
 
-        // If unauthorized, trigger login
+        // If unauthorized, clear stale tokens, preserve intendedPath, and trigger login
         if (response.status === 401) {
-            console.warn('fetchWithAuth: Received 401 Unauthorized. Redirecting to login.');
+            console.warn('fetchWithAuth: Received 401 Unauthorized. Clearing stale auth and redirecting to login.');
+            auth.clearAuthData();
+            auth.setIntendedPath(window.location.pathname + window.location.search);
             auth.login();
             return undefined;
         }

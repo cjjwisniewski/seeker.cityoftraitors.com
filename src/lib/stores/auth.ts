@@ -54,6 +54,7 @@ const createAuthStore = () => {
     });
 
     let isInitializing = false; // Prevent concurrent initializations
+    let storageListenerRegistered = false;
 
     // Function to parse user info from JWT payload
     function parseJwt(token: string): User | null {
@@ -170,34 +171,56 @@ const createAuthStore = () => {
                 return; // Stop initialization
             }
 
+            if (!storageListenerRegistered) {
+                storageListenerRegistered = true;
+                window.addEventListener('storage', (event) => {
+                    if (event.key === 'authToken') {
+                        if (!event.newValue) {
+                            set({ isAuthenticated: false, token: null, user: null, isLoading: false, intendedPath: null });
+                        } else {
+                            const jwtUser = parseJwt(event.newValue);
+                            if (jwtUser) {
+                                let syncedUser: User | null = jwtUser;
+                                try {
+                                    const cached = localStorage.getItem('cachedUserInfo');
+                                    if (cached) syncedUser = JSON.parse(cached);
+                                } catch {
+                                    // ignore malformed cache
+                                }
+                                update(state => ({ ...state, isAuthenticated: true, token: event.newValue, user: syncedUser, isLoading: false }));
+                            }
+                        }
+                    }
+                });
+            }
+
             const token = localStorage.getItem('authToken');
             if (token) {
-                // Try to get cached user info for instant load
-                let initialUser: User | null = null;
-                const cachedUserStr = localStorage.getItem('cachedUserInfo');
+                const jwtUser = parseJwt(token);
+                if (!jwtUser) {
+                    // Token is expired or malformed; clear stale cache immediately
+                    clearAuthData();
+                } else {
+                    // Try to get cached user info for instant load
+                    let initialUser: User | null = null;
+                    const cachedUserStr = localStorage.getItem('cachedUserInfo');
 
-                if (cachedUserStr) {
-                    try {
-                        initialUser = JSON.parse(cachedUserStr);
-                    } catch (e) {
-                        console.warn('AuthStore: Error parsing cachedUserInfo:', e);
+                    if (cachedUserStr) {
+                        try {
+                            initialUser = JSON.parse(cachedUserStr);
+                        } catch (e) {
+                            console.warn('AuthStore: Error parsing cachedUserInfo:', e);
+                        }
                     }
-                }
 
-                // If no cache, fall back to parsing the JWT directly (fast)
-                if (!initialUser) {
-                    initialUser = parseJwt(token);
-                }
+                    if (!initialUser) {
+                        initialUser = jwtUser;
+                    }
 
-                if (initialUser) {
-                    // We have some user data! Set it immediately so the UI can render.
                     setAuthData(token, initialUser);
 
                     // Trigger a background refresh to get the latest settings/profile
                     refreshUserInfo(token);
-                } else {
-                    // No valid user data from token or cache
-                    clearAuthData();
                 }
             } else {
                 update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
@@ -210,6 +233,7 @@ const createAuthStore = () => {
     return {
         subscribe,
         initialize,
+        clearAuthData,
         setIntendedPath: (path: string) => {
             update(state => ({ ...state, intendedPath: path }));
         },
