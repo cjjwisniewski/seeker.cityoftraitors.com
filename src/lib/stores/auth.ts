@@ -20,6 +20,7 @@ interface User {
         marketplaceTcgplayerEnabled?: boolean;
         marketplaceEbayEnabled?: boolean;
         marketplaceManapoolEnabled?: boolean;
+        marketplaceCardkingdomEnabled?: boolean;
         marketplaceHimarketEnabled?: boolean;
         marketplaceHareruyaEnabled?: boolean;
         marketplaceRutenEnabled?: boolean;
