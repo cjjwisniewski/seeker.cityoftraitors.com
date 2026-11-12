@@ -15,8 +15,8 @@
 
 	<h2 class="hero-title">Your Seeking List is Empty</h2>
 	<p class="hero-subtitle">
-		Seeker monitors 8 major marketplaces around the clock and delivers instant Discord restock alerts
-		with direct buy links when your cards become available below your target price.
+		Seeker monitors major domestic and international marketplaces around the clock and delivers instant
+		Discord restock alerts with direct buy links when your cards become available below your target price.
 	</p>
 
 	<!-- Primary Action Cards -->
@@ -67,7 +67,7 @@
 					<i class="fa-solid fa-list-check"></i>
 				</div>
 				<h4>Add Your Targets</h4>
-				<p>Configure desired finish (Foil, Etched, Nonfoil), language, and max price cap.</p>
+				<p>Configure desired finish, language, and price cap. Override condition thresholds per card at any time.</p>
 			</div>
 
 			<div class="step-divider" aria-hidden="true">
@@ -80,7 +80,7 @@
 					<i class="fa-solid fa-arrows-rotate"></i>
 				</div>
 				<h4>Automated Sweeps</h4>
-				<p>Seeker continuously polls TCGPlayer, CardTrader, Mana Pool, Cardmarket, Hareruya, and more.</p>
+				<p>Seeker continuously polls supported domestic and international marketplaces around the clock.</p>
 			</div>
 
 			<div class="step-divider" aria-hidden="true">
@@ -96,6 +96,23 @@
 				<p>Receive grouped DMs with direct purchase links and all-time floor intelligence.</p>
 			</div>
 		</div>
+	</div>
+
+	<!-- Marketplace & Condition Settings Callout -->
+	<div class="preferences-settings-callout">
+		<div class="callout-icon-wrap">
+			<i class="fa-solid fa-sliders"></i>
+		</div>
+		<div class="callout-content">
+			<div class="callout-title">Customize Marketplaces & Condition Filters</div>
+			<p class="callout-desc">
+				Core stores are active by default. You can enable additional domestic and international marketplaces, as well as set your global minimum card condition threshold (e.g. Near Mint or Lightly Played), in your account settings.
+			</p>
+		</div>
+		<a href="/account" class="callout-btn">
+			<span>Account Settings</span>
+			<i class="fa-solid fa-arrow-right"></i>
+		</a>
 	</div>
 
 	<!-- Discord DM Status Tip -->
@@ -164,7 +181,7 @@
 		grid-template-columns: repeat(2, 1fr);
 		gap: 1.25rem;
 		width: 100%;
-		margin-bottom: 2.5rem;
+		margin-bottom: 2.25rem;
 	}
 
 	.action-card {
@@ -276,7 +293,7 @@
 		width: 100%;
 		padding-top: 1.75rem;
 		border-top: 1px solid var(--color-border, #334155);
-		margin-bottom: 2rem;
+		margin-bottom: 1.75rem;
 	}
 
 	.steps-heading {
@@ -354,6 +371,82 @@
 		opacity: 0.5;
 	}
 
+	/* Preferences (Marketplaces & Condition) Settings Callout */
+	.preferences-settings-callout {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		width: 100%;
+		padding: 1rem 1.25rem;
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--color-border, #334155);
+		border-radius: 12px;
+		text-align: left;
+		margin-bottom: 1.25rem;
+		transition: border-color var(--transition-fast, 0.15s ease);
+	}
+
+	.preferences-settings-callout:hover {
+		border-color: var(--color-primary, #3b82f6);
+	}
+
+	.preferences-settings-callout .callout-icon-wrap {
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		background: rgba(59, 130, 246, 0.15);
+		color: var(--color-primary, #3b82f6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.15rem;
+		flex-shrink: 0;
+	}
+
+	.preferences-settings-callout .callout-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.preferences-settings-callout .callout-title {
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--color-text-primary, #f1f5f9);
+		margin-bottom: 0.2rem;
+	}
+
+	.preferences-settings-callout .callout-desc {
+		font-size: 0.825rem;
+		color: var(--color-text-secondary, #94a3b8);
+		margin: 0;
+		line-height: 1.45;
+	}
+
+	.preferences-settings-callout .callout-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.55rem 0.95rem;
+		background: var(--color-bg-secondary, #1e293b);
+		border: 1px solid var(--color-border, #334155);
+		border-radius: 8px;
+		color: var(--color-text-primary, #f1f5f9);
+		font-size: 0.8rem;
+		font-weight: 600;
+		text-decoration: none;
+		white-space: nowrap;
+		flex-shrink: 0;
+		transition: background var(--transition-fast, 0.15s ease),
+			border-color var(--transition-fast, 0.15s ease),
+			color var(--transition-fast, 0.15s ease);
+	}
+
+	.preferences-settings-callout .callout-btn:hover {
+		background: var(--color-primary, #3b82f6);
+		border-color: var(--color-primary, #3b82f6);
+		color: #ffffff;
+	}
+
 	/* Discord Tip Banner */
 	.discord-tip {
 		display: flex;
@@ -420,7 +513,7 @@
 		.action-cards-grid {
 			grid-template-columns: 1fr;
 			gap: 0.85rem;
-			margin-bottom: 2rem;
+			margin-bottom: 1.75rem;
 		}
 
 		.action-card {
@@ -434,6 +527,18 @@
 
 		.step-divider {
 			display: none;
+		}
+
+		.preferences-settings-callout {
+			flex-direction: column;
+			text-align: center;
+			gap: 0.75rem;
+			padding: 1rem;
+		}
+
+		.preferences-settings-callout .callout-btn {
+			width: 100%;
+			justify-content: center;
 		}
 
 		.discord-tip {
