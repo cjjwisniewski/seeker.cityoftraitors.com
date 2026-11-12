@@ -58,6 +58,7 @@ export function formatVendorDisplayName(vendor) {
 		cardtrader: 'CardTrader',
 		tcgplayer: 'TCGPlayer',
 		manapool: 'Mana Pool',
+		cardkingdom: 'Card Kingdom',
 		cardmarket: 'CardMarket',
 		himarket: 'HiMarket',
 		hareruya: 'Hareruya',
@@ -259,7 +260,8 @@ export function getLowestOffer(
 	hmEnabled,
 	hrEnabled,
 	rtEnabled,
-	cmEnabled
+	cmEnabled,
+	ckEnabled = false
 ) {
 	const offers = [];
 	if (ctEnabled && getStockStatus(card.cardtrader_stock) === 'available' && card.cardtrader_low_price > 0) {
@@ -273,6 +275,9 @@ export function getLowestOffer(
 	}
 	if (mpEnabled && getStockStatus(card.manapool_stock) === 'available' && card.manapool_low_price > 0) {
 		offers.push({ vendor: 'manapool', cents: Math.round(card.manapool_low_price) });
+	}
+	if (ckEnabled && getStockStatus(card.cardkingdom_stock) === 'available' && card.cardkingdom_low_price > 0) {
+		offers.push({ vendor: 'cardkingdom', cents: Math.round(card.cardkingdom_low_price) });
 	}
 	if (hmEnabled && getStockStatus(card.himarket_stock) === 'available' && card.himarket_low_price > 0) {
 		offers.push({ vendor: 'himarket', cents: Math.round(card.himarket_low_price) });
@@ -311,7 +316,8 @@ export function isBestVendorPrice(
 	hmEnabled,
 	hrEnabled,
 	rtEnabled,
-	cmEnabled
+	cmEnabled,
+	ckEnabled = false
 ) {
 	const info = getLowestOffer(
 		card,
@@ -322,7 +328,8 @@ export function isBestVendorPrice(
 		hmEnabled,
 		hrEnabled,
 		rtEnabled,
-		cmEnabled
+		cmEnabled,
+		ckEnabled
 	);
 	return info.offerCount >= 2 && info.bestVendors.has(vendor);
 }
@@ -349,7 +356,8 @@ export function getBestOfferDetails(
 	hrEnabled,
 	rtEnabled,
 	cmEnabled,
-	setCodeToNameMap = {}
+	setCodeToNameMap = {},
+	ckEnabled = false
 ) {
 	const offers = [];
 
@@ -378,6 +386,15 @@ export function getBestOfferDetails(
 			cents: Math.round(card.manapool_low_price),
 			condition: card.manapool_condition || '',
 			url: card.manapool_url || 'https://manapool.com'
+		});
+	}
+	if (ckEnabled && getStockStatus(card.cardkingdom_stock) === 'available' && card.cardkingdom_low_price > 0) {
+		offers.push({
+			vendor: 'cardkingdom',
+			displayName: 'Card Kingdom',
+			cents: Math.round(card.cardkingdom_low_price),
+			condition: card.cardkingdom_condition || '',
+			url: card.cardkingdom_url || 'https://www.cardkingdom.com'
 		});
 	}
 	if (cmEnabled && getStockStatus(card.cardmarket_stock) === 'available' && card.cardmarket_low_price > 0) {
@@ -474,7 +491,8 @@ export function getCardHistoricalBadgeInfo(
 	rtEnabled,
 	cmEnabled,
 	acctMinCond = 'ANY',
-	tick = Date.now()
+	tick = Date.now(),
+	ckEnabled = false
 ) {
 	const hp = card?.historical_pricing;
 	if (!hp) return null;
@@ -534,7 +552,8 @@ export function getCardHistoricalBadgeInfo(
 		hmEnabled,
 		hrEnabled,
 		rtEnabled,
-		cmEnabled
+		cmEnabled,
+		ckEnabled
 	);
 
 	if (lowestOffer.minPriceCents !== null && relevantLowCents !== null) {
@@ -717,6 +736,10 @@ export function buildSeekingCsvString(targetCards) {
 		'Mana Pool Stock',
 		'Mana Pool Price',
 		'Mana Pool Condition',
+		'Card Kingdom Stock',
+		'Card Kingdom Price (USD)',
+		'Card Kingdom Condition',
+		'Card Kingdom URL',
 		'CardMarket Stock',
 		'CardMarket Price (USD)',
 		'CardMarket Price (EUR)',
@@ -768,6 +791,12 @@ export function buildSeekingCsvString(targetCards) {
 				? (card.manapool_low_price / 100).toFixed(2)
 				: '',
 			card.manapool_condition || '',
+			getStockStatus(card.cardkingdom_stock),
+			card.cardkingdom_low_price !== null && card.cardkingdom_low_price !== undefined
+				? (card.cardkingdom_low_price / 100).toFixed(2)
+				: '',
+			card.cardkingdom_condition || '',
+			`"${(card.cardkingdom_url || '').replace(/"/g, '""')}"`,
 			getStockStatus(card.cardmarket_stock),
 			card.cardmarket_low_price !== null && card.cardmarket_low_price !== undefined
 				? (card.cardmarket_low_price / 100).toFixed(2)

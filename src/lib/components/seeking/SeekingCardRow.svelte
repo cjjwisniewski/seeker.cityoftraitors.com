@@ -38,6 +38,7 @@
 	export let showTCGPlayer = true;
 	export let showEbay = true;
 	export let showManapool = true;
+	export let showCardkingdom = true;
 	export let showHimarket = true;
 	export let showHareruya = true;
 	export let showRuten = true;
@@ -60,7 +61,8 @@
 				showHimarket,
 				showHareruya,
 				showRuten,
-				showCardmarket
+				showCardmarket,
+				showCardkingdom
 			)
 		: null;
 
@@ -75,7 +77,8 @@
 				showHareruya,
 				showRuten,
 				showCardmarket,
-				setCodeToNameMap
+				setCodeToNameMap,
+				showCardkingdom
 			)
 		: null;
 
@@ -395,6 +398,55 @@
 						<i
 							class="fa-solid fa-circle-question text-muted"
 							title="Card not found on Mana Pool"
+						></i>
+					</div>
+				{/if}
+			</td>
+		{/if}
+
+		{#if showCardkingdom}
+			<td data-label="Card Kingdom" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('cardkingdom')}>
+				{#if card.cardkingdom_url}
+					<a
+						href={card.cardkingdom_url}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="vendor-link"
+					>
+						<div
+							class="stock-indicator"
+							class:best-price={isBestVendor('cardkingdom')}
+						>
+							<i
+								class="{getStockIcon(getStockStatus(card.cardkingdom_stock))} {getStockColor(
+									getStockStatus(card.cardkingdom_stock)
+								)}"
+							></i>
+							{#if card.cardkingdom_low_price !== null && card.cardkingdom_low_price !== undefined && getStockStatus(card.cardkingdom_stock) === 'available'}
+								<span class="price-text">
+									{formatPrice(card.cardkingdom_low_price)}
+									{#if card.cardkingdom_condition}
+										<span
+											class="condition-bubble cond-{card.cardkingdom_condition.toLowerCase()}"
+											title="Condition: {card.cardkingdom_condition}"
+										>
+											{card.cardkingdom_condition}
+										</span>
+									{/if}
+								</span>
+							{/if}
+						</div>
+					</a>
+				{:else}
+					<div
+						class="stock-indicator {getStockColor(
+							getStockStatus(card.cardkingdom_stock)
+						)}"
+					>
+						<i
+							class="{getStockIcon(getStockStatus(card.cardkingdom_stock))} {getStockColor(
+								getStockStatus(card.cardkingdom_stock)
+							)}"
 						></i>
 					</div>
 				{/if}

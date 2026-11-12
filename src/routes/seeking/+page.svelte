@@ -38,6 +38,7 @@
 		tcgplayer: null,
 		ebay: null,
 		manapool: null,
+		cardkingdom: null,
 		himarket: null,
 		hareruya: null,
 		ruten: null,
@@ -108,6 +109,9 @@
 	$: showEbay = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? false) : false;
 	$: showManapool = isPremiumOrLegacy
 		? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true)
+		: false;
+	$: showCardkingdom = isPremiumOrLegacy
+		? ($auth.user?.settings?.marketplaceCardkingdomEnabled ?? false)
 		: false;
 	$: showHimarket = isPremiumOrLegacy
 		? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false)
@@ -594,6 +598,7 @@
 					tcgplayer: data.lastChecked.tcgplayer || null,
 					ebay: data.lastChecked.ebay || null,
 					manapool: data.lastChecked.manapool || null,
+					cardkingdom: data.lastChecked.cardkingdom || null,
 					himarket: data.lastChecked.himarket || null,
 					hareruya: data.lastChecked.hareruya || null,
 					ruten: data.lastChecked.ruten || null,
@@ -688,6 +693,7 @@
 				(showTCGPlayer && card.tcgplayer_stock === true) ||
 				(showEbay && card.ebay_stock === true) ||
 				(showManapool && card.manapool_stock === true) ||
+				(showCardkingdom && card.cardkingdom_stock === true) ||
 				(showHimarket && card.himarket_stock === true) ||
 				(showHareruya && card.hareruya_stock === true) ||
 				(showRuten &&
@@ -718,6 +724,13 @@
 				getStockStatus(card.manapool_stock) === 'available'
 			) {
 				prices.push(card.manapool_low_price);
+			}
+			if (
+				showCardkingdom &&
+				card.cardkingdom_low_price > 0 &&
+				getStockStatus(card.cardkingdom_stock) === 'available'
+			) {
+				prices.push(card.cardkingdom_low_price);
 			}
 			if (
 				showHimarket &&
@@ -770,7 +783,8 @@
 					showHimarket,
 					showHareruya,
 					showRuten,
-					showCardmarket
+					showCardmarket,
+					showCardkingdom
 				);
 				return info.minPriceCents;
 			};
@@ -877,7 +891,8 @@
 				showHimarket,
 				showHareruya,
 				showRuten,
-				showCardmarket
+				showCardmarket,
+				showCardkingdom
 			);
 			if (offer.minPriceCents !== null) {
 				acc.inStockCount += 1;
@@ -901,7 +916,8 @@
 					showHimarket,
 					showHareruya,
 					showRuten,
-					showCardmarket
+					showCardmarket,
+					showCardkingdom
 				);
 				if (offer.minPriceCents !== null) {
 					acc.inStockCount += 1;
@@ -1354,6 +1370,30 @@
 							</div>
 						</th>
 						{/if}
+						{#if showCardkingdom}
+						<th
+							class="th-vendor col-vendor"
+							on:click={() => sortBy('cardkingdom_low_price')}
+							class:active={sortKey === 'cardkingdom_low_price'}
+							title={lastChecked.cardkingdom ? `Card Kingdom last checked: ${formatExactTimestamp(lastChecked.cardkingdom)}` : 'Card Kingdom stock & lowest price'}
+						>
+							<div class="th-vendor-wrap">
+								<span class="th-vendor-title">
+									Card Kingdom
+									{#if sortKey === 'cardkingdom_low_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
+								{#if formatRelativeTime(lastChecked.cardkingdom, nowTick)}
+									<span class="th-last-checked">
+										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.cardkingdom, nowTick)}
+									</span>
+								{/if}
+							</div>
+						</th>
+						{/if}
 						{#if showCardmarket}
 						<th
 							class="th-vendor col-vendor"
@@ -1492,7 +1532,8 @@
 							showRuten,
 							showCardmarket,
 							accountMinCondition,
-							nowTick
+							nowTick,
+							showCardkingdom
 						)}
 						{@const cooldownSec = getCardCooldownRemainingSec(card, isAdmin, nowTick)}
 						{@const isCheckingCard = checkingStockCardKeys.has(cardKey)}
@@ -1508,6 +1549,7 @@
 							{showTCGPlayer}
 							{showEbay}
 							{showManapool}
+							{showCardkingdom}
 							{showHimarket}
 							{showHareruya}
 							{showRuten}

@@ -37,6 +37,7 @@
 	$: marketplaceTcgplayerEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
 	$: marketplaceEbayEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? false) : false;
 	$: marketplaceManapoolEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
+	$: marketplaceCardkingdomEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceCardkingdomEnabled ?? false) : false;
 	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 	$: marketplaceHareruyaEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
 	$: marketplaceRutenEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceRutenEnabled ?? false) : false;
@@ -91,6 +92,7 @@
 		if (settingName === 'marketplaceTcgplayerEnabled') oldValue = marketplaceTcgplayerEnabled;
 		if (settingName === 'marketplaceEbayEnabled') oldValue = marketplaceEbayEnabled;
 		if (settingName === 'marketplaceManapoolEnabled') oldValue = marketplaceManapoolEnabled;
+		if (settingName === 'marketplaceCardkingdomEnabled') oldValue = marketplaceCardkingdomEnabled;
 		if (settingName === 'marketplaceHimarketEnabled') oldValue = marketplaceHimarketEnabled;
 		if (settingName === 'marketplaceHareruyaEnabled') oldValue = marketplaceHareruyaEnabled;
 		if (settingName === 'marketplaceRutenEnabled') oldValue = marketplaceRutenEnabled;
@@ -108,6 +110,7 @@
 		if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = newValue;
 		if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = newValue;
 		if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = newValue;
+		if (settingName === 'marketplaceCardkingdomEnabled') marketplaceCardkingdomEnabled = newValue;
 		if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = newValue;
 		if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = newValue;
 		if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = newValue;
@@ -140,6 +143,7 @@
 				if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = oldValue;
 				if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
 				if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
+				if (settingName === 'marketplaceCardkingdomEnabled') marketplaceCardkingdomEnabled = oldValue;
 				if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
 				if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = oldValue;
 				if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = oldValue;
@@ -163,6 +167,7 @@
 			if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = oldValue;
 			if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
 			if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
+			if (settingName === 'marketplaceCardkingdomEnabled') marketplaceCardkingdomEnabled = oldValue;
 			if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
 			if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = oldValue;
 			if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = oldValue;
@@ -718,6 +723,35 @@
 								type="checkbox"
 								checked={marketplaceEbayEnabled}
 								on:change={() => updateSetting('marketplaceEbayEnabled', !marketplaceEbayEnabled)}
+								disabled={isUpdatingSetting || !isPremiumOrLegacy}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-item-left">
+							<div class="vendor-avatar cardkingdom-badge">
+								<i class="fa-solid fa-chess-rook"></i>
+							</div>
+							<div class="setting-info">
+								<div class="label-with-tier">
+									<span class="setting-title">Card Kingdom</span>
+									<span class="lang-scope-badge">EN · SPECIALTY PROMOS</span>
+									{#if !isPremiumOrLegacy}
+										<span class="tier-pill-locked">
+											<i class="fa-solid fa-lock"></i> Premium
+										</span>
+									{/if}
+								</div>
+								<span class="setting-desc">Enable/disable stock checks on Card Kingdom (US). Primarily intended for <strong>English</strong> singles and <strong>Japanese/Phyrexian specialty promos</strong>.</span>
+							</div>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceCardkingdomEnabled}
+								on:change={() => updateSetting('marketplaceCardkingdomEnabled', !marketplaceCardkingdomEnabled)}
 								disabled={isUpdatingSetting || !isPremiumOrLegacy}
 							/>
 							<span class="slider round"></span>
@@ -1380,6 +1414,12 @@
 		background: rgba(139, 92, 246, 0.12);
 		border: 1px solid rgba(139, 92, 246, 0.25);
 		color: #8b5cf6;
+	}
+
+	.cardkingdom-badge {
+		background: rgba(59, 130, 246, 0.12);
+		border: 1px solid rgba(59, 130, 246, 0.25);
+		color: #3b82f6;
 	}
 
 	.himarket-badge {

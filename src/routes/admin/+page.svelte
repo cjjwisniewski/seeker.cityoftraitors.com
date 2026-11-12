@@ -1317,6 +1317,11 @@
 																<i class="fa-solid fa-droplet"></i> MP
 															</span>
 														{/if}
+														{#if isMarketplaceEnabled(table, 'cardkingdom')}
+															<span class="mk-icon-badge cardkingdom" title="Card Kingdom: Enabled">
+																<i class="fa-solid fa-chess-rook"></i> CK
+															</span>
+														{/if}
 														{#if isMarketplaceEnabled(table, 'ebay')}
 															<span class="mk-icon-badge ebay" title="eBay: Enabled">
 																<i class="fa-brands fa-ebay"></i> EB
@@ -1453,6 +1458,9 @@
 															{#if isMarketplaceEnabled(table, 'manapool')}
 																<th class="col-vendor">Mana Pool</th>
 															{/if}
+															{#if isMarketplaceEnabled(table, 'cardkingdom')}
+																<th class="col-vendor">Card Kingdom</th>
+															{/if}
 															{#if isMarketplaceEnabled(table, 'ebay')}
 																<th class="col-vendor">eBay</th>
 															{/if}
@@ -1541,6 +1549,21 @@
 																				{formatCents(card.manapool_low_price)}
 																				{#if card.manapool_condition}
 																					<span class="cond-pill">{card.manapool_condition}</span>
+																				{/if}
+																			</span>
+																		{:else}
+																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																		{/if}
+																	</td>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'cardkingdom')}
+																	<td class="col-vendor" data-label="Card Kingdom">
+																		{#if card.cardkingdom_stock}
+																			<span class="stock-pill in-stock">
+																				<i class="fa-solid fa-check"></i>
+																				{formatCents(card.cardkingdom_low_price)}
+																				{#if card.cardkingdom_condition}
+																					<span class="cond-pill">{card.cardkingdom_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
@@ -3175,6 +3198,12 @@
 		color: #f59e0b;
 		border-color: rgba(245, 158, 11, 0.35);
 		background: rgba(245, 158, 11, 0.1);
+	}
+
+	.mk-icon-badge.cardkingdom {
+		color: #3b82f6;
+		border-color: rgba(59, 130, 246, 0.35);
+		background: rgba(59, 130, 246, 0.1);
 	}
 
 	.mk-icon-badge.himarket {
