@@ -3,7 +3,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
 	import { PUBLIC_ADD_TO_SEEKING_FUNCTION_URL } from '$env/static/public';
-	import { languageMap } from '$lib/utils/languageUtils';
+	import { getLanguageName } from '$lib/utils/languageUtils';
 
 	export let disabled = false;
 
@@ -303,7 +303,7 @@
 
 				<select bind:value={selectedLanguage} class="quick-select" aria-label="Select language">
 					{#each quickLanguages as lang}
-						<option value={lang}>{languageMap[lang]?.name || lang.toUpperCase()}</option>
+						<option value={lang}>{getLanguageName(lang)}</option>
 					{/each}
 				</select>
 
