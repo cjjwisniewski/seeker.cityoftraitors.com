@@ -10,7 +10,7 @@
 
 <div class="empty-seeking-container">
 	<div class="hero-badge">
-		<i class="fa-solid fa-radar"></i>
+		<i class="fa-solid fa-satellite-dish"></i>
 	</div>
 
 	<h2 class="hero-title">Your Seeking List is Empty</h2>
