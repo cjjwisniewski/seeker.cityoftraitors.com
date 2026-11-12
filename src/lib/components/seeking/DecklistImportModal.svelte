@@ -524,6 +524,7 @@
 		importProgress = { current: 0, total: toImport.length, added: 0, skipped: 0 };
 		const batchSize = 20;
 		const nowIso = new Date().toISOString();
+		const importSessionId = crypto.randomUUID();
 
 		try {
 			for (let i = 0; i < toImport.length; i += batchSize) {
@@ -548,6 +549,7 @@
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
 						action: 'add_batch',
+						import_session_id: importSessionId,
 						cards: batchPayload
 					})
 				});
