@@ -231,7 +231,7 @@
 				bind:value={query}
 				on:input={handleInput}
 				on:keydown={handleKeyDown}
-				placeholder="Quick-add card to seeking list..."
+				placeholder="Quick-add card..."
 				class="quick-add-input"
 				aria-label="Quick-add card to seeking list"
 				{disabled}
@@ -334,11 +334,10 @@
 <style>
 	.quick-add-wrapper {
 		position: relative;
-		margin: 1rem auto 0.65rem auto;
-		width: calc(100% - 2rem);
-		max-width: calc(1540px - 2rem);
+		width: 220px;
+		flex-shrink: 0;
 		box-sizing: border-box;
-		z-index: 25;
+		z-index: 30;
 	}
 
 	.quick-add-bar {
@@ -348,16 +347,19 @@
 	.quick-add-input-wrap {
 		display: flex;
 		align-items: center;
-		gap: 0.55rem;
-		padding: 0 0.85rem;
-		height: 40px;
-		background: var(--glass-bg);
-		backdrop-filter: blur(var(--backdrop-blur));
-		-webkit-backdrop-filter: blur(var(--backdrop-blur));
+		gap: 0.5rem;
+		padding: 0 0.75rem;
+		height: 36px;
+		background: var(--color-bg-secondary, var(--glass-bg));
 		border: 1px solid var(--glass-border);
-		border-radius: 10px;
-		box-shadow: var(--shadow-sm);
+		border-radius: 8px;
 		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+	}
+
+	@media (max-width: 768px) {
+		.quick-add-wrapper {
+			width: 100%;
+		}
 	}
 
 	.quick-add-input-wrap:focus-within {
@@ -446,16 +448,29 @@
 	}
 
 	.quick-add-confirm {
-		margin-top: 0.5rem;
-		padding: 0.6rem 0.85rem;
-		background: var(--glass-bg);
-		border: 1px solid var(--glass-border);
+		position: absolute;
+		top: calc(100% + 0.45rem);
+		left: 0;
+		min-width: 480px;
+		max-width: min(640px, 92vw);
+		padding: 0.7rem 0.9rem;
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
 		border-radius: 10px;
+		box-shadow: var(--shadow-lg);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
 		flex-wrap: wrap;
+		z-index: 60;
+	}
+
+	@media (max-width: 768px) {
+		.quick-add-confirm {
+			min-width: 0;
+			width: 100%;
+		}
 	}
 
 	.quick-card-preview {
@@ -537,25 +552,25 @@
 	}
 
 	.quick-add-error {
-		margin-top: 0.4rem;
-		padding: 0.45rem 0.75rem;
+		position: absolute;
+		top: calc(100% + 0.45rem);
+		left: 0;
+		min-width: 280px;
+		max-width: min(480px, 90vw);
+		padding: 0.5rem 0.75rem;
 		border-radius: 8px;
-		background: rgba(239, 68, 68, 0.12);
-		border: 1px solid rgba(239, 68, 68, 0.3);
+		background: var(--color-bg-elevated);
+		border: 1px solid rgba(239, 68, 68, 0.45);
+		box-shadow: var(--shadow-md);
 		color: #ef4444;
 		font-size: 0.82rem;
 		display: flex;
 		align-items: center;
 		gap: 0.45rem;
+		z-index: 60;
 	}
 
 	@media (max-width: 768px) {
-		.quick-add-wrapper {
-			width: calc(100% - 1.5rem);
-			max-width: none;
-			margin: 0.75rem auto 0.5rem auto;
-		}
-
 		.quick-add-confirm {
 			flex-direction: column;
 			align-items: stretch;

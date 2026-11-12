@@ -82,8 +82,6 @@
 
 	// Quick filter pills & search state
 	let filterInStockOnly = false;
-	let filterUnderPriceCap = false;
-	let filterFoilOnly = false;
 	let filterSetCode = '';
 	let searchQuery = '';
 	let enlargedCardImage = null;
@@ -390,8 +388,6 @@
 
 	function resetFilters() {
 		filterInStockOnly = false;
-		filterUnderPriceCap = false;
-		filterFoilOnly = false;
 		filterSetCode = '';
 		searchQuery = '';
 	}
@@ -700,10 +696,6 @@
 			if (!matchesQuery) return false;
 		}
 
-		if (filterFoilOnly && card.finish.toLowerCase() !== 'foil') {
-			return false;
-		}
-
 		if (filterSetCode && card.set_code.toUpperCase() !== filterSetCode.toUpperCase()) {
 			return false;
 		}
@@ -722,68 +714,6 @@
 					card.ruten_stock === true) ||
 				(showCardmarket && card.cardmarket_stock === true);
 			if (!hasStock) return false;
-		}
-
-		if (filterUnderPriceCap) {
-			if (card.max_price_cap === null || card.max_price_cap === undefined) return false;
-			const cap = card.max_price_cap;
-			const prices = [];
-			if (showCardTrader && card.cardtrader_low_price > 0) prices.push(card.cardtrader_low_price);
-			if (
-				showTCGPlayer &&
-				card.tcgplayer_low_price > 0 &&
-				getStockStatus(card.tcgplayer_stock) === 'available'
-			) {
-				prices.push(Math.round(card.tcgplayer_low_price * 100));
-			}
-			if (showEbay && card.ebay_low_price > 0 && getStockStatus(card.ebay_stock) === 'available') {
-				prices.push(card.ebay_low_price);
-			}
-			if (
-				showManapool &&
-				card.manapool_low_price > 0 &&
-				getStockStatus(card.manapool_stock) === 'available'
-			) {
-				prices.push(card.manapool_low_price);
-			}
-			if (
-				showCardkingdom &&
-				card.cardkingdom_low_price > 0 &&
-				getStockStatus(card.cardkingdom_stock) === 'available'
-			) {
-				prices.push(card.cardkingdom_low_price);
-			}
-			if (
-				showHimarket &&
-				card.himarket_low_price > 0 &&
-				getStockStatus(card.himarket_stock) === 'available'
-			) {
-				prices.push(card.himarket_low_price);
-			}
-			if (
-				showHareruya &&
-				card.hareruya_low_price > 0 &&
-				getStockStatus(card.hareruya_stock) === 'available'
-			) {
-				prices.push(card.hareruya_low_price);
-			}
-			if (
-				showRuten &&
-				['zht', 'en'].includes((card.language || '').toLowerCase()) &&
-				card.ruten_low_price > 0 &&
-				getStockStatus(card.ruten_stock) === 'available'
-			) {
-				prices.push(card.ruten_low_price);
-			}
-			if (
-				showCardmarket &&
-				card.cardmarket_low_price > 0 &&
-				getStockStatus(card.cardmarket_stock) === 'available'
-			) {
-				prices.push(card.cardmarket_low_price);
-			}
-			const hasPriceUnderCap = prices.some((p) => p <= cap);
-			if (!hasPriceUnderCap) return false;
 		}
 
 		return true;
@@ -877,8 +807,6 @@
 	$: if (
 		searchQuery ||
 		filterInStockOnly ||
-		filterUnderPriceCap ||
-		filterFoilOnly ||
 		filterSetCode ||
 		sortKey ||
 		sortDirection
@@ -1063,19 +991,19 @@
 	</div>
 {/if}
 
-{#if isAuthenticated && !authLoading && !loading}
-	<InlineQuickAdd
-		disabled={($auth.user?.membershipTier || '').toLowerCase() === 'banned'}
-		on:added={(e) => {
-			fetchSeekingList(true);
-			scheduleAutoPoll();
-			showStockCheckFeedback('success', `Added "${e.detail.cardName}" to your seeking list!`);
-		}}
-	/>
-{/if}
-
 <div class="workspace-toolbar">
 	<div class="toolbar-left">
+		{#if isAuthenticated && !authLoading && !loading}
+			<InlineQuickAdd
+				disabled={($auth.user?.membershipTier || '').toLowerCase() === 'banned'}
+				on:added={(e) => {
+					fetchSeekingList(true);
+					scheduleAutoPoll();
+					showStockCheckFeedback('success', `Added "${e.detail.cardName}" to your seeking list!`);
+				}}
+			/>
+		{/if}
+
 		<div class="search-box">
 			<i class="fa-solid fa-magnifying-glass search-icon"></i>
 			<input
@@ -1100,22 +1028,6 @@
 			>
 				<i class="fa-solid fa-circle-check"></i> In Stock
 			</button>
-			<button
-				type="button"
-				class="filter-pill"
-				class:active={filterUnderPriceCap}
-				on:click={() => (filterUnderPriceCap = !filterUnderPriceCap)}
-			>
-				<i class="fa-solid fa-tag"></i> Under Cap
-			</button>
-			<button
-				type="button"
-				class="filter-pill"
-				class:active={filterFoilOnly}
-				on:click={() => (filterFoilOnly = !filterFoilOnly)}
-			>
-				<i class="fa-solid fa-sparkles"></i> Foil
-			</button>
 			{#if availableSetCodes.length > 0}
 				<select bind:value={filterSetCode} class="set-select" aria-label="Filter by Set">
 					<option value="">All Sets ({availableSetCodes.length})</option>
@@ -1124,7 +1036,7 @@
 					{/each}
 				</select>
 			{/if}
-			{#if filterInStockOnly || filterUnderPriceCap || filterFoilOnly || filterSetCode || searchQuery}
+			{#if filterInStockOnly || filterSetCode || searchQuery}
 				<button
 					type="button"
 					class="filter-pill reset"
