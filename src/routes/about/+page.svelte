@@ -35,7 +35,7 @@
 			id: 'premium',
 			name: 'Premium',
 			badgeClass: 'tier-premium',
-			icon: 'fa-crown',
+			icon: 'fa-gem',
 			premium: true,
 			features: {
 				'Saved Cards': '150',

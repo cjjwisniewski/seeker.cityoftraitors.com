@@ -1270,12 +1270,13 @@
 												{/if}
 												<span class="tier-badge tier-{(table.membershipTier || 'Basic').toLowerCase()}">
 													<i
-														class="fa-solid {table.membershipTier === 'Premium' ||
-														table.membershipTier === 'Legacy'
+														class="fa-solid {table.membershipTier === 'Legacy'
 															? 'fa-crown'
-															: table.membershipTier === 'Banned'
-																? 'fa-ban'
-																: 'fa-certificate'}"
+															: table.membershipTier === 'Premium'
+																? 'fa-gem'
+																: table.membershipTier === 'Banned'
+																	? 'fa-ban'
+																	: 'fa-certificate'}"
 													></i>
 													{table.membershipTier || 'Basic'}
 												</span>
@@ -1736,7 +1737,7 @@
 					{#each [
 						{ id: 'Basic', label: 'Basic', desc: 'Standard free tier (25 cards)', icon: 'fa-certificate' },
 						{ id: 'Premium', label: 'Premium', desc: 'Premium tier (150 cards, all marketplaces)', icon: 'fa-gem' },
-						{ id: 'Legacy', label: 'Legacy', desc: 'Legacy supporter (unlimited cards)', icon: 'fa-wand-magic-sparkles' },
+						{ id: 'Legacy', label: 'Legacy', desc: 'Legacy supporter (unlimited cards)', icon: 'fa-crown' },
 						{ id: 'Banned', label: 'Banned', desc: 'Suspended (cannot add cards, checks disabled)', icon: 'fa-ban' },
 						{ id: 'None', label: 'Reset (Discord Sync)', desc: 'Remove manual override, sync with Discord roles', icon: 'fa-rotate' }
 					] as opt}

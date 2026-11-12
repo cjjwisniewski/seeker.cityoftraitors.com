@@ -277,12 +277,13 @@
 						<h1>{user.global_name || user.username || 'User'}</h1>
 						<span class="tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
 							<i
-								class="fa-solid {user.membershipTier === 'Premium' ||
-								user.membershipTier === 'Legacy'
+								class="fa-solid {user.membershipTier === 'Legacy'
 									? 'fa-crown'
-									: (user.membershipTier || '').toLowerCase() === 'banned'
-										? 'fa-ban'
-										: 'fa-certificate'}"
+									: user.membershipTier === 'Premium'
+										? 'fa-gem'
+										: (user.membershipTier || '').toLowerCase() === 'banned'
+											? 'fa-ban'
+											: 'fa-certificate'}"
 							></i>
 							{user.membershipTier || 'Basic'}
 						</span>
@@ -340,12 +341,13 @@
 						<div class="info-value">
 							<span class="tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
 								<i
-									class="fa-solid {user.membershipTier === 'Premium' ||
-									user.membershipTier === 'Legacy'
+									class="fa-solid {user.membershipTier === 'Legacy'
 										? 'fa-crown'
-										: (user.membershipTier || '').toLowerCase() === 'banned'
-											? 'fa-ban'
-											: 'fa-certificate'}"
+										: user.membershipTier === 'Premium'
+											? 'fa-gem'
+											: (user.membershipTier || '').toLowerCase() === 'banned'
+												? 'fa-ban'
+												: 'fa-certificate'}"
 								></i>
 								{user.membershipTier || 'Basic'}
 							</span>
