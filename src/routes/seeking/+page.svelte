@@ -288,12 +288,16 @@
 					partitionKey: card.set_code,
 					rowKey: `${card.collector_number}_${card.language}_${card.finish}`
 				};
-				await fetchWithAuth(PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL, {
+				const res = await fetchWithAuth(PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL, {
 					method: 'DELETE',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(requestBody)
 				});
-				cards = cards.filter((c) => getCardKey(c) !== getCardKey(card));
+				if (res && res.ok) {
+					cards = cards.filter((c) => getCardKey(c) !== getCardKey(card));
+				} else {
+					console.error(`Failed to delete card ${card.name}: HTTP ${res?.status}`);
+				}
 			} catch (err) {
 				console.error(`Failed to delete card ${card.name}:`, err);
 			}
@@ -317,9 +321,12 @@
 		let parsedCap = null;
 		if (bulkPriceCapInput && bulkPriceCapInput.trim() !== '') {
 			const floatVal = parseFloat(bulkPriceCapInput);
-			if (!isNaN(floatVal) && floatVal >= 0) {
-				parsedCap = Math.round(floatVal * 100);
+			if (isNaN(floatVal) || floatVal < 0) {
+				error = 'Price cap must be a valid non-negative number.';
+				isProcessingBulkAction = false;
+				return;
 			}
+			parsedCap = Math.round(floatVal * 100);
 		}
 
 		for (const card of cardsToUpdate) {
@@ -329,12 +336,16 @@
 					rowKey: `${card.collector_number}_${card.language}_${card.finish}`,
 					max_price_cap: parsedCap
 				};
-				await fetchWithAuth(PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL, {
+				const res = await fetchWithAuth(PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(requestBody)
 				});
-				card.max_price_cap = parsedCap;
+				if (res && res.ok) {
+					card.max_price_cap = parsedCap;
+				} else {
+					console.error(`Failed to set price cap for ${card.name}: HTTP ${res?.status}`);
+				}
 			} catch (err) {
 				console.error(`Failed to set price cap for ${card.name}:`, err);
 			}
@@ -351,7 +362,11 @@
 
 	function handleGlobalKeyDown(event) {
 		if (event.key === 'Escape') {
-			if (showHistoricalModal) {
+			if (enlargedCardImage) {
+				enlargedCardImage = null;
+			} else if (showSettingsModal) {
+				showSettingsModal = false;
+			} else if (showHistoricalModal) {
 				showHistoricalModal = false;
 			} else if (showImportModal && !isImportBusy) {
 				showImportModal = false;
@@ -520,11 +535,16 @@
 			nowTick = Date.now();
 		}, 15000);
 
+		let hasFetchedInitialList = false;
 		unsubscribe = auth.subscribe((state) => {
 			if (!state.isLoading) {
 				if (state.isAuthenticated) {
-					fetchSeekingList();
+					if (!hasFetchedInitialList) {
+						hasFetchedInitialList = true;
+						fetchSeekingList();
+					}
 				} else {
+					hasFetchedInitialList = false;
 					error = 'Please log in to view your seeking list.';
 					loading = false;
 				}
@@ -828,16 +848,25 @@
 
 	let tableContainerEl;
 	let isHeaderPinned = false;
+	let pinnedCheckRaf = null;
+	let cachedNavHeight = null;
 
 	function checkHeaderPinned() {
 		if (!tableContainerEl || typeof window === 'undefined') {
 			isHeaderPinned = false;
 			return;
 		}
-		const rect = tableContainerEl.getBoundingClientRect();
-		const navEl = document.querySelector('nav');
-		const navHeight = navEl ? navEl.offsetHeight : 64;
-		isHeaderPinned = rect.top <= navHeight + 1 && rect.bottom > navHeight;
+		if (pinnedCheckRaf) return;
+		pinnedCheckRaf = requestAnimationFrame(() => {
+			pinnedCheckRaf = null;
+			if (!tableContainerEl) return;
+			const rect = tableContainerEl.getBoundingClientRect();
+			if (cachedNavHeight === null) {
+				const navEl = document.querySelector('nav');
+				cachedNavHeight = navEl ? navEl.offsetHeight : 64;
+			}
+			isHeaderPinned = rect.top <= cachedNavHeight + 1 && rect.bottom > cachedNavHeight;
+		});
 	}
 
 	$: if (scrollY !== undefined || tableContainerEl) {

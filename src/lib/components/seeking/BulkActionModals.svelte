@@ -45,7 +45,7 @@
 			<button class="bulk-btn secondary" on:click={onSelectAllFiltered}>
 				Select All ({totalFilteredCount})
 			</button>
-			<button class="bulk-btn secondary" on:click={onClearSelection} title="Clear selection (Esc)">
+			<button class="bulk-btn secondary" on:click={onClearSelection} title="Clear selection (Esc)" aria-label="Clear selection">
 				<i class="fa-solid fa-xmark"></i>
 			</button>
 		</div>
@@ -56,10 +56,10 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}>
-		<div class="modal-content" on:click|stopPropagation>
+		<div class="modal-content" role="dialog" aria-modal="true" aria-label="Set Price Cap" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>Set Price Cap ({selectedCount} Cards)</h2>
-				<button class="close-modal-btn" on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}>
+				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>
@@ -113,10 +113,10 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}>
-		<div class="modal-content" on:click|stopPropagation>
+		<div class="modal-content" role="dialog" aria-modal="true" aria-label="Delete Selected Cards" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>Delete {selectedCount} Cards?</h2>
-				<button class="close-modal-btn" on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}>
+				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>

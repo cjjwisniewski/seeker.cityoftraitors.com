@@ -224,14 +224,18 @@
 
 	onMount(() => {
 		// Close dropdown when clicking outside
-		document.addEventListener('click', (e: MouseEvent) => {
+		const handleDocumentClick = (e: MouseEvent) => {
 			if (
 				!dropdownContainer?.contains(e.target as Node) &&
 				!searchInput?.contains(e.target as Node)
 			) {
 				showDropdown = false;
 			}
-		});
+		};
+		document.addEventListener('click', handleDocumentClick);
+		return () => {
+			document.removeEventListener('click', handleDocumentClick);
+		};
 	});
 
 	const handleInput = async () => {

@@ -590,7 +590,7 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={handleClose}>
-		<div class="modal-content import-modal-content" on:click|stopPropagation>
+		<div class="modal-content import-modal-content" role="dialog" aria-modal="true" aria-label="Import Decklist" on:click|stopPropagation>
 			<div class="modal-header">
 				<div class="import-modal-title-group">
 					<h2>
@@ -603,7 +603,7 @@
 						</span>
 					{/if}
 				</div>
-				<button class="close-modal-btn" on:click={handleClose} disabled={isResolvingImport || isImportingCards}>
+				<button class="close-modal-btn" aria-label="Close modal" on:click={handleClose} disabled={isResolvingImport || isImportingCards}>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>

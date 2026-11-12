@@ -208,8 +208,23 @@ export function getEbayUrl(card, map) {
 	return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keywords)}&_sop=15`;
 }
 
+export function sanitizeExternalUrl(url, fallback = null) {
+	if (!url || typeof url !== 'string') return fallback;
+	const trimmed = url.trim();
+	if (!trimmed) return fallback;
+	try {
+		const parsed = new URL(trimmed);
+		if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+			return parsed.toString();
+		}
+	} catch {
+		return fallback;
+	}
+	return fallback;
+}
+
 export function getCardmarketUrl(card) {
-	if (card.cardmarket_url) return card.cardmarket_url;
+	if (card.cardmarket_url) return sanitizeExternalUrl(card.cardmarket_url, 'https://www.cardmarket.com');
 	if (!card.cardmarket_id) return 'https://www.cardmarket.com';
 	let url = `https://www.cardmarket.com/en/Magic/Products?idProduct=${card.cardmarket_id}`;
 	const params = [];
@@ -385,7 +400,7 @@ export function getBestOfferDetails(
 			displayName: 'Mana Pool',
 			cents: Math.round(card.manapool_low_price),
 			condition: card.manapool_condition || '',
-			url: card.manapool_url || 'https://manapool.com'
+			url: sanitizeExternalUrl(card.manapool_url, 'https://manapool.com')
 		});
 	}
 	if (ckEnabled && getStockStatus(card.cardkingdom_stock) === 'available' && card.cardkingdom_low_price > 0) {
@@ -394,7 +409,7 @@ export function getBestOfferDetails(
 			displayName: 'Card Kingdom',
 			cents: Math.round(card.cardkingdom_low_price),
 			condition: card.cardkingdom_condition || '',
-			url: card.cardkingdom_url || 'https://www.cardkingdom.com'
+			url: sanitizeExternalUrl(card.cardkingdom_url, 'https://www.cardkingdom.com')
 		});
 	}
 	if (cmEnabled && getStockStatus(card.cardmarket_stock) === 'available' && card.cardmarket_low_price > 0) {
@@ -421,7 +436,7 @@ export function getBestOfferDetails(
 			displayName: 'HiMarket',
 			cents: Math.round(card.himarket_low_price),
 			condition: card.himarket_condition || '',
-			url: card.himarket_url || 'https://himarket.com.hk'
+			url: sanitizeExternalUrl(card.himarket_url, 'https://himarket.com.hk')
 		});
 	}
 	if (hrEnabled && getStockStatus(card.hareruya_stock) === 'available' && card.hareruya_low_price > 0) {
@@ -430,7 +445,7 @@ export function getBestOfferDetails(
 			displayName: 'Hareruya',
 			cents: Math.round(card.hareruya_low_price),
 			condition: card.hareruya_condition || '',
-			url: card.hareruya_url || 'https://www.hareruyamtg.com'
+			url: sanitizeExternalUrl(card.hareruya_url, 'https://www.hareruyamtg.com')
 		});
 	}
 	if (
@@ -444,7 +459,7 @@ export function getBestOfferDetails(
 			displayName: 'Ruten',
 			cents: Math.round(card.ruten_low_price),
 			condition: card.ruten_condition || '',
-			url: card.ruten_url || 'https://www.ruten.com.tw'
+			url: sanitizeExternalUrl(card.ruten_url, 'https://www.ruten.com.tw')
 		});
 	}
 

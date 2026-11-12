@@ -44,7 +44,7 @@
             if (result?.success) {
                 message = 'Login successful! Redirecting...';
                 const rawState = state || '/';
-                const redirectTo = rawState.startsWith('/') && !rawState.startsWith('//') ? rawState : '/';
+                const redirectTo = rawState.startsWith('/') && !rawState.startsWith('//') && !rawState.includes('\\') ? rawState : '/';
                 console.log('Callback: Redirecting to:', redirectTo);
                 // Use replaceState: true if you don't want the callback page in history
                 goto(redirectTo, { replaceState: true });

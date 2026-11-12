@@ -588,11 +588,14 @@
 	}
 
 	// Lifecycle
-	$: if (!authLoading && isAuthorized) {
+	let hasLoadedInitialAdminData = false;
+	$: if (!authLoading && isAuthorized && !hasLoadedInitialAdminData) {
+		hasLoadedInitialAdminData = true;
 		loadUserTables();
 		loadSystemStatus();
 		loadBanner();
 	} else if (!authLoading && !isAuthorized) {
+		hasLoadedInitialAdminData = false;
 		loading = false;
 		statusLoading = false;
 	}
@@ -602,7 +605,7 @@
 	<title>Admin Console - Seeker</title>
 </svelte:head>
 
-<svelte:window on:keydown={showDeleteModal ? handleKeydown : null} />
+<svelte:window on:keydown={(showDeleteModal || showTierModal || showPoisonModal || showClearPoisonModal) ? handleKeydown : null} />
 
 {#if authLoading}
 	<div class="loading-container">

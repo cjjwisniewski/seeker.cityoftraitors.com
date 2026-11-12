@@ -11,7 +11,7 @@
 	onMount(() => {
 		// Error handling (keep this part)
 		const error = $page.url.searchParams.get('error');
-		const message = decodeURIComponent($page.url.searchParams.get('message') || '');
+		const message = $page.url.searchParams.get('message') || '';
 		// Removed duplicate declarations below
 
 		if (error) {

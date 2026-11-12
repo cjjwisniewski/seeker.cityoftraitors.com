@@ -260,10 +260,10 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={() => !isSavingSettings && onClose()}>
-		<div class="modal-content" on:click|stopPropagation>
+		<div class="modal-content" role="dialog" aria-modal="true" aria-label="Edit Card" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>Edit Card</h2>
-				<button class="close-modal-btn" on:click={() => !isSavingSettings && onClose()}>
+				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isSavingSettings && onClose()}>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>

@@ -16,7 +16,8 @@
 		getTCGPlayerUrl,
 		getEbayUrl,
 		getCardmarketUrl,
-		getCardmarketConditionClass
+		getCardmarketConditionClass,
+		sanitizeExternalUrl
 	} from '$lib/utils/seekingUtils.js';
 	import {
 		formatHkdPrice,
@@ -205,7 +206,7 @@
 			{#if bestOffer && bestOffer.inStock}
 				{#if bestOffer.url}
 					<a
-						href={bestOffer.url}
+						href={sanitizeExternalUrl(bestOffer.url) || undefined}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="vendor-link"
@@ -362,9 +363,9 @@
 
 		{#if showManapool}
 			<td data-label="Mana Pool" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('manapool')}>
-				{#if card.manapool_url}
+				{#if sanitizeExternalUrl(card.manapool_url)}
 					<a
-						href={card.manapool_url}
+						href={sanitizeExternalUrl(card.manapool_url)}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="vendor-link"
@@ -406,9 +407,9 @@
 
 		{#if showCardkingdom}
 			<td data-label="Card Kingdom" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('cardkingdom')}>
-				{#if card.cardkingdom_url}
+				{#if sanitizeExternalUrl(card.cardkingdom_url)}
 					<a
-						href={card.cardkingdom_url}
+						href={sanitizeExternalUrl(card.cardkingdom_url)}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="vendor-link"
@@ -537,9 +538,9 @@
 
 		{#if showHimarket}
 			<td data-label="HiMarket" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('himarket')}>
-				{#if card.himarket_url}
+				{#if sanitizeExternalUrl(card.himarket_url)}
 					<a
-						href={card.himarket_url}
+						href={sanitizeExternalUrl(card.himarket_url)}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="vendor-link"
@@ -586,9 +587,9 @@
 
 		{#if showHareruya}
 			<td data-label="Hareruya" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('hareruya')}>
-				{#if card.hareruya_url}
+				{#if sanitizeExternalUrl(card.hareruya_url)}
 					<a
-						href={card.hareruya_url}
+						href={sanitizeExternalUrl(card.hareruya_url)}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="vendor-link"
@@ -642,9 +643,9 @@
 							title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards"
 						>—</span>
 					</div>
-				{:else if card.ruten_url}
+				{:else if sanitizeExternalUrl(card.ruten_url)}
 					<a
-						href={card.ruten_url}
+						href={sanitizeExternalUrl(card.ruten_url)}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="vendor-link"

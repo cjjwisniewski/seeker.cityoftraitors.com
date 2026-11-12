@@ -62,7 +62,7 @@
 			const hashParams = new URLSearchParams(window.location.hash.substring(1));
 			const token = hashParams.get('token');
 			const rawState = hashParams.get('state') || '/';
-			const state = rawState.startsWith('/') && !rawState.startsWith('//') ? rawState : '/';
+			const state = rawState.startsWith('/') && !rawState.startsWith('//') && !rawState.includes('\\') ? rawState : '/';
 
 			if (token) {
 				console.log('Layout onMount: Found token in URL fragment. Handling callback...');
@@ -89,6 +89,14 @@
 	});
 </script>
 
+<svelte:window
+	on:click={(e) => {
+		if (showDropdown && !e.target?.closest?.('.user-dropdown')) {
+			showDropdown = false;
+		}
+	}}
+/>
+
 <div class="layout">
 	<Banner {...bannerData} />
 	{#if $page.url.pathname !== '/login'}
@@ -101,13 +109,13 @@
 					</a>
 				</div>
 				<div class="nav-right">
-					<a href="/about" class="about-link" title="About">
+					<a href="/about" class="about-link" title="About" aria-label="About">
 						<i class="fa-solid fa-circle-info"></i>
 					</a>
-					<a href="/seeking" class="seeking-link" title="Seeking">
+					<a href="/seeking" class="seeking-link" title="Seeking" aria-label="Seeking List">
 						<i class="fa-solid fa-sd-card"></i>
 					</a>
-					<a href="/" class="search-link" title="Search">
+					<a href="/" class="search-link" title="Search" aria-label="Search Cards">
 						<i class="fa-solid fa-magnifying-glass"></i>
 					</a>
 					{#if $auth.isAuthenticated && $auth.user}
@@ -150,7 +158,10 @@
 											class="dropdown-item"
 											role="menuitem"
 											tabindex="0"
-											on:click={() => goto('/admin')}
+											on:click={() => {
+												showDropdown = false;
+												goto('/admin');
+											}}
 										>
 											<i class="fa-solid fa-shield"></i>
 											Admin
