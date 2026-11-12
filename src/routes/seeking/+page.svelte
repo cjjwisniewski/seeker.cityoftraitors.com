@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
 	import {
@@ -99,6 +100,7 @@
 	let filterSetCode = '';
 	let searchQuery = '';
 	let enlargedCardImage = null;
+	$: previewEmpty = $page.url.searchParams.get('preview') === 'empty';
 
 	// Sorting state
 	let sortKey = 'name';
@@ -1215,7 +1217,7 @@
 	<div class="error">{error}</div>
 {:else if !isAuthenticated}
 	<div class="empty">Please log in to view your seeking list.</div>
-{:else if cards.length === 0}
+{:else if cards.length === 0 || previewEmpty}
 	<EmptySeekingState on:openImport={() => (showImportModal = true)} />
 {:else if sortedCards.length === 0}
 	<div class="seeking-list">
