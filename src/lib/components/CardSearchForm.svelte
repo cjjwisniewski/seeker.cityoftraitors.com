@@ -517,7 +517,7 @@
 				bind:value={searchTerm}
 				on:input={handleInput}
 				on:keydown={handleKeyDown}
-				placeholder="Search MTG cards (e.g. Fire // Ice, Black Lotus)..."
+				placeholder="Search MTG cards..."
 				aria-autocomplete="list"
 				aria-expanded={showDropdown && suggestions.length > 0}
 			/>
@@ -605,6 +605,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		flex-shrink: 0;
 		color: var(--color-text-muted);
 		margin-right: 0.65rem;
 		font-size: 0.95rem;
@@ -612,21 +613,26 @@
 
 	input {
 		flex: 1;
-		min-width: 120px;
+		min-width: 0;
+		width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		border: none;
 		background: transparent;
 		color: var(--color-text-primary);
 		font-size: 0.95rem;
 		font-weight: 500;
 		outline: none;
-		padding: 0.4rem 0;
+		padding: 0.4rem 0.5rem 0.4rem 0;
 	}
 
 	input::placeholder {
 		color: var(--color-text-muted);
+		text-overflow: ellipsis;
 	}
 
 	.clear-btn {
+		flex-shrink: 0;
 		background: transparent;
 		border: none;
 		color: var(--color-text-muted);
@@ -645,6 +651,7 @@
 	}
 
 	.search-submit-btn {
+		flex-shrink: 0;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
