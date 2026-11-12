@@ -70,6 +70,7 @@
 					: null;
 
 		return {
+			id: print.id || fallbackCard?.id,
 			set: print.set_name || print.set,
 			set_code: print.set || print.set_code,
 			lang: print.lang || 'en',

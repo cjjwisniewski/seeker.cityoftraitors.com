@@ -530,7 +530,7 @@
 			for (let i = 0; i < toImport.length; i += batchSize) {
 				const chunk = toImport.slice(i, i + batchSize);
 				const batchPayload = chunk.map((c) => ({
-					id: c.id || crypto.randomUUID(),
+					id: c.scryfall_id || c.id || crypto.randomUUID(),
 					name: c.name,
 					set_code: c.set_code,
 					set_name: c.set_name,

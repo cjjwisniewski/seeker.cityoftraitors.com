@@ -349,7 +349,7 @@
 			}
 
 			const payload = {
-				id: crypto.randomUUID(),
+				id: currentPrint.id || card.id || crypto.randomUUID(),
 				name: card.name,
 				set_code: card.set,
 				set_name: currentPrint.set || card.set_name,
