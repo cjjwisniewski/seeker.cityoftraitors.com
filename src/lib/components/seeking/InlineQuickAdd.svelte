@@ -446,6 +446,7 @@
 		background: var(--color-bg-elevated);
 		border: 1px solid var(--color-border);
 		border-radius: 10px;
+		box-sizing: border-box;
 		box-shadow: var(--shadow-lg);
 		max-height: 280px;
 		overflow-y: auto;
@@ -488,6 +489,7 @@
 		background: var(--color-bg-elevated);
 		border: 1px solid var(--color-border);
 		border-radius: 12px;
+		box-sizing: border-box;
 		box-shadow: var(--shadow-lg);
 		display: flex;
 		flex-direction: column;
