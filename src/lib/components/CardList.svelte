@@ -788,6 +788,17 @@
 										<i class="fa-solid fa-sparkles"></i>
 										<span>Foil</span>
 									</button>
+									{#if currentPrint?.finishes?.includes('etched')}
+										<button
+											type="button"
+											class="finish-toggle-btn foil-option"
+											class:selected={selectedFinishes[card.id] === 'etched'}
+											on:click={() => handleFinishChange(card.id, 'etched')}
+										>
+											<i class="fa-solid fa-sparkles"></i>
+											<span>Etched</span>
+										</button>
+									{/if}
 								</div>
 							</div>
 

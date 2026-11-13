@@ -332,15 +332,17 @@
 							>
 								✦ Foil
 							</button>
-							<button
-								type="button"
-								class="edit-finish-option foil"
-								class:active={editFinishInput === 'etched'}
-								disabled={isSavingSettings || !editAvailableFinishes.includes('etched')}
-								on:click={() => (editFinishInput = 'etched')}
-							>
-								✦ Etched
-							</button>
+							{#if editAvailableFinishes.includes('etched')}
+								<button
+									type="button"
+									class="edit-finish-option foil"
+									class:active={editFinishInput === 'etched'}
+									disabled={isSavingSettings}
+									on:click={() => (editFinishInput = 'etched')}
+								>
+									✦ Etched
+								</button>
+							{/if}
 						</div>
 					</div>
 				</div>
