@@ -14,6 +14,7 @@
 	let settingsError = null;
 	let isUpdatingSetting = false;
 	let copiedUserId = false;
+	let activeTab = 'preferences'; // 'preferences' | 'marketplaces' | 'profile'
 
 	// Reactive declarations based on the auth store
 	$: user = $auth.user;
@@ -41,6 +42,16 @@
 	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 	$: marketplaceHareruyaEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
 	$: marketplaceRutenEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceRutenEnabled ?? false) : false;
+	$: enabledMarketplaceCount = [
+		marketplaceCardtraderEnabled,
+		marketplaceTcgplayerEnabled,
+		marketplaceManapoolEnabled,
+		marketplaceEbayEnabled,
+		marketplaceCardkingdomEnabled,
+		marketplaceHimarketEnabled,
+		marketplaceHareruyaEnabled,
+		marketplaceRutenEnabled
+	].filter(Boolean).length;
 
 	async function copyUserId() {
 		if (!user?.id) return;
@@ -320,8 +331,47 @@
 			</div>
 		{/if}
 
+		<!-- Account Navigation Tabs -->
+		<div class="account-tabs" role="tablist" aria-label="Account Settings Sections">
+			<button
+				type="button"
+				role="tab"
+				aria-selected={activeTab === 'preferences'}
+				class="account-tab"
+				class:active={activeTab === 'preferences'}
+				on:click={() => (activeTab = 'preferences')}
+			>
+				<i class="fa-solid fa-sliders"></i>
+				<span>Preferences</span>
+			</button>
+			<button
+				type="button"
+				role="tab"
+				aria-selected={activeTab === 'marketplaces'}
+				class="account-tab"
+				class:active={activeTab === 'marketplaces'}
+				on:click={() => (activeTab = 'marketplaces')}
+			>
+				<i class="fa-solid fa-store"></i>
+				<span>Marketplaces</span>
+				<span class="tab-badge">{enabledMarketplaceCount}/8</span>
+			</button>
+			<button
+				type="button"
+				role="tab"
+				aria-selected={activeTab === 'profile'}
+				class="account-tab"
+				class:active={activeTab === 'profile'}
+				on:click={() => (activeTab = 'profile')}
+			>
+				<i class="fa-solid fa-id-card"></i>
+				<span>Account</span>
+			</button>
+		</div>
+
 		<!-- Profile Sections Grid -->
 		<div class="profile-content">
+			{#if activeTab === 'profile'}
 			<!-- Section 1: Account Information -->
 			<section class="profile-section">
 				<div class="section-title-row">
@@ -382,7 +432,9 @@
 					</div>
 				</div>
 			</section>
+			{/if}
 
+			{#if activeTab === 'preferences'}
 			<!-- Section 2: User Settings -->
 			<section class="profile-section">
 				<div class="section-title-row">
@@ -611,7 +663,9 @@
 					</div>
 				</div>
 			</section>
+			{/if}
 
+			{#if activeTab === 'marketplaces'}
 			<!-- Section 3: Marketplace Settings -->
 			<section class="profile-section">
 				<div class="section-title-row">
@@ -620,7 +674,7 @@
 					</div>
 					<h2>Marketplace Integrations</h2>
 				</div>
-				<div class="settings-content">
+				<div class="settings-content marketplace-grid">
 					<div class="setting-item">
 						<div class="setting-item-left">
 							<div class="vendor-avatar ct-badge">
@@ -849,7 +903,9 @@
 					</div>
 				</div>
 			</section>
+			{/if}
 
+			{#if activeTab === 'profile'}
 			<!-- Section 4: Danger Zone -->
 			<section class="profile-section danger-zone">
 				<div class="section-title-row">
@@ -880,6 +936,7 @@
 					</div>
 				</div>
 			</section>
+			{/if}
 
 			{#if deleteError}
 				<div class="error-message" role="alert">
@@ -1315,10 +1372,88 @@
 	}
 
 	/* Settings List */
+	.account-tabs {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+		padding: 0.4rem;
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border: 1px solid var(--glass-border, var(--color-border));
+		border-radius: 14px;
+		overflow-x: auto;
+	}
+
+	.account-tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		padding: 0.6rem 1.05rem;
+		border: 1px solid transparent;
+		border-radius: 10px;
+		background: transparent;
+		color: var(--color-text-secondary);
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		white-space: nowrap;
+		transition: all var(--transition-fast);
+	}
+
+	.account-tab:hover {
+		color: var(--color-text-primary);
+		background: var(--color-bg-secondary);
+	}
+
+	.account-tab.active {
+		background: var(--color-primary);
+		color: #ffffff;
+		box-shadow: 0 2px 10px var(--color-primary-alpha, rgba(99, 102, 241, 0.28));
+	}
+
+	.tab-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 20px;
+		height: 20px;
+		padding: 0 0.45rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 700;
+		background: rgba(148, 163, 184, 0.18);
+		color: inherit;
+	}
+
+	.account-tab.active .tab-badge {
+		background: rgba(255, 255, 255, 0.22);
+		color: #ffffff;
+	}
+
 	.settings-content {
 		display: flex;
 		flex-direction: column;
 		gap: 0.85rem;
+	}
+
+	.settings-content.marketplace-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+		gap: 0.85rem;
+	}
+
+	.settings-content.marketplace-grid .setting-item {
+		align-items: flex-start;
+		height: 100%;
+		box-sizing: border-box;
+	}
+
+	@media (max-width: 640px) {
+		.settings-content.marketplace-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.setting-item {

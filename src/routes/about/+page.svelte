@@ -49,6 +49,27 @@
 	];
 
 	const featureList = Object.keys(tiers[0].features);
+
+	const supportedMarketplaces = [
+		{ name: 'CardTrader', region: 'Global', icon: 'fa-solid fa-cube', color: '#3b82f6' },
+		{ name: 'TCGPlayer', region: 'US', icon: 'fa-solid fa-store', color: '#10b981' },
+		{ name: 'Mana Pool', region: 'US', icon: 'fa-solid fa-droplet', color: '#8b5cf6' },
+		{ name: 'Card Kingdom', region: 'US', icon: 'fa-solid fa-crown', color: '#3b82f6' },
+		{ name: 'eBay', region: 'US', icon: 'fa-brands fa-ebay', color: '#f59e0b' },
+		{ name: 'HiMarket', region: 'HK', icon: 'fa-solid fa-earth-asia', color: '#ec4899' },
+		{ name: 'Hareruya', region: 'JP', icon: 'fa-solid fa-sun', color: '#f97316' },
+		{ name: 'Ruten', region: 'TW', icon: 'fa-solid fa-shop', color: '#14b8a6' },
+		{ name: 'CardMarket', region: 'EU', icon: 'fa-solid fa-euro-sign', color: '#38bdf8' }
+	];
+
+	const slashCommands = [
+		{ cmd: '/seeker add', desc: 'Add a card printing, finish, and language to your list' },
+		{ cmd: '/seeker price', desc: 'Check live lowest prices across enabled marketplaces' },
+		{ cmd: '/seeker history', desc: 'View historical price snapshots for a card' },
+		{ cmd: '/seeker digest', desc: 'Send your current in-stock digest to Discord' },
+		{ cmd: '/seeker delete', desc: 'Remove a card from your seeking list' },
+		{ cmd: '/seeker settings', desc: 'Inspect or toggle alerts and preferences' }
+	];
 </script>
 
 {#if mounted}
@@ -120,6 +141,31 @@
 								</li>
 							{/each}
 						</ul>
+					</div>
+				{/each}
+			</div>
+
+			<h2>Supported Marketplaces</h2>
+			<p>Seeker monitors domestic and international storefronts with exact set, finish, and language matching:</p>
+			<div class="marketplace-pills-grid">
+				{#each supportedMarketplaces as mk}
+					<div class="marketplace-pill">
+						<span class="mk-pill-icon" style="color: {mk.color}; background: {mk.color}1a;">
+							<i class={mk.icon}></i>
+						</span>
+						<span class="mk-pill-name">{mk.name}</span>
+						<span class="mk-pill-region">{mk.region}</span>
+					</div>
+				{/each}
+			</div>
+
+			<h2>Discord Bot Commands</h2>
+			<p>Manage your seeking list and check prices directly from Discord using <code>/seeker</code> slash commands:</p>
+			<div class="commands-grid">
+				{#each slashCommands as item}
+					<div class="command-card">
+						<code class="command-name">{item.cmd}</code>
+						<span class="command-desc">{item.desc}</span>
 					</div>
 				{/each}
 			</div>
@@ -390,5 +436,81 @@
 		.about-content {
 			padding: 1.5rem;
 		}
+	}
+
+	/* Supported Marketplaces & Discord Commands */
+	.marketplace-pills-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+		gap: 0.65rem;
+		margin: 1rem 0 2rem;
+	}
+
+	.marketplace-pill {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.6rem 0.75rem;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+	}
+
+	.mk-pill-icon {
+		width: 28px;
+		height: 28px;
+		border-radius: 7px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.85rem;
+		flex-shrink: 0;
+	}
+
+	.mk-pill-name {
+		font-size: 0.88rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		flex: 1;
+		min-width: 0;
+	}
+
+	.mk-pill-region {
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: var(--color-text-muted);
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		padding: 0.1rem 0.4rem;
+	}
+
+	.commands-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: 0.75rem;
+		margin-top: 1rem;
+	}
+
+	.command-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		padding: 0.8rem 0.95rem;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+	}
+
+	.command-name {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--color-primary);
+	}
+
+	.command-desc {
+		font-size: 0.82rem;
+		color: var(--color-text-secondary);
+		line-height: 1.4;
 	}
 </style>
