@@ -130,6 +130,7 @@
 						prices: print.prices || card.prices || null,
 						finishes: print.finishes || [],
 						tcgplayer_id: print.tcgplayer_id || null,
+						tcgplayer_etched_id: print.tcgplayer_etched_id || null,
 						cardmarket_id: print.cardmarket_id || null,
 						card_faces: cardFaces
 					};
@@ -261,6 +262,7 @@
 			card.selected_language = language;
 			card.localized_id = cardData.id || null;
 			card.localized_tcgplayer_id = cardData.tcgplayer_id || null;
+			card.localized_tcgplayer_etched_id = cardData.tcgplayer_etched_id || null;
 			card.localized_cardmarket_id = cardData.cardmarket_id || null;
 			card.image_uris = { grid: imageUri, normal: imageUri };
 			card.flavor_text = flavor_text;
@@ -356,6 +358,7 @@
 			const baseLang = (currentPrint.lang || 'en').toLowerCase();
 			const useBaseIds = targetLang === baseLang;
 
+			const selectedFinish = selectedFinishes[card.id] || 'nonfoil';
 			const payload = {
 				id: useBaseIds ? (currentPrint.id || card.id || crypto.randomUUID()) : (card.localized_id || crypto.randomUUID()),
 				name: card.name,
@@ -366,8 +369,15 @@
 				oracle_id: card.oracle_id,
 				image_uri: getCardImageUri(card) || currentPrint.image_uri,
 				timestamp: new Date().toISOString(),
-				finish: selectedFinishes[card.id] || 'nonfoil',
-				tcgplayer_id: useBaseIds ? (currentPrint.tcgplayer_id || null) : (card.localized_tcgplayer_id || null),
+				finish: selectedFinish,
+				tcgplayer_id:
+					selectedFinish === 'etched'
+						? useBaseIds
+							? currentPrint.tcgplayer_etched_id || null
+							: card.localized_tcgplayer_etched_id || null
+						: useBaseIds
+							? currentPrint.tcgplayer_id || null
+							: card.localized_tcgplayer_id || null,
 				cardmarket_id: useBaseIds ? (currentPrint.cardmarket_id || null) : (card.localized_cardmarket_id || null)
 			};
 

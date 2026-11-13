@@ -261,7 +261,10 @@
 				image_uri: getScryfallImage(langVariant) || getScryfallImage(selectedPrint),
 				timestamp: new Date().toISOString(),
 				finish: selectedFinish,
-				tcgplayer_id: langVariant.tcgplayer_id || selectedPrint.tcgplayer_id || null,
+				tcgplayer_id:
+					selectedFinish === 'etched'
+						? langVariant.tcgplayer_etched_id || selectedPrint.tcgplayer_etched_id || null
+						: langVariant.tcgplayer_id || selectedPrint.tcgplayer_id || null,
 				cardmarket_id: langVariant.cardmarket_id || selectedPrint.cardmarket_id || null
 			};
 

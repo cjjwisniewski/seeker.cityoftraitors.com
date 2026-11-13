@@ -298,7 +298,11 @@
 				finish,
 				oracle_id,
 				image_uri,
-				tcgplayer_id: sameLang ? (scry.tcgplayer_id || item.tcgplayer_id || null) : null,
+				tcgplayer_id: sameLang
+					? finish === 'etched'
+						? scry.tcgplayer_etched_id || null
+						: scry.tcgplayer_id || item.tcgplayer_id || null
+					: null,
 				cardmarket_id: sameLang ? (scry.cardmarket_id || item.cardmarket_id || null) : null,
 				isBasicLand,
 				alreadyExists,

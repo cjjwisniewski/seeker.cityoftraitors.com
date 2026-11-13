@@ -88,6 +88,7 @@
 			prices: print.prices || fallbackCard?.prices || null,
 			finishes: print.finishes || [],
 			tcgplayer_id: print.tcgplayer_id || null,
+			tcgplayer_etched_id: print.tcgplayer_etched_id || null,
 			cardmarket_id: print.cardmarket_id || null,
 			card_faces: cardFaces
 		};

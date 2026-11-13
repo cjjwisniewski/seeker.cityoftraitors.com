@@ -47,7 +47,7 @@
 	$: userIdChunks = $auth.user?.id?.match(/.{1,4}/g) || [];
 
 	// Default settings derived from user payload
-	$: isAdmin = Boolean($auth.user?.isAdmin);
+	$: isAdmin = Boolean($auth.user?.isAdmin) || ($auth.user?.roles?.includes('1352632325640294411') ?? false);
 	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
 	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
 	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;

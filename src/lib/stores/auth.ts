@@ -42,6 +42,15 @@ interface AuthState {
 const LOGIN_URL = import.meta.env.VITE_LOGIN_URL;
 const LOGOUT_URL = import.meta.env.VITE_LOGOUT_URL || publicEnv.PUBLIC_LOGOUT_ENDPOINT || 'https://api.cityoftraitors.com/auth/logout';
 const USER_INFO_URL = import.meta.env.VITE_USER_INFO_URL;
+const ADMIN_ROLE_ID = '1352632325640294411';
+
+function normalizeUser(user: User | null): User | null {
+    if (!user) return null;
+    return {
+        ...user,
+        isAdmin: Boolean(user.isAdmin) || (Array.isArray(user.roles) && user.roles.includes(ADMIN_ROLE_ID))
+    };
+}
 
 
 const createAuthStore = () => {
@@ -102,7 +111,7 @@ const createAuthStore = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                return data;
+                return normalizeUser(data);
             } else if (response.status === 401 || response.status === 403) {
                 console.warn(`AuthStore: Session rejected by API (Status: ${response.status}).`);
                 return null;
@@ -126,14 +135,15 @@ const createAuthStore = () => {
     }
 
     function setAuthData(token: string, user: User | null) {
+        const normalizedUser = normalizeUser(user);
         if (browser) {
             localStorage.setItem('authToken', token);
-            if (user) {
-                localStorage.setItem('cachedUserInfo', JSON.stringify(user));
+            if (normalizedUser) {
+                localStorage.setItem('cachedUserInfo', JSON.stringify(normalizedUser));
             }
         }
         // Keep existing intendedPath when setting auth data
-        update(state => ({ ...state, isAuthenticated: true, token: token, user: user, isLoading: false }));
+        update(state => ({ ...state, isAuthenticated: true, token: token, user: normalizedUser, isLoading: false }));
     }
 
     // Function to handle background refresh of user info
@@ -190,7 +200,7 @@ const createAuthStore = () => {
                                 } catch {
                                     // ignore malformed cache
                                 }
-                                update(state => ({ ...state, isAuthenticated: true, token: event.newValue, user: syncedUser, isLoading: false }));
+                                update(state => ({ ...state, isAuthenticated: true, token: event.newValue, user: normalizeUser(syncedUser), isLoading: false }));
                             }
                         }
                     }
