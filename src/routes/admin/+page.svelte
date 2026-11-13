@@ -31,6 +31,7 @@
 	let error = null; // General error display
 	let statusError = null; // Error display for system status
 	let systemStatus = null;
+	let activeTab = 'overview'; // 'overview' | 'health' | 'users' | 'banner'
 
 	// Tier counts for filter pills
 	$: tierCounts = {
@@ -551,17 +552,39 @@
 	}
 
 	// Statistics Logic
+	const MARKETPLACE_METRICS = [
+		{ key: 'cardtrader', label: 'CardTrader', badgeClass: 'ct', iconClass: 'fa-solid fa-cube', secPerCard: 2 },
+		{ key: 'tcgplayer', label: 'TCGPlayer', badgeClass: 'tcg', iconClass: 'fa-solid fa-store', secPerCard: 2 },
+		{ key: 'manapool', label: 'Mana Pool', badgeClass: 'manapool', iconClass: 'fa-solid fa-droplet', secPerCard: 1 },
+		{ key: 'cardkingdom', label: 'Card Kingdom', badgeClass: 'cardkingdom', iconClass: 'fa-solid fa-crown', secPerCard: 1 },
+		{ key: 'ebay', label: 'eBay', badgeClass: 'ebay', iconClass: 'fa-brands fa-ebay', secPerCard: 1 },
+		{ key: 'himarket', label: 'HiMarket', badgeClass: 'himarket', iconClass: 'fa-solid fa-earth-asia', secPerCard: 1 },
+		{ key: 'hareruya', label: 'Hareruya', badgeClass: 'hareruya', iconClass: 'fa-solid fa-sun', secPerCard: 2 },
+		{ key: 'ruten', label: 'Ruten', badgeClass: 'ruten', iconClass: 'fa-solid fa-shop', secPerCard: 2 },
+		{ key: 'cardmarket', label: 'CardMarket', badgeClass: 'cardmarket', iconClass: 'fa-solid fa-euro-sign', secPerCard: 12 }
+	];
+
 	$: totalUsers = userTables.length;
 	$: totalItems = userTables.reduce((sum, table) => sum + (table.itemCount || 0), 0);
+	$: totalQueuedMessages = (systemStatus?.queues || []).reduce((sum, q) => sum + (q.active_messages || 0), 0);
+	$: totalPoisonMessages = (systemStatus?.queues || []).reduce((sum, q) => sum + (q.poison_messages || 0), 0);
 
-	$: estimatedCTTimeSeconds = totalItems * 2;
-	$: estimatedTCGTimeSeconds = totalItems * 2;
-	$: estimatedEbayTimeSeconds = totalItems * 1;
-	$: estimatedManapoolTimeSeconds = totalItems * 1;
-	$: estimatedHimarketTimeSeconds = totalItems * 1;
-	$: estimatedHareruyaTimeSeconds = totalItems * 2;
-	$: estimatedRutenTimeSeconds = totalItems * 2;
-	$: estimatedCardmarketTimeSeconds = totalItems * 12;
+	$: marketplaceAdoption = MARKETPLACE_METRICS.map((mk) => {
+		let users = 0;
+		let items = 0;
+		for (const table of userTables) {
+			if (isMarketplaceEnabled(table, mk.key)) {
+				users += 1;
+				items += table.itemCount || 0;
+			}
+		}
+		return {
+			...mk,
+			users,
+			items,
+			estSeconds: items * mk.secPerCard
+		};
+	});
 
 	function formatCents(cents) {
 		if (cents === null || cents === undefined || cents <= 0) return '—';
@@ -643,9 +666,12 @@
 
 			<div class="toolbar-right">
 				{#if systemStatus}
-					<div class="status-indicator-pill" title="System Status: {systemStatus.state || 'Active'}">
-						<span class="pulse-dot"></span>
-						<span>System Healthy</span>
+					<div
+						class="status-indicator-pill {systemStatus.state?.toLowerCase() === 'degraded' ? 'degraded' : ''}"
+						title="System Status: {systemStatus.state || 'Active'}"
+					>
+						<span class="pulse-dot {systemStatus.state?.toLowerCase() === 'degraded' ? 'degraded' : ''}"></span>
+						<span>{systemStatus.state?.toLowerCase() === 'degraded' ? 'System Degraded' : 'System Healthy'}</span>
 					</div>
 				{/if}
 				<div class="card-counter" title="Total registered users">
@@ -666,7 +692,65 @@
 			</div>
 		</div>
 
+		<!-- Admin Navigation Tabs -->
+		<div class="admin-tabs" role="tablist" aria-label="Admin Console Sections">
+			<button
+				type="button"
+				role="tab"
+				aria-selected={activeTab === 'overview'}
+				class="admin-tab"
+				class:active={activeTab === 'overview'}
+				on:click={() => (activeTab = 'overview')}
+			>
+				<i class="fa-solid fa-chart-pie"></i>
+				<span>Overview</span>
+			</button>
+			<button
+				type="button"
+				role="tab"
+				aria-selected={activeTab === 'health'}
+				class="admin-tab"
+				class:active={activeTab === 'health'}
+				on:click={() => (activeTab = 'health')}
+			>
+				<i class="fa-solid fa-heart-pulse"></i>
+				<span>System Health</span>
+				{#if totalPoisonMessages > 0}
+					<span class="tab-badge alert">{totalPoisonMessages}</span>
+				{:else if systemStatus?.state?.toLowerCase() === 'degraded'}
+					<span class="tab-badge warn">!</span>
+				{/if}
+			</button>
+			<button
+				type="button"
+				role="tab"
+				aria-selected={activeTab === 'users'}
+				class="admin-tab"
+				class:active={activeTab === 'users'}
+				on:click={() => (activeTab = 'users')}
+			>
+				<i class="fa-solid fa-users-gear"></i>
+				<span>Users</span>
+				<span class="tab-badge">{totalUsers}</span>
+			</button>
+			<button
+				type="button"
+				role="tab"
+				aria-selected={activeTab === 'banner'}
+				class="admin-tab"
+				class:active={activeTab === 'banner'}
+				on:click={() => (activeTab = 'banner')}
+			>
+				<i class="fa-solid fa-bullhorn"></i>
+				<span>Banner &amp; Broadcast</span>
+				{#if bannerEnabled}
+					<span class="tab-live-dot" title="Banner is currently live"></span>
+				{/if}
+			</button>
+		</div>
+
 		<div class="admin-content">
+			{#if activeTab === 'overview'}
 			<!-- Section 1: Overview Statistics -->
 			<section class="admin-section">
 				<div class="section-title-row">
@@ -682,7 +766,7 @@
 						<span>Calculating stats...</span>
 					</div>
 				{:else}
-					<div class="stats-grid">
+					<div class="kpi-grid">
 						<div class="stat-card">
 							<div class="stat-card-header">
 								<span class="stat-title">Total Users</span>
@@ -696,7 +780,7 @@
 
 						<div class="stat-card">
 							<div class="stat-card-header">
-								<span class="stat-title">Total Items</span>
+								<span class="stat-title">Tracked Cards</span>
 								<div class="stat-icon-badge items">
 									<i class="fa-solid fa-layer-group"></i>
 								</div>
@@ -707,95 +791,57 @@
 
 						<div class="stat-card">
 							<div class="stat-card-header">
-								<span class="stat-title">CardTrader Time</span>
+								<span class="stat-title">Queued Checks</span>
 								<div class="stat-icon-badge ct">
-									<i class="fa-solid fa-cube"></i>
+									<i class="fa-solid fa-list-check"></i>
 								</div>
 							</div>
-							<div class="stat-value">{formatDuration(estimatedCTTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 2s / card</div>
+							<div class="stat-value">{totalQueuedMessages}</div>
+							<div class="stat-sub">Active across {systemStatus?.queues?.length || 0} queues</div>
 						</div>
 
 						<div class="stat-card">
 							<div class="stat-card-header">
-								<span class="stat-title">TCGPlayer Time</span>
-								<div class="stat-icon-badge tcg">
-									<i class="fa-solid fa-store"></i>
+								<span class="stat-title">Poison Queue</span>
+								<div class="stat-icon-badge {totalPoisonMessages > 0 ? 'poison' : 'health'}">
+									<i class="fa-solid {totalPoisonMessages > 0 ? 'fa-skull-crossbones' : 'fa-shield-halved'}"></i>
 								</div>
 							</div>
-							<div class="stat-value">{formatDuration(estimatedTCGTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 2s / card</div>
+							<div class="stat-value">{totalPoisonMessages}</div>
+							<div class="stat-sub">{totalPoisonMessages > 0 ? 'Needs inspection' : 'All queues clean'}</div>
 						</div>
+					</div>
 
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">Mana Pool Time</span>
-								<div class="stat-icon-badge manapool">
-									<i class="fa-solid fa-droplet"></i>
-								</div>
-							</div>
-							<div class="stat-value">{formatDuration(estimatedManapoolTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 1s / card</div>
+					<div class="subsection">
+						<div class="subsection-header-row">
+							<h3 class="subsection-title">Marketplace Adoption &amp; Est. Scan Time</h3>
+							<span class="subsection-hint">Based on enabled user lists</span>
 						</div>
-
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">eBay Time</span>
-								<div class="stat-icon-badge ebay">
-									<i class="fa-brands fa-ebay"></i>
+						<div class="marketplace-grid">
+							{#each marketplaceAdoption as mk}
+								<div class="mk-stat-card">
+									<div class="mk-stat-top">
+										<div class="mk-stat-identity">
+											<div class="stat-icon-badge {mk.badgeClass}">
+												<i class={mk.iconClass}></i>
+											</div>
+											<span class="mk-stat-name">{mk.label}</span>
+										</div>
+										<span class="mk-stat-time">{formatDuration(mk.estSeconds)}</span>
+									</div>
+									<div class="mk-stat-meta">
+										<span>{mk.users} {mk.users === 1 ? 'user' : 'users'} &bull; {mk.items} cards</span>
+										<span>@{mk.secPerCard}s/card</span>
+									</div>
 								</div>
-							</div>
-							<div class="stat-value">{formatDuration(estimatedEbayTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 1s / card</div>
-						</div>
-
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">HiMarket Time</span>
-								<div class="stat-icon-badge himarket">
-									<i class="fa-solid fa-earth-asia"></i>
-								</div>
-							</div>
-							<div class="stat-value">{formatDuration(estimatedHimarketTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 1s / card</div>
-						</div>
-
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">Hareruya Time</span>
-								<div class="stat-icon-badge hareruya">
-									<i class="fa-solid fa-sun"></i>
-								</div>
-							</div>
-							<div class="stat-value">{formatDuration(estimatedHareruyaTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 2s / card</div>
-						</div>
-
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">Ruten Time</span>
-								<div class="stat-icon-badge ruten">
-									<i class="fa-solid fa-shop"></i>
-								</div>
-							</div>
-							<div class="stat-value">{formatDuration(estimatedRutenTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 2s / card (ZHT/EN)</div>
-						</div>
-
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">CardMarket Time</span>
-								<div class="stat-icon-badge cardmarket">
-									<i class="fa-solid fa-euro-sign"></i>
-								</div>
-							</div>
-							<div class="stat-value">{formatDuration(estimatedCardmarketTimeSeconds)}</div>
-							<div class="stat-sub">Est. @ 12s / card (EU VPN)</div>
+							{/each}
 						</div>
 					</div>
 				{/if}
 			</section>
+			{/if}
 
+			{#if activeTab === 'banner'}
 			<!-- Section 2: Notification Banner -->
 			<section class="admin-section">
 				<div class="section-title-row">
@@ -879,7 +925,9 @@
 					</div>
 				{/if}
 			</section>
+			{/if}
 
+			{#if activeTab === 'health'}
 			<!-- Section 3: System Status -->
 			<section class="admin-section">
 				<div class="section-title-row">
@@ -1099,7 +1147,9 @@
 					{/if}
 				{/if}
 			</section>
+			{/if}
 
+			{#if activeTab === 'users'}
 			<!-- Section 4: User Management -->
 			<section class="admin-section">
 				<div class="section-title-row">
@@ -1679,6 +1729,7 @@
 					</div>
 				{/if}
 			</section>
+			{/if}
 		</div>
 	</div>
 
@@ -2112,6 +2163,96 @@
 		animation: pulse 2s infinite;
 	}
 
+	.status-indicator-pill.degraded {
+		color: #f59e0b;
+		border-color: rgba(245, 158, 11, 0.35);
+		background: rgba(245, 158, 11, 0.1);
+	}
+
+	.pulse-dot.degraded {
+		background-color: #f59e0b;
+		box-shadow: 0 0 8px #f59e0b;
+	}
+
+	/* Admin Navigation Tabs */
+	.admin-tabs {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+		padding: 0.4rem;
+		background: var(--glass-bg, var(--color-bg-elevated));
+		backdrop-filter: blur(var(--backdrop-blur, 10px));
+		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
+		border: 1px solid var(--glass-border, var(--color-border));
+		border-radius: 14px;
+		overflow-x: auto;
+	}
+
+	.admin-tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		padding: 0.6rem 1.05rem;
+		border: 1px solid transparent;
+		border-radius: 10px;
+		background: transparent;
+		color: var(--color-text-secondary);
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		white-space: nowrap;
+		transition: all var(--transition-fast);
+	}
+
+	.admin-tab:hover {
+		color: var(--color-text-primary);
+		background: var(--color-bg-secondary);
+	}
+
+	.admin-tab.active {
+		background: var(--color-primary);
+		color: #ffffff;
+		box-shadow: 0 2px 10px var(--color-primary-alpha, rgba(99, 102, 241, 0.28));
+	}
+
+	.tab-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 20px;
+		height: 20px;
+		padding: 0 0.4rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 700;
+		background: rgba(148, 163, 184, 0.18);
+		color: inherit;
+	}
+
+	.admin-tab.active .tab-badge {
+		background: rgba(255, 255, 255, 0.22);
+		color: #ffffff;
+	}
+
+	.tab-badge.alert {
+		background: rgba(239, 68, 68, 0.18);
+		color: #ef4444;
+	}
+
+	.tab-badge.warn {
+		background: rgba(245, 158, 11, 0.2);
+		color: #f59e0b;
+	}
+
+	.tab-live-dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #22c55e;
+		box-shadow: 0 0 6px #22c55e;
+	}
+
 	@keyframes pulse {
 		0%, 100% { opacity: 1; transform: scale(1); }
 		50% { opacity: 0.5; transform: scale(0.85); }
@@ -2240,6 +2381,89 @@
 	}
 
 	/* Stats Grid */
+	.kpi-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.subsection-header-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 0.85rem;
+		flex-wrap: wrap;
+	}
+
+	.subsection-hint {
+		font-size: 0.78rem;
+		color: var(--color-text-muted);
+		font-weight: 500;
+	}
+
+	.marketplace-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: 0.75rem;
+	}
+
+	.mk-stat-card {
+		padding: 0.9rem 1rem;
+		background: var(--color-bg-secondary);
+		border-radius: 12px;
+		border: 1px solid var(--color-border);
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+		transition: transform var(--transition-fast), border-color var(--transition-fast);
+	}
+
+	.mk-stat-card:hover {
+		transform: translateY(-1px);
+		border-color: var(--color-border-hover);
+	}
+
+	.mk-stat-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.mk-stat-identity {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		min-width: 0;
+	}
+
+	.mk-stat-name {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--color-text-primary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.mk-stat-time {
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--color-text-primary);
+		white-space: nowrap;
+	}
+
+	.mk-stat-meta {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+		font-weight: 500;
+	}
+
 	.stats-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -2309,6 +2533,21 @@
 	.stat-icon-badge.manapool {
 		background: rgba(139, 92, 246, 0.12);
 		color: #8b5cf6;
+	}
+
+	.stat-icon-badge.cardkingdom {
+		background: rgba(59, 130, 246, 0.12);
+		color: #3b82f6;
+	}
+
+	.stat-icon-badge.health {
+		background: rgba(34, 197, 94, 0.12);
+		color: #22c55e;
+	}
+
+	.stat-icon-badge.poison {
+		background: rgba(239, 68, 68, 0.12);
+		color: #ef4444;
 	}
 
 	.stat-icon-badge.ebay {
