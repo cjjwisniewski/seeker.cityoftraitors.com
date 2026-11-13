@@ -447,12 +447,9 @@
 		border: 1px solid var(--color-border);
 		border-radius: 10px;
 		box-shadow: var(--shadow-lg);
-		z-index: 60;
-	}
-		box-shadow: var(--shadow-lg);
 		max-height: 280px;
 		overflow-y: auto;
-		z-index: 40;
+		z-index: 60;
 	}
 
 	.quick-suggestion-btn {
