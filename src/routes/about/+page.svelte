@@ -90,6 +90,10 @@
 					<strong>Have questions or feedback?</strong>
 					<span>Reach out to <a href="https://discord.com/users/213058259076913152" target="_blank" rel="noopener noreferrer">@undomian</a> on the City of Traitors Discord.</span>
 				</div>
+				<a href="/demo" class="about-demo-cta">
+					<i class="fa-solid fa-flask"></i>
+					<span>Try Interactive Demo</span>
+				</a>
 			</div>
 
 			<h2>Membership Tiers</h2>
@@ -511,5 +515,20 @@
 		font-size: 0.82rem;
 		color: var(--color-text-secondary);
 		line-height: 1.4;
+	}
+
+	.about-demo-cta {
+		margin-left: auto;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		padding: 0.55rem 0.95rem;
+		border-radius: 8px;
+		background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+		color: #fff;
+		text-decoration: none;
+		font-size: 0.85rem;
+		font-weight: 600;
+		white-space: nowrap;
 	}
 </style>

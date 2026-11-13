@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { auth } from '$lib/stores/auth';
 	import CardSearchForm from '$lib/components/CardSearchForm.svelte';
 	import CardList from '$lib/components/CardList.svelte';
 
@@ -58,6 +59,31 @@
 					</div>
 				</div>
 			</div>
+
+			{#if !$auth.isAuthenticated}
+				<div class="demo-promo-banner">
+					<div class="demo-promo-copy">
+						<span class="demo-promo-badge">No Discord Login Required</span>
+						<strong>Want to see Seeker in action first?</strong>
+						<span>Explore a live 12-card interactive watchlist across 8 marketplaces, import sample decklists, and preview Discord DM alerts.</span>
+					</div>
+					<a href="/demo" class="demo-promo-cta">
+						<i class="fa-solid fa-flask"></i>
+						<span>View Live Demo Watchlist</span>
+					</a>
+				</div>
+			{:else if $auth.isDemo}
+				<div class="demo-promo-banner">
+					<div class="demo-promo-copy">
+						<span class="demo-promo-badge">Demo Sandbox Active</span>
+						<span>Search any card above and click <strong>Add to Seeking</strong> to test adding it with live Scryfall pricing, or jump back to your watchlist.</span>
+					</div>
+					<a href="/seeking" class="demo-promo-cta">
+						<i class="fa-solid fa-sd-card"></i>
+						<span>Open Demo Watchlist</span>
+					</a>
+				</div>
+			{/if}
 		{/if}
 
 		<CardList {cards} {hasSearched} />
@@ -157,5 +183,62 @@
 		.home-container {
 			padding: 1rem 1rem 2rem 1rem;
 		}
+	}
+
+	.demo-promo-banner {
+		margin-top: 1.5rem;
+		padding: 1rem 1.25rem;
+		border-radius: 12px;
+		background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(88, 101, 242, 0.1) 100%);
+		border: 1px solid rgba(16, 185, 129, 0.35);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		text-align: left;
+		flex-wrap: wrap;
+	}
+
+	.demo-promo-copy {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		flex: 1 1 280px;
+		font-size: 0.9rem;
+		color: var(--color-text-secondary);
+	}
+
+	.demo-promo-copy strong {
+		color: var(--color-text-primary);
+		font-size: 0.98rem;
+	}
+
+	.demo-promo-badge {
+		align-self: flex-start;
+		font-size: 0.72rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: #10b981;
+	}
+
+	.demo-promo-cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.65rem 1.15rem;
+		border-radius: 8px;
+		background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+		color: #fff;
+		text-decoration: none;
+		font-weight: 600;
+		font-size: 0.9rem;
+		white-space: nowrap;
+		transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+	}
+
+	.demo-promo-cta:hover {
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-md);
 	}
 </style>

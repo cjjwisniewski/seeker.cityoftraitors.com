@@ -8,6 +8,8 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte'; // Import the theme toggle
 	import Logo from '$lib/components/Logo.svelte'; // Import Logo component
 	import Banner from '$lib/components/Banner.svelte'; // Import Banner component
+	import DemoBanner from '$lib/components/demo/DemoBanner.svelte';
+	import DemoAlertPreviewModal from '$lib/components/demo/DemoAlertPreviewModal.svelte';
 	import { PUBLIC_GET_BANNER_FUNCTION_URL } from '$env/static/public';
 
 	// Import global styles
@@ -153,7 +155,7 @@
 										Account
 									</button>
 									<!-- Check roles from the auth store user object -->
-									{#if $auth.user?.roles?.includes('1352632325640294411')}
+									{#if !$auth.isDemo && $auth.user?.roles?.includes('1352632325640294411')}
 										<button
 											class="dropdown-item"
 											role="menuitem"
@@ -169,7 +171,7 @@
 									{/if}
 									<button on:click={logout} class="dropdown-item" role="menuitem" tabindex="0">
 										<i class="fa-solid fa-right-from-bracket"></i>
-										Logout
+										{$auth.isDemo ? 'Exit Demo' : 'Logout'}
 									</button>
 									<!-- Add Theme Toggle Here -->
 									<div class="dropdown-divider"></div>
@@ -180,12 +182,14 @@
 							{/if}
 						</div>
 					{:else if !$auth.isLoading}
-						<!-- Optionally show a Login button if not authenticated and not loading -->
+						<!-- Offer both Demo Sandbox and Discord Login for public visitors -->
+						<a href="/demo" class="login-button demo-nav-btn">Try Demo</a>
 						<a href="/login" class="login-button">Login</a>
 					{/if}
 				</div>
 			</div>
 		</nav>
+		<DemoBanner />
 	{/if}
 
 	<main class={$page.url.pathname === '/login' ? 'no-padding-top' : ''}>
@@ -196,6 +200,7 @@
 			<div class="loading-indicator">Loading...</div>
 		{/if}
 	</main>
+	<DemoAlertPreviewModal />
 	<Footer />
 </div>
 
@@ -443,6 +448,13 @@
 	.login-button:hover {
 		transform: translateY(-1px);
 		box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+	}
+	.demo-nav-btn {
+		background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+		box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25);
+	}
+	.demo-nav-btn:hover {
+		box-shadow: 0 4px 8px rgba(16, 185, 129, 0.35);
 	}
 
 	/* Layout structure */

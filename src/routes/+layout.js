@@ -29,8 +29,38 @@ export const load = async ({ url }) => {
         currentPath === '/auth/callback' ||
         currentPath === '/auth/logout';
 
-    // Redirect to login if not authenticated, not loading, and not on an auth path
-    if (!authState.isAuthenticated && !authState.isLoading && !isAuthPath) {
+    const isPublicPath =
+        isAuthPath ||
+        currentPath === '/' ||
+        currentPath === '/about' ||
+        currentPath === '/demo';
+
+    if (browser) {
+        const wantsDemoParam = url.searchParams.get('demo') === '1';
+        if (currentPath === '/demo') {
+            auth.enterDemoMode(true);
+        } else if (wantsDemoParam && !authState.isAuthenticated) {
+            auth.enterDemoMode(false);
+        }
+    }
+
+    const effectiveAuthState = browser ? get(auth) : authState;
+
+    // Strictly block demo users and non-admins from admin routes
+    if (currentPath.startsWith('/admin') && !effectiveAuthState.isLoading) {
+        if (!effectiveAuthState.isAuthenticated) {
+            if (browser) {
+                auth.setIntendedPath(currentPath + url.search);
+            }
+            throw redirect(302, '/login');
+        }
+        if (effectiveAuthState.isDemo || !effectiveAuthState.user?.isAdmin) {
+            throw redirect(302, effectiveAuthState.isDemo ? '/seeking' : '/');
+        }
+    }
+
+    // Redirect to login if not authenticated, not loading, and not on a public/auth path
+    if (!effectiveAuthState.isAuthenticated && !effectiveAuthState.isLoading && !isPublicPath) {
         const intendedPath = currentPath + url.search;
         if (browser) {
             auth.setIntendedPath(intendedPath); // Store intended path for redirect after login
@@ -39,13 +69,13 @@ export const load = async ({ url }) => {
     }
 
     // Redirect authenticated users away from the login page
-    if (authState.isAuthenticated && currentPath === '/login') {
-         throw redirect(302, '/');
+    if (effectiveAuthState.isAuthenticated && currentPath === '/login') {
+        throw redirect(302, effectiveAuthState.isDemo ? '/seeking' : '/');
     }
 
     // Make user data available to pages
     return {
-        user: authState.user
+        user: effectiveAuthState.user
     };
 };
 

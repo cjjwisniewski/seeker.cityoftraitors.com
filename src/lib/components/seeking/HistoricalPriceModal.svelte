@@ -51,7 +51,11 @@
 						<p>
 							{card.set_code.toUpperCase()} #{card.collector_number}
 							• {card.language.toUpperCase()}
-							• {card.finish.toLowerCase() === 'foil' ? '✦ Foil' : 'Nonfoil'}
+							• {card.finish.toLowerCase() === 'foil'
+								? '✦ Foil'
+								: card.finish.toLowerCase() === 'etched'
+									? '◈ Etched'
+									: 'Nonfoil'}
 						</p>
 						{#if hp?.first_observed_at}
 							<span class="hist-tracked-since">

@@ -1,5 +1,7 @@
 <script>
+	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
+	import { SAMPLE_DEMO_DECKS } from '$lib/demo/demoSeed';
 	import {
 		PUBLIC_ADD_TO_SEEKING_FUNCTION_URL,
 		PUBLIC_FETCH_MOXFIELD_DECK_FUNCTION_URL
@@ -266,9 +268,11 @@
 				availableLanguages.unshift('en');
 			}
 
-			const requestedLang = (importMode === 'moxfield'
-				? (importDefaultLanguage || 'en')
-				: (item.language || importDefaultLanguage || 'en')
+			const requestedLang = (item.preset_language
+				? item.preset_language
+				: importMode === 'moxfield'
+					? (importDefaultLanguage || 'en')
+					: (item.language || importDefaultLanguage || 'en')
 			).toLowerCase();
 
 			const language = availableLanguages.includes(requestedLang)
@@ -304,6 +308,7 @@
 						: scry.tcgplayer_id || item.tcgplayer_id || null
 					: null,
 				cardmarket_id: sameLang ? (scry.cardmarket_id || item.cardmarket_id || null) : null,
+				demo_scryfall_prices: scry.prices || null,
 				isBasicLand,
 				alreadyExists,
 				selected: !alreadyExists && !(excludeBasicLands && isBasicLand)
@@ -434,6 +439,47 @@
 		}
 	}
 
+	async function handleLoadSampleDeck(preset) {
+		if (!preset || isResolvingImport) return;
+		importError = null;
+		isResolvingImport = true;
+		importResolveStatus = `Loading "${preset.title}" via Scryfall...`;
+		importedDeckName = preset.title;
+		try {
+			const rawItems = preset.cards.map((c) => ({
+				name: c.name,
+				set_code: c.set_code || '',
+				collector_number: c.collector_number || '',
+				finish: c.finish || preset.defaultFinish || 'nonfoil',
+				language: c.language || preset.defaultLanguage || 'en',
+				preset_language: c.language || preset.defaultLanguage || 'en'
+			}));
+			const resolved = await resolveCardsWithScryfall(rawItems);
+			if (resolved.length === 0) {
+				throw new Error('Could not resolve sample deck cards from Scryfall.');
+			}
+			if (isCapped) {
+				let remaining = remainingSlots;
+				for (const item of resolved) {
+					if (item.selected) {
+						if (remaining > 0) {
+							remaining--;
+						} else {
+							item.selected = false;
+						}
+					}
+				}
+			}
+			importPreviewCards = resolved;
+			importStep = 'preview';
+		} catch (err) {
+			importError = err.message || 'Failed to resolve sample deck.';
+		} finally {
+			isResolvingImport = false;
+			importResolveStatus = '';
+		}
+	}
+
 	function handleToggleExcludeBasicLands() {
 		const existingKeySet = new Set(cards.map(getCardKey));
 		importPreviewCards = importPreviewCards.map((c) => {
@@ -549,7 +595,8 @@
 					timestamp: nowIso,
 					finish: c.finish,
 					tcgplayer_id: c.tcgplayer_id,
-					cardmarket_id: c.cardmarket_id
+					cardmarket_id: c.cardmarket_id,
+					...($auth.isDemo ? { demo_scryfall_prices: c.demo_scryfall_prices || null } : {})
 				}));
 
 				const res = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
@@ -655,32 +702,61 @@
 
 					{#if importMode === 'moxfield'}
 						<div class="settings-group">
-							<label for="moxfield-url-input">Public Moxfield Deck URL</label>
-							<p class="setting-description">
-								Paste a link to any public Moxfield deck to import its exact printings, set codes, collector numbers, and foil finishes.
-							</p>
-							<input
-								id="moxfield-url-input"
-								type="url"
-								bind:value={moxfieldUrlInput}
-								placeholder="https://www.moxfield.com/decks/..."
-								class="modal-input import-full-input"
-								disabled={isResolvingImport}
-								on:keydown={(e) => e.key === 'Enter' && handlePreviewImport()}
-							/>
-
-							<div class="import-defaults-row" style="margin-top: 0.75rem;">
-								<div class="import-default-field">
-									<label for="moxfield-default-lang">Language</label>
-									<select id="moxfield-default-lang" bind:value={importDefaultLanguage} class="import-select" disabled={isResolvingImport}>
-										{#each Object.entries(languageMap) as [code, label]}
-											{#if code !== 'jp' && code !== 'kr'}
-												<option value={code}>{label}</option>
-											{/if}
-										{/each}
-									</select>
+							{#if $auth.isDemo}
+								<div class="demo-moxfield-notice">
+									<i class="fa-solid fa-shield-halved"></i>
+									<div>
+										<strong>Demo Sample Decks</strong>
+										<span>Live Moxfield URL proxying is disabled in Demo Mode to keep the sandbox strictly client-side. Pick a Sample Deck below (resolved live via Scryfall) or switch to the <strong>Text / Clipboard</strong> tab!</span>
+									</div>
 								</div>
-							</div>
+
+								<div class="demo-sample-deck-list">
+									{#each SAMPLE_DEMO_DECKS as preset (preset.id)}
+										<button
+											type="button"
+											class="demo-sample-deck-btn"
+											disabled={isResolvingImport}
+											on:click={() => handleLoadSampleDeck(preset)}
+										>
+											<div class="sample-deck-info">
+												<strong>{preset.title}</strong>
+												<span>{preset.subtitle}</span>
+											</div>
+											<span class="sample-deck-cta">
+												Load Deck <i class="fa-solid fa-arrow-right"></i>
+											</span>
+										</button>
+									{/each}
+								</div>
+							{:else}
+								<label for="moxfield-url-input">Public Moxfield Deck URL</label>
+								<p class="setting-description">
+									Paste a link to any public Moxfield deck to import its exact printings, set codes, collector numbers, and foil finishes.
+								</p>
+								<input
+									id="moxfield-url-input"
+									type="url"
+									bind:value={moxfieldUrlInput}
+									placeholder="https://www.moxfield.com/decks/..."
+									class="modal-input import-full-input"
+									disabled={isResolvingImport}
+									on:keydown={(e) => e.key === 'Enter' && handlePreviewImport()}
+								/>
+
+								<div class="import-defaults-row" style="margin-top: 0.75rem;">
+									<div class="import-default-field">
+										<label for="moxfield-default-lang">Language</label>
+										<select id="moxfield-default-lang" bind:value={importDefaultLanguage} class="import-select" disabled={isResolvingImport}>
+											{#each Object.entries(languageMap) as [code, label]}
+												{#if code !== 'jp' && code !== 'kr'}
+													<option value={code}>{label}</option>
+												{/if}
+											{/each}
+										</select>
+									</div>
+								</div>
+							{/if}
 						</div>
 					{:else}
 						<div class="settings-group">
@@ -913,18 +989,20 @@
 					>
 						Cancel
 					</button>
-					<button
-						type="button"
-						class="modal-btn primary"
-						on:click={handlePreviewImport}
-						disabled={isResolvingImport}
-					>
-						{#if isResolvingImport}
-							<i class="fa-solid fa-circle-notch fa-spin"></i> Resolving...
-						{:else}
-							Preview Cards <i class="fa-solid fa-arrow-right"></i>
-						{/if}
-					</button>
+					{#if !(importMode === 'moxfield' && $auth.isDemo)}
+						<button
+							type="button"
+							class="modal-btn primary"
+							on:click={handlePreviewImport}
+							disabled={isResolvingImport}
+						>
+							{#if isResolvingImport}
+								<i class="fa-solid fa-circle-notch fa-spin"></i> Resolving...
+							{:else}
+								Preview Cards <i class="fa-solid fa-arrow-right"></i>
+							{/if}
+						</button>
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -1492,5 +1570,78 @@
 			padding: 0.7rem 1rem;
 			text-align: center;
 		}
+	}
+
+	.demo-moxfield-notice {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.65rem;
+		padding: 0.75rem 0.85rem;
+		border-radius: 8px;
+		background: rgba(88, 101, 242, 0.12);
+		border: 1px solid rgba(88, 101, 242, 0.35);
+		font-size: 0.84rem;
+		color: var(--color-text-secondary);
+		margin-bottom: 0.85rem;
+	}
+
+	.demo-moxfield-notice i {
+		color: #8ea1ff;
+		margin-top: 0.15rem;
+	}
+
+	.demo-moxfield-notice strong {
+		display: block;
+		color: var(--color-text-primary);
+		margin-bottom: 0.15rem;
+	}
+
+	.demo-sample-deck-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+	}
+
+	.demo-sample-deck-btn {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.75rem 0.9rem;
+		border-radius: 9px;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		cursor: pointer;
+		text-align: left;
+		transition: all 0.15s ease;
+	}
+
+	.demo-sample-deck-btn:hover:not(:disabled) {
+		border-color: var(--color-primary);
+		background: rgba(59, 130, 246, 0.08);
+	}
+
+	.sample-deck-info strong {
+		display: block;
+		font-size: 0.92rem;
+		color: var(--color-text-primary);
+	}
+
+	.sample-deck-info span {
+		display: block;
+		font-size: 0.8rem;
+		color: var(--color-text-secondary);
+		margin-top: 0.1rem;
+	}
+
+	.sample-deck-cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--color-primary);
+		white-space: nowrap;
 	}
 </style>

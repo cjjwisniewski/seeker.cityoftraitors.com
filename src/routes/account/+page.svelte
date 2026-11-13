@@ -8,10 +8,12 @@
 	} from '$env/static/public';
 	import { browser } from '$app/environment'; // To ensure code runs client-side
 	import { languageNames } from '$lib/utils/languageUtils'; // Import language support
+	import { resetDemoWorkspace } from '$lib/demo/demoStore';
 
 	// State variables
 	let showConfirmDialog = false;
 	let deleteError = null;
+	let demoResetDone = false;
 	let settingsError = null;
 	let isUpdatingSetting = false;
 	let copiedUserId = false;
@@ -41,13 +43,14 @@
 	// Reactive declarations based on the auth store
 	$: user = $auth.user;
 	$: token = $auth.token;
+	$: isDemo = Boolean($auth.isDemo);
 	$: isLoading = $auth.isLoading;
 
 	// Split the user ID into chunks for readability without adding real spaces (facilitates copying)
 	$: userIdChunks = $auth.user?.id?.match(/.{1,4}/g) || [];
 
 	// Default settings derived from user payload
-	$: isAdmin = Boolean($auth.user?.isAdmin) || ($auth.user?.roles?.includes('1352632325640294411') ?? false);
+	$: isAdmin = !isDemo && (Boolean($auth.user?.isAdmin) || ($auth.user?.roles?.includes('1352632325640294411') ?? false));
 	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
 	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
 	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
@@ -110,7 +113,7 @@
 
 	// --- Update Setting Logic ---
 	async function updateSetting(settingName, newValue) {
-		if (!token) return;
+		if (!token && !$auth.isDemo) return;
 
 		isUpdatingSetting = true;
 		settingsError = null;
@@ -221,6 +224,11 @@
 	// --- Delete Account Logic ---
 	async function handleDeleteAccount() {
 		deleteError = null;
+
+		if ($auth.isDemo) {
+			showConfirmDialog = false;
+			return;
+		}
 
 		if (!token) {
 			deleteError = 'Action failed: Authentication token is missing.';
@@ -341,11 +349,19 @@
 			</div>
 
 			<div class="profile-right">
-				<div class="discord-status-badge">
-					<span class="discord-pulse-dot"></span>
-					<i class="fa-brands fa-discord"></i>
-					<span>Discord Connected</span>
-				</div>
+				{#if isDemo}
+					<div class="discord-status-badge">
+						<span class="discord-pulse-dot"></span>
+						<i class="fa-solid fa-flask"></i>
+						<span>Demo Sandbox</span>
+					</div>
+				{:else}
+					<div class="discord-status-badge">
+						<span class="discord-pulse-dot"></span>
+						<i class="fa-brands fa-discord"></i>
+						<span>Discord Connected</span>
+					</div>
+				{/if}
 			</div>
 		</div>
 
@@ -962,34 +978,57 @@
 			{/if}
 
 			{#if activeTab === 'profile'}
-			<!-- Section 4: Danger Zone -->
+			<!-- Section 4: Danger Zone / Demo Sandbox Reset -->
 			<section class="profile-section danger-zone">
 				<div class="section-title-row">
 					<div class="section-title-icon danger">
 						<i class="fa-solid fa-triangle-exclamation"></i>
 					</div>
-					<h2>Danger Zone</h2>
+					<h2>{isDemo ? 'Demo Sandbox Controls' : 'Danger Zone'}</h2>
 				</div>
 				<div class="danger-content">
-					<div class="danger-item">
-						<div class="danger-info">
-							<span class="danger-title">Delete Account</span>
-							<span class="danger-desc"
-								>Permanently remove your account and all associated seeking cards and preferences from Seeker.</span
+					{#if isDemo}
+						<div class="danger-item">
+							<div class="danger-info">
+								<span class="danger-title">Reset Demo Data</span>
+								<span class="danger-desc"
+									>Restore the 12 curated demo cards, sample Discord alerts, and default sandbox settings in local storage.</span
+								>
+							</div>
+							<button
+								class="delete-btn"
+								on:click={() => {
+									const fresh = resetDemoWorkspace();
+									auth.updateSettings(fresh);
+									demoResetDone = true;
+									setTimeout(() => (demoResetDone = false), 3000);
+								}}
 							>
+								<i class="fa-solid fa-rotate-left"></i>
+								<span>{demoResetDone ? 'Demo Reset!' : 'Reset Demo Data'}</span>
+							</button>
 						</div>
-						<button
-							class="delete-btn"
-							on:click={() => (showConfirmDialog = true)}
-							disabled={!token || !user}
-							title={!token || !user
-								? 'Cannot delete account: Authentication missing.'
-								: 'Delete your account'}
-						>
-							<i class="fa-solid fa-trash-can"></i>
-							<span>Delete Account</span>
-						</button>
-					</div>
+					{:else}
+						<div class="danger-item">
+							<div class="danger-info">
+								<span class="danger-title">Delete Account</span>
+								<span class="danger-desc"
+									>Permanently remove your account and all associated seeking cards and preferences from Seeker.</span
+								>
+							</div>
+							<button
+								class="delete-btn"
+								on:click={() => (showConfirmDialog = true)}
+								disabled={!token || !user}
+								title={!token || !user
+									? 'Cannot delete account: Authentication missing.'
+									: 'Delete your account'}
+							>
+								<i class="fa-solid fa-trash-can"></i>
+								<span>Delete Account</span>
+							</button>
+						</div>
+					{/if}
 				</div>
 			</section>
 			{/if}

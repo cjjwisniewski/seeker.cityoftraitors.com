@@ -250,6 +250,15 @@
 
 		try {
 			const langVariant = printLanguageVariants[selectedLanguage] || selectedPrint;
+			const variantPrices = langVariant?.prices;
+			const hasVariantPrice = Boolean(
+				variantPrices &&
+					(variantPrices.usd ||
+						variantPrices.usd_foil ||
+						variantPrices.usd_etched ||
+						variantPrices.eur ||
+						variantPrices.eur_foil)
+			);
 			const payload = {
 				id: langVariant.id || selectedPrint.id,
 				name: selectedPrint.name,
@@ -265,7 +274,10 @@
 					selectedFinish === 'etched'
 						? langVariant.tcgplayer_etched_id || selectedPrint.tcgplayer_etched_id || null
 						: langVariant.tcgplayer_id || selectedPrint.tcgplayer_id || null,
-				cardmarket_id: langVariant.cardmarket_id || selectedPrint.cardmarket_id || null
+				cardmarket_id: langVariant.cardmarket_id || selectedPrint.cardmarket_id || null,
+				...($auth.isDemo
+					? { demo_scryfall_prices: hasVariantPrice ? variantPrices : selectedPrint.prices || null }
+					: {})
 			};
 
 			const response = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {

@@ -1,19 +1,28 @@
 import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { env as publicEnv } from '$env/dynamic/public';
+import { createDemoUser, DEMO_STORAGE_KEYS } from '$lib/demo/demoSeed';
+import { initializeDemoStorage, saveDemoSettings } from '$lib/demo/demoStore';
+import type { DemoUserSettings } from '$lib/demo/demoTypes';
 
 // Define the shape of the user object
 interface User {
     id: string;
+    discordId?: string;
     username: string;
-    avatar?: string;
+    globalName?: string;
+    discriminator?: string;
+    avatar?: string | null;
     roles?: string[]; // Add roles if your user info endpoint returns them
     isAdmin?: boolean;
     membershipTier?: string;
+    scanningPaused?: boolean;
     settings?: {
         stockAlertEnabled?: boolean;
         stockDigestEnabled?: boolean;
         stockDigestHourUtc?: number;
+        priceDropAlertEnabled?: boolean;
+        priceDropThreshold?: number;
         preferredLanguage?: string;
         preferredFinish?: string;
         minCondition?: string;
@@ -36,6 +45,7 @@ interface AuthState {
     user: User | null;
     isLoading: boolean;
     intendedPath: string | null;
+    isDemo: boolean;
 }
 
 // Use environment variables for Azure Function URLs
@@ -44,11 +54,11 @@ const LOGOUT_URL = import.meta.env.VITE_LOGOUT_URL || publicEnv.PUBLIC_LOGOUT_EN
 const USER_INFO_URL = import.meta.env.VITE_USER_INFO_URL;
 const ADMIN_ROLE_ID = '1352632325640294411';
 
-function normalizeUser(user: User | null): User | null {
+function normalizeUser(user: User | null, isDemo = false): User | null {
     if (!user) return null;
     return {
         ...user,
-        isAdmin: Boolean(user.isAdmin) || (Array.isArray(user.roles) && user.roles.includes(ADMIN_ROLE_ID))
+        isAdmin: !isDemo && (Boolean(user.isAdmin) || (Array.isArray(user.roles) && user.roles.includes(ADMIN_ROLE_ID)))
     };
 }
 
@@ -62,6 +72,7 @@ const createAuthStore = () => {
         user: null,
         isLoading: true,
         intendedPath: null,
+        isDemo: false
     });
 
     let isInitializing = false; // Prevent concurrent initializations
@@ -130,20 +141,58 @@ const createAuthStore = () => {
         if (browser) {
             localStorage.removeItem('authToken');
             localStorage.removeItem('cachedUserInfo');
+            localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
         }
-        set({ isAuthenticated: false, token: null, user: null, isLoading: false, intendedPath: null });
+        set({ isAuthenticated: false, token: null, user: null, isLoading: false, intendedPath: null, isDemo: false });
     }
 
     function setAuthData(token: string, user: User | null) {
-        const normalizedUser = normalizeUser(user);
+        const normalizedUser = normalizeUser(user, false);
         if (browser) {
+            localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
             localStorage.setItem('authToken', token);
             if (normalizedUser) {
                 localStorage.setItem('cachedUserInfo', JSON.stringify(normalizedUser));
             }
         }
         // Keep existing intendedPath when setting auth data
-        update(state => ({ ...state, isAuthenticated: true, token: token, user: normalizedUser, isLoading: false }));
+        update(state => ({ ...state, isAuthenticated: true, token: token, user: normalizedUser, isLoading: false, isDemo: false }));
+    }
+
+    function enterDemoMode(force = false) {
+        if (!browser) return;
+        const currentState = get(auth);
+        if (!force && currentState.isAuthenticated && !currentState.isDemo) {
+            return;
+        }
+        if (force) {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('cachedUserInfo');
+        }
+        const settings = initializeDemoStorage();
+        localStorage.setItem(DEMO_STORAGE_KEYS.ACTIVE, '1');
+        set({
+            isAuthenticated: true,
+            token: null,
+            user: createDemoUser(settings),
+            isLoading: false,
+            intendedPath: null,
+            isDemo: true
+        });
+    }
+
+    function exitDemoMode() {
+        if (browser) {
+            localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
+        }
+        set({
+            isAuthenticated: false,
+            token: null,
+            user: null,
+            isLoading: false,
+            intendedPath: null,
+            isDemo: false
+        });
     }
 
     // Function to handle background refresh of user info
@@ -176,20 +225,14 @@ const createAuthStore = () => {
             isInitializing = true;
             update(state => ({ ...state, isLoading: true }));
 
-            // Check if essential URLs are configured
-            if (!LOGIN_URL) {
-                console.error('AuthStore FATAL: VITE_LOGIN_URL environment variable is not set. Authentication cannot proceed.');
-                update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
-                isInitializing = false;
-                return; // Stop initialization
-            }
-
             if (!storageListenerRegistered) {
                 storageListenerRegistered = true;
                 window.addEventListener('storage', (event) => {
                     if (event.key === 'authToken') {
                         if (!event.newValue) {
-                            set({ isAuthenticated: false, token: null, user: null, isLoading: false, intendedPath: null });
+                            if (!get(auth).isDemo) {
+                                set({ isAuthenticated: false, token: null, user: null, isLoading: false, intendedPath: null, isDemo: false });
+                            }
                         } else {
                             const jwtUser = parseJwt(event.newValue);
                             if (jwtUser) {
@@ -200,7 +243,7 @@ const createAuthStore = () => {
                                 } catch {
                                     // ignore malformed cache
                                 }
-                                update(state => ({ ...state, isAuthenticated: true, token: event.newValue, user: normalizeUser(syncedUser), isLoading: false }));
+                                update(state => ({ ...state, isAuthenticated: true, token: event.newValue, user: normalizeUser(syncedUser, false), isLoading: false, isDemo: false }));
                             }
                         }
                     }
@@ -208,11 +251,23 @@ const createAuthStore = () => {
             }
 
             const token = localStorage.getItem('authToken');
-            if (token) {
+            const demoActive = localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === '1';
+
+            if (!LOGIN_URL && !demoActive) {
+                console.error('AuthStore FATAL: VITE_LOGIN_URL environment variable is not set. Authentication cannot proceed.');
+                update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false, isDemo: false }));
+                isInitializing = false;
+                return; // Stop initialization
+            }
+
+            if (token && LOGIN_URL) {
                 const jwtUser = parseJwt(token);
                 if (!jwtUser) {
                     // Token is expired or malformed; clear stale cache immediately
                     clearAuthData();
+                    if (demoActive) {
+                        enterDemoMode(false);
+                    }
                 } else {
                     // Try to get cached user info for instant load
                     let initialUser: User | null = null;
@@ -235,8 +290,10 @@ const createAuthStore = () => {
                     // Trigger a background refresh to get the latest settings/profile
                     refreshUserInfo(token);
                 }
+            } else if (demoActive) {
+                enterDemoMode(false);
             } else {
-                update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false }));
+                update(state => ({ ...state, isAuthenticated: false, token: null, user: null, isLoading: false, isDemo: false }));
             }
 
             isInitializing = false;
@@ -247,15 +304,32 @@ const createAuthStore = () => {
         subscribe,
         initialize,
         clearAuthData,
+        enterDemoMode,
+        exitDemoMode,
         setIntendedPath: (path: string) => {
             update(state => ({ ...state, intendedPath: path }));
         },
         login: () => {
+            if (browser) {
+                localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
+            }
+            if (!LOGIN_URL) {
+                console.error('AuthStore: VITE_LOGIN_URL is not configured.');
+                return;
+            }
             // Use the stored intendedPath as state for the OAuth flow, default to '/'
-            const stateToUse = get(auth).intendedPath || '/';
+            const rawIntended = get(auth).intendedPath || '/';
+            const stateToUse = rawIntended.startsWith('/demo') ? '/seeking' : rawIntended;
             window.location.href = `${LOGIN_URL}?state=${encodeURIComponent(stateToUse)}`;
         },
         logout: async () => {
+            const currentState = get(auth);
+            if (currentState.isDemo) {
+                exitDemoMode();
+                window.location.href = '/login';
+                return;
+            }
+
             const currentToken = localStorage.getItem('authToken');
             clearAuthData(); // Clear client-side state immediately
 
@@ -292,12 +366,18 @@ const createAuthStore = () => {
         updateSettings: (newSettings: Partial<NonNullable<User['settings']>>) => {
             update(state => {
                 if (state.user) {
-                    state.user.settings = {
+                    const merged = {
                         ...state.user.settings,
                         ...newSettings
                     };
-                    if (browser) {
-                        localStorage.setItem('cachedUserInfo', JSON.stringify(state.user));
+                    if (state.isDemo) {
+                        const sanitized = saveDemoSettings(merged as DemoUserSettings);
+                        state.user.settings = sanitized;
+                    } else {
+                        state.user.settings = merged;
+                        if (browser) {
+                            localStorage.setItem('cachedUserInfo', JSON.stringify(state.user));
+                        }
                     }
                 }
                 return state;

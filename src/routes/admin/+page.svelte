@@ -79,8 +79,8 @@
 	$: authLoading = $auth.isLoading;
 	$: isAuthenticated = $auth.isAuthenticated;
 
-	// Authorization check
-	$: isAdmin = user?.roles?.includes(ADMIN_ROLE_ID) ?? false;
+	// Authorization check (strictly exclude demo sessions)
+	$: isAdmin = !$auth.isDemo && (user?.roles?.includes(ADMIN_ROLE_ID) ?? false);
 	$: isAuthorized = isAuthenticated && isAdmin;
 	$: showUnauthorized = !authLoading && (!isAuthenticated || !isAdmin);
 

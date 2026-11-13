@@ -1,10 +1,13 @@
 import { auth } from '$lib/stores/auth';
+import { handleDemoApiRequest } from '$lib/demo/demoStore';
 import { get } from 'svelte/store';
 import { browser } from '$app/environment';
 
 /**
  * Wrapper around fetch that automatically adds the Authorization header
  * and handles 401 errors by triggering the login flow.
+ * When running in Demo Sandbox mode ($auth.isDemo), all requests are intercepted
+ * cleanly on the client and never hit backend APIs.
  *
  * @param url The URL to fetch.
  * @param options Fetch options.
@@ -26,6 +29,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
         await new Promise(resolve => setTimeout(resolve, 100));
         authState = get(auth);
         retries++;
+    }
+
+    // Hard security boundary: Demo sessions have token: null and must never hit Azure/APIM
+    if (authState.isDemo) {
+        return handleDemoApiRequest(url, options);
     }
 
     // If still loading or not authenticated after waiting, trigger login

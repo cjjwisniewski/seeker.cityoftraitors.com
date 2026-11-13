@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
+	import { openDemoAlertPreviews, demoResetNonce } from '$lib/demo/demoStore';
 	import { initExchangeRates } from '$lib/stores/exchangeRate';
 	import {
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
@@ -104,6 +105,15 @@
 	}
 
 	// Reactive auth & marketplace flags
+	let lastDemoResetNonce = 0;
+	let demoResetWatchReady = false;
+
+	$: if (demoResetWatchReady && $auth.isDemo && $demoResetNonce > lastDemoResetNonce) {
+		lastDemoResetNonce = $demoResetNonce;
+		selectedKeys = new Set();
+		fetchSeekingList(false);
+	}
+
 	$: isAuthenticated = $auth.isAuthenticated;
 	$: authLoading = $auth.isLoading;
 	$: accountMinCondition = ($auth.user?.settings?.minCondition || 'ANY').toUpperCase();
@@ -406,8 +416,8 @@
 		searchQuery = '';
 	}
 
-	function showStockCheckFeedback(type, message) {
-		stockCheckToast = { type, message };
+	function showStockCheckFeedback(type, message, showDemoPreviewAction = false) {
+		stockCheckToast = { type, message, showDemoPreviewAction };
 		if (stockCheckToastTimer) clearTimeout(stockCheckToastTimer);
 		stockCheckToastTimer = setTimeout(() => {
 			stockCheckToast = null;
@@ -505,8 +515,17 @@
 				};
 			}
 			nowTick = Date.now();
-			showStockCheckFeedback('success', `Queued live stock check for ${card.name}.`);
-			scheduleAutoPoll();
+			if ($auth.isDemo) {
+				await fetchSeekingList(true);
+				showStockCheckFeedback(
+					'success',
+					`Simulated live stock check completed for ${card.name}.`,
+					true
+				);
+			} else {
+				showStockCheckFeedback('success', `Queued live stock check for ${card.name}.`);
+				scheduleAutoPoll();
+			}
 		} catch (e) {
 			console.error('Error triggering manual stock check:', e);
 			showStockCheckFeedback('error', e.message || 'Could not queue stock check.');
@@ -555,6 +574,8 @@
 			/* Ignore storage parse errors */
 		}
 		seekingPrefsReady = true;
+		lastDemoResetNonce = $demoResetNonce;
+		demoResetWatchReady = true;
 
 		fetchScryfallSets();
 		initExchangeRates();
@@ -1027,7 +1048,11 @@
 				showStockCheckFeedback('error', `Failed to update "${card.name}".`);
 				return;
 			}
-			showStockCheckFeedback('success', `Updated "${card.name}".`);
+			showStockCheckFeedback(
+				'success',
+				`Updated "${card.name}".`,
+				$auth.isDemo && 'max_price_cap' in patch && patch.max_price_cap !== null
+			);
 		} catch (err) {
 			cards = prevCards;
 			showStockCheckFeedback('error', `Failed to update "${card.name}".`);
@@ -1203,6 +1228,19 @@
 					: 'fa-circle-exclamation'}"
 		></i>
 		<span>{stockCheckToast.message}</span>
+		{#if $auth.isDemo && stockCheckToast.showDemoPreviewAction}
+			<button
+				type="button"
+				class="toast-preview-btn"
+				on:click={() => {
+					openDemoAlertPreviews(null);
+					stockCheckToast = null;
+				}}
+			>
+				<i class="fa-brands fa-discord"></i>
+				Preview Alert
+			</button>
+		{/if}
 		<button
 			type="button"
 			class="toast-dismiss-btn"
@@ -2644,6 +2682,25 @@
 	.under-cap-summary {
 		color: #16a34a;
 		font-weight: 700;
+	}
+
+	.toast-preview-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.25rem 0.6rem;
+		border-radius: 6px;
+		background: #5865f2;
+		color: #fff;
+		border: none;
+		font-size: 0.78rem;
+		font-weight: 600;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+
+	.toast-preview-btn:hover {
+		background: #4752c4;
 	}
 
 	@media (pointer: coarse), (max-width: 768px) {

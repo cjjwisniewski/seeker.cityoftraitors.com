@@ -317,7 +317,7 @@
 				error: true,
 				success: false,
 				exists: false,
-				message: 'Login required'
+				message: 'Login or try Demo'
 			};
 			buttonStates = { ...buttonStates };
 			setTimeout(() => {
@@ -359,6 +359,15 @@
 			const useBaseIds = targetLang === baseLang;
 
 			const selectedFinish = selectedFinishes[card.id] || 'nonfoil';
+			const cardPrices = card?.prices;
+			const hasCardPrice = Boolean(
+				cardPrices &&
+					(cardPrices.usd ||
+						cardPrices.usd_foil ||
+						cardPrices.usd_etched ||
+						cardPrices.eur ||
+						cardPrices.eur_foil)
+			);
 			const payload = {
 				id: useBaseIds ? (currentPrint.id || card.id || crypto.randomUUID()) : (card.localized_id || crypto.randomUUID()),
 				name: card.name,
@@ -378,7 +387,10 @@
 						: useBaseIds
 							? currentPrint.tcgplayer_id || null
 							: card.localized_tcgplayer_id || null,
-				cardmarket_id: useBaseIds ? (currentPrint.cardmarket_id || null) : (card.localized_cardmarket_id || null)
+				cardmarket_id: useBaseIds ? (currentPrint.cardmarket_id || null) : (card.localized_cardmarket_id || null),
+				...($auth.isDemo
+					? { demo_scryfall_prices: hasCardPrice ? cardPrices : currentPrint.prices || null }
+					: {})
 			};
 
 			const response = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
