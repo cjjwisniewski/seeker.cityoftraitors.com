@@ -26,14 +26,92 @@
 	let isAdding = false;
 	let inlineError = '';
 
+	let isLoadingLanguages = false;
+	let availableLanguages = ['en'];
+	let printLanguageVariants = {};
+	const printVariantsCache = new Map();
+	let activeLangFetchKey = '';
+
 	$: selectedPrint = prints.find((p) => p.id === selectedPrintId) || prints[0] || null;
 	$: availableFinishes = selectedPrint?.finishes?.length ? selectedPrint.finishes : ['nonfoil'];
 	$: if (selectedPrint && !availableFinishes.includes(selectedFinish)) {
 		const prefFinish = ($auth.user?.settings?.preferredFinish || 'nonfoil').toLowerCase();
 		selectedFinish = availableFinishes.includes(prefFinish) ? prefFinish : availableFinishes[0];
 	}
+	$: if (selectedPrint) {
+		loadPrintLanguages(selectedPrint);
+	}
 
-	const quickLanguages = ['en', 'ja', 'zht', 'zhs', 'de', 'fr', 'it', 'es', 'pt', 'ko', 'ru', 'ph'];
+	async function loadPrintLanguages(printObj) {
+		if (!printObj?.set || !printObj?.collector_number) {
+			availableLanguages = ['en'];
+			printLanguageVariants = {};
+			selectedLanguage = 'en';
+			return;
+		}
+		const cacheKey = `${printObj.set.toLowerCase()}_${printObj.collector_number}`;
+		if (activeLangFetchKey === cacheKey && Object.keys(printLanguageVariants).length > 0) {
+			return;
+		}
+		activeLangFetchKey = cacheKey;
+
+		const applyVariants = (variantsMap) => {
+			const langs = Object.keys(variantsMap);
+			availableLanguages = langs.length > 0 ? langs : [(printObj.lang || 'en').toLowerCase()];
+			printLanguageVariants = variantsMap;
+			if (!availableLanguages.includes(selectedLanguage)) {
+				const prefLang = ($auth.user?.settings?.preferredLanguage || 'en').toLowerCase();
+				selectedLanguage = availableLanguages.includes(prefLang)
+					? prefLang
+					: availableLanguages.includes('en')
+						? 'en'
+						: availableLanguages[0];
+			}
+		};
+
+		if (printVariantsCache.has(cacheKey)) {
+			applyVariants(printVariantsCache.get(cacheKey));
+			return;
+		}
+
+		const fallbackLang = (printObj.lang || 'en').toLowerCase();
+		availableLanguages = [fallbackLang];
+		printLanguageVariants = { [fallbackLang]: printObj };
+		selectedLanguage = fallbackLang;
+		isLoadingLanguages = true;
+
+		try {
+			const url = `https://api.scryfall.com/cards/search?q=cn%3A${encodeURIComponent(
+				printObj.collector_number
+			)}+set%3A${encodeURIComponent(printObj.set)}&include_multilingual=true&unique=prints`;
+			const res = await fetch(url);
+			if (activeLangFetchKey !== cacheKey) return;
+			if (!res.ok) return;
+			const data = await res.json();
+			const variants = data.data || [];
+			if (variants.length === 0) return;
+
+			const variantsMap = {};
+			for (const v of variants) {
+				if (v.lang) {
+					const code = v.lang.toLowerCase();
+					if (!variantsMap[code]) {
+						variantsMap[code] = v;
+					}
+				}
+			}
+			if (Object.keys(variantsMap).length > 0) {
+				printVariantsCache.set(cacheKey, variantsMap);
+				applyVariants(variantsMap);
+			}
+		} catch {
+			// Keep fallback printing language if Scryfall multilingual lookup fails
+		} finally {
+			if (activeLangFetchKey === cacheKey) {
+				isLoadingLanguages = false;
+			}
+		}
+	}
 
 	onMount(() => {
 		const handleDocClick = (e) => {
@@ -141,8 +219,6 @@
 
 			prints = list;
 			selectedPrintId = list[0].id;
-			const prefLang = ($auth.user?.settings?.preferredLanguage || 'en').toLowerCase();
-			selectedLanguage = quickLanguages.includes(prefLang) ? prefLang : 'en';
 			const prefFin = ($auth.user?.settings?.preferredFinish || 'nonfoil').toLowerCase();
 			const firstFinishes = list[0].finishes || ['nonfoil'];
 			selectedFinish = firstFinishes.includes(prefFin) ? prefFin : firstFinishes[0];
@@ -161,6 +237,9 @@
 		selectedCardName = '';
 		prints = [];
 		selectedPrintId = '';
+		availableLanguages = ['en'];
+		printLanguageVariants = {};
+		activeLangFetchKey = '';
 		inlineError = '';
 	}
 
@@ -170,19 +249,20 @@
 		inlineError = '';
 
 		try {
+			const langVariant = printLanguageVariants[selectedLanguage] || selectedPrint;
 			const payload = {
-				id: selectedPrint.id,
+				id: langVariant.id || selectedPrint.id,
 				name: selectedPrint.name,
 				set_code: selectedPrint.set,
 				set_name: selectedPrint.set_name,
 				collector_number: selectedPrint.collector_number,
 				language: selectedLanguage,
 				oracle_id: selectedPrint.oracle_id,
-				image_uri: getScryfallImage(selectedPrint),
+				image_uri: getScryfallImage(langVariant) || getScryfallImage(selectedPrint),
 				timestamp: new Date().toISOString(),
 				finish: selectedFinish,
-				tcgplayer_id: selectedPrint.tcgplayer_id || null,
-				cardmarket_id: selectedPrint.cardmarket_id || null
+				tcgplayer_id: langVariant.tcgplayer_id || selectedPrint.tcgplayer_id || null,
+				cardmarket_id: langVariant.cardmarket_id || selectedPrint.cardmarket_id || null
 			};
 
 			const response = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
@@ -323,9 +403,16 @@
 					</label>
 
 					<label class="quick-field">
-						<span class="quick-field-label">Language</span>
-						<select bind:value={selectedLanguage} class="quick-select" aria-label="Select language">
-							{#each quickLanguages as lang}
+						<span class="quick-field-label">
+							Language {#if isLoadingLanguages}<i class="fa-solid fa-spinner fa-spin"></i>{/if}
+						</span>
+						<select
+							bind:value={selectedLanguage}
+							class="quick-select"
+							aria-label="Select language"
+							disabled={isLoadingLanguages}
+						>
+							{#each availableLanguages as lang}
 								<option value={lang}>{getLanguageName(lang)}</option>
 							{/each}
 						</select>
