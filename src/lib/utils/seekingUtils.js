@@ -498,12 +498,21 @@ export function getBestOfferDetails(
 			conditionClass: '',
 			url: null,
 			offerCount: 0,
-			otherOffersCount: 0
+			otherOffersCount: 0,
+			otherOffers: []
 		};
 	}
 
 	offers.sort((a, b) => a.cents - b.cents);
 	const best = offers[0];
+	const otherOffers = offers.slice(1).map((o) => ({
+		vendor: o.vendor,
+		displayName: o.displayName,
+		cents: o.cents,
+		condition: o.condition,
+		conditionClass: getNormalizedConditionClass(o.condition),
+		url: o.url
+	}));
 
 	return {
 		inStock: true,
@@ -515,7 +524,8 @@ export function getBestOfferDetails(
 		conditionClass: getNormalizedConditionClass(best.condition),
 		url: best.url,
 		offerCount: offers.length,
-		otherOffersCount: offers.length - 1
+		otherOffersCount: otherOffers.length,
+		otherOffers
 	};
 }
 

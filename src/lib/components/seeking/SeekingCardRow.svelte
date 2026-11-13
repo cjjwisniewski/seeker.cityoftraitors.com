@@ -32,6 +32,7 @@
 	export let index = 0;
 	export let isCondensed = false;
 	export let isSelected = false;
+	export let hasAnySelected = false;
 	export let isMenuOpen = false;
 	export let isDropUp = false;
 	export let histBadge = null;
@@ -155,6 +156,25 @@
 		editingCond = true;
 	}
 
+	let showOtherOffers = false;
+	let bestOfferWrapEl = null;
+
+	$: if (!isCondensed || !bestOffer?.otherOffersCount) {
+		showOtherOffers = false;
+	}
+
+	$: otherOffersTooltip = bestOffer?.otherOffers?.length
+		? bestOffer.otherOffers
+				.map((o) => `${o.displayName} ${formatPrice(o.cents)}${o.condition ? ` (${o.condition})` : ''}`)
+				.join(' · ')
+		: '';
+
+	function handleWindowClick(e) {
+		if (showOtherOffers && bestOfferWrapEl && !bestOfferWrapEl.contains(e.target)) {
+			showOtherOffers = false;
+		}
+	}
+
 	function handleCondChange(e) {
 		const val = e.target.value;
 		editingCond = false;
@@ -164,6 +184,11 @@
 		}
 	}
 </script>
+
+<svelte:window
+	on:click={handleWindowClick}
+	on:keydown={(e) => e.key === 'Escape' && (showOtherOffers = false)}
+/>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -178,10 +203,25 @@
 	on:touchend={(e) => dispatch('rowTouchEnd', e)}
 	on:touchcancel={(e) => dispatch('rowTouchEnd', e)}
 	on:contextmenu={(e) => dispatch('rowContextMenu', e)}
-	style={isMenuOpen ? 'z-index: 50; position: relative;' : ''}
+	style={isMenuOpen || showOtherOffers ? 'z-index: 50; position: relative;' : ''}
 >
 	<td data-label="Card" class="col-card">
 		<div class="card-info">
+			<button
+				type="button"
+				class="row-select-checkbox"
+				class:checked={isSelected}
+				class:selection-active={hasAnySelected}
+				role="checkbox"
+				aria-checked={isSelected}
+				aria-label={isSelected ? `Deselect ${card.name}` : `Select ${card.name}`}
+				title="Select card (Shift-click for range)"
+				on:click|stopPropagation={(e) => dispatch('toggleSelect', e)}
+			>
+				{#if isSelected}
+					<i class="fa-solid fa-check" aria-hidden="true"></i>
+				{/if}
+			</button>
 			{#if !isCondensed}
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -195,89 +235,105 @@
 				/>
 			{/if}
 			<div class="card-name-group">
-				<span>{card.name}</span>
-				{#if (card.max_price_cap !== null && card.max_price_cap !== undefined) || card.min_condition || histBadge || isUnderCap || editingCap || editingCond}
-					<div class="card-badges-row">
-						{#if isUnderCap}
-							<span
-								class="cap-badge under-cap-badge"
-								title="In stock at {formatPrice(activeLowestCents)} (at or below your {formatPrice(card.max_price_cap)} cap)"
+				<span class="card-title-text">{card.name}</span>
+				<div class="card-badges-row">
+					{#if isUnderCap}
+						<span
+							class="cap-badge under-cap-badge"
+							title="In stock at {formatPrice(activeLowestCents)} (at or below your {formatPrice(card.max_price_cap)} cap)"
+						>
+							<i class="fa-solid fa-tag"></i> UNDER CAP
+						</span>
+					{/if}
+					{#if histBadge}
+						<button
+							type="button"
+							class="cap-badge hist-badge hist-{histBadge.type}"
+							title={histBadge.title}
+							on:click|stopPropagation={() => dispatch('openHistory')}
+						>
+							{histBadge.label}
+						</button>
+					{/if}
+					{#if editingCap}
+						<!-- svelte-ignore a11y-no-static-element-interactions -->
+						<div class="inline-badge-editor" on:click|stopPropagation>
+							<span class="inline-currency">$</span>
+							<input
+								type="number"
+								step="0.01"
+								min="0"
+								bind:value={capDraft}
+								on:keydown={handleCapKeydown}
+								on:blur={saveInlineCap}
+								placeholder="No cap"
+								class="inline-cap-input"
+								aria-label="Edit max price cap"
+								autofocus
+							/>
+						</div>
+					{:else if card.max_price_cap !== null && card.max_price_cap !== undefined}
+						<button
+							type="button"
+							class="cap-badge"
+							title="Click to edit Max Price Cap inline"
+							on:click|stopPropagation={startEditCap}
+						>
+							MAX {formatPrice(card.max_price_cap)}
+						</button>
+					{:else}
+						<button
+							type="button"
+							class="cap-badge quick-add-pill"
+							title="Set a maximum price cap inline"
+							on:click|stopPropagation={startEditCap}
+						>
+							+ Cap
+						</button>
+					{/if}
+					{#if editingCond}
+						<!-- svelte-ignore a11y-no-static-element-interactions -->
+						<div class="inline-badge-editor" on:click|stopPropagation>
+							<select
+								bind:value={condDraft}
+								on:change={handleCondChange}
+								on:blur={() => (editingCond = false)}
+								class="inline-cond-select"
+								aria-label="Edit minimum condition"
+								autofocus
 							>
-								<i class="fa-solid fa-tag"></i> UNDER CAP
-							</span>
-						{/if}
-						{#if histBadge}
-							<button
-								type="button"
-								class="cap-badge hist-badge hist-{histBadge.type}"
-								title={histBadge.title}
-								on:click|stopPropagation={() => dispatch('openHistory')}
-							>
-								{histBadge.label}
-							</button>
-						{/if}
-						{#if editingCap}
-							<!-- svelte-ignore a11y-no-static-element-interactions -->
-							<div class="inline-badge-editor" on:click|stopPropagation>
-								<span class="inline-currency">$</span>
-								<input
-									type="number"
-									step="0.01"
-									min="0"
-									bind:value={capDraft}
-									on:keydown={handleCapKeydown}
-									on:blur={saveInlineCap}
-									placeholder="No cap"
-									class="inline-cap-input"
-									aria-label="Edit max price cap"
-									autofocus
-								/>
-							</div>
-						{:else if card.max_price_cap !== null && card.max_price_cap !== undefined}
-							<button
-								type="button"
-								class="cap-badge"
-								title="Click to edit Max Price Cap inline"
-								on:click|stopPropagation={startEditCap}
-							>
-								MAX {formatPrice(card.max_price_cap)}
-							</button>
-						{/if}
-						{#if editingCond}
-							<!-- svelte-ignore a11y-no-static-element-interactions -->
-							<div class="inline-badge-editor" on:click|stopPropagation>
-								<select
-									bind:value={condDraft}
-									on:change={handleCondChange}
-									on:blur={() => (editingCond = false)}
-									class="inline-cond-select"
-									aria-label="Edit minimum condition"
-									autofocus
-								>
-									<option value="">Account Default</option>
-									<option value="ANY">ANY</option>
-									<option value="HP">HP+</option>
-									<option value="MP">MP+</option>
-									<option value="SP">SP+</option>
-									<option value="NM">NM Only</option>
-								</select>
-							</div>
-						{:else if card.min_condition}
-							<button
-								type="button"
-								class="cap-badge cond-override-badge"
-								title="Minimum Condition Override: {formatMinConditionLabel(card.min_condition)} (Click to edit inline)"
-								on:click|stopPropagation={startEditCond}
-							>
-								{card.min_condition === 'NM'
-									? 'NM ONLY'
-									: card.min_condition === 'ANY'
-										? 'ANY COND'
-										: `MIN ${card.min_condition}+`}
-							</button>
-						{/if}
-					</div>
-				{/if}
+								<option value="">Account Default</option>
+								<option value="ANY">ANY</option>
+								<option value="HP">HP+</option>
+								<option value="MP">MP+</option>
+								<option value="SP">SP+</option>
+								<option value="NM">NM Only</option>
+							</select>
+						</div>
+					{:else if card.min_condition}
+						<button
+							type="button"
+							class="cap-badge cond-override-badge"
+							title="Minimum Condition Override: {formatMinConditionLabel(card.min_condition)} (Click to edit inline)"
+							on:click|stopPropagation={startEditCond}
+						>
+							{card.min_condition === 'NM'
+								? 'NM ONLY'
+								: card.min_condition === 'ANY'
+									? 'ANY COND'
+									: `MIN ${card.min_condition}+`}
+						</button>
+					{:else}
+						<button
+							type="button"
+							class="cap-badge quick-add-pill"
+							title="Set a minimum condition override inline"
+							on:click|stopPropagation={startEditCond}
+						>
+							+ Cond
+						</button>
+					{/if}
+				</div>
 			</div>
 		</div>
 	</td>
@@ -331,57 +387,99 @@
 	{#if isCondensed}
 		<td data-label="Best Price" class="vendor-stock-cell col-vendor col-best-price">
 			{#if bestOffer && bestOffer.inStock}
-				{#if bestOffer.url}
-					<a
-						href={sanitizeExternalUrl(bestOffer.url) || undefined}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="vendor-link"
-						title="Buy on {bestOffer.vendorDisplayName}"
-					>
-						<div class="best-offer-row">
-							<span class="best-price-badge">{bestOffer.priceFormatted}</span>
-							<span class="best-vendor-pill">{bestOffer.vendorDisplayName}</span>
-							{#if bestOffer.condition}
-								<span
-									class="condition-bubble cond-{bestOffer.conditionClass}"
-									title="Condition: {bestOffer.condition}"
-								>
-									{bestOffer.condition}
-								</span>
-							{/if}
-							{#if bestOffer.otherOffersCount > 0}
-								<span
-									class="other-stores-chip"
-									title="{bestOffer.otherOffersCount} other store{bestOffer.otherOffersCount > 1 ? 's' : ''} in stock"
-								>
-									+{bestOffer.otherOffersCount}
-								</span>
-							{/if}
-						</div>
-					</a>
-				{:else}
+				<div class="best-offer-wrap" bind:this={bestOfferWrapEl}>
 					<div class="best-offer-row">
-						<span class="best-price-badge">{bestOffer.priceFormatted}</span>
-						<span class="best-vendor-pill">{bestOffer.vendorDisplayName}</span>
-						{#if bestOffer.condition}
-							<span
-								class="condition-bubble cond-{bestOffer.conditionClass}"
-								title="Condition: {bestOffer.condition}"
+						{#if bestOffer.url}
+							<a
+								href={sanitizeExternalUrl(bestOffer.url) || undefined}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="vendor-link best-primary-link"
+								title="Buy on {bestOffer.vendorDisplayName}"
 							>
-								{bestOffer.condition}
-							</span>
+								<span class="best-price-badge">{bestOffer.priceFormatted}</span>
+								<span class="best-vendor-pill">{bestOffer.vendorDisplayName}</span>
+								{#if bestOffer.condition}
+									<span
+										class="condition-bubble cond-{bestOffer.conditionClass}"
+										title="Condition: {bestOffer.condition}"
+									>
+										{bestOffer.condition}
+									</span>
+								{/if}
+							</a>
+						{:else}
+							<div class="best-primary-link">
+								<span class="best-price-badge">{bestOffer.priceFormatted}</span>
+								<span class="best-vendor-pill">{bestOffer.vendorDisplayName}</span>
+								{#if bestOffer.condition}
+									<span
+										class="condition-bubble cond-{bestOffer.conditionClass}"
+										title="Condition: {bestOffer.condition}"
+									>
+										{bestOffer.condition}
+									</span>
+								{/if}
+							</div>
 						{/if}
 						{#if bestOffer.otherOffersCount > 0}
-							<span
+							<button
+								type="button"
 								class="other-stores-chip"
-								title="{bestOffer.otherOffersCount} other store{bestOffer.otherOffersCount > 1 ? 's' : ''} in stock"
+								class:open={showOtherOffers}
+								aria-expanded={showOtherOffers}
+								aria-label="Show {bestOffer.otherOffersCount} other in-stock offer{bestOffer.otherOffersCount > 1 ? 's' : ''}"
+								title="Other in-stock stores: {otherOffersTooltip}"
+								on:click|stopPropagation={() => (showOtherOffers = !showOtherOffers)}
 							>
 								+{bestOffer.otherOffersCount}
-							</span>
+							</button>
 						{/if}
 					</div>
-				{/if}
+
+					{#if showOtherOffers && bestOffer.otherOffers?.length}
+						<!-- svelte-ignore a11y-click-events-have-key-events -->
+						<!-- svelte-ignore a11y-no-static-element-interactions -->
+						<div
+							class="other-offers-popover"
+							class:drop-up={isDropUp}
+							on:click|stopPropagation
+						>
+							<div class="other-offers-header">
+								<span>Other in-stock stores</span>
+							</div>
+							{#each bestOffer.otherOffers as alt (`${alt.vendor}-${alt.cents}`)}
+								{@const safeAltUrl = sanitizeExternalUrl(alt.url, '')}
+								{#if safeAltUrl}
+									<a
+										href={safeAltUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="other-offer-item"
+									>
+										<span class="other-offer-store">{alt.displayName}</span>
+										<span class="other-offer-meta">
+											{#if alt.condition}
+												<span class="condition-bubble cond-{alt.conditionClass}">{alt.condition}</span>
+											{/if}
+											<strong>{formatPrice(alt.cents)}</strong>
+										</span>
+									</a>
+								{:else}
+									<div class="other-offer-item">
+										<span class="other-offer-store">{alt.displayName}</span>
+										<span class="other-offer-meta">
+											{#if alt.condition}
+												<span class="condition-bubble cond-{alt.conditionClass}">{alt.condition}</span>
+											{/if}
+											<strong>{formatPrice(alt.cents)}</strong>
+										</span>
+									</div>
+								{/if}
+							{/each}
+						</div>
+					{/if}
+				</div>
 			{:else if card?.historical_pricing?.last_seen_cents}
 				<div
 					class="oos-compact"
@@ -1069,8 +1167,44 @@
 	.card-info {
 		display: flex;
 		align-items: center;
-		gap: 0.65rem;
+		gap: 0.6rem;
 		min-width: 0;
+	}
+
+	.row-select-checkbox {
+		width: 18px;
+		height: 18px;
+		min-width: 18px;
+		padding: 0;
+		border-radius: 5px;
+		border: 1.5px solid var(--color-border-hover, var(--color-border));
+		background: transparent;
+		color: #fff;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.64rem;
+		cursor: pointer;
+		flex-shrink: 0;
+		opacity: 0.45;
+		transition: all var(--transition-fast);
+	}
+
+	tr:hover .row-select-checkbox,
+	.row-select-checkbox:focus-visible,
+	.row-select-checkbox.selection-active {
+		opacity: 0.9;
+		border-color: var(--color-primary);
+	}
+
+	.row-select-checkbox:hover {
+		background: var(--color-primary-alpha);
+	}
+
+	.row-select-checkbox.checked {
+		opacity: 1;
+		background: var(--color-primary);
+		border-color: var(--color-primary);
 	}
 
 	.card-thumbnail {
@@ -1094,7 +1228,7 @@
 		min-width: 0;
 	}
 
-	.card-name-group span {
+	.card-name-group .card-title-text {
 		font-weight: 600;
 		color: var(--color-text-primary);
 		line-height: 1.2;
@@ -1122,6 +1256,23 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.2rem;
+	}
+
+	.cap-badge.quick-add-pill {
+		color: var(--color-text-muted);
+		background: transparent;
+		border: 1px dashed var(--color-border-hover, var(--color-border));
+		font-weight: 600;
+		opacity: 0.58;
+	}
+
+	tr:hover .cap-badge.quick-add-pill,
+	.cap-badge.quick-add-pill:hover,
+	.cap-badge.quick-add-pill:focus-visible {
+		opacity: 1;
+		color: var(--color-primary);
+		border-color: var(--color-primary);
+		background: var(--color-primary-alpha);
 	}
 
 	.cap-badge.cond-override-badge {
@@ -1429,20 +1580,33 @@
 		border-color: rgba(249, 115, 22, 0.35);
 	}
 
+	.best-offer-wrap {
+		position: relative;
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
 	.best-offer-row {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		gap: 0.35rem;
-		padding: 0.22rem 0.6rem;
+		padding: 0.22rem 0.5rem;
 		background: rgba(16, 185, 129, 0.08);
 		border: 1px solid rgba(16, 185, 129, 0.35);
 		border-radius: 999px;
 		transition: all var(--transition-fast);
-		cursor: pointer;
 	}
 
-	.vendor-link:hover .best-offer-row {
+	.best-primary-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		text-decoration: none;
+	}
+
+	.best-offer-row:has(.best-primary-link:hover) {
 		background: rgba(16, 185, 129, 0.18);
 		border-color: rgba(16, 185, 129, 0.65);
 		box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
@@ -1464,14 +1628,85 @@
 	}
 
 	.other-stores-chip {
-		font-size: 0.62rem;
+		font-size: 0.64rem;
 		font-weight: 700;
-		padding: 0.05rem 0.32rem;
+		padding: 0.12rem 0.38rem;
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.08);
-		color: var(--color-text-secondary);
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
 		border: 1px solid var(--color-border);
 		line-height: 1.1;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.other-stores-chip:hover,
+	.other-stores-chip.open {
+		background: var(--color-primary-alpha);
+		color: var(--color-primary);
+		border-color: var(--color-primary);
+	}
+
+	.other-offers-popover {
+		position: absolute;
+		top: calc(100% + 0.35rem);
+		right: 0;
+		min-width: 210px;
+		max-width: 260px;
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-border);
+		border-radius: 10px;
+		box-shadow: var(--shadow-lg);
+		padding: 0.35rem;
+		z-index: 90;
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		text-align: left;
+	}
+
+	.other-offers-popover.drop-up {
+		top: auto;
+		bottom: calc(100% + 0.35rem);
+	}
+
+	.other-offers-header {
+		font-size: 0.68rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--color-text-muted);
+		padding: 0.2rem 0.45rem;
+		border-bottom: 1px solid var(--color-border);
+		margin-bottom: 0.1rem;
+	}
+
+	.other-offer-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.35rem 0.45rem;
+		border-radius: 6px;
+		text-decoration: none;
+		color: var(--color-text-primary);
+		font-size: 0.78rem;
+		transition: background var(--transition-fast);
+	}
+
+	a.other-offer-item:hover {
+		background: var(--color-bg-hover);
+	}
+
+	.other-offer-store {
+		font-weight: 600;
+	}
+
+	.other-offer-meta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		color: #10b981;
 	}
 
 	.oos-compact {
@@ -1685,13 +1920,21 @@
 			flex-shrink: 0;
 		}
 
-		td[data-label='Card'] .card-info span {
+		td[data-label='Card'] .card-info .card-title-text {
 			font-weight: 700;
 			font-size: 0.98rem;
 			line-height: 1.25;
 			padding: 0;
 			word-break: break-word;
 			overflow-wrap: anywhere;
+		}
+
+		.row-select-checkbox {
+			opacity: 0.85;
+		}
+
+		.cap-badge.quick-add-pill {
+			opacity: 0.85;
 		}
 
 		.set-code-text {
@@ -1793,11 +2036,31 @@
 			transition: all var(--transition-fast);
 		}
 
+		td[data-label='Best Price'] .best-offer-wrap {
+			width: 100%;
+			align-items: flex-start;
+		}
+
 		td[data-label='Best Price'] .best-offer-row {
 			justify-content: flex-start;
 			background: transparent;
 			border: none;
 			padding: 0;
+			flex-wrap: wrap;
+		}
+
+		td[data-label='Best Price'] .best-primary-link {
+			width: auto;
+			flex: 0 1 auto;
+		}
+
+		td[data-label='Best Price'] .other-offers-popover {
+			position: static;
+			width: 100%;
+			max-width: none;
+			min-width: 0;
+			margin-top: 0.35rem;
+			box-shadow: none;
 		}
 
 		td[data-label='Best Price'] .oos-compact {

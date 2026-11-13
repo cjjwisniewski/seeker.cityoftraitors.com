@@ -111,14 +111,38 @@
 					</a>
 				</div>
 				<div class="nav-right">
-					<a href="/about" class="about-link" title="About" aria-label="About">
-						<i class="fa-solid fa-circle-info"></i>
+					<a
+						href="/about"
+						class="nav-link about-link"
+						class:active={$page.url.pathname === '/about'}
+						aria-current={$page.url.pathname === '/about' ? 'page' : undefined}
+						title="About"
+						aria-label="About"
+					>
+						<i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+						<span class="nav-label">About</span>
 					</a>
-					<a href="/seeking" class="seeking-link" title="Seeking" aria-label="Seeking List">
-						<i class="fa-solid fa-sd-card"></i>
+					<a
+						href="/seeking"
+						class="nav-link seeking-link"
+						class:active={$page.url.pathname === '/seeking'}
+						aria-current={$page.url.pathname === '/seeking' ? 'page' : undefined}
+						title="Seeking List"
+						aria-label="Seeking List"
+					>
+						<i class="fa-solid fa-sd-card" aria-hidden="true"></i>
+						<span class="nav-label">Seeking</span>
 					</a>
-					<a href="/" class="search-link" title="Search" aria-label="Search Cards">
-						<i class="fa-solid fa-magnifying-glass"></i>
+					<a
+						href="/"
+						class="nav-link search-link"
+						class:active={$page.url.pathname === '/'}
+						aria-current={$page.url.pathname === '/' ? 'page' : undefined}
+						title="Search Cards"
+						aria-label="Search Cards"
+					>
+						<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+						<span class="nav-label">Search</span>
 					</a>
 					{#if $auth.isAuthenticated && $auth.user}
 						<div class="user-dropdown">
@@ -257,32 +281,37 @@
 
 	.nav-right {
 		display: flex;
-		gap: 1.25rem;
+		gap: 0.55rem;
 		align-items: center;
 	}
 
 	/* Links in nav-right */
-	.search-link,
-	.about-link,
-	.seeking-link {
+	.nav-link {
 		color: var(--color-text-secondary);
 		text-decoration: none;
-		padding: 0.5rem;
-		border-radius: 50%;
+		padding: 0.42rem 0.78rem;
+		border-radius: 9999px;
+		border: 1px solid transparent;
 		transition: all var(--transition-fast);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 36px;
-		height: 36px;
+		gap: 0.4rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+		white-space: nowrap;
 	}
 
-	.search-link:hover,
-	.about-link:hover,
-	.seeking-link:hover {
+	.nav-link:hover {
 		color: var(--color-primary);
 		background: var(--color-bg-hover);
 		transform: translateY(-1px);
+	}
+
+	.nav-link.active {
+		color: var(--color-primary);
+		background: var(--color-primary-alpha);
+		border-color: rgba(59, 130, 246, 0.35);
 	}
 
 	/* User Dropdown */
@@ -487,19 +516,19 @@
 
 	@media (max-width: 768px) {
 		.nav-right {
-			gap: 0.75rem;
+			gap: 0.45rem;
 		}
 
-		.username {
+		.username,
+		.nav-label {
 			display: none;
 		}
 
-		.search-link,
-		.about-link,
-		.seeking-link {
-			width: 32px;
-			height: 32px;
+		.nav-link {
+			width: 34px;
+			height: 34px;
 			padding: 0.4rem;
+			border-radius: 50%;
 		}
 	}
 </style>

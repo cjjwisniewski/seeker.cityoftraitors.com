@@ -182,11 +182,25 @@
 				target.closest('select') ||
 				target.closest('.inline-badge-editor') ||
 				target.closest('.card-thumbnail') ||
-				target.closest('.kebab-dropdown')
+				target.closest('.kebab-dropdown') ||
+				target.closest('.other-offers-popover') ||
+				target.closest('.row-select-checkbox')
 		);
 	}
 
-	function toggleCardSelection(card, index = -1) {
+	function toggleCardSelection(card, index = -1, event = null) {
+		if (event?.shiftKey && lastSelectedIndex >= 0 && index >= 0) {
+			const start = Math.min(lastSelectedIndex, index);
+			const end = Math.max(lastSelectedIndex, index);
+			const newSelected = new Set(selectedKeys);
+			for (let i = start; i <= end; i++) {
+				if (sortedCards[i]) {
+					newSelected.add(getCardKey(sortedCards[i]));
+				}
+			}
+			selectedKeys = newSelected;
+			return;
+		}
 		const key = getCardKey(card);
 		const newSelected = new Set(selectedKeys);
 		if (newSelected.has(key)) {
@@ -563,7 +577,9 @@
 			const rawPrefs = localStorage.getItem('seeker_seeking_prefs');
 			if (rawPrefs) {
 				const parsed = JSON.parse(rawPrefs);
-				if (typeof parsed.sortKey === 'string' && parsed.sortKey) sortKey = parsed.sortKey;
+				if (typeof parsed.sortKey === 'string' && parsed.sortKey && parsed.sortKey !== 'best_price') {
+					sortKey = parsed.sortKey;
+				}
 				if (parsed.sortDirection === 'asc' || parsed.sortDirection === 'desc') {
 					sortDirection = parsed.sortDirection;
 				}
@@ -775,25 +791,7 @@
 		let aValue = a[sortKey];
 		let bValue = b[sortKey];
 
-		if (sortKey === 'best_price') {
-			const getBest = (card) => {
-				const info = getLowestOffer(
-					card,
-					showCardTrader,
-					showTCGPlayer,
-					showEbay,
-					showManapool,
-					showHimarket,
-					showHareruya,
-					showRuten,
-					showCardmarket,
-					showCardkingdom
-				);
-				return info.minPriceCents;
-			};
-			aValue = getBest(a) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
-			bValue = getBest(b) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
-		} else if (sortKey.includes('_price')) {
+		if (sortKey.includes('_price')) {
 			const normalizePrice = (card, val) => {
 				if (val === null || val === undefined || val <= 0) return null;
 				if (
@@ -1336,20 +1334,11 @@
 						</th>
 						{#if isCondensed}
 						<th
-							class="th-vendor col-vendor col-best-price"
-							on:click={() => sortBy('best_price')}
-							class:active={sortKey === 'best_price'}
-							title="Sort by lowest price available across all enabled stores"
+							class="th-vendor col-vendor col-best-price non-sortable-th"
+							title="Lowest price available across all enabled stores"
 						>
 							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									Best Price
-									{#if sortKey === 'best_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
+								<span class="th-vendor-title">Best Price</span>
 							</div>
 						</th>
 						{:else}
@@ -1570,7 +1559,7 @@
 						</th>
 						{/if}
 						{/if}
-						<th class="actions-header col-actions"></th>
+						<th class="actions-header col-actions non-sortable-th"></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -1597,6 +1586,7 @@
 							{index}
 							{isCondensed}
 							isSelected={selectedKeys.has(cardKey)}
+							hasAnySelected={selectedKeys.size > 0}
 							isMenuOpen={activeMenuId === cardKey}
 							isDropUp={index >= displayedCards.length - 2}
 							{histBadge}
@@ -1622,7 +1612,7 @@
 							on:rowContextMenu={(e) => handleRowContextMenu(e.detail)}
 							on:toggleMenu={(e) => toggleMenu(cardKey, e.detail)}
 							on:closeMenu={closeMenu}
-							on:toggleSelect={() => toggleCardSelection(card, index)}
+							on:toggleSelect={(e) => toggleCardSelection(card, index, e.detail)}
 							on:manualStockCheck={() => handleManualStockCheck(card)}
 							on:copyLine={() => copyDecklistToClipboard([card])}
 							on:openHistory={() => openHistoricalModal(card)}
@@ -2309,12 +2299,16 @@
 		letter-spacing: 0.04em;
 	}
 
+	th.non-sortable-th {
+		cursor: default;
+	}
+
 	th.active {
 		color: var(--color-primary);
 		background-color: var(--color-bg-hover);
 	}
 
-	th:not([class*='disabled-column']):hover {
+	th:not([class*='disabled-column']):not(.non-sortable-th):hover {
 		background-color: var(--color-bg-hover);
 	}
 
