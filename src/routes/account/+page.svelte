@@ -25,6 +25,7 @@
 	$: userIdChunks = $auth.user?.id?.match(/.{1,4}/g) || [];
 
 	// Default settings derived from user payload
+	$: isAdmin = Boolean($auth.user?.isAdmin);
 	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
 	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
 	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
@@ -42,6 +43,8 @@
 	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
 	$: marketplaceHareruyaEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
 	$: marketplaceRutenEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceRutenEnabled ?? false) : false;
+	$: marketplaceCardmarketEnabled = isAdmin ? ($auth.user?.settings?.marketplaceCardmarketEnabled ?? false) : false;
+	$: totalMarketplaceCount = isAdmin ? 9 : 8;
 	$: enabledMarketplaceCount = [
 		marketplaceCardtraderEnabled,
 		marketplaceTcgplayerEnabled,
@@ -50,7 +53,8 @@
 		marketplaceCardkingdomEnabled,
 		marketplaceHimarketEnabled,
 		marketplaceHareruyaEnabled,
-		marketplaceRutenEnabled
+		marketplaceRutenEnabled,
+		...(isAdmin ? [marketplaceCardmarketEnabled] : [])
 	].filter(Boolean).length;
 
 	async function copyUserId() {
@@ -107,6 +111,7 @@
 		if (settingName === 'marketplaceHimarketEnabled') oldValue = marketplaceHimarketEnabled;
 		if (settingName === 'marketplaceHareruyaEnabled') oldValue = marketplaceHareruyaEnabled;
 		if (settingName === 'marketplaceRutenEnabled') oldValue = marketplaceRutenEnabled;
+		if (settingName === 'marketplaceCardmarketEnabled') oldValue = marketplaceCardmarketEnabled;
 
 		// Optimistic UI update
 		if (settingName === 'stockAlertEnabled') stockAlertEnabled = newValue;
@@ -125,6 +130,7 @@
 		if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = newValue;
 		if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = newValue;
 		if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = newValue;
+		if (settingName === 'marketplaceCardmarketEnabled') marketplaceCardmarketEnabled = newValue;
 
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
@@ -158,6 +164,7 @@
 				if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
 				if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = oldValue;
 				if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = oldValue;
+				if (settingName === 'marketplaceCardmarketEnabled') marketplaceCardmarketEnabled = oldValue;
 				settingsError = 'Error updating setting. Please try again.';
 				return;
 			}
@@ -182,6 +189,7 @@
 			if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
 			if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = oldValue;
 			if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = oldValue;
+			if (settingName === 'marketplaceCardmarketEnabled') marketplaceCardmarketEnabled = oldValue;
 			settingsError = 'Error updating setting. Please try again.';
 		} finally {
 			isUpdatingSetting = false;
@@ -354,7 +362,7 @@
 			>
 				<i class="fa-solid fa-store"></i>
 				<span>Marketplaces</span>
-				<span class="tab-badge">{enabledMarketplaceCount}/8</span>
+				<span class="tab-badge">{enabledMarketplaceCount}/{totalMarketplaceCount}</span>
 			</button>
 			<button
 				type="button"
@@ -901,6 +909,32 @@
 							<span class="slider round"></span>
 						</label>
 					</div>
+
+					{#if isAdmin}
+					<div class="setting-item">
+						<div class="setting-item-left">
+							<div class="vendor-avatar cardmarket-badge">
+								<i class="fa-solid fa-euro-sign"></i>
+							</div>
+							<div class="setting-info">
+								<div class="label-with-tier">
+									<span class="setting-title">CardMarket</span>
+									<span class="lang-scope-badge">ADMIN ONLY</span>
+								</div>
+								<span class="setting-desc">Enable/disable stock checks and price tracking on CardMarket (EU). Visible to admins only.</span>
+							</div>
+						</div>
+						<label class="toggle-switch">
+							<input
+								type="checkbox"
+								checked={marketplaceCardmarketEnabled}
+								on:change={() => updateSetting('marketplaceCardmarketEnabled', !marketplaceCardmarketEnabled)}
+								disabled={isUpdatingSetting}
+							/>
+							<span class="slider round"></span>
+						</label>
+					</div>
+					{/if}
 				</div>
 			</section>
 			{/if}
@@ -1573,6 +1607,12 @@
 		background: rgba(20, 184, 166, 0.12);
 		border: 1px solid rgba(20, 184, 166, 0.25);
 		color: #14b8a6;
+	}
+
+	.cardmarket-badge {
+		background: rgba(56, 189, 248, 0.12);
+		border: 1px solid rgba(56, 189, 248, 0.25);
+		color: #38bdf8;
 	}
 
 	.lang-scope-badge {
