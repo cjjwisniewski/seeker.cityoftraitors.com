@@ -122,7 +122,8 @@
 				(table.username && table.username.toLowerCase().includes(q)) ||
 				(table.globalName && table.globalName.toLowerCase().includes(q)) ||
 				(table.userId && table.userId.toLowerCase().includes(q)) ||
-				(table.membershipTier && table.membershipTier.toLowerCase().includes(q))
+				(table.membershipTier && table.membershipTier.toLowerCase().includes(q)) ||
+				(table.adminNotes && table.adminNotes.toLowerCase().includes(q))
 			);
 		})
 		.sort((a, b) => {
@@ -320,6 +321,54 @@
 		}
 	}
 
+	// Admin User Notes state & functions
+	let showNotesModal = false;
+	let userToEditNotes = null;
+	let notesDraft = '';
+	let isUpdatingNotes = false;
+
+	function openNotesModal(table) {
+		userToEditNotes = table;
+		notesDraft = table.adminNotes || '';
+		showNotesModal = true;
+	}
+
+	function closeNotesModal() {
+		if (isUpdatingNotes) return;
+		showNotesModal = false;
+		userToEditNotes = null;
+	}
+
+	async function handleSaveNotes() {
+		if (!userToEditNotes || !isAuthorized) return;
+		isUpdatingNotes = true;
+		error = null;
+		const trimmedNotes = notesDraft.trim();
+		try {
+			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
+				method: 'POST',
+				body: JSON.stringify({
+					targetUserId: userToEditNotes.userId,
+					settingName: 'adminNotes',
+					settingValue: trimmedNotes
+				})
+			});
+			if (!response || !response.ok) {
+				const errText = response ? await response.text() : 'Network error';
+				throw new Error(`Failed to update admin notes: ${errText}`);
+			}
+			userTables = userTables.map((u) =>
+				u.userId === userToEditNotes.userId ? { ...u, adminNotes: trimmedNotes } : u
+			);
+			closeNotesModal();
+		} catch (e) {
+			console.error('Error updating admin notes:', e);
+			error = e.message;
+		} finally {
+			isUpdatingNotes = false;
+		}
+	}
+
 	// Poison queue inspect and manage state & functions
 	let showPoisonModal = false;
 	let activePoisonQueue = null;
@@ -436,6 +485,7 @@
 			}
 			if (showDeleteModal) closeDeleteModal();
 			if (showTierModal) closeTierModal();
+			if (showNotesModal) closeNotesModal();
 			if (showPoisonModal) closePoisonModal();
 		}
 	}
@@ -649,7 +699,7 @@
 	<title>Admin Console - Seeker</title>
 </svelte:head>
 
-<svelte:window on:keydown={(showDeleteModal || showTierModal || showPoisonModal || showClearPoisonModal) ? handleKeydown : null} />
+<svelte:window on:keydown={(showDeleteModal || showTierModal || showNotesModal || showPoisonModal || showClearPoisonModal) ? handleKeydown : null} />
 
 {#if authLoading}
 	<div class="loading-container">
@@ -1191,7 +1241,7 @@
 							<input
 								type="text"
 								bind:value={userSearchQuery}
-								placeholder="Filter by username, user ID, or tier..."
+								placeholder="Filter by username, user ID, tier, or notes..."
 								class="user-search-input"
 							/>
 							{#if userSearchQuery}
@@ -1368,6 +1418,16 @@
 													<i class="fa-solid fa-pen-to-square"></i>
 													<span>Edit Tier</span>
 												</button>
+												<button
+													type="button"
+													class="edit-note-pill-btn"
+													class:has-note={Boolean(table.adminNotes)}
+													on:click|stopPropagation={() => openNotesModal(table)}
+													title={table.adminNotes ? 'Edit admin note' : 'Add admin note'}
+												>
+													<i class="fa-regular fa-note-sticky"></i>
+													<span>{table.adminNotes ? 'Edit Note' : 'Add Note'}</span>
+												</button>
 											</div>
 											<div class="user-meta-column">
 												<div class="user-meta-line">
@@ -1438,6 +1498,12 @@
 														Last Login: {formatLocalDate(table.lastAccessed)}
 													</span>
 												</div>
+												{#if table.adminNotes}
+													<div class="admin-note-preview" title="Admin Note (click Edit Note to modify)">
+														<i class="fa-regular fa-note-sticky"></i>
+														<span>{table.adminNotes}</span>
+													</div>
+												{/if}
 											</div>
 										</div>
 									</div>
@@ -1864,6 +1930,59 @@
 					<button class="confirm-btn save-tier-btn" on:click={handleSaveTier} disabled={isUpdatingTier}>
 						<i class="fa-solid {isUpdatingTier ? 'fa-spinner fa-spin' : 'fa-check'}"></i>
 						<span>{isUpdatingTier ? 'Saving...' : 'Save Tier'}</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Edit Admin Notes Modal -->
+	{#if showNotesModal && userToEditNotes}
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div
+			class="modal-overlay"
+			on:click={closeNotesModal}
+			on:keydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') closeNotesModal();
+			}}
+			role="button"
+			tabindex="0"
+			aria-label="Close dialog"
+		>
+			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+			<div
+				class="modal tier-modal"
+				on:click|stopPropagation
+				on:keydown|stopPropagation
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="admin-notes-dialog-title"
+				tabindex="-1"
+			>
+				<div class="modal-icon-badge tier">
+					<i class="fa-regular fa-note-sticky"></i>
+				</div>
+				<h3 id="admin-notes-dialog-title">Admin User Notes</h3>
+				<p>
+					Private notes for <strong class="tier-target-user">{userToEditNotes.globalName || userToEditNotes.username || userToEditNotes.userId}</strong>
+				</p>
+				<textarea
+					bind:value={notesDraft}
+					rows="4"
+					maxlength="1000"
+					placeholder="e.g. Met on Reddit r/mtgfinance, local LGS friend, invited for Beta..."
+					class="notes-textarea"
+					disabled={isUpdatingNotes}
+				></textarea>
+				<div class="notes-char-count">{notesDraft.length}/1000</div>
+
+				<div class="modal-buttons">
+					<button class="cancel-btn" on:click={closeNotesModal} disabled={isUpdatingNotes}>
+						Cancel
+					</button>
+					<button class="confirm-btn save-tier-btn" on:click={handleSaveNotes} disabled={isUpdatingNotes}>
+						<i class="fa-solid {isUpdatingNotes ? 'fa-spinner fa-spin' : 'fa-check'}"></i>
+						<span>{isUpdatingNotes ? 'Saving...' : 'Save Note'}</span>
 					</button>
 				</div>
 			</div>
@@ -4413,5 +4532,77 @@
 		.modal-buttons {
 			flex-direction: column;
 		}
+	}
+	.edit-note-pill-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.2rem 0.55rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 600;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.edit-note-pill-btn:hover,
+	.edit-note-pill-btn.has-note {
+		border-color: rgba(245, 158, 11, 0.45);
+		color: #f59e0b;
+		background: rgba(245, 158, 11, 0.1);
+	}
+
+	.admin-note-preview {
+		display: inline-flex;
+		align-items: flex-start;
+		gap: 0.4rem;
+		margin-top: 0.3rem;
+		padding: 0.35rem 0.6rem;
+		border-radius: 8px;
+		background: rgba(245, 158, 11, 0.08);
+		border: 1px solid rgba(245, 158, 11, 0.25);
+		color: var(--color-text-secondary);
+		font-size: 0.78rem;
+		line-height: 1.35;
+		max-width: 100%;
+		word-break: break-word;
+	}
+
+	.admin-note-preview i {
+		color: #f59e0b;
+		margin-top: 0.15rem;
+		flex-shrink: 0;
+	}
+
+	.notes-textarea {
+		width: 100%;
+		box-sizing: border-box;
+		padding: 0.7rem 0.85rem;
+		border-radius: 10px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		font-family: inherit;
+		font-size: 0.88rem;
+		line-height: 1.45;
+		resize: vertical;
+		outline: none;
+		margin-top: 0.5rem;
+	}
+
+	.notes-textarea:focus {
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 2px var(--color-primary-alpha, rgba(99, 102, 241, 0.2));
+	}
+
+	.notes-char-count {
+		text-align: right;
+		font-size: 0.72rem;
+		color: var(--color-text-muted);
+		margin-top: 0.25rem;
+		margin-bottom: 0.75rem;
 	}
 </style>
