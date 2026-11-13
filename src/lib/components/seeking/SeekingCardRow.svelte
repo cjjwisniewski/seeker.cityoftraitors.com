@@ -86,6 +86,71 @@
 	function isBestVendor(vendor) {
 		return Boolean(lowestOffer && lowestOffer.offerCount >= 2 && lowestOffer.bestVendors.has(vendor));
 	}
+
+	$: activeLowestCents = isCondensed
+		? (bestOffer?.minPriceCents ?? null)
+		: (lowestOffer?.minPriceCents ?? null);
+	$: isUnderCap = Boolean(
+		card.max_price_cap > 0 && activeLowestCents !== null && activeLowestCents <= card.max_price_cap
+	);
+
+	// Inline quick-edit state for Max Price Cap & Min Condition
+	let editingCap = false;
+	let capDraft = '';
+	let editingCond = false;
+	let condDraft = '';
+
+	function startEditCap() {
+		editingCond = false;
+		capDraft =
+			card.max_price_cap !== null && card.max_price_cap !== undefined
+				? (card.max_price_cap / 100).toFixed(2)
+				: '';
+		editingCap = true;
+	}
+
+	function saveInlineCap() {
+		if (!editingCap) return;
+		const trimmed = String(capDraft).trim();
+		let nextCap = null;
+		if (trimmed !== '') {
+			const parsed = Math.round(parseFloat(trimmed) * 100);
+			if (isNaN(parsed) || parsed < 0) {
+				editingCap = false;
+				return;
+			}
+			nextCap = parsed;
+		}
+		editingCap = false;
+		if (nextCap !== (card.max_price_cap ?? null)) {
+			dispatch('quickUpdate', { card, patch: { max_price_cap: nextCap } });
+		}
+	}
+
+	function handleCapKeydown(e) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			saveInlineCap();
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			editingCap = false;
+		}
+	}
+
+	function startEditCond() {
+		editingCap = false;
+		condDraft = (card.min_condition || '').toUpperCase();
+		editingCond = true;
+	}
+
+	function handleCondChange(e) {
+		const val = e.target.value;
+		editingCond = false;
+		const nextCond = val ? val : null;
+		if (nextCond !== (card.min_condition || null)) {
+			dispatch('quickUpdate', { card, patch: { min_condition: nextCond } });
+		}
+	}
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -93,6 +158,7 @@
 <tr
 	class:condensed={isCondensed}
 	class:selected={isSelected}
+	class:under-cap={isUnderCap}
 	on:click={(e) => dispatch('rowClick', e)}
 	on:touchstart={(e) => dispatch('rowTouchStart', e)}
 	on:touchmove={(e) => dispatch('rowTouchMove', e)}
@@ -117,8 +183,16 @@
 			{/if}
 			<div class="card-name-group">
 				<span>{card.name}</span>
-				{#if (card.max_price_cap !== null && card.max_price_cap !== undefined) || card.min_condition || histBadge}
+				{#if (card.max_price_cap !== null && card.max_price_cap !== undefined) || card.min_condition || histBadge || isUnderCap || editingCap || editingCond}
 					<div class="card-badges-row">
+						{#if isUnderCap}
+							<span
+								class="cap-badge under-cap-badge"
+								title="In stock at {formatPrice(activeLowestCents)} (at or below your {formatPrice(card.max_price_cap)} cap)"
+							>
+								<i class="fa-solid fa-tag"></i> UNDER CAP
+							</span>
+						{/if}
 						{#if histBadge}
 							<button
 								type="button"
@@ -129,22 +203,58 @@
 								{histBadge.label}
 							</button>
 						{/if}
-						{#if card.max_price_cap !== null && card.max_price_cap !== undefined}
+						{#if editingCap}
+							<!-- svelte-ignore a11y-no-static-element-interactions -->
+							<div class="inline-badge-editor" on:click|stopPropagation>
+								<span class="inline-currency">$</span>
+								<input
+									type="number"
+									step="0.01"
+									min="0"
+									bind:value={capDraft}
+									on:keydown={handleCapKeydown}
+									on:blur={saveInlineCap}
+									placeholder="No cap"
+									class="inline-cap-input"
+									aria-label="Edit max price cap"
+									autofocus
+								/>
+							</div>
+						{:else if card.max_price_cap !== null && card.max_price_cap !== undefined}
 							<button
 								type="button"
 								class="cap-badge"
-								title="Click to edit Max Price Cap"
-								on:click|stopPropagation={() => dispatch('openSettings')}
+								title="Click to edit Max Price Cap inline"
+								on:click|stopPropagation={startEditCap}
 							>
 								MAX {formatPrice(card.max_price_cap)}
 							</button>
 						{/if}
-						{#if card.min_condition}
+						{#if editingCond}
+							<!-- svelte-ignore a11y-no-static-element-interactions -->
+							<div class="inline-badge-editor" on:click|stopPropagation>
+								<select
+									bind:value={condDraft}
+									on:change={handleCondChange}
+									on:blur={() => (editingCond = false)}
+									class="inline-cond-select"
+									aria-label="Edit minimum condition"
+									autofocus
+								>
+									<option value="">Account Default</option>
+									<option value="ANY">ANY</option>
+									<option value="HP">HP+</option>
+									<option value="MP">MP+</option>
+									<option value="SP">SP+</option>
+									<option value="NM">NM Only</option>
+								</select>
+							</div>
+						{:else if card.min_condition}
 							<button
 								type="button"
 								class="cap-badge cond-override-badge"
-								title="Minimum Condition Override: {formatMinConditionLabel(card.min_condition)} (Click to edit)"
-								on:click|stopPropagation={() => dispatch('openSettings')}
+								title="Minimum Condition Override: {formatMinConditionLabel(card.min_condition)} (Click to edit inline)"
+								on:click|stopPropagation={startEditCond}
 							>
 								{card.min_condition === 'NM'
 									? 'NM ONLY'
@@ -806,6 +916,14 @@
 		box-shadow: inset 3px 0 0 var(--color-primary, #6366f1);
 	}
 
+	tr.under-cap:not(.selected) td {
+		background-color: rgba(34, 197, 94, 0.06);
+	}
+
+	tr.under-cap:not(.selected) {
+		box-shadow: inset 3px 0 0 #22c55e;
+	}
+
 	td {
 		padding: 0.6rem 0.4rem;
 		text-align: center;
@@ -965,6 +1083,57 @@
 	.cap-badge.cond-override-badge:hover {
 		background: rgba(168, 85, 247, 0.22);
 		border-color: rgba(168, 85, 247, 0.6);
+	}
+
+	.cap-badge.under-cap-badge {
+		color: #16a34a;
+		background: rgba(34, 197, 94, 0.14);
+		border-color: rgba(34, 197, 94, 0.4);
+		cursor: default;
+	}
+
+	.cap-badge.under-cap-badge:hover {
+		background: rgba(34, 197, 94, 0.14);
+		border-color: rgba(34, 197, 94, 0.4);
+		transform: none;
+	}
+
+	.inline-badge-editor {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-primary);
+		border-radius: 999px;
+		padding: 0.05rem 0.4rem;
+		box-shadow: 0 0 0 2px var(--color-primary-alpha, rgba(99, 102, 241, 0.2));
+	}
+
+	.inline-currency {
+		font-size: 0.65rem;
+		font-weight: 700;
+		color: var(--color-text-muted);
+	}
+
+	.inline-cap-input {
+		width: 58px;
+		border: none;
+		background: transparent;
+		color: var(--color-text-primary);
+		font-size: 0.68rem;
+		font-weight: 700;
+		outline: none;
+		padding: 0;
+	}
+
+	.inline-cond-select {
+		border: none;
+		background: transparent;
+		color: var(--color-text-primary);
+		font-size: 0.66rem;
+		font-weight: 700;
+		outline: none;
+		cursor: pointer;
 	}
 
 	.hist-badge {

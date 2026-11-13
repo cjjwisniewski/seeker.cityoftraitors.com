@@ -1,4 +1,5 @@
 <script>
+	import { onMount } from 'svelte';
 	import { auth } from '$lib/stores/auth'; // Import the auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
 	import {
@@ -15,6 +16,27 @@
 	let isUpdatingSetting = false;
 	let copiedUserId = false;
 	let activeTab = 'preferences'; // 'preferences' | 'marketplaces' | 'profile'
+	let accountTabReady = false;
+
+	onMount(() => {
+		try {
+			const saved = localStorage.getItem('seeker_account_tab');
+			if (saved && ['preferences', 'marketplaces', 'profile'].includes(saved)) {
+				activeTab = saved;
+			}
+		} catch (e) {
+			/* Ignore storage access errors */
+		}
+		accountTabReady = true;
+	});
+
+	$: if (accountTabReady && typeof localStorage !== 'undefined') {
+		try {
+			localStorage.setItem('seeker_account_tab', activeTab);
+		} catch (e) {
+			/* Ignore storage access errors */
+		}
+	}
 
 	// Reactive declarations based on the auth store
 	$: user = $auth.user;

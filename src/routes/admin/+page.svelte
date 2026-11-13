@@ -32,6 +32,27 @@
 	let statusError = null; // Error display for system status
 	let systemStatus = null;
 	let activeTab = 'overview'; // 'overview' | 'health' | 'users' | 'banner'
+	let adminTabReady = false;
+
+	onMount(() => {
+		try {
+			const saved = localStorage.getItem('seeker_admin_tab');
+			if (saved && ['overview', 'health', 'users', 'banner'].includes(saved)) {
+				activeTab = saved;
+			}
+		} catch (e) {
+			/* Ignore storage access errors */
+		}
+		adminTabReady = true;
+	});
+
+	$: if (adminTabReady && typeof localStorage !== 'undefined') {
+		try {
+			localStorage.setItem('seeker_admin_tab', activeTab);
+		} catch (e) {
+			/* Ignore storage access errors */
+		}
+	}
 
 	// Tier counts for filter pills
 	$: tierCounts = {

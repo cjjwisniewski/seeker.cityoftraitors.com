@@ -90,6 +90,18 @@
 	// Sorting state
 	let sortKey = 'name';
 	let sortDirection = 'asc';
+	let seekingPrefsReady = false;
+
+	$: if (seekingPrefsReady && typeof localStorage !== 'undefined') {
+		try {
+			localStorage.setItem(
+				'seeker_seeking_prefs',
+				JSON.stringify({ sortKey, sortDirection, filterInStockOnly })
+			);
+		} catch (e) {
+			/* Ignore storage access errors */
+		}
+	}
 
 	// Reactive auth & marketplace flags
 	$: isAuthenticated = $auth.isAuthenticated;
@@ -156,6 +168,8 @@
 			target.closest('a') ||
 				target.closest('button') ||
 				target.closest('input') ||
+				target.closest('select') ||
+				target.closest('.inline-badge-editor') ||
 				target.closest('.card-thumbnail') ||
 				target.closest('.kebab-dropdown')
 		);
@@ -525,6 +539,22 @@
 		if (storedCondensed !== null) {
 			isCondensed = storedCondensed === 'true';
 		}
+		try {
+			const rawPrefs = localStorage.getItem('seeker_seeking_prefs');
+			if (rawPrefs) {
+				const parsed = JSON.parse(rawPrefs);
+				if (typeof parsed.sortKey === 'string' && parsed.sortKey) sortKey = parsed.sortKey;
+				if (parsed.sortDirection === 'asc' || parsed.sortDirection === 'desc') {
+					sortDirection = parsed.sortDirection;
+				}
+				if (typeof parsed.filterInStockOnly === 'boolean') {
+					filterInStockOnly = parsed.filterInStockOnly;
+				}
+			}
+		} catch (e) {
+			/* Ignore storage parse errors */
+		}
+		seekingPrefsReady = true;
 
 		fetchScryfallSets();
 		initExchangeRates();
@@ -855,10 +885,13 @@
 			if (offer.minPriceCents !== null) {
 				acc.inStockCount += 1;
 				acc.totalLowestCents += offer.minPriceCents;
+				if (card.max_price_cap > 0 && offer.minPriceCents <= card.max_price_cap) {
+					acc.underCapCount += 1;
+				}
 			}
 			return acc;
 		},
-		{ inStockCount: 0, totalLowestCents: 0 }
+		{ inStockCount: 0, totalLowestCents: 0, underCapCount: 0 }
 	);
 
 	$: selectedCostSummary = cards
@@ -972,6 +1005,34 @@
 			showStockCheckFeedback('error', 'Failed to copy decklist to clipboard.');
 		}
 	}
+
+	async function handleQuickUpdateCard({ card, patch }) {
+		if (!card || !patch) return;
+		const cardKey = getCardKey(card);
+		const prevCards = cards;
+		cards = cards.map((c) => (getCardKey(c) === cardKey ? { ...c, ...patch } : c));
+
+		try {
+			const response = await fetchWithAuth(PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					partitionKey: card.set_code,
+					rowKey: `${card.collector_number}_${card.language}_${card.finish}`,
+					...patch
+				})
+			});
+			if (!response || !response.ok) {
+				cards = prevCards;
+				showStockCheckFeedback('error', `Failed to update "${card.name}".`);
+				return;
+			}
+			showStockCheckFeedback('success', `Updated "${card.name}".`);
+		} catch (err) {
+			cards = prevCards;
+			showStockCheckFeedback('error', `Failed to update "${card.name}".`);
+		}
+	}
 </script>
 
 <svelte:window
@@ -1061,7 +1122,9 @@
 				<i class="fa-solid fa-sack-dollar"></i>
 				<span>
 					Est. <strong>{formatPrice(inStockSummary.totalLowestCents)}</strong>
-					<small>({inStockSummary.inStockCount} in stock)</small>
+					<small>
+						({inStockSummary.inStockCount} in stock{#if inStockSummary.underCapCount > 0} &bull; <span class="under-cap-summary">{inStockSummary.underCapCount} under cap</span>{/if})
+					</small>
 				</span>
 			</button>
 		{/if}
@@ -1525,6 +1588,7 @@
 							on:copyLine={() => copyDecklistToClipboard([card])}
 							on:openHistory={() => openHistoricalModal(card)}
 							on:openSettings={() => openSettings(card)}
+							on:quickUpdate={(e) => handleQuickUpdateCard(e.detail)}
 							on:deleteCard={() => handleDelete(card)}
 							on:enlargeImage={(e) => (enlargedCardImage = e.detail)}
 						/>
@@ -2575,6 +2639,11 @@
 		border-color: var(--color-primary);
 		color: var(--color-primary);
 		box-shadow: var(--shadow-lg);
+	}
+
+	.under-cap-summary {
+		color: #16a34a;
+		font-weight: 700;
 	}
 
 	@media (pointer: coarse), (max-width: 768px) {
