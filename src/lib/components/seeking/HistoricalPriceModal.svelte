@@ -1,4 +1,5 @@
 <script>
+	import { auth } from '$lib/stores/auth';
 	import {
 		getWebpImageUri,
 		formatExactTimestamp,
@@ -12,6 +13,10 @@
 	export let nowTick = Date.now();
 	export let onClose = () => {};
 	export let onEditCard = () => {};
+
+	$: vendorKeys = $auth.user?.isAdmin
+		? ['cardtrader', 'tcgplayer', 'manapool', 'cardkingdom', 'cardmarket', 'himarket', 'hareruya']
+		: ['cardtrader', 'tcgplayer', 'manapool', 'cardkingdom', 'himarket', 'hareruya'];
 </script>
 
 {#if show && card}
@@ -135,7 +140,7 @@
 						<div class="hist-vendors-section">
 							<h4>Verified Marketplace History</h4>
 							<div class="hist-vendors-list">
-								{#each ['cardtrader', 'tcgplayer', 'manapool', 'cardkingdom', 'himarket', 'hareruya'] as vKey}
+								{#each vendorKeys as vKey}
 									{@const vData = hp.vendor_lows[vKey]}
 									{#if vData && vData.low_cents > 0}
 										<div class="hist-vendor-row">
