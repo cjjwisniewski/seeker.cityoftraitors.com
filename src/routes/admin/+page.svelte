@@ -60,7 +60,8 @@
 		basic: userTables.filter((t) => (t.membershipTier || 'Basic').toLowerCase() === 'basic').length,
 		premium: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'premium').length,
 		legacy: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'legacy').length,
-		banned: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'banned').length
+		banned: userTables.filter((t) => (t.membershipTier || '').toLowerCase() === 'banned').length,
+		paused: userTables.filter((t) => Boolean(t.scanningPaused)).length
 	};
 
 	function toggleSort(field) {
@@ -109,11 +110,15 @@
 	$: filteredUserTables = userTables
 		.filter((table) => {
 			if (tierFilter !== 'all') {
-				const tier = (table.membershipTier || 'basic').toLowerCase();
-				if (tierFilter === 'none') {
-					if (tier !== 'none' && tier !== '') return false;
-				} else if (tier !== tierFilter) {
-					return false;
+				if (tierFilter === 'paused') {
+					if (!table.scanningPaused) return false;
+				} else {
+					const tier = (table.membershipTier || 'basic').toLowerCase();
+					if (tierFilter === 'none') {
+						if (tier !== 'none' && tier !== '') return false;
+					} else if (tier !== tierFilter) {
+						return false;
+					}
 				}
 			}
 			if (!userSearchQuery.trim()) return true;
@@ -366,6 +371,44 @@
 			error = e.message;
 		} finally {
 			isUpdatingNotes = false;
+		}
+	}
+
+	let togglingPauseUserId = null;
+
+	async function toggleScanningPaused(table) {
+		if (!table || !isAuthorized || togglingPauseUserId) return;
+		const nextPaused = !table.scanningPaused;
+		togglingPauseUserId = table.userId;
+		error = null;
+		try {
+			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
+				method: 'POST',
+				body: JSON.stringify({
+					targetUserId: table.userId,
+					settingName: 'scanningPaused',
+					settingValue: nextPaused
+				})
+			});
+			if (!response || !response.ok) {
+				const errText = response ? await response.text() : 'Network error';
+				throw new Error(`Failed to update pause state: ${errText}`);
+			}
+			userTables = userTables.map((u) =>
+				u.userId === table.userId
+					? {
+							...u,
+							scanningPaused: nextPaused,
+							scanningPausedAt: nextPaused ? new Date().toISOString() : null,
+							inactivityWarningSentAt: nextPaused ? u.inactivityWarningSentAt : null
+						}
+					: u
+			);
+		} catch (e) {
+			console.error('Error toggling scanningPaused:', e);
+			error = e.message;
+		} finally {
+			togglingPauseUserId = null;
 		}
 	}
 
@@ -1348,6 +1391,14 @@
 						>
 							Banned ({tierCounts.banned})
 						</button>
+						<button
+							type="button"
+							class="tier-filter-pill tier-paused"
+							class:active={tierFilter === 'paused'}
+							on:click={() => (tierFilter = 'paused')}
+						>
+							Paused ({tierCounts.paused})
+						</button>
 					</div>
 				</div>
 
@@ -1428,6 +1479,26 @@
 													<i class="fa-regular fa-note-sticky"></i>
 													<span>{table.adminNotes ? 'Edit Note' : 'Add Note'}</span>
 												</button>
+												<button
+													type="button"
+													class="edit-pause-pill-btn"
+													class:is-paused={Boolean(table.scanningPaused)}
+													disabled={togglingPauseUserId === table.userId}
+													on:click|stopPropagation={() => toggleScanningPaused(table)}
+													title={table.scanningPaused ? 'Resume automated scanning & digests' : 'Pause automated scanning & digests'}
+												>
+													<i class="fa-solid {togglingPauseUserId === table.userId ? 'fa-spinner fa-spin' : table.scanningPaused ? 'fa-play' : 'fa-pause'}"></i>
+													<span>{table.scanningPaused ? 'Resume' : 'Pause'}</span>
+												</button>
+												{#if table.scanningPaused}
+													<span class="paused-status-pill" title="Scanning & digests paused{table.scanningPausedAt ? ` since ${formatLocalDate(table.scanningPausedAt)}` : ''}">
+														<i class="fa-solid fa-moon"></i> Paused
+													</span>
+												{:else if table.inactivityWarningSentAt}
+													<span class="warned-status-pill" title="Inactivity warning DM sent on {formatLocalDate(table.inactivityWarningSentAt)}">
+														<i class="fa-solid fa-hourglass-half"></i> Warned
+													</span>
+												{/if}
 											</div>
 											<div class="user-meta-column">
 												<div class="user-meta-line">
@@ -4604,5 +4675,54 @@
 		color: var(--color-text-muted);
 		margin-top: 0.25rem;
 		margin-bottom: 0.75rem;
+	}
+
+	.edit-pause-pill-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.2rem 0.55rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 600;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.edit-pause-pill-btn:hover {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+	}
+
+	.edit-pause-pill-btn.is-paused {
+		border-color: rgba(34, 197, 94, 0.45);
+		color: #22c55e;
+		background: rgba(34, 197, 94, 0.1);
+	}
+
+	.paused-status-pill,
+	.warned-status-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		padding: 0.18rem 0.5rem;
+		border-radius: 999px;
+		font-size: 0.7rem;
+		font-weight: 700;
+	}
+
+	.paused-status-pill {
+		background: rgba(245, 158, 11, 0.14);
+		border: 1px solid rgba(245, 158, 11, 0.35);
+		color: #f59e0b;
+	}
+
+	.warned-status-pill {
+		background: rgba(99, 102, 241, 0.12);
+		border: 1px solid rgba(99, 102, 241, 0.35);
+		color: #6366f1;
 	}
 </style>
