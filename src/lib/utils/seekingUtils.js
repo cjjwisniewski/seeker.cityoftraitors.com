@@ -247,7 +247,7 @@ export function getCardmarketUrl(card) {
 		params.push(`language=${langMap[card.language.toLowerCase()]}`);
 	}
 	if (card.finish) {
-		params.push(`isFoil=${card.finish.toLowerCase() === 'foil' ? 'Y' : 'N'}`);
+		params.push(`isFoil=${['foil', 'etched'].includes(card.finish.toLowerCase()) ? 'Y' : 'N'}`);
 	}
 	if (params.length > 0) {
 		url += (url.includes('?') ? '&' : '?') + params.join('&');
@@ -652,15 +652,23 @@ export function parseDecklistText(rawText, importDefaultFinish = 'nonfoil', impo
 
 		line = line.replace(/\s*\^[^^]+\^\s*$/g, '').trim();
 
-		let isFoil = false;
+		let detectedFinish = null;
+		const etchedRegex = /\s*(?:\*[eE]\*|\(etched\)|\[etched\])\s*$/i;
 		const foilRegex = /\s*(?:\*[fFeE]\*|\((?:foil|etched)\)|\[(?:foil|etched)\])\s*$/i;
 		while (foilRegex.test(line)) {
-			isFoil = true;
+			if (etchedRegex.test(line)) {
+				detectedFinish = 'etched';
+			} else if (detectedFinish !== 'etched') {
+				detectedFinish = 'foil';
+			}
 			line = line.replace(foilRegex, '').trim();
 		}
-		if (/\s+\*[fFeE]\*\b/i.test(line)) {
-			isFoil = true;
-			line = line.replace(/\s+\*[fFeE]\*\b/gi, '').trim();
+		if (/\s+\*[eE]\*\b/i.test(line)) {
+			detectedFinish = 'etched';
+			line = line.replace(/\s+\*[eE]\*\b/gi, '').trim();
+		} else if (/\s+\*[fF]\*\b/i.test(line)) {
+			if (detectedFinish !== 'etched') detectedFinish = 'foil';
+			line = line.replace(/\s+\*[fF]\*\b/gi, '').trim();
 		}
 
 		line = line.replace(/\s+#[\w\-]+\s*$/g, '').trim();
@@ -682,7 +690,7 @@ export function parseDecklistText(rawText, importDefaultFinish = 'nonfoil', impo
 			}
 		}
 
-		const finish = isFoil ? 'foil' : importDefaultFinish;
+		const finish = detectedFinish || importDefaultFinish;
 		const language = importDefaultLanguage || 'en';
 		const key = `${name.toLowerCase()}|${set_code}|${collector_number}|${language}|${finish}`;
 		if (seen.has(key)) continue;

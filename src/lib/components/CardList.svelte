@@ -259,6 +259,9 @@
 				card.name;
 
 			card.selected_language = language;
+			card.localized_id = cardData.id || null;
+			card.localized_tcgplayer_id = cardData.tcgplayer_id || null;
+			card.localized_cardmarket_id = cardData.cardmarket_id || null;
 			card.image_uris = { grid: imageUri, normal: imageUri };
 			card.flavor_text = flavor_text;
 			card.oracle_text = oracle_text;
@@ -349,8 +352,12 @@
 				return;
 			}
 
+			const targetLang = (card.selected_language || 'en').toLowerCase();
+			const baseLang = (currentPrint.lang || 'en').toLowerCase();
+			const useBaseIds = targetLang === baseLang;
+
 			const payload = {
-				id: currentPrint.id || card.id || crypto.randomUUID(),
+				id: useBaseIds ? (currentPrint.id || card.id || crypto.randomUUID()) : (card.localized_id || crypto.randomUUID()),
 				name: card.name,
 				set_code: card.set,
 				set_name: currentPrint.set || card.set_name,
@@ -360,8 +367,8 @@
 				image_uri: getCardImageUri(card) || currentPrint.image_uri,
 				timestamp: new Date().toISOString(),
 				finish: selectedFinishes[card.id] || 'nonfoil',
-				tcgplayer_id: currentPrint.tcgplayer_id || null,
-				cardmarket_id: currentPrint.cardmarket_id || null
+				tcgplayer_id: useBaseIds ? (currentPrint.tcgplayer_id || null) : (card.localized_tcgplayer_id || null),
+				cardmarket_id: useBaseIds ? (currentPrint.cardmarket_id || null) : (card.localized_cardmarket_id || null)
 			};
 
 			const response = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {

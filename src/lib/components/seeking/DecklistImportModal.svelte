@@ -184,7 +184,7 @@
 
 			const set_code = (scry.set || item.set_code || '').toLowerCase();
 			const collector_number = String(scry.collector_number || item.collector_number || 'N/A');
-			const finish = item.finish === 'foil' ? 'foil' : 'nonfoil';
+			const finish = item.finish === 'etched' ? 'etched' : (item.finish === 'foil' ? 'foil' : 'nonfoil');
 			const name = scry.name || item.name;
 			const type_line = scry.type_line || item.type_line || '';
 			const oracle_id = scry.oracle_id || item.oracle_id || scry.id;
@@ -282,10 +282,13 @@
 			const alreadyExists = existingKeySet.has(cardKey);
 			const isBasicLand = isBasicLandCard(name, type_line);
 
+			const scryLang = String(scry.lang || 'en').toLowerCase();
+			const sameLang = language === scryLang;
+
 			finalPreview.push({
 				previewKey: cardKey,
 				id: crypto.randomUUID(),
-				scryfall_id: scry.id || item.scryfall_id || null,
+				scryfall_id: sameLang ? (scry.id || item.scryfall_id || null) : null,
 				name,
 				set_code,
 				set_name,
@@ -295,8 +298,8 @@
 				finish,
 				oracle_id,
 				image_uri,
-				tcgplayer_id: scry.tcgplayer_id || item.tcgplayer_id || null,
-				cardmarket_id: scry.cardmarket_id || item.cardmarket_id || null,
+				tcgplayer_id: sameLang ? (scry.tcgplayer_id || item.tcgplayer_id || null) : null,
+				cardmarket_id: sameLang ? (scry.cardmarket_id || item.cardmarket_id || null) : null,
 				isBasicLand,
 				alreadyExists,
 				selected: !alreadyExists && !(excludeBasicLands && isBasicLand)
@@ -696,6 +699,7 @@
 									<select id="import-default-finish" bind:value={importDefaultFinish} class="import-select" disabled={isResolvingImport}>
 										<option value="nonfoil">Non-Foil</option>
 										<option value="foil">Foil</option>
+										<option value="etched">Etched</option>
 									</select>
 								</div>
 								<div class="import-default-field">
@@ -840,12 +844,12 @@
 											<button
 												type="button"
 												class="import-finish-pill"
-												class:foil={item.finish === 'foil'}
+												class:foil={item.finish === 'foil' || item.finish === 'etched'}
 												on:click={() => toggleImportCardFinish(item)}
 												disabled={isImportingCards}
-												title="Click to toggle Foil / Nonfoil"
+												title="Click to toggle Finish"
 											>
-												{item.finish === 'foil' ? '✦ Foil' : 'Nonfoil'}
+												{item.finish === 'etched' ? '✦ Etched' : item.finish === 'foil' ? '✦ Foil' : 'Nonfoil'}
 											</button>
 										{/if}
 									</div>

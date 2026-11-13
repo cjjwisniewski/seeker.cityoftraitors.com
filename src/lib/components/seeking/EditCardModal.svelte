@@ -111,7 +111,8 @@
 				}
 				if (Array.isArray(p.finishes)) {
 					if (p.finishes.includes('nonfoil')) finishesSet.add('nonfoil');
-					if (p.finishes.includes('foil') || p.finishes.includes('etched')) finishesSet.add('foil');
+					if (p.finishes.includes('foil')) finishesSet.add('foil');
+					if (p.finishes.includes('etched')) finishesSet.add('etched');
 				}
 			}
 
@@ -282,7 +283,7 @@
 						<p>
 							{card.set_code.toUpperCase()} #{card.collector_number}
 							• {editLanguageInput.toUpperCase()}
-							• {editFinishInput === 'foil' ? '✦ Foil' : 'Nonfoil'}
+							• {editFinishInput === 'etched' ? '✦ Etched' : editFinishInput === 'foil' ? '✦ Foil' : 'Nonfoil'}
 						</p>
 					</div>
 				</div>
@@ -330,6 +331,15 @@
 								on:click={() => (editFinishInput = 'foil')}
 							>
 								✦ Foil
+							</button>
+							<button
+								type="button"
+								class="edit-finish-option foil"
+								class:active={editFinishInput === 'etched'}
+								disabled={isSavingSettings || !editAvailableFinishes.includes('etched')}
+								on:click={() => (editFinishInput = 'etched')}
+							>
+								✦ Etched
 							</button>
 						</div>
 					</div>
