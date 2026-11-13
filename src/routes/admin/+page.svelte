@@ -705,11 +705,6 @@
 		return `$${(cents / 100).toFixed(2)}`;
 	}
 
-	function formatDollars(dollars) {
-		if (dollars === null || dollars === undefined || Number(dollars) <= 0) return '—';
-		return `$${Number(dollars).toFixed(2)}`;
-	}
-
 	function formatDuration(seconds) {
 		if (!seconds) return '0s';
 		const h = Math.floor(seconds / 3600);
@@ -1742,7 +1737,7 @@
 																		{#if card.tcgplayer_stock}
 																			<span class="stock-pill in-stock">
 																				<i class="fa-solid fa-check"></i>
-																				{formatDollars(card.tcgplayer_low_price)}
+																				{formatCents(card.tcgplayer_low_price)}
 																				{#if card.tcgplayer_condition}
 																					<span class="cond-pill">{card.tcgplayer_condition}</span>
 																				{/if}

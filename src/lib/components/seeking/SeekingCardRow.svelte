@@ -4,7 +4,6 @@
 		getWebpImageUri,
 		getSetIconCode,
 		formatPrice,
-		formatDollarPrice,
 		formatMinConditionLabel,
 		getLowestOffer,
 		getBestOfferDetails,
@@ -447,7 +446,7 @@
 							></i>
 							{#if card.tcgplayer_low_price > 0 && getStockStatus(card.tcgplayer_stock) === 'available'}
 								<span class="price-text">
-									{formatDollarPrice(card.tcgplayer_low_price)}
+									{formatPrice(card.tcgplayer_low_price)}
 									{#if card.tcgplayer_condition}
 										<span
 											class="condition-bubble cond-{card.tcgplayer_condition.toLowerCase()}"

@@ -164,13 +164,6 @@ export function formatPrice(cents) {
 	return `$${dollars.toFixed(2)}`;
 }
 
-export function formatDollarPrice(dollars) {
-	if (dollars === null || dollars === undefined) {
-		return '';
-	}
-	return `$${Number(dollars).toFixed(2)}`;
-}
-
 export function getTCGPlayerUrl(card) {
 	let url = `https://www.tcgplayer.com/product/${card.tcgplayer_id}`;
 	const params = [];
@@ -283,7 +276,7 @@ export function getLowestOffer(
 		offers.push({ vendor: 'cardtrader', cents: Math.round(card.cardtrader_low_price) });
 	}
 	if (tcgEnabled && getStockStatus(card.tcgplayer_stock) === 'available' && card.tcgplayer_low_price > 0) {
-		offers.push({ vendor: 'tcgplayer', cents: Math.round(Number(card.tcgplayer_low_price) * 100) });
+		offers.push({ vendor: 'tcgplayer', cents: Math.round(Number(card.tcgplayer_low_price)) });
 	}
 	if (ebayEnabled && getStockStatus(card.ebay_stock) === 'available' && card.ebay_low_price > 0) {
 		offers.push({ vendor: 'ebay', cents: Math.round(card.ebay_low_price) });
@@ -389,7 +382,7 @@ export function getBestOfferDetails(
 		offers.push({
 			vendor: 'tcgplayer',
 			displayName: 'TCGPlayer',
-			cents: Math.round(Number(card.tcgplayer_low_price) * 100),
+			cents: Math.round(Number(card.tcgplayer_low_price)),
 			condition: card.tcgplayer_condition || '',
 			url: getTCGPlayerUrl(card)
 		});
@@ -801,7 +794,7 @@ export function buildSeekingCsvString(targetCards) {
 			card.cardtrader_condition || '',
 			getStockStatus(card.tcgplayer_stock),
 			card.tcgplayer_low_price !== null && card.tcgplayer_low_price !== undefined
-				? Number(card.tcgplayer_low_price).toFixed(2)
+				? (Number(card.tcgplayer_low_price) / 100).toFixed(2)
 				: '',
 			card.tcgplayer_condition || '',
 			getStockStatus(card.manapool_stock),
