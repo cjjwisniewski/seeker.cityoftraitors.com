@@ -457,7 +457,7 @@
 		poisonFeedback = null;
 		try {
 			const url = `${PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL}?action=replay_poison&queue=${encodeURIComponent(queueName)}`;
-			const response = await fetchWithAuth(url);
+			const response = await fetchWithAuth(url, { method: 'POST' });
 			if (response && response.ok) {
 				const data = await response.json();
 				poisonFeedback = { type: 'success', text: data.message || 'Messages replayed successfully.' };
@@ -498,7 +498,7 @@
 		poisonFeedback = null;
 		try {
 			const url = `${PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL}?action=clear_poison&queue=${encodeURIComponent(targetQueue)}`;
-			const response = await fetchWithAuth(url);
+			const response = await fetchWithAuth(url, { method: 'POST' });
 			if (response && response.ok) {
 				const data = await response.json();
 				poisonFeedback = { type: 'success', text: data.message || 'Poison queue cleared.' };

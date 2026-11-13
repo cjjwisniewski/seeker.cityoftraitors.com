@@ -8,6 +8,7 @@ interface User {
     username: string;
     avatar?: string;
     roles?: string[]; // Add roles if your user info endpoint returns them
+    isAdmin?: boolean;
     membershipTier?: string;
     settings?: {
         stockAlertEnabled?: boolean;
@@ -78,7 +79,8 @@ const createAuthStore = () => {
                 id: payload.id,
                 username: payload.username,
                 avatar: payload.avatar,
-                roles: payload.roles
+                roles: payload.roles,
+                isAdmin: Array.isArray(payload.roles) && payload.roles.includes('1352632325640294411')
             };
         } catch (e) {
             console.error('Invalid token format:', e);
