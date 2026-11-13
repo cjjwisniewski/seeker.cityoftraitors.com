@@ -2207,7 +2207,22 @@
 		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
 		border: 1px solid var(--glass-border, var(--color-border));
 		border-radius: 14px;
-		overflow-x: auto;
+		flex-wrap: wrap;
+	}
+
+	@media (max-width: 640px) {
+		.admin-tabs {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 0.35rem;
+		}
+
+		.admin-tab {
+			justify-content: center;
+			padding: 0.55rem 0.6rem;
+			font-size: 0.8rem;
+			min-width: 0;
+		}
 	}
 
 	.admin-tab {

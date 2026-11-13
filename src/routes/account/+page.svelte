@@ -1439,7 +1439,20 @@
 		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
 		border: 1px solid var(--glass-border, var(--color-border));
 		border-radius: 14px;
-		overflow-x: auto;
+		flex-wrap: wrap;
+	}
+
+	@media (max-width: 640px) {
+		.account-tabs {
+			gap: 0.35rem;
+		}
+
+		.account-tab {
+			flex: 1 1 auto;
+			justify-content: center;
+			padding: 0.55rem 0.7rem;
+			font-size: 0.82rem;
+		}
 	}
 
 	.account-tab {
