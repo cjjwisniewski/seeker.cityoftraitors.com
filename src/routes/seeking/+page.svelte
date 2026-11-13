@@ -1667,6 +1667,8 @@
 
 	/* Workspace Toolbar */
 	.workspace-toolbar {
+		position: relative;
+		z-index: 40;
 		margin: 1.25rem auto 1rem auto;
 		width: calc(100% - 2rem);
 		max-width: calc(1540px - 2rem);
