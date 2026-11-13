@@ -259,6 +259,37 @@ export function getCardmarketConditionClass(cond) {
 	return 'sp';
 }
 
+/**
+ * Returns true if the card reports available stock on at least one enabled marketplace
+ * (respecting Ruten's Traditional Chinese / English language scope).
+ */
+export function hasEnabledStock(
+	card,
+	ctEnabled,
+	tcgEnabled,
+	ebayEnabled,
+	mpEnabled,
+	hmEnabled,
+	hrEnabled,
+	rtEnabled,
+	cmEnabled,
+	ckEnabled = false
+) {
+	if (!card) return false;
+	const lang = (card.language || '').toLowerCase();
+	return Boolean(
+		(ctEnabled && card.cardtrader_stock === true) ||
+			(tcgEnabled && card.tcgplayer_stock === true) ||
+			(ebayEnabled && card.ebay_stock === true) ||
+			(mpEnabled && card.manapool_stock === true) ||
+			(ckEnabled && card.cardkingdom_stock === true) ||
+			(hmEnabled && card.himarket_stock === true) ||
+			(hrEnabled && card.hareruya_stock === true) ||
+			(rtEnabled && ['zht', 'en'].includes(lang) && card.ruten_stock === true) ||
+			(cmEnabled && card.cardmarket_stock === true)
+	);
+}
+
 export function getLowestOffer(
 	card,
 	ctEnabled,

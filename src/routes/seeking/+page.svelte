@@ -22,6 +22,7 @@
 		getStockStatus,
 		formatPrice,
 		getLowestOffer,
+		hasEnabledStock,
 		getCardHistoricalBadgeInfo,
 		formatCardAsDecklistLine,
 		buildSeekingCsvString
@@ -752,18 +753,18 @@
 		}
 
 		if (filterInStockOnly) {
-			const hasStock =
-				(showCardTrader && card.cardtrader_stock === true) ||
-				(showTCGPlayer && card.tcgplayer_stock === true) ||
-				(showEbay && card.ebay_stock === true) ||
-				(showManapool && card.manapool_stock === true) ||
-				(showCardkingdom && card.cardkingdom_stock === true) ||
-				(showHimarket && card.himarket_stock === true) ||
-				(showHareruya && card.hareruya_stock === true) ||
-				(showRuten &&
-					['zht', 'en'].includes((card.language || '').toLowerCase()) &&
-					card.ruten_stock === true) ||
-				(showCardmarket && card.cardmarket_stock === true);
+			const hasStock = hasEnabledStock(
+				card,
+				showCardTrader,
+				showTCGPlayer,
+				showEbay,
+				showManapool,
+				showHimarket,
+				showHareruya,
+				showRuten,
+				showCardmarket,
+				showCardkingdom
+			);
 			if (!hasStock) return false;
 		}
 

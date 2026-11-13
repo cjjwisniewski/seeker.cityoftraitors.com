@@ -7,6 +7,7 @@
 		formatMinConditionLabel,
 		getLowestOffer,
 		getBestOfferDetails,
+		hasEnabledStock,
 		formatExactTimestamp,
 		formatCooldownRemaining,
 		getStockIcon,
@@ -86,6 +87,18 @@
 		return Boolean(lowestOffer && lowestOffer.offerCount >= 2 && lowestOffer.bestVendors.has(vendor));
 	}
 
+	$: hasStock = hasEnabledStock(
+		card,
+		showCardTrader,
+		showTCGPlayer,
+		showEbay,
+		showManapool,
+		showHimarket,
+		showHareruya,
+		showRuten,
+		showCardmarket,
+		showCardkingdom
+	);
 	$: activeLowestCents = isCondensed
 		? (bestOffer?.minPriceCents ?? null)
 		: (lowestOffer?.minPriceCents ?? null);
@@ -157,6 +170,7 @@
 <tr
 	class:condensed={isCondensed}
 	class:selected={isSelected}
+	class:in-stock={hasStock}
 	class:under-cap={isUnderCap}
 	on:click={(e) => dispatch('rowClick', e)}
 	on:touchstart={(e) => dispatch('rowTouchStart', e)}
@@ -919,14 +933,6 @@
 		box-shadow: inset 3px 0 0 var(--color-primary, #6366f1);
 	}
 
-	tr.under-cap:not(.selected) td {
-		background-color: rgba(34, 197, 94, 0.06);
-	}
-
-	tr.under-cap:not(.selected) {
-		box-shadow: inset 3px 0 0 #22c55e;
-	}
-
 	td {
 		padding: 0.6rem 0.4rem;
 		text-align: center;
@@ -986,6 +992,30 @@
 	}
 
 	@media (min-width: 769px) {
+		tr.in-stock:not(.selected) td {
+			background-color: rgba(34, 197, 94, 0.06);
+		}
+
+		tr.in-stock:not(.selected):hover td {
+			background-color: rgba(34, 197, 94, 0.11);
+		}
+
+		tr.in-stock:not(.selected) {
+			box-shadow: inset 3px 0 0 rgba(34, 197, 94, 0.5);
+		}
+
+		tr.under-cap:not(.selected) td {
+			background-color: rgba(34, 197, 94, 0.09);
+		}
+
+		tr.under-cap:not(.selected):hover td {
+			background-color: rgba(34, 197, 94, 0.14);
+		}
+
+		tr.under-cap:not(.selected) {
+			box-shadow: inset 3px 0 0 #22c55e;
+		}
+
 		td.col-card {
 			position: sticky;
 			left: 0;
@@ -997,8 +1027,31 @@
 			background: var(--color-bg-hover);
 		}
 
+		tr.in-stock:not(.selected) td.col-card {
+			background: linear-gradient(0deg, rgba(34, 197, 94, 0.06), rgba(34, 197, 94, 0.06)),
+				var(--color-bg-primary);
+			box-shadow: inset 3px 0 0 rgba(34, 197, 94, 0.5);
+		}
+
+		tr.in-stock:not(.selected):hover td.col-card {
+			background: linear-gradient(0deg, rgba(34, 197, 94, 0.11), rgba(34, 197, 94, 0.11)),
+				var(--color-bg-primary);
+		}
+
+		tr.under-cap:not(.selected) td.col-card {
+			background: linear-gradient(0deg, rgba(34, 197, 94, 0.09), rgba(34, 197, 94, 0.09)),
+				var(--color-bg-primary);
+			box-shadow: inset 3px 0 0 #22c55e;
+		}
+
+		tr.under-cap:not(.selected):hover td.col-card {
+			background: linear-gradient(0deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.14)),
+				var(--color-bg-primary);
+		}
+
 		tr.selected td.col-card {
 			background: var(--color-primary-alpha, rgba(99, 102, 241, 0.15)) !important;
+			box-shadow: inset 3px 0 0 var(--color-primary, #6366f1);
 		}
 
 		td.col-card::after {
@@ -1555,6 +1608,24 @@
 
 		tr:hover td {
 			background-color: transparent;
+		}
+
+		tr.in-stock:not(.selected) {
+			background: linear-gradient(0deg, rgba(34, 197, 94, 0.07), rgba(34, 197, 94, 0.07)),
+				var(--glass-bg);
+			border-color: rgba(34, 197, 94, 0.35);
+			box-shadow:
+				inset 3px 0 0 rgba(34, 197, 94, 0.5),
+				var(--shadow-sm);
+		}
+
+		tr.under-cap:not(.selected) {
+			background: linear-gradient(0deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.1)),
+				var(--glass-bg);
+			border-color: rgba(34, 197, 94, 0.55);
+			box-shadow:
+				inset 3px 0 0 #22c55e,
+				var(--shadow-sm);
 		}
 
 		td,
