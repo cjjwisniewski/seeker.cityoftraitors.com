@@ -27,7 +27,6 @@
 					Est. {formatPrice(selectedCostSummary.totalLowestCents)} ({selectedCostSummary.inStockCount} in stock)
 				</span>
 			{/if}
-			<span class="bulk-hint desktop-only">(Shift/Ctrl to multi-select)</span>
 		</div>
 		<div class="bulk-actions">
 			<button class="bulk-btn secondary" on:click={onCopySelected} title="Copy selected cards as Decklist (Moxfield / Text format)">
@@ -156,17 +155,19 @@
 		bottom: 1.5rem;
 		left: 50%;
 		transform: translateX(-50%);
+		width: max-content;
+		max-width: calc(100vw - 2rem);
+		box-sizing: border-box;
 		background: var(--color-bg-elevated, #1e1e2d);
 		border: 1px solid var(--color-border);
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 		border-radius: 12px;
-		padding: 0.75rem 1.25rem;
+		padding: 0.65rem 1rem;
 		display: flex;
 		align-items: center;
-		gap: 1.5rem;
+		gap: 1rem;
 		z-index: 900;
 		animation: slideUp 0.25s ease-out;
-		max-width: 90vw;
 	}
 
 	.bulk-info {
@@ -191,16 +192,11 @@
 		font-weight: 600;
 	}
 
-	.bulk-hint {
-		font-size: 0.75rem;
-		color: var(--color-text-muted);
-	}
-
 	.bulk-actions {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
+		gap: 0.45rem;
+		flex-wrap: nowrap;
 	}
 
 	.bulk-btn {
@@ -408,10 +404,6 @@
 	}
 
 	@media (max-width: 768px) {
-		.desktop-only {
-			display: none !important;
-		}
-
 		.floating-bulk-bar {
 			left: 0.75rem;
 			right: 0.75rem;
