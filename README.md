@@ -8,10 +8,9 @@
 
 This repository houses the frontend client application. The complete Seeker platform is divided across several sister projects:
 
-*   **[seeker_functions](https://github.com/cjjwisniewski/seeker_functions)**: The Azure Functions Python backend. Handles Discord OAuth2 authentication, signs and verifies custom JWTs, manages user account settings, and runs background timers/queues to monitor card availability across CardTrader, TCGPlayer (native marketplace API), Mana Pool, eBay, HiMarket, Hareruya, Ruten, and Cardmarket.
+*   **[seeker_functions](https://github.com/cjjwisniewski/seeker_functions)**: The Azure Functions Python backend. Handles Discord OAuth2 authentication, signs and verifies custom JWTs, powers `/seeker` Discord slash commands, manages user account settings and inactivity lifecycle, and runs background timers/queues to monitor card availability across CardTrader, TCGPlayer (native marketplace API), Mana Pool, Card Kingdom, eBay, HiMarket, Hareruya, Ruten, and Cardmarket.
 *   **[seeker_checkCardmarketStock](https://github.com/cjjwisniewski/seeker_checkCardmarketStock)**: The containerized European scraper worker operating behind a dedicated LinuxServer WireGuard EU VPN sidecar, processing `cardmarketstockcheck` queue messages with persistent Cloudflare clearance tokens and atomic ETag Table Storage updates.
-*   **[seeker_checkTCGPlayerStock](https://github.com/cjjwisniewski/seeker_checkTCGPlayerStock)**: *(Deprecated / Legacy)* The original containerized Selenium/Chromium worker, now superseded by the native serverless `checkTCGPlayerStock` Azure Function.
-*   **[seeker_infra](https://github.com/cjjwisniewski/seeker_infra)**: The Terraform infrastructure configurations. Manages the Azure API Management (APIM) gateway proxy, Function App IP firewalls, storage tables, queue configurations, and DNS settings.
+*   **[seeker_infra](https://github.com/cjjwisniewski/seeker_infra)**: The Terraform infrastructure configurations. Manages the Azure API Management (APIM) gateway proxy, Function App IP firewalls, storage tables, queue configurations, and Cloudflare DNS/security transform rulesets.
 *   **[seeker.cityoftraitors.com](https://github.com/cjjwisniewski/seeker.cityoftraitors.com)**: The SvelteKit frontend client application (this repository).
 
 ---
@@ -23,23 +22,24 @@ This repository houses the frontend client application. The complete Seeker plat
 *   **Multi-Face & Transform Support**: Full support for double-faced cards (Transform, MDFC), split cards, and adventures, featuring an interactive face-flipping button (`Front` / `Transform`) and multi-face oracle text parsing.
 *   **Edition & Printing Selector**: Displays card set and collector number with lazy-loading for sets and printings to maximize performance.
 *   **Multilingual Support**: Automatically detects available foreign language prints for the active card, respects the user's preferred language setting, and fetches localized images, printed names, and rules text.
-*   **Finish Selector**: Choose between Nonfoil, Foil, and Etched finishes, automatically defaulting to user preferences.
+*   **Finish Selector**: Choose between Nonfoil, Foil, and Etched finishes (showing Etched only when the selected printing supports it), automatically defaulting to user preferences.
 
 ### 🔮 Official MTG Symbology
 *   **Vector Symbology**: Parses mana costs and rules text using official Scryfall SVG symbology.
 *   **Inline Rules Rendering**: Dynamically replaces mana symbols (`{W}`, `{U}`, `{B}`, `{R}`, `{G}`, `{C}`, hybrid, Phyrexian) and action symbols (`{T}`, `{Q}`, `{E}`, `{PW}`) with crisp vector icons inside oracle text.
 
 ### 📋 Sought Cards Workspace
-*   **Unified Glassmorphic Toolbar**: Real-time card search, sorting controls (Name, Date Added, Stock Status, Price), and instant filter pills (All, In Stock, Out of Stock, Tracking Enabled/Disabled).
+*   **Unified Glassmorphic Toolbar**: Real-time card search, sorting controls (Name, Date Added, Stock Status, Price), `InlineQuickAdd` popover for fast additions without leaving `/seeking`, instant filter pills, and `localStorage` view-state persistence.
 *   **Tracking Limit Indicator**: Live capacity pill showing currently tracked cards against the user's membership tier limit (e.g., `12 / 25 Cards`).
-*   **Decklist Import**: Paste raw card lists or import directly from Moxfield URLs (`fetchMoxfieldDeck`) to batch-add dozens of cards at once.
+*   **Decklist Import**: Paste raw card lists or import directly from Moxfield URLs (`fetchMoxfieldDeck`) to batch-add dozens of cards at once while preserving language-specific Scryfall IDs.
 *   **Multi-Card Selection & Bulk Actions**: Select individual cards, use `Shift + Click` for range selection, or long-press on mobile. Floating action bar provides one-click bulk removal and bulk price cap updates.
-*   **Per-Card Management**: Set target price caps, override minimum acceptable condition (`NM`, `SP+`, `MP+`, `HP+`, `ANY`), toggle individual marketplace tracking, switch languages/finishes inline, trigger on-demand stock checks, and jump straight to vendor listings.
+*   **Per-Card Management**: Click-to-edit inline `max_price_cap` and `min_condition` directly on `/seeking` rows, `UNDER CAP` row highlighting and summary counts, individual marketplace toggles, inline language/finish switching, on-demand stock checks, and formula-escaped CSV exports.
 *   **Historical Price Intelligence & Scarce Card Memory**: Inline badges displaying **🔥 Historical Low** deals, condition-tiered historical floors (`NM/LP` vs. `Played`), and **Last Seen In-Stock** prices/dates for out-of-stock scarce printings, backed by a detailed per-marketplace price history modal and toolbar filter (`At Low`).
-*   **Best Price Glow**: Instant emerald border and ambient glow highlighting the lowest available price across enabled marketplaces.
+*   **Best Price Glow**: Instant emerald border and ambient glow highlighting the lowest available price across enabled marketplaces, plus a Compact Best-Price view mode.
 
 ### 👤 Account & Preferences
-*   **Discord OAuth2 Authentication**: Secure Discord sign-in with cached user profile details and automatic JWT session renewal.
+*   **Discord OAuth2 Authentication**: Secure Discord sign-in with cached user profile details, strict JWT expiration/403 handling, and `PUBLIC_LOGOUT_ENDPOINT` sign-out.
+*   **Tabbed Account Console**: Organized into `Preferences`, `Marketplaces`, and `Account` tabs with `localStorage` active-tab persistence.
 *   **Monospace User ID Pill**: Formats Discord User IDs into 4-character visual segments inside a single styled pill with one-click clipboard copying.
 *   **Tier Status**: Visual membership badges highlighting user tiers (Basic, Premium, Legacy).
 *   **Minimum Card Condition**: Account-wide preference to ignore listings graded worse than your threshold (`NM Only`, `SP+`, `MP+`, `HP+`, or `Any Condition`), overridable per card.
@@ -49,18 +49,20 @@ This repository houses the frontend client application. The complete Seeker plat
         *   **TCGPlayer** (Premium/Legacy)
         *   **Mana Pool** (Premium/Legacy)
     *   **Default-Disabled (Opt-In)**:
+        *   **Card Kingdom** (US Singles — English & Specialty Promos)
         *   **eBay** (Browse API, with title false-positive filter warning)
         *   **HiMarket** (Hong Kong, EN · JA · ZHT · ZHS, live HKD conversion)
         *   **Hareruya** (Japan, JA · EN, live JPY conversion)
         *   **Ruten** (Taiwan, ZHT · EN, live TWD conversion)
-        *   **Cardmarket** (Europe, live EUR conversion, filtered product deep links)
+        *   **Cardmarket** (Admin-only, Europe, live EUR conversion, filtered product deep links)
 *   **Alert Configuration**: Customize percentage thresholds for price drop alerts and default card finishes/languages.
 *   **Account Deletion**: Self-service account removal with safety confirmation modal.
 
 ### 🛡️ Admin Operations
-*   **System & Queue Health**: Live health monitoring for Azure Storage queues, tracking active and poison message counts.
-*   **Dead-Letter & Poison Queue Inspector**: Peek into poison messages, replay failed jobs back to active queues, and safely purge poison queues with confirmation modals.
-*   **User Management Table**: Searchable directory of all users with membership tier breakdowns, tracking counts, and marketplace activity.
+*   **Tabbed Admin Console**: Organized into `Overview`, `System Health`, `Users`, and `Banner & Broadcast` tabs with live queue/user/banner badges.
+*   **System, Queue & Worker Health**: Live health monitoring for Azure Storage queues (active and poison counts) and external worker nodes/scrapers (Cardmarket VPN egress & heartbeat freshness).
+*   **Dead-Letter & Poison Queue Inspector**: Peek into poison messages, replay failed jobs back to active queues, and safely purge poison queues via `POST` requests with confirmation modals.
+*   **User Management Table**: Searchable directory of all users with membership tier breakdowns, tracking counts, inactivity warned/paused badges & manual toggle, and per-user custom `adminNotes` modal.
 *   **CSV Data Export**: One-click complete CSV export of user and tracking data for reporting.
 *   **Announcement Banner Manager**: Create, preview, update, and clear system-wide notification banners across the site in real time.
 
@@ -75,7 +77,7 @@ This repository houses the frontend client application. The complete Seeker plat
     *   [Scryfall API](https://scryfall.com/docs/api): Card search, prints, foreign language editions, and SVG symbology.
     *   Azure APIM Gateway: Secure backend proxy for Seeker Python functions and OAuth endpoints.
 *   **Icons**: [FontAwesome 6 Free](https://fontawesome.com/) & Scryfall SVG Symbology
-*   **Hosting**: Azure Blob Storage static website hosting & Azure CDN
+*   **Hosting**: Azure Blob Storage static website (`$web`) fronted by Cloudflare (CSP/HSTS transform rules & SPA fallback)
 
 ---
 
@@ -93,13 +95,22 @@ src/
 │   │   ├── Footer.svelte     # Application footer with build version
 │   │   ├── Header.svelte     # Glassmorphic top navigation bar
 │   │   ├── NotificationModal.svelte # Accessible notification dialog
-│   │   └── UserStatus.svelte # Auth state and login/logout button
+│   │   ├── UserStatus.svelte # Auth state and login/logout button
+│   │   └── seeking/          # Seeking workspace components
+│   │       ├── BulkActionModals.svelte
+│   │       ├── DecklistImportModal.svelte
+│   │       ├── EditCardModal.svelte
+│   │       ├── EmptySeekingState.svelte
+│   │       ├── HistoricalPriceModal.svelte
+│   │       ├── InlineQuickAdd.svelte
+│   │       └── SeekingCardRow.svelte
 │   ├── stores/
 │   │   └── auth.ts           # Authentication store, token lifecycle, and session cache
 │   └── utils/
 │       ├── api.ts            # Fetch wrapper injecting JWT Bearer tokens
 │       ├── cardSymbols.ts    # Scryfall mana & action symbol parser and SVG registry
-│       └── languageUtils.js  # Card language mapping and multilingual print discovery
+│       ├── languageUtils.js  # Card language mapping and multilingual print discovery
+│       └── seekingUtils.js   # Seeking pricing, condition, URL, and CSV export helpers
 └── routes/
     ├── +layout.svelte        # Root layout with banner, header, footer, and theme shell
     ├── +page.svelte          # Home / Card Search page
@@ -145,6 +156,7 @@ PUBLIC_VERSION=1.0.0-dev
 PUBLIC_DISCORD_CLIENT_ID=your_discord_client_id
 PUBLIC_DISCORD_REDIRECT_URI=http://localhost:5173/callback
 VITE_LOGIN_URL=https://seeker.azure-api.net/api/login
+PUBLIC_LOGOUT_ENDPOINT=https://seeker.azure-api.net/api/logout
 VITE_USER_INFO_URL=https://seeker.azure-api.net/api/userinfo
 
 # Backend Azure APIM / Function Endpoints
