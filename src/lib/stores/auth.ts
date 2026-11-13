@@ -1,5 +1,6 @@
 import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
+import { env as publicEnv } from '$env/dynamic/public';
 
 // Define the shape of the user object
 interface User {
@@ -38,7 +39,7 @@ interface AuthState {
 
 // Use environment variables for Azure Function URLs
 const LOGIN_URL = import.meta.env.VITE_LOGIN_URL;
-const LOGOUT_URL = import.meta.env.VITE_LOGOUT_URL;
+const LOGOUT_URL = import.meta.env.VITE_LOGOUT_URL || publicEnv.PUBLIC_LOGOUT_ENDPOINT || 'https://api.cityoftraitors.com/auth/logout';
 const USER_INFO_URL = import.meta.env.VITE_USER_INFO_URL;
 
 
@@ -100,8 +101,8 @@ const createAuthStore = () => {
             if (response.ok) {
                 const data = await response.json();
                 return data;
-            } else if (response.status === 401) {
-                console.warn('AuthStore: Token invalid according to API.');
+            } else if (response.status === 401 || response.status === 403) {
+                console.warn(`AuthStore: Session rejected by API (Status: ${response.status}).`);
                 return null;
             } else {
                 console.error(`AuthStore: API error fetching user info (Status: ${response.status}). Falling back to JWT.`);

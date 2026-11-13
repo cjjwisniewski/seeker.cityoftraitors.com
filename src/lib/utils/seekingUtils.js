@@ -846,7 +846,17 @@ export function buildSeekingCsvString(targetCards) {
 				: '',
 			card.min_condition || ''
 		];
-		csvRows.push(row.join(','));
+		const safeRow = row.map((cell) => {
+			const str = cell === null || cell === undefined ? '' : String(cell);
+			if (str.startsWith('"') && /^"[=+\-@\t\r]/.test(str)) {
+				return `"'${str.slice(1)}`;
+			}
+			if (/^[=+\-@\t\r]/.test(str)) {
+				return `'${str}`;
+			}
+			return str;
+		});
+		csvRows.push(safeRow.join(','));
 	}
 
 	return csvRows.join('\n');
