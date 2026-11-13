@@ -277,35 +277,60 @@
 		</div>
 	{:else if selectedPrint}
 		<div class="quick-add-confirm">
-			<div class="quick-card-preview">
+			<div class="quick-confirm-header">
 				{#if getScryfallImage(selectedPrint)}
 					<img src={getScryfallImage(selectedPrint)} alt={selectedPrint.name} class="quick-thumb" />
 				{/if}
-				<span class="quick-card-title">{selectedPrint.name}</span>
+				<div class="quick-card-meta">
+					<span class="quick-card-title">{selectedPrint.name}</span>
+					<span class="quick-card-sub">
+						{selectedPrint.set_name} ({selectedPrint.set.toUpperCase()} #{selectedPrint.collector_number})
+					</span>
+				</div>
+				<button
+					type="button"
+					class="quick-popover-close"
+					on:click={clearSelection}
+					aria-label="Close quick-add"
+					title="Cancel"
+				>
+					<i class="fa-solid fa-xmark"></i>
+				</button>
 			</div>
 
 			<div class="quick-controls">
-				<select bind:value={selectedPrintId} class="quick-select quick-print-select" aria-label="Select printing">
-					{#each prints as p}
-						<option value={p.id}>
-							{p.set_name} ({p.set.toUpperCase()} #{p.collector_number})
-						</option>
-					{/each}
-				</select>
+				<label class="quick-field quick-field-full">
+					<span class="quick-field-label">Printing</span>
+					<select bind:value={selectedPrintId} class="quick-select" aria-label="Select printing">
+						{#each prints as p}
+							<option value={p.id}>
+								{p.set_name} ({p.set.toUpperCase()} #{p.collector_number})
+							</option>
+						{/each}
+					</select>
+				</label>
 
-				<select bind:value={selectedFinish} class="quick-select" aria-label="Select finish">
-					{#each availableFinishes as fin}
-						<option value={fin}>
-							{fin === 'foil' ? 'Foil' : fin === 'etched' ? 'Etched' : 'Nonfoil'}
-						</option>
-					{/each}
-				</select>
+				<div class="quick-controls-row">
+					<label class="quick-field">
+						<span class="quick-field-label">Finish</span>
+						<select bind:value={selectedFinish} class="quick-select" aria-label="Select finish">
+							{#each availableFinishes as fin}
+								<option value={fin}>
+									{fin === 'foil' ? 'Foil' : fin === 'etched' ? 'Etched' : 'Nonfoil'}
+								</option>
+							{/each}
+						</select>
+					</label>
 
-				<select bind:value={selectedLanguage} class="quick-select" aria-label="Select language">
-					{#each quickLanguages as lang}
-						<option value={lang}>{getLanguageName(lang)}</option>
-					{/each}
-				</select>
+					<label class="quick-field">
+						<span class="quick-field-label">Language</span>
+						<select bind:value={selectedLanguage} class="quick-select" aria-label="Select language">
+							{#each quickLanguages as lang}
+								<option value={lang}>{getLanguageName(lang)}</option>
+							{/each}
+						</select>
+					</label>
+				</div>
 
 				<button
 					type="button"
@@ -316,7 +341,7 @@
 					{#if isAdding}
 						<i class="fa-solid fa-spinner fa-spin"></i> Adding...
 					{:else}
-						<i class="fa-solid fa-plus"></i> Add Card
+						<i class="fa-solid fa-plus"></i> Add to Seeking List
 					{/if}
 				</button>
 			</div>
@@ -338,6 +363,11 @@
 		flex-shrink: 0;
 		box-sizing: border-box;
 		z-index: 30;
+		transition: width 0.18s ease;
+	}
+
+	.quick-add-wrapper:focus-within {
+		width: 260px;
 	}
 
 	.quick-add-bar {
@@ -351,9 +381,9 @@
 		padding: 0 0.75rem;
 		height: 36px;
 		background: var(--color-bg-secondary, var(--glass-bg));
-		border: 1px solid var(--glass-border);
+		border: 1px solid rgba(99, 102, 241, 0.35);
 		border-radius: 8px;
-		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 	}
 
 	@media (max-width: 768px) {
@@ -406,15 +436,19 @@
 
 	.quick-suggestions {
 		position: absolute;
-		top: calc(100% + 0.35rem);
+		top: calc(100% + 0.4rem);
 		left: 0;
-		right: 0;
+		min-width: 290px;
+		max-width: min(380px, 92vw);
 		margin: 0;
 		padding: 0.35rem;
 		list-style: none;
 		background: var(--color-bg-elevated);
 		border: 1px solid var(--color-border);
 		border-radius: 10px;
+		box-shadow: var(--shadow-lg);
+		z-index: 60;
+	}
 		box-shadow: var(--shadow-lg);
 		max-height: 280px;
 		overflow-y: auto;
@@ -449,93 +483,158 @@
 
 	.quick-add-confirm {
 		position: absolute;
-		top: calc(100% + 0.45rem);
+		top: calc(100% + 0.5rem);
 		left: 0;
-		min-width: 480px;
-		max-width: min(640px, 92vw);
-		padding: 0.7rem 0.9rem;
+		width: 370px;
+		max-width: min(400px, 92vw);
+		padding: 0.9rem;
 		background: var(--color-bg-elevated);
 		border: 1px solid var(--color-border);
-		border-radius: 10px;
+		border-radius: 12px;
 		box-shadow: var(--shadow-lg);
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		flex-wrap: wrap;
+		flex-direction: column;
+		gap: 0.85rem;
 		z-index: 60;
 	}
 
 	@media (max-width: 768px) {
-		.quick-add-confirm {
+		.quick-add-wrapper:focus-within {
+			width: 100%;
+		}
+		.quick-suggestions {
 			min-width: 0;
 			width: 100%;
 		}
+		.quick-add-confirm {
+			width: 100%;
+			max-width: 100%;
+		}
 	}
 
-	.quick-card-preview {
+	.quick-confirm-header {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		min-width: 0;
+		gap: 0.75rem;
+		padding-bottom: 0.65rem;
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.quick-thumb {
-		width: 28px;
-		height: 39px;
+		width: 40px;
+		height: 56px;
 		object-fit: cover;
-		border-radius: 3px;
+		border-radius: 5px;
+		box-shadow: var(--shadow-sm);
 		flex-shrink: 0;
 	}
 
+	.quick-card-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		min-width: 0;
+		flex: 1;
+	}
+
 	.quick-card-title {
-		font-weight: 600;
-		font-size: 0.9rem;
+		font-weight: 700;
+		font-size: 0.95rem;
 		color: var(--color-text-primary);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
+	.quick-card-sub {
+		font-size: 0.78rem;
+		color: var(--color-text-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.quick-popover-close {
+		background: transparent;
+		border: none;
+		color: var(--color-text-muted);
+		cursor: pointer;
+		padding: 0.25rem;
+		border-radius: 6px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.quick-popover-close:hover {
+		color: var(--color-text-primary);
+		background: var(--glass-bg);
+	}
+
 	.quick-controls {
 		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-		flex: 1;
-		justify-content: flex-end;
+		flex-direction: column;
+		gap: 0.65rem;
+	}
+
+	.quick-controls-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.6rem;
+	}
+
+	.quick-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		min-width: 0;
+	}
+
+	.quick-field-label {
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--color-text-muted);
 	}
 
 	.quick-select {
-		height: 34px;
+		height: 36px;
+		width: 100%;
 		padding: 0 0.6rem;
 		border-radius: 8px;
 		border: 1px solid var(--color-border);
 		background: var(--color-bg-secondary);
 		color: var(--color-text-primary);
-		font-size: 0.82rem;
+		font-size: 0.83rem;
 		outline: none;
-		max-width: 100%;
 	}
 
-	.quick-print-select {
-		max-width: 260px;
+	.quick-select:focus {
+		border-color: var(--color-primary);
 	}
 
 	.quick-submit-btn {
-		height: 34px;
-		padding: 0 0.9rem;
+		height: 38px;
+		width: 100%;
+		padding: 0 1rem;
 		border: none;
 		border-radius: 8px;
 		background: var(--color-primary);
 		color: #ffffff;
-		font-size: 0.82rem;
+		font-size: 0.86rem;
 		font-weight: 600;
 		cursor: pointer;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
-		white-space: nowrap;
+		justify-content: center;
+		gap: 0.45rem;
+		transition: filter var(--transition-fast), transform var(--transition-fast);
+	}
+
+	.quick-submit-btn:hover:not(:disabled) {
+		filter: brightness(1.08);
 	}
 
 	.quick-submit-btn:disabled {
