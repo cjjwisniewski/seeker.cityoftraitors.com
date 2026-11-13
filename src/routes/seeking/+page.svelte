@@ -121,9 +121,7 @@
 	$: showRuten = isPremiumOrLegacy
 		? ($auth.user?.settings?.marketplaceRutenEnabled ?? false)
 		: false;
-	$: showCardmarket = isPremiumOrLegacy
-		? ($auth.user?.settings?.marketplaceCardmarketEnabled ?? false)
-		: false;
+	$: showCardmarket = false;
 
 	function openHistoricalModal(card) {
 		selectedCardForHistory = card;

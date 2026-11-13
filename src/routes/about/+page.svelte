@@ -58,8 +58,7 @@
 		{ name: 'eBay', region: 'US', icon: 'fa-brands fa-ebay', color: '#f59e0b' },
 		{ name: 'HiMarket', region: 'HK', icon: 'fa-solid fa-earth-asia', color: '#ec4899' },
 		{ name: 'Hareruya', region: 'JP', icon: 'fa-solid fa-sun', color: '#f97316' },
-		{ name: 'Ruten', region: 'TW', icon: 'fa-solid fa-shop', color: '#14b8a6' },
-		{ name: 'CardMarket', region: 'EU', icon: 'fa-solid fa-euro-sign', color: '#38bdf8' }
+		{ name: 'Ruten', region: 'TW', icon: 'fa-solid fa-shop', color: '#14b8a6' }
 	];
 
 	const slashCommands = [

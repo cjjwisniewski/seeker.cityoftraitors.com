@@ -755,11 +755,6 @@ export function buildSeekingCsvString(targetCards) {
 		'Card Kingdom Price (USD)',
 		'Card Kingdom Condition',
 		'Card Kingdom URL',
-		'CardMarket Stock',
-		'CardMarket Price (USD)',
-		'CardMarket Price (EUR)',
-		'CardMarket Condition',
-		'CardMarket URL',
 		'eBay Stock',
 		'eBay Price',
 		'eBay Condition',
@@ -812,15 +807,6 @@ export function buildSeekingCsvString(targetCards) {
 				: '',
 			card.cardkingdom_condition || '',
 			`"${(card.cardkingdom_url || '').replace(/"/g, '""')}"`,
-			getStockStatus(card.cardmarket_stock),
-			card.cardmarket_low_price !== null && card.cardmarket_low_price !== undefined
-				? (card.cardmarket_low_price / 100).toFixed(2)
-				: '',
-			card.cardmarket_price_eur !== null && card.cardmarket_price_eur !== undefined
-				? Number(card.cardmarket_price_eur).toFixed(2)
-				: '',
-			card.cardmarket_condition || '',
-			`"${(getCardmarketUrl(card) || '').replace(/"/g, '""')}"`,
 			getStockStatus(card.ebay_stock),
 			card.ebay_low_price !== null && card.ebay_low_price !== undefined
 				? (card.ebay_low_price / 100).toFixed(2)

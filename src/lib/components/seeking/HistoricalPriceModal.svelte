@@ -61,7 +61,7 @@
 						<i class="fa-solid fa-satellite-dish"></i>
 						<h4>No Verified In-Stock History Yet</h4>
 						<p>
-							This printing has not yet been observed in stock on a catalog-verified marketplace (CardTrader, TCGPlayer, Mana Pool, CardMarket, HiMarket, or Hareruya). As soon as a copy appears during any user's scan, Seeker will permanently record its price and date here.
+							This printing has not yet been observed in stock on a catalog-verified marketplace (CardTrader, TCGPlayer, Mana Pool, Card Kingdom, HiMarket, or Hareruya). As soon as a copy appears during any user's scan, Seeker will permanently record its price and date here.
 						</p>
 					</div>
 				{:else}
@@ -135,7 +135,7 @@
 						<div class="hist-vendors-section">
 							<h4>Verified Marketplace History</h4>
 							<div class="hist-vendors-list">
-								{#each ['cardtrader', 'tcgplayer', 'manapool', 'cardkingdom', 'cardmarket', 'himarket', 'hareruya'] as vKey}
+								{#each ['cardtrader', 'tcgplayer', 'manapool', 'cardkingdom', 'himarket', 'hareruya'] as vKey}
 									{@const vData = hp.vendor_lows[vKey]}
 									{#if vData && vData.low_cents > 0}
 										<div class="hist-vendor-row">
