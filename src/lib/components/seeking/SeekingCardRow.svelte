@@ -302,11 +302,15 @@
 		<button
 			type="button"
 			class="inline-variant-btn"
-			class:foil-variant={(card.finish || '').toLowerCase() === 'foil'}
+			class:foil-variant={(card.finish || '').toLowerCase() === 'foil' || (card.finish || '').toLowerCase() === 'etched'}
 			title="Click to edit finish or language"
 			on:click|stopPropagation={() => dispatch('openSettings')}
 		>
-			{(card.finish || '').toLowerCase() === 'foil' ? '✦ Foil' : 'Nonfoil'}
+			{(card.finish || '').toLowerCase() === 'etched'
+				? '◈ Etched'
+				: (card.finish || '').toLowerCase() === 'foil'
+					? '✦ Foil'
+					: 'Nonfoil'}
 		</button>
 	</td>
 

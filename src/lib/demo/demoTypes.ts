@@ -121,6 +121,19 @@ export interface DemoCardRecord {
 
 export type DemoAlertKind = 'restock' | 'price_drop' | 'historical_low';
 
+export interface DemoAlertHistoricalContext {
+	tierLabel: string;
+	isLowBreakthrough: boolean;
+	previousLowCents?: number | null;
+	previousLowVendor?: string | null;
+	activeLowCents?: number | null;
+	activeLowVendor?: string | null;
+	prevLastSeenCents?: number | null;
+	prevLastSeenCondition?: string | null;
+	prevLastSeenVendor?: string | null;
+	prevLastSeenAt?: string | null;
+}
+
 export interface DemoAlertPreview {
 	id: string;
 	kind: DemoAlertKind;
@@ -134,9 +147,11 @@ export interface DemoAlertPreview {
 	vendor: string;
 	vendorDisplayName: string;
 	priceCents: number;
+	nativePriceText?: string | null;
 	oldPriceCents?: number | null;
 	percentageDrop?: number | null;
 	historicalLowCents?: number | null;
+	historicalContext?: DemoAlertHistoricalContext | null;
 	condition: string;
 	priceCapCents?: number | null;
 	buyUrl: string;

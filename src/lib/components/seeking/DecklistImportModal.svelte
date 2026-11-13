@@ -309,6 +309,12 @@
 					: null,
 				cardmarket_id: sameLang ? (scry.cardmarket_id || item.cardmarket_id || null) : null,
 				demo_scryfall_prices: scry.prices || null,
+				demo_tcgplayer_id:
+					(finish === 'etched'
+						? scry.tcgplayer_etched_id || scry.tcgplayer_id
+						: scry.tcgplayer_id) ||
+					item.tcgplayer_id ||
+					null,
 				isBasicLand,
 				alreadyExists,
 				selected: !alreadyExists && !(excludeBasicLands && isBasicLand)
@@ -596,7 +602,12 @@
 					finish: c.finish,
 					tcgplayer_id: c.tcgplayer_id,
 					cardmarket_id: c.cardmarket_id,
-					...($auth.isDemo ? { demo_scryfall_prices: c.demo_scryfall_prices || null } : {})
+					...($auth.isDemo
+						? {
+								demo_scryfall_prices: c.demo_scryfall_prices || null,
+								demo_tcgplayer_id: c.demo_tcgplayer_id || null
+							}
+						: {})
 				}));
 
 				const res = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {

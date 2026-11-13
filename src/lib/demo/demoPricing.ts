@@ -87,10 +87,54 @@ function buildSearchSlug(cardName: string): string {
 	return encodeURIComponent(cardName);
 }
 
+/**
+ * Populates canonical non-empty marketplace IDs and URLs so Demo cards
+ * show normal "Out of stock" rather than error "Card not found / Not searched" states.
+ */
+export function buildDemoVendorIdentifiers(
+	card: Pick<DemoCardRecord, 'name' | 'set_code' | 'collector_number' | 'language' | 'finish' | 'tcgplayer_id' | 'cardtrader_id' | 'manapool_id'>
+): Pick<
+	DemoCardRecord,
+	| 'cardtrader_id'
+	| 'tcgplayer_id'
+	| 'manapool_id'
+	| 'manapool_url'
+	| 'cardkingdom_url'
+	| 'himarket_url'
+	| 'hareruya_url'
+	| 'ruten_url'
+> {
+	const seedKey = `${card.set_code}:${card.collector_number}:${card.language}:${card.finish}`;
+	const baseHash = hashSeed(seedKey);
+	const slug = buildSearchSlug(card.name);
+	const langLower = String(card.language || 'en').toLowerCase();
+
+	const cardtraderId =
+		card.cardtrader_id !== undefined && card.cardtrader_id !== null && String(card.cardtrader_id).trim() !== ''
+			? String(card.cardtrader_id)
+			: String(200000 + (baseHash % 80000));
+
+	const tcgplayerId =
+		card.tcgplayer_id !== undefined && card.tcgplayer_id !== null && String(card.tcgplayer_id).trim() !== ''
+			? card.tcgplayer_id
+			: String(300000 + (baseHash % 150000));
+
+	return {
+		cardtrader_id: cardtraderId,
+		tcgplayer_id: tcgplayerId,
+		manapool_id: card.manapool_id || `mp-${card.set_code}-${card.collector_number}`,
+		manapool_url: `https://manapool.com/cards?q=${slug}`,
+		cardkingdom_url: `https://www.cardkingdom.com/catalog/search?filter%5Bname%5D=${slug}`,
+		himarket_url: `https://www.himarket.hk/search?q=${slug}`,
+		hareruya_url: `https://www.hareruyamtg.com/en/products/search?product=${slug}`,
+		ruten_url: ['zht', 'en'].includes(langLower) ? `https://www.ruten.com.tw/find/?q=${slug}` : ''
+	};
+}
+
 export function simulateVendorOffersForCard(
 	card: Pick<
 		DemoCardRecord,
-		'name' | 'set_code' | 'collector_number' | 'language' | 'finish' | 'tcgplayer_id'
+		'name' | 'set_code' | 'collector_number' | 'language' | 'finish' | 'tcgplayer_id' | 'cardtrader_id' | 'manapool_id'
 	>,
 	baselineCents: number,
 	generation = 0,
@@ -118,7 +162,7 @@ export function simulateVendorOffersForCard(
 
 	// Always stock at least 2 core US/Global marketplaces + localized stores for non-English printings
 	const cardtraderInStock = generation % 7 !== 6;
-	const tcgInStock = Boolean(card.tcgplayer_id) && ((h >> 1) % 5 !== 0 || langLower === 'en');
+	const tcgInStock = (h >> 1) % 5 !== 0 || langLower === 'en';
 	const manapoolInStock = langLower === 'en' && (h >> 2) % 4 !== 0;
 	const ckInStock = (langLower === 'en' || card.finish === 'foil') && (h >> 3) % 3 !== 0;
 	const ebayInStock = (h >> 4) % 3 === 0;
@@ -218,11 +262,11 @@ export function simulateVendorOffersForCard(
 			}
 		: existingHist;
 
-	const slug = buildSearchSlug(card.name);
+	const idsAndUrls = buildDemoVendorIdentifiers(card);
 
 	return {
+		...idsAndUrls,
 		demo_baseline_cents: safeBase,
-		cardtrader_id: cardtraderPrice ? String(200000 + (h % 80000)) : '',
 		cardtrader_stock: Boolean(cardtraderPrice),
 		cardtrader_low_price: cardtraderPrice,
 		cardtrader_condition: cardtraderCond,
@@ -234,12 +278,9 @@ export function simulateVendorOffersForCard(
 		manapool_stock: Boolean(manapoolPrice),
 		manapool_low_price: manapoolPrice,
 		manapool_condition: manapoolCond,
-		manapool_id: manapoolPrice ? `mp-${card.set_code}-${card.collector_number}` : '',
-		manapool_url: manapoolPrice ? `https://manapool.com/cards?q=${slug}` : '',
 		cardkingdom_stock: Boolean(ckPrice),
 		cardkingdom_low_price: ckPrice,
 		cardkingdom_condition: ckCond,
-		cardkingdom_url: ckPrice ? `https://www.cardkingdom.com/catalog/search?filter%5Bname%5D=${slug}` : '',
 		ebay_id: '',
 		ebay_stock: Boolean(ebayPrice),
 		ebay_low_price: ebayPrice,
@@ -248,17 +289,14 @@ export function simulateVendorOffersForCard(
 		himarket_low_price: himarketUsdCents,
 		himarket_price_hkd: himarketUsdCents ? Math.round((himarketUsdCents / 100) * FX_HKD_PER_USD * 100) / 100 : null,
 		himarket_condition: himarketCond,
-		himarket_url: himarketUsdCents ? `https://www.himarket.hk/search?q=${slug}` : '',
 		hareruya_stock: Boolean(hareruyaUsdCents),
 		hareruya_low_price: hareruyaUsdCents,
 		hareruya_price_jpy: hareruyaUsdCents ? Math.round((hareruyaUsdCents / 100) * FX_JPY_PER_USD) : null,
 		hareruya_condition: hareruyaCond,
-		hareruya_url: hareruyaUsdCents ? `https://www.hareruyamtg.com/en/products/search?product=${slug}` : '',
 		ruten_stock: Boolean(rutenUsdCents),
 		ruten_low_price: rutenUsdCents,
 		ruten_price_twd: rutenUsdCents ? Math.round((rutenUsdCents / 100) * FX_TWD_PER_USD) : null,
 		ruten_condition: rutenCond,
-		ruten_url: rutenUsdCents ? `https://www.ruten.com.tw/find/?q=${slug}` : '',
 		historical_pricing: hist
 	};
 }

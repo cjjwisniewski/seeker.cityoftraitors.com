@@ -1,4 +1,4 @@
-import { simulateVendorOffersForCard } from './demoPricing';
+import { buildDemoVendorIdentifiers, simulateVendorOffersForCard } from './demoPricing';
 import type {
 	DemoAlertPreview,
 	DemoCardRecord,
@@ -13,9 +13,9 @@ export const DEMO_MAX_CARDS = 150;
 
 export const DEMO_STORAGE_KEYS = {
 	ACTIVE: 'seeker_demo_active',
-	CARDS: 'seeker_demo_seeking_list_v1',
+	CARDS: 'seeker_demo_seeking_list_v2',
 	SETTINGS: 'seeker_demo_user_settings_v1',
-	ALERTS: 'seeker_demo_alerts_v1'
+	ALERTS: 'seeker_demo_alerts_v2'
 } as const;
 
 export const DEFAULT_DEMO_SETTINGS: DemoUserSettings = {
@@ -113,8 +113,8 @@ const CURATED_SEED_SPECS: SeedCardSpec[] = [
 		collector_number: '143',
 		language: 'zht',
 		finish: 'nonfoil',
-		tcgplayer_id: '',
-		cardmarket_id: '',
+		tcgplayer_id: 4303,
+		cardmarket_id: 9371,
 		baselineCents: 55314,
 		max_price_cap: 60000,
 		min_condition: 'MP',
@@ -189,7 +189,7 @@ const CURATED_SEED_SPECS: SeedCardSpec[] = [
 		collector_number: '266',
 		language: 'ja',
 		finish: 'foil',
-		tcgplayer_id: '',
+		tcgplayer_id: 262050,
 		cardmarket_id: '',
 		baselineCents: 5312,
 		max_price_cap: 5800,
@@ -234,7 +234,7 @@ const CURATED_SEED_SPECS: SeedCardSpec[] = [
 		collector_number: '233',
 		language: 'zht',
 		finish: 'foil',
-		tcgplayer_id: '',
+		tcgplayer_id: 92828,
 		cardmarket_id: '',
 		baselineCents: 2643,
 		max_price_cap: 3000,
@@ -369,6 +369,7 @@ export function createInitialDemoCards(nowMs = Date.now()): DemoCardRecord[] {
 		if (spec.forceOutOfStock) {
 			return {
 				...baseRecord,
+				...buildDemoVendorIdentifiers(baseRecord),
 				historical_pricing: createOutOfStockHistoricalBaseline(nowMs)
 			};
 		}
@@ -393,6 +394,7 @@ export function createInitialDemoAlerts(
 
 	if (cityEn) {
 		const priceCents = cityEn.cardtrader_low_price ?? 52995;
+		const floorCents = cityEn.historical_pricing?.nm_low_cents ?? Math.round(priceCents * 0.94);
 		alerts.push({
 			id: 'demo-alert-restock-city',
 			kind: 'restock',
@@ -408,13 +410,25 @@ export function createInitialDemoAlerts(
 			priceCents,
 			condition: cityEn.cardtrader_condition || 'SP',
 			priceCapCents: cityEn.max_price_cap,
-			buyUrl: `https://www.cardtrader.com/cards?search=${encodeURIComponent(cityEn.name)}`
+			historicalContext: {
+				tierLabel: 'NM/LP',
+				isLowBreakthrough: false,
+				activeLowCents: floorCents,
+				activeLowVendor: cityEn.historical_pricing?.nm_low_vendor || 'cardtrader',
+				prevLastSeenCents: Math.round(priceCents * 1.03),
+				prevLastSeenCondition: 'SP',
+				prevLastSeenVendor: 'tcgplayer',
+				prevLastSeenAt: new Date(nowMs - 4 * 24 * 60 * 60 * 1000).toISOString()
+			},
+			buyUrl: `https://www.cardtrader.com/cards/${cityEn.cardtrader_id || '200001'}`
 		});
 	}
 
 	if (demonicJa) {
 		const priceCents = demonicJa.hareruya_low_price ?? 24200;
+		const jpyVal = demonicJa.hareruya_price_jpy ?? Math.round((priceCents / 100) * 152);
 		const oldPriceCents = Math.round(priceCents * 1.15);
+		const floorCents = demonicJa.historical_pricing?.nm_low_cents ?? Math.round(priceCents * 0.96);
 		alerts.push({
 			id: 'demo-alert-drop-demonic',
 			kind: 'price_drop',
@@ -428,10 +442,17 @@ export function createInitialDemoAlerts(
 			vendor: 'hareruya',
 			vendorDisplayName: 'Hareruya',
 			priceCents,
+			nativePriceText: `(¥${Math.round(jpyVal).toLocaleString('en-US')})`,
 			oldPriceCents,
 			percentageDrop: 13,
 			condition: demonicJa.hareruya_condition || 'NM',
 			priceCapCents: demonicJa.max_price_cap,
+			historicalContext: {
+				tierLabel: 'NM/LP',
+				isLowBreakthrough: false,
+				activeLowCents: floorCents,
+				activeLowVendor: demonicJa.historical_pricing?.nm_low_vendor || 'hareruya'
+			},
 			buyUrl:
 				demonicJa.hareruya_url ||
 				`https://www.hareruyamtg.com/en/products/search?product=${encodeURIComponent(demonicJa.name)}`
@@ -441,6 +462,7 @@ export function createInitialDemoAlerts(
 	if (forceEn) {
 		const priceCents = forceEn.manapool_low_price ?? forceEn.cardtrader_low_price ?? 6290;
 		const priorLow = Math.round(priceCents * 1.06);
+		const isMp = forceEn.manapool_stock;
 		alerts.push({
 			id: 'demo-alert-atl-force',
 			kind: 'historical_low',
@@ -451,15 +473,23 @@ export function createInitialDemoAlerts(
 			language: forceEn.language,
 			finish: forceEn.finish,
 			imageUri: forceEn.image_uri,
-			vendor: forceEn.manapool_stock ? 'manapool' : 'cardtrader',
-			vendorDisplayName: forceEn.manapool_stock ? 'ManaPool' : 'CardTrader',
+			vendor: isMp ? 'manapool' : 'cardtrader',
+			vendorDisplayName: isMp ? 'Mana Pool' : 'CardTrader',
 			priceCents,
 			historicalLowCents: priorLow,
+			historicalContext: {
+				tierLabel: 'NM/LP',
+				isLowBreakthrough: true,
+				previousLowCents: priorLow,
+				previousLowVendor: 'tcgplayer',
+				activeLowCents: priceCents,
+				activeLowVendor: isMp ? 'manapool' : 'cardtrader'
+			},
 			condition: forceEn.manapool_condition || forceEn.cardtrader_condition || 'SP',
 			priceCapCents: forceEn.max_price_cap,
-			buyUrl:
-				forceEn.manapool_url ||
-				`https://manapool.com/cards?q=${encodeURIComponent(forceEn.name)}`
+			buyUrl: isMp
+				? forceEn.manapool_url || `https://manapool.com/cards?q=${encodeURIComponent(forceEn.name)}`
+				: `https://www.cardtrader.com/cards/${forceEn.cardtrader_id || '200002'}`
 		});
 	}
 

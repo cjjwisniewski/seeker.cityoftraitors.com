@@ -2,7 +2,11 @@ import { browser } from '$app/environment';
 import { env as dynamicPublicEnv } from '$env/dynamic/public';
 import * as staticPublicEnvModule from '$env/static/public';
 import { writable } from 'svelte/store';
-import { extractScryfallBaselineCents, simulateVendorOffersForCard } from './demoPricing';
+import {
+	buildDemoVendorIdentifiers,
+	extractScryfallBaselineCents,
+	simulateVendorOffersForCard
+} from './demoPricing';
 import {
 	createInitialDemoAlerts,
 	createInitialDemoCards,
@@ -312,6 +316,17 @@ function sanitizeCardRecord(
 	if (typeof r.demo_generation === 'number' && Number.isFinite(r.demo_generation)) {
 		record.demo_generation = Math.max(0, Math.round(r.demo_generation));
 	}
+
+	const defaultIds = buildDemoVendorIdentifiers(record);
+	if (!record.cardtrader_id) record.cardtrader_id = defaultIds.cardtrader_id;
+	if (!record.tcgplayer_id) record.tcgplayer_id = defaultIds.tcgplayer_id;
+	if (!record.manapool_id) record.manapool_id = defaultIds.manapool_id;
+	if (!record.manapool_url) record.manapool_url = defaultIds.manapool_url;
+	if (!record.cardkingdom_url) record.cardkingdom_url = defaultIds.cardkingdom_url;
+	if (!record.himarket_url) record.himarket_url = defaultIds.himarket_url;
+	if (!record.hareruya_url) record.hareruya_url = defaultIds.hareruya_url;
+	if (!record.ruten_url && defaultIds.ruten_url) record.ruten_url = defaultIds.ruten_url;
+
 	return record;
 }
 
@@ -357,6 +372,7 @@ interface BestOfferSummary {
 	vendor: string;
 	vendorDisplayName: string;
 	priceCents: number;
+	nativePriceText: string | null;
 	condition: string;
 	buyUrl: string;
 }
@@ -368,12 +384,31 @@ function getBestQualifiedOffer(
 	const effectiveMinCond = (card.min_condition || settings.minCondition || 'ANY').toUpperCase();
 	const minRank = CONDITION_RANK[effectiveMinCond] ?? 0;
 
+	const tcgLangMap: Record<string, string> = {
+		en: 'English',
+		ja: 'Japanese',
+		jp: 'Japanese',
+		de: 'German',
+		fr: 'French',
+		it: 'Italian',
+		es: 'Spanish',
+		pt: 'Portuguese',
+		ru: 'Russian',
+		ko: 'Korean',
+		kr: 'Korean',
+		zht: 'Chinese (T)',
+		zhs: 'Chinese (S)'
+	};
+	const tcgLang = encodeURIComponent(tcgLangMap[card.language.toLowerCase()] || 'English');
+	const tcgPrint = encodeURIComponent(card.finish === 'foil' || card.finish === 'etched' ? 'Foil' : 'Normal');
+
 	const candidates: Array<{
 		vendor: string;
 		label: string;
 		enabled: boolean;
 		stock: boolean;
 		price: number | null;
+		nativeText: string | null;
 		cond: string | null;
 		url: string;
 	}> = [
@@ -383,8 +418,11 @@ function getBestQualifiedOffer(
 			enabled: settings.marketplaceCardtraderEnabled,
 			stock: card.cardtrader_stock,
 			price: card.cardtrader_low_price,
+			nativeText: null,
 			cond: card.cardtrader_condition,
-			url: `https://www.cardtrader.com/cards?search=${encodeURIComponent(card.name)}`
+			url: card.cardtrader_id
+				? `https://www.cardtrader.com/cards/${encodeURIComponent(String(card.cardtrader_id))}`
+				: `https://www.cardtrader.com/cards?search=${encodeURIComponent(card.name)}`
 		},
 		{
 			vendor: 'tcgplayer',
@@ -392,17 +430,19 @@ function getBestQualifiedOffer(
 			enabled: settings.marketplaceTcgplayerEnabled,
 			stock: card.tcgplayer_stock,
 			price: card.tcgplayer_low_price,
+			nativeText: null,
 			cond: card.tcgplayer_condition,
 			url: card.tcgplayer_id
-				? `https://www.tcgplayer.com/product/${encodeURIComponent(String(card.tcgplayer_id))}`
+				? `https://www.tcgplayer.com/product/${encodeURIComponent(String(card.tcgplayer_id))}?Language=${tcgLang}&Printing=${tcgPrint}`
 				: `https://www.tcgplayer.com/search/magic/product?q=${encodeURIComponent(card.name)}`
 		},
 		{
 			vendor: 'manapool',
-			label: 'ManaPool',
+			label: 'Mana Pool',
 			enabled: settings.marketplaceManapoolEnabled,
 			stock: card.manapool_stock,
 			price: card.manapool_low_price,
+			nativeText: null,
 			cond: card.manapool_condition,
 			url: card.manapool_url || `https://manapool.com/cards?q=${encodeURIComponent(card.name)}`
 		},
@@ -412,6 +452,7 @@ function getBestQualifiedOffer(
 			enabled: settings.marketplaceCardkingdomEnabled,
 			stock: card.cardkingdom_stock,
 			price: card.cardkingdom_low_price,
+			nativeText: null,
 			cond: card.cardkingdom_condition,
 			url:
 				card.cardkingdom_url ||
@@ -423,6 +464,7 @@ function getBestQualifiedOffer(
 			enabled: settings.marketplaceHimarketEnabled,
 			stock: card.himarket_stock,
 			price: card.himarket_low_price,
+			nativeText: card.himarket_price_hkd ? `(HK$${card.himarket_price_hkd.toFixed(2)})` : null,
 			cond: card.himarket_condition,
 			url: card.himarket_url || `https://www.himarket.hk/search?q=${encodeURIComponent(card.name)}`
 		},
@@ -432,6 +474,9 @@ function getBestQualifiedOffer(
 			enabled: settings.marketplaceHareruyaEnabled,
 			stock: card.hareruya_stock,
 			price: card.hareruya_low_price,
+			nativeText: card.hareruya_price_jpy
+				? `(¥${Math.round(card.hareruya_price_jpy).toLocaleString('en-US')})`
+				: null,
 			cond: card.hareruya_condition,
 			url:
 				card.hareruya_url ||
@@ -443,6 +488,9 @@ function getBestQualifiedOffer(
 			enabled: settings.marketplaceRutenEnabled && ['zht', 'en'].includes(card.language.toLowerCase()),
 			stock: card.ruten_stock,
 			price: card.ruten_low_price,
+			nativeText: card.ruten_price_twd
+				? `(NT$${Math.round(card.ruten_price_twd).toLocaleString('en-US')})`
+				: null,
 			cond: card.ruten_condition,
 			url: card.ruten_url || `https://www.ruten.com.tw/find/?q=${encodeURIComponent(card.name)}`
 		},
@@ -452,6 +500,7 @@ function getBestQualifiedOffer(
 			enabled: settings.marketplaceEbayEnabled,
 			stock: card.ebay_stock,
 			price: card.ebay_low_price,
+			nativeText: null,
 			cond: card.ebay_condition,
 			url: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(card.name)}&_sop=15`
 		}
@@ -474,6 +523,7 @@ function getBestQualifiedOffer(
 		vendor: best.vendor,
 		vendorDisplayName: best.label,
 		priceCents: best.price!,
+		nativePriceText: best.nativeText,
 		condition: best.cond || 'NM',
 		buyUrl: sanitizeSafeUrl(best.url) || 'https://www.cardtrader.com'
 	};
@@ -495,7 +545,11 @@ function recordAlertIfQualified(
 	let percentageDrop: number | null = null;
 	let historicalLowCents: number | null = null;
 
-	const prevNmLow = nextCard.historical_pricing?.nm_low_cents ?? null;
+	const isPlayed = ['MP', 'HP', 'DMG', 'D'].includes(bestNext.condition.toUpperCase());
+	const tierLabel = isPlayed ? 'Played' : 'NM/LP';
+	const hp = nextCard.historical_pricing;
+	const tierFloorCents = isPlayed ? hp?.played_low_cents ?? null : hp?.nm_low_cents ?? null;
+	const tierFloorVendor = isPlayed ? hp?.played_low_vendor ?? null : hp?.nm_low_vendor ?? null;
 
 	if (!bestPrev) {
 		kind = 'restock';
@@ -508,14 +562,29 @@ function recordAlertIfQualified(
 		kind = 'price_drop';
 		oldPriceCents = bestPrev.priceCents;
 		percentageDrop = Math.round(((bestPrev.priceCents - bestNext.priceCents) / bestPrev.priceCents) * 100);
-	} else if (prevNmLow !== null && bestNext.priceCents <= prevNmLow) {
+	} else if (tierFloorCents !== null && bestNext.priceCents <= tierFloorCents) {
 		kind = 'historical_low';
-		historicalLowCents = prevNmLow;
+		historicalLowCents = tierFloorCents;
 	} else if (forceAlert) {
 		kind = 'restock';
 	}
 
 	if (!kind) return;
+
+	const historicalContext = hp
+		? {
+				tierLabel,
+				isLowBreakthrough: kind === 'historical_low',
+				previousLowCents: kind === 'historical_low' ? historicalLowCents : tierFloorCents,
+				previousLowVendor: tierFloorVendor,
+				activeLowCents: tierFloorCents,
+				activeLowVendor: tierFloorVendor,
+				prevLastSeenCents: hp.last_seen_cents,
+				prevLastSeenCondition: hp.last_seen_condition,
+				prevLastSeenVendor: hp.last_seen_vendor,
+				prevLastSeenAt: hp.last_seen_at
+			}
+		: null;
 
 	const alert: DemoAlertPreview = {
 		id: `demo-alert-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -530,9 +599,11 @@ function recordAlertIfQualified(
 		vendor: bestNext.vendor,
 		vendorDisplayName: bestNext.vendorDisplayName,
 		priceCents: bestNext.priceCents,
+		nativePriceText: bestNext.nativePriceText,
 		oldPriceCents,
 		percentageDrop,
 		historicalLowCents,
+		historicalContext,
 		condition: bestNext.condition,
 		priceCapCents: nextCard.max_price_cap,
 		buyUrl: bestNext.buyUrl
@@ -743,8 +814,14 @@ function createPendingCardFromPayload(
 			? (payload.demo_scryfall_prices as ScryfallPrices)
 			: null;
 	const baselineCents = extractScryfallBaselineCents(prices, finish, seedKey);
+	const incomingTcgId =
+		typeof payload.tcgplayer_id === 'string' || typeof payload.tcgplayer_id === 'number'
+			? payload.tcgplayer_id
+			: typeof payload.demo_tcgplayer_id === 'string' || typeof payload.demo_tcgplayer_id === 'number'
+				? payload.demo_tcgplayer_id
+				: '';
 
-	return {
+	const skeleton: StoredDemoCard = {
 		id: `${collectorNumber}_${language}_${finish}`,
 		name,
 		set_code: setCode,
@@ -766,10 +843,7 @@ function createPendingCardFromPayload(
 		cardtrader_stock: false,
 		cardtrader_low_price: null,
 		cardtrader_condition: null,
-		tcgplayer_id:
-			typeof payload.tcgplayer_id === 'string' || typeof payload.tcgplayer_id === 'number'
-				? payload.tcgplayer_id
-				: '',
+		tcgplayer_id: incomingTcgId,
 		tcgplayer_stock: false,
 		tcgplayer_low_price: null,
 		tcgplayer_condition: null,
@@ -808,6 +882,11 @@ function createPendingCardFromPayload(
 		demo_baseline_cents: baselineCents,
 		demo_pending_until: nowMs + NEW_CARD_SIM_DELAY_MS,
 		demo_generation: 0
+	};
+
+	return {
+		...skeleton,
+		...buildDemoVendorIdentifiers(skeleton)
 	};
 }
 
