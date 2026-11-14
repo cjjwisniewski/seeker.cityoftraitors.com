@@ -6,12 +6,85 @@
 
 ## 🧭 The Seeker Ecosystem
 
-This repository houses the frontend client application. The complete Seeker platform is divided across several sister projects:
+This repository houses the public SvelteKit frontend client application. The complete Seeker platform is composed of this frontend and three private companion repositories:
 
-*   **[seeker_functions](https://github.com/cjjwisniewski/seeker_functions)**: The Azure Functions Python backend. Handles Discord OAuth2 authentication, signs and verifies custom JWTs, powers `/seeker` Discord slash commands, manages user account settings and inactivity lifecycle, and runs background timers/queues to monitor card availability across CardTrader, TCGPlayer (native marketplace API), Mana Pool, Card Kingdom, eBay, HiMarket, Hareruya, Ruten, and Cardmarket.
-*   **[seeker_checkCardmarketStock](https://github.com/cjjwisniewski/seeker_checkCardmarketStock)**: The containerized European scraper worker operating behind a dedicated LinuxServer WireGuard EU VPN sidecar, processing `cardmarketstockcheck` queue messages with persistent Cloudflare clearance tokens and atomic ETag Table Storage updates.
-*   **[seeker_infra](https://github.com/cjjwisniewski/seeker_infra)**: The Terraform infrastructure configurations. Manages the Azure API Management (APIM) gateway proxy, Function App IP firewalls, storage tables, queue configurations, and Cloudflare DNS/security transform rulesets.
-*   **[seeker.cityoftraitors.com](https://github.com/cjjwisniewski/seeker.cityoftraitors.com)**: The SvelteKit frontend client application (this repository).
+*   **`seeker_functions`** *(Private)*: The Azure Functions Python backend. Handles Discord OAuth2 authentication, signs and verifies custom JWTs, powers `/seeker` Discord slash commands, manages user account settings and inactivity lifecycle, and runs background timers/queues to monitor card availability across CardTrader, TCGPlayer (native marketplace API), Mana Pool, Card Kingdom, eBay, HiMarket, Hareruya, Ruten, and Cardmarket.
+*   **`seeker_checkCardmarketStock`** *(Private)*: The containerized European scraper worker operating behind a dedicated LinuxServer WireGuard EU VPN sidecar, processing `cardmarketstockcheck` queue messages with persistent Cloudflare clearance tokens and atomic ETag Table Storage updates.
+*   **`seeker_infra`** *(Private)*: The Terraform infrastructure configurations. Manages the Azure API Management (APIM) gateway proxy, Function App IP firewalls, storage tables, queue configurations, and Cloudflare DNS/security transform rulesets.
+*   **[seeker.cityoftraitors.com](https://github.com/cjjwisniewski/seeker.cityoftraitors.com)** *(This Repo)*: The SvelteKit frontend client application, including an isolated client-side `/demo` mode.
+
+---
+
+## 🏗️ Architecture Diagrams
+
+### 1. Edge, API & Client Data Flow
+
+```mermaid
+flowchart TD
+    Browser["User Browser (SvelteKit SPA)"]
+    CF["Cloudflare Edge\n(CSP · HSTS · SPA Fallback)"]
+    WebStorage[("Azure Storage $web\n(Static Assets)")]
+    Scryfall["Scryfall API\n(Search · Prints · Foreign Editions · SVG Symbols)"]
+    APIM["Azure API Management\n(JWT Validation · CORS · Header Injection)"]
+    Functions["Azure Functions (Python)\n(Private Backend)"]
+    Storage[("Azure Table & Queue Storage")]
+    Discord["Discord\n(OAuth2 · DM Alerts · /seeker Slash Commands)"]
+
+    Browser -->|"HTTPS Static Assets"| CF --> WebStorage
+    Browser -->|"Client-Side Card Discovery"| Scryfall
+    Browser -->|"REST API (/api/* with HS256 JWT)"| APIM --> Functions
+    Functions --> Storage
+    Functions -->|"Alerts & Digests"| Discord
+```
+
+### 2. Discord OAuth2 & JWT Authentication Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant SPA as SvelteKit SPA (/login, /callback)
+    participant Discord as Discord OAuth2
+    participant APIM as Azure APIM
+    participant AuthFn as Backend Auth (login / userinfo)
+
+    User->>SPA: Click "Sign in with Discord"
+    SPA->>Discord: Redirect with client_id & signed state
+    Discord-->>SPA: Redirect to /callback?code=...&state=...
+    SPA->>APIM: POST /api/login (code, state)
+    APIM->>AuthFn: Forward request
+    AuthFn->>Discord: Exchange code & verify guild/role membership
+    Discord-->>AuthFn: Discord user profile & roles
+    AuthFn-->>SPA: Issue 7-day custom HS256 JWT + user info
+    SPA->>SPA: Persist session in auth.ts store
+    Note over SPA,APIM: Subsequent requests via api.ts attach Authorization: Bearer <JWT>
+    SPA->>APIM: Authenticated API call
+    APIM->>APIM: Validate JWT & inject x-ms-client-principal-id
+    APIM->>AuthFn: Forward verified request
+```
+
+### 3. Live Mode vs. Isolated Client-Side Demo Mode (`/demo`)
+
+```mermaid
+flowchart LR
+    subgraph Demo["Isolated Demo Mode (/demo)"]
+        DemoPage["demo/+page.svelte"]
+        DemoStore["demoStore.ts (localStorage)"]
+        DemoSeed["demoSeed.ts (Sample Cards & Alerts)"]
+        DemoPrice["demoPricing.ts (Scryfall Baseline)"]
+        DemoPage --> DemoStore
+        DemoSeed --> DemoStore
+        DemoPrice --> DemoStore
+    end
+
+    subgraph Live["Live Authenticated Mode (/seeking, /account, /admin)"]
+        LivePages["App Routes"]
+        AuthStore["auth.ts (JWT Session)"]
+        ApiUtil["api.ts (Bearer Fetch Wrapper)"]
+        Backend["Azure APIM -> Azure Functions"]
+        LivePages --> AuthStore
+        LivePages --> ApiUtil --> Backend
+    end
+```
 
 ---
 
@@ -86,6 +159,7 @@ This repository houses the frontend client application. The complete Seeker plat
 ```
 src/
 ├── app.html                  # HTML entry template with meta tags & FontAwesome
+├── app.d.ts                  # SvelteKit & environment type definitions
 ├── lib/
 │   ├── components/           # Reusable UI components
 │   │   ├── Banner.svelte     # Dynamic announcement banner
@@ -93,9 +167,11 @@ src/
 │   │   ├── CardSearchForm.svelte # Search input with autocomplete & print resolution
 │   │   ├── CardText.svelte   # Scryfall vector symbol renderer for oracle text
 │   │   ├── Footer.svelte     # Application footer with build version
-│   │   ├── Header.svelte     # Glassmorphic top navigation bar
-│   │   ├── NotificationModal.svelte # Accessible notification dialog
-│   │   ├── UserStatus.svelte # Auth state and login/logout button
+│   │   ├── Logo.svelte       # Brand mark component
+│   │   ├── ThemeToggle.svelte # Light/dark theme switcher
+│   │   ├── demo/             # Interactive demo UI components
+│   │   │   ├── DemoAlertPreviewModal.svelte
+│   │   │   └── DemoBanner.svelte
 │   │   └── seeking/          # Seeking workspace components
 │   │       ├── BulkActionModals.svelte
 │   │       ├── DecklistImportModal.svelte
@@ -104,20 +180,32 @@ src/
 │   │       ├── HistoricalPriceModal.svelte
 │   │       ├── InlineQuickAdd.svelte
 │   │       └── SeekingCardRow.svelte
+│   ├── demo/                 # Isolated client-side demo state & pricing
+│   │   ├── demoPricing.ts    # Scryfall baseline pricing & marketplace ID resolution
+│   │   ├── demoSeed.ts       # Seeded cards, price history, and sample alerts
+│   │   ├── demoStore.ts      # localStorage-backed reactive demo store
+│   │   └── demoTypes.ts      # TypeScript interfaces for demo entities
 │   ├── stores/
-│   │   └── auth.ts           # Authentication store, token lifecycle, and session cache
+│   │   ├── auth.ts           # Authentication store, token lifecycle, and session cache
+│   │   ├── exchangeRate.ts   # Currency exchange rate store for international markets
+│   │   └── theme.js          # Persistent theme preference store
+│   ├── styles/
+│   │   ├── components.css    # Shared glassmorphic component styles
+│   │   ├── global.css        # Base layout and typography
+│   │   └── theme.css         # CSS variables and color tokens
 │   └── utils/
 │       ├── api.ts            # Fetch wrapper injecting JWT Bearer tokens
 │       ├── cardSymbols.ts    # Scryfall mana & action symbol parser and SVG registry
 │       ├── languageUtils.js  # Card language mapping and multilingual print discovery
 │       └── seekingUtils.js   # Seeking pricing, condition, URL, and CSV export helpers
 └── routes/
-    ├── +layout.svelte        # Root layout with banner, header, footer, and theme shell
+    ├── +layout.svelte        # Root layout with banner, navigation, footer, and theme shell
     ├── +page.svelte          # Home / Card Search page
     ├── about/                # Project overview and about page
     ├── account/              # User profile, notification settings, and preferences
     ├── admin/                # Admin operations, queue health, user table, banner controls
     ├── callback/             # Discord OAuth2 callback handler & token exchange
+    ├── demo/                 # Isolated client-side interactive demo route
     ├── login/                # Sign-in landing route
     └── seeking/              # Sought Cards workspace (search, filters, bulk actions)
 ```
