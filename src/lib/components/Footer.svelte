@@ -1,16 +1,26 @@
 <script>
 	import { PUBLIC_VERSION } from '$env/static/public';
+	import DiscordInviteModal from './DiscordInviteModal.svelte';
+
+	let showDiscordModal = false;
 </script>
 
 <footer>
 	<div class="footer-content">
 		<p>&copy; {new Date().getFullYear()} Seeker. All rights reserved.</p>
-		<p class="sub-text">Part of the City of Traitors community.</p>
+		<p class="sub-text">
+			Part of the City of Traitors community &middot;
+			<button type="button" class="footer-discord-btn" on:click={() => (showDiscordModal = true)}>
+				Join Discord
+			</button>
+		</p>
 	</div>
 	<div class="version">
 		<p>v{PUBLIC_VERSION}</p>
 	</div>
 </footer>
+
+<DiscordInviteModal open={showDiscordModal} on:close={() => (showDiscordModal = false)} />
 
 <style>
 	footer {
@@ -36,6 +46,20 @@
 	.sub-text {
 		font-size: 0.75rem;
 		opacity: 0.8;
+	}
+
+	.footer-discord-btn {
+		background: none;
+		border: none;
+		padding: 0;
+		font: inherit;
+		color: var(--color-primary);
+		cursor: pointer;
+		text-decoration: none;
+	}
+
+	.footer-discord-btn:hover {
+		text-decoration: underline;
 	}
 
 	.version {

@@ -3,10 +3,12 @@
 	import { auth } from '$lib/stores/auth';
 	import CardSearchForm from '$lib/components/CardSearchForm.svelte';
 	import CardList from '$lib/components/CardList.svelte';
+	import DiscordInviteModal from '$lib/components/DiscordInviteModal.svelte';
 
 	let cards = [];
 	let hasSearched = false;
 	let mounted = false;
+	let showDiscordModal = false;
 
 	onMount(() => {
 		mounted = true;
@@ -72,6 +74,21 @@
 						<span>View Live Demo Watchlist</span>
 					</a>
 				</div>
+
+				<div class="discord-community-banner">
+					<div class="discord-community-copy">
+						<strong>Need an invite to the City of Traitors Discord?</strong>
+						<span>Seeker DM alerts and community discussions live on the City of Traitors Discord server.</span>
+					</div>
+					<button
+						type="button"
+						class="discord-community-cta"
+						on:click={() => (showDiscordModal = true)}
+					>
+						<i class="fa-brands fa-discord"></i>
+						<span>Join Discord</span>
+					</button>
+				</div>
 			{:else if $auth.isDemo}
 				<div class="demo-promo-banner">
 					<div class="demo-promo-copy">
@@ -88,6 +105,8 @@
 
 		<CardList {cards} {hasSearched} />
 	</div>
+
+	<DiscordInviteModal open={showDiscordModal} on:close={() => (showDiscordModal = false)} />
 {/if}
 
 <style>
@@ -97,6 +116,66 @@
 		max-width: 900px;
 		margin: 0 auto;
 		animation: fadeIn 0.5s ease-out;
+	}
+
+	.discord-community-banner {
+		margin-top: 1rem;
+		padding: 1rem 1.25rem;
+		border-radius: 12px;
+		background: var(--glass-bg);
+		border: 1px solid var(--border-color, var(--color-border));
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		text-align: left;
+		flex-wrap: wrap;
+	}
+
+	.discord-community-copy {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.discord-community-copy strong {
+		color: var(--color-text-primary);
+		font-size: 0.95rem;
+	}
+
+	.discord-community-copy span {
+		color: var(--color-text-secondary);
+		font-size: 0.875rem;
+	}
+
+	.discord-community-cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.55rem 1rem;
+		border-radius: 8px;
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		border: 1px solid var(--color-border);
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			background-color var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.discord-community-cta:hover {
+		background: var(--color-bg-hover);
+		border-color: var(--color-primary);
+	}
+
+	@media (max-width: 640px) {
+		.discord-community-cta {
+			width: 100%;
+			justify-content: center;
+			min-height: 44px;
+		}
 	}
 
 	.search-hero {
