@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { auth } from '$lib/stores/auth';
 
 	let mounted = false;
 
@@ -90,10 +91,12 @@
 					<strong>Have questions or feedback?</strong>
 					<span>Reach out to <a href="https://discord.com/users/213058259076913152" target="_blank" rel="noopener noreferrer">@undomian</a> on the City of Traitors Discord.</span>
 				</div>
-				<a href="/demo" class="about-demo-cta">
-					<i class="fa-solid fa-flask"></i>
-					<span>Try Interactive Demo</span>
-				</a>
+				{#if !$auth.isAuthenticated}
+					<a href="/demo" data-sveltekit-preload-data="off" class="about-demo-cta">
+						<i class="fa-solid fa-flask"></i>
+						<span>Try Interactive Demo</span>
+					</a>
+				{/if}
 			</div>
 
 			<h2>Membership Tiers</h2>

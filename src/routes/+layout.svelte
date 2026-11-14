@@ -207,7 +207,7 @@
 						</div>
 					{:else if !$auth.isLoading}
 						<!-- Offer both Demo Sandbox and Discord Login for public visitors -->
-						<a href="/demo" class="login-button demo-nav-btn">Try Demo</a>
+						<a href="/demo" data-sveltekit-preload-data="off" class="login-button demo-nav-btn">Try Demo</a>
 						<a href="/login" class="login-button">Login</a>
 					{/if}
 				</div>

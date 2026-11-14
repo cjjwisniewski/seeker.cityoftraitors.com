@@ -37,9 +37,7 @@ export const load = async ({ url }) => {
 
     if (browser) {
         const wantsDemoParam = url.searchParams.get('demo') === '1';
-        if (currentPath === '/demo') {
-            auth.enterDemoMode(true);
-        } else if (wantsDemoParam && !authState.isAuthenticated) {
+        if (wantsDemoParam && !authState.isAuthenticated) {
             auth.enterDemoMode(false);
         }
     }

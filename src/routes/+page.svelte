@@ -69,7 +69,7 @@
 						<strong>Want to see Seeker in action first?</strong>
 						<span>Explore a live 12-card interactive watchlist across 8 marketplaces, import sample decklists, and preview Discord DM alerts.</span>
 					</div>
-					<a href="/demo" class="demo-promo-cta">
+					<a href="/demo" data-sveltekit-preload-data="off" class="demo-promo-cta">
 						<i class="fa-solid fa-flask"></i>
 						<span>View Live Demo Watchlist</span>
 					</a>
