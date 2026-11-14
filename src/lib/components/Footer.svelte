@@ -6,11 +6,6 @@
 	<div class="footer-content">
 		<p>&copy; {new Date().getFullYear()} Seeker. All rights reserved.</p>
 		<p class="sub-text">Part of the City of Traitors community.</p>
-		<p class="sub-text footer-links">
-			<a href="https://pittimps.com" target="_blank" rel="noopener noreferrer">Pitt Imps</a>
-			<span aria-hidden="true">&middot;</span>
-			<a href="https://undo.is" target="_blank" rel="noopener noreferrer">undo.is</a>
-		</p>
 	</div>
 	<div class="version">
 		<p>v{PUBLIC_VERSION}</p>
@@ -41,24 +36,6 @@
 	.sub-text {
 		font-size: 0.75rem;
 		opacity: 0.8;
-	}
-
-	.footer-links {
-		display: inline-flex;
-		justify-content: center;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.footer-links a {
-		color: inherit;
-		text-decoration: none;
-		transition: color var(--transition-fast);
-	}
-
-	.footer-links a:hover {
-		color: var(--color-text-secondary);
-		text-decoration: underline;
 	}
 
 	.version {
