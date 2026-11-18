@@ -1,9 +1,12 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { build } from 'esbuild';
+
+const viteRequire = createRequire(new URL('../node_modules/vite/package.json', import.meta.url));
+const { build } = viteRequire('esbuild');
 
 if (process.env.GITHUB_ACTIONS !== 'true') {
 	console.error(
@@ -124,6 +127,12 @@ async function main() {
 				format: 'esm',
 				target: 'node20',
 				banner: { js: browserShimBanner },
+				define: {
+					'import.meta.env.VITE_LOGIN_URL': '"https://seeker.azure-api.net/auth/login"',
+					'import.meta.env.VITE_LOGOUT_URL': '"https://seeker.azure-api.net/auth/logout"',
+					'import.meta.env.VITE_USER_INFO_URL': '"https://seeker.azure-api.net/seeker/userinfo"',
+					'import.meta.env': '{}'
+				},
 				plugins: [svelteKitMocksPlugin],
 				external: ['node:*']
 			});
