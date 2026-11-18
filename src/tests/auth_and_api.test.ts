@@ -31,7 +31,9 @@ describe('auth store and fetchWithAuth fail-closed Demo Mode interception', () =
 
 		// 1. Valid Seeking list fetch succeeds locally from virtual store
 		const listRes = await fetchWithAuth('https://seeker.azure-api.net/seeker/getSeekingList');
-		assert.ok(listRes);
+		if (!listRes) {
+			throw new Error('Expected Demo Mode response for getSeekingList');
+		}
 		assert.equal(listRes.status, 200);
 		const listBody = await listRes.json();
 		assert.equal(Array.isArray(listBody.cards), true);

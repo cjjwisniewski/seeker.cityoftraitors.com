@@ -201,6 +201,11 @@ export function getEbayUrl(card, map) {
 	return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keywords)}&_sop=15`;
 }
 
+/**
+ * @param {string | null | undefined} url
+ * @param {string | null} [fallback]
+ * @returns {string | null}
+ */
 export function sanitizeExternalUrl(url, fallback = null) {
 	if (!url || typeof url !== 'string') return fallback;
 	const trimmed = url.trim();

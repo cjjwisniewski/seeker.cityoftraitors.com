@@ -304,6 +304,7 @@ const createAuthStore = () => {
         subscribe,
         initialize,
         clearAuthData,
+        setAuthData,
         enterDemoMode,
         exitDemoMode,
         setIntendedPath: (path: string) => {

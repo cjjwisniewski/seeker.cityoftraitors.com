@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 import { createInitialDemoCards } from '$lib/demo/demoSeed';
-import { handleDemoApiRequest, initializeDemoStorage, resetDemoSandbox } from '$lib/demo/demoStore';
+import {
+	handleDemoApiRequest,
+	initializeDemoStorage,
+	resetDemoWorkspace
+} from '$lib/demo/demoStore';
 
 describe('Virtual Demo Sandbox store, seed parity, and CRUD contracts', () => {
 	beforeEach(() => {
@@ -108,8 +112,8 @@ describe('Virtual Demo Sandbox store, seed parity, and CRUD contracts', () => {
 		);
 		assert.equal(cmSetRes.status, 403);
 
-		// 6. Reset demo sandbox restores the 12 default cards
-		resetDemoSandbox();
+		// 6. Reset demo workspace restores the 12 default cards
+		resetDemoWorkspace();
 		const listRes = await handleDemoApiRequest(
 			'https://seeker.azure-api.net/seeker/getSeekingList'
 		);
