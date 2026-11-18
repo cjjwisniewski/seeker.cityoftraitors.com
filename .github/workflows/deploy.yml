@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch: 
   
 permissions:
@@ -11,7 +14,36 @@ permissions:
   contents: read
 
 jobs:
+  test:
+    name: Typecheck, Lint & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci || (sleep 5 && npm ci) || (sleep 10 && npm ci)
+
+      - name: Run SvelteKit typecheck (svelte-check)
+        run: npm run check
+
+      - name: Run Linter (prettier & eslint)
+        run: npm run lint
+
+      - name: Run isolated CI test suite
+        run: npm run test
+
   build-and-deploy:
+    needs: test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: production
 

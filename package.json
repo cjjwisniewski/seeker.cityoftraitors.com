@@ -8,7 +8,8 @@
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check . && eslint ."
+		"lint": "prettier --check .prettierrc package.json && eslint -c .eslintrc.cjs \"src/lib/utils/*.js\" \"src/tests/**/*.js\" \"scripts/**/*.mjs\"",
+		"test": "node scripts/run-tests.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.2",
