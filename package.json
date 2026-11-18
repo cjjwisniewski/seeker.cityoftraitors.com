@@ -8,7 +8,7 @@
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check .prettierrc && eslint -c .eslintrc.cjs \"src/lib/utils/*.js\" \"src/tests/**/*.js\" \"scripts/**/*.mjs\"",
+		"lint": "prettier --check .prettierrc && eslint \"src/lib/utils/*.js\" \"src/tests/**/*.js\" \"scripts/**/*.mjs\"",
 		"test": "node scripts/run-tests.mjs"
 	},
 	"devDependencies": {
