@@ -310,15 +310,18 @@ npm run dev
 ```
 The app will be available at `http://localhost:5173`.
 
-### 🔍 Code Quality & Type Checking
+### 🔍 Code Quality, Type Checking & CI Testing
 
 ```bash
 # SvelteKit sync and type-check
 npm run check
 
-# Code style and ESLint check
+# Code style (Prettier) and ESLint check
 npm run lint
 ```
+
+> [!NOTE]
+> Automated unit tests in [`src/tests/`](src/tests) (`seekingUtils.test.js`, `auth_and_api.test.ts`, `demoStore.test.ts`) are bundled via [`scripts/run-tests.mjs`](scripts/run-tests.mjs) and execute **exclusively inside GitHub Actions CI (`GITHUB_ACTIONS=true`)**. Local execution of `npm run test` is intentionally blocked.
 
 ---
 
@@ -333,12 +336,12 @@ This generates the static SPA bundle inside the `./build` directory.
 
 ### 🌐 Continuous Deployment (GitHub Actions)
 
-Deployments are automated via GitHub Actions in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on pushes to `main`:
+Deployments are automated via GitHub Actions in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on pushes to `main` and pull requests:
 
-1. **Version Increment:** Bumps the repository's patch version automatically.
-2. **Asset Compilation:** Runs `npm run build` with production environment configuration.
-3. **Storage Sync:** Authenticates to Azure and deploys compiled static files into the `$web` Azure Storage container.
-4. **CDN Purge:** Purges CDN edge endpoints to propagate changes worldwide.
+1. **Pre-Deploy Verification (`test` job):** Runs `npm run check` (`svelte-check`), `npm run lint` (`prettier` + `eslint`), and `npm run test` (isolated Node 20 test runner).
+2. **Version Increment (`build-and-deploy` job, `main` only):** Gated behind `needs: test`; bumps `PUBLIC_VERSION` automatically.
+3. **Asset Compilation:** Runs `npm run build` with production environment configuration.
+4. **Storage Sync:** Authenticates to Azure via OIDC and deploys compiled static files into the `$web` Azure Storage container.
 
 ---
 
