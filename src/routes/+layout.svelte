@@ -68,13 +68,13 @@
 
 			if (token) {
 				console.log('Layout onMount: Found token in URL fragment. Handling callback...');
+				// Always strip the sensitive #token=... fragment immediately from the URL
+				replaceState(window.location.pathname + window.location.search, history.state);
 
 				const callbackResult = await auth.handleCallback(token);
 
 				if (callbackResult.success) {
 					console.log('Layout onMount: Callback successful, navigating to state:', state);
-					// Clear the hash fragment ONLY on success, right before navigating
-					replaceState(window.location.pathname + window.location.search, history.state);
 					// Use goto for client-side navigation after successful callback
 					await goto(state, { replaceState: true, invalidateAll: true });
 				} else {
@@ -83,7 +83,7 @@
 					);
 					// Redirect to login page with error
 					// Use the specific error from the callback result if available
-					const errorCode = callbackResult.error || 'callback_failed';
+					const errorCode = encodeURIComponent(callbackResult.error || 'callback_failed');
 					await goto(`/login?error=${errorCode}`, { replaceState: true });
 				}
 			}

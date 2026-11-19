@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import { goto } from '$app/navigation';
+    import { goto, replaceState } from '$app/navigation';
     import { auth } from '$lib/stores/auth';
     import { browser } from '$app/environment';
 
@@ -15,9 +15,8 @@
         const state = hashParams.get('state'); // Original path user intended to visit
         const errorCode = hashParams.get('error'); // Check for potential errors passed from backend
 
-        // Clear the hash from the URL for cleanliness and security
-        // Use replaceState to avoid adding a new entry to browser history
-        history.replaceState(null, '', window.location.pathname + window.location.search);
+        // Clear the hash from the URL for cleanliness and security using SvelteKit's replaceState
+        replaceState(window.location.pathname + window.location.search, history.state);
 
         if (errorCode) {
             console.error('Callback received error code:', errorCode);

@@ -101,7 +101,7 @@
 		showCardkingdom
 	);
 	$: activeLowestCents = isCondensed
-		? (bestOffer?.minPriceCents ?? null)
+		? (bestOffer?.cents ?? null)
 		: (lowestOffer?.minPriceCents ?? null);
 	$: isUnderCap = Boolean(
 		card.max_price_cap > 0 && activeLowestCents !== null && activeLowestCents <= card.max_price_cap

@@ -14,6 +14,8 @@
 	let searchInput: HTMLInputElement;
 	let dropdownContainer: HTMLDivElement;
 	let debounceTimer: number;
+	let autocompleteAbortController: AbortController | null = null;
+	let autocompleteRequestSeq = 0;
 
 	const SCRYFALL_API = 'https://api.scryfall.com';
 	const AUTOCOMPLETE_URL = `${SCRYFALL_API}/cards/autocomplete`;
@@ -167,6 +169,10 @@
 		oracle_text?: string;
 		type_line?: string;
 		printed_name?: string;
+		localized_id?: string;
+		localized_tcgplayer_id?: number | null;
+		localized_tcgplayer_etched_id?: number | null;
+		localized_cardmarket_id?: number | null;
 	} | null> => {
 		try {
 			const url = `${SCRYFALL_API}/cards/${encodeURIComponent(setCode)}/${encodeURIComponent(collectorNumber)}/${encodeURIComponent(lang)}`;
@@ -205,7 +211,11 @@
 				flavor_text,
 				oracle_text,
 				type_line,
-				printed_name
+				printed_name,
+				localized_id: data.id,
+				localized_tcgplayer_id: data.tcgplayer_id ?? null,
+				localized_tcgplayer_etched_id: data.tcgplayer_etched_id ?? null,
+				localized_cardmarket_id: data.cardmarket_id ?? null
 			};
 		} catch {
 			return null;
@@ -265,14 +275,28 @@
 			return;
 		}
 
+		if (autocompleteAbortController) {
+			autocompleteAbortController.abort();
+			autocompleteAbortController = null;
+		}
+		const requestSeq = ++autocompleteRequestSeq;
+		const termSnapshot = searchTerm;
+
 		debounceTimer = setTimeout(async () => {
+			const controller = new AbortController();
+			autocompleteAbortController = controller;
 			try {
-				const response = await fetch(`${AUTOCOMPLETE_URL}?q=${encodeURIComponent(searchTerm)}`);
+				const response = await fetch(
+					`${AUTOCOMPLETE_URL}?q=${encodeURIComponent(termSnapshot)}`,
+					{ signal: controller.signal }
+				);
 				const data = await response.json();
+				if (requestSeq !== autocompleteRequestSeq) return;
 				suggestions = data.data || [];
 				selectedIndex = -1;
 				showDropdown = suggestions.length > 0;
-			} catch (error) {
+			} catch (error: any) {
+				if (error?.name === 'AbortError') return;
 				console.error('Error fetching suggestions:', error);
 			}
 		}, 300);

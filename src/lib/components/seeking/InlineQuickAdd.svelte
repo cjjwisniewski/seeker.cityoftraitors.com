@@ -14,6 +14,8 @@
 	let showSuggestions = false;
 	let selectedIndex = -1;
 	let debounceTimer = null;
+	let autocompleteAbortController = null;
+	let autocompleteRequestSeq = 0;
 	let containerEl;
 	let inputEl;
 
@@ -135,18 +137,29 @@
 			showSuggestions = false;
 			return;
 		}
+		if (autocompleteAbortController) {
+			autocompleteAbortController.abort();
+			autocompleteAbortController = null;
+		}
+		const requestSeq = ++autocompleteRequestSeq;
 		debounceTimer = setTimeout(async () => {
+			const controller = new AbortController();
+			autocompleteAbortController = controller;
 			try {
 				const res = await fetch(
-					`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(trimmed)}`
+					`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(trimmed)}`,
+					{ signal: controller.signal }
 				);
+				if (requestSeq !== autocompleteRequestSeq) return;
 				if (res.ok) {
 					const data = await res.json();
+					if (requestSeq !== autocompleteRequestSeq) return;
 					suggestions = (data.data || []).slice(0, 8);
 					showSuggestions = suggestions.length > 0;
 					selectedIndex = -1;
 				}
-			} catch {
+			} catch (err) {
+				if (err?.name === 'AbortError') return;
 				suggestions = [];
 				showSuggestions = false;
 			}

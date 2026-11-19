@@ -504,8 +504,27 @@
 
 	function toggleImportCardFinish(cardItem) {
 		const existingKeySet = new Set(cards.map(getCardKey));
-		const newFinish = cardItem.finish === 'foil' ? 'nonfoil' : 'foil';
+		const availFinishes =
+			Array.isArray(cardItem.availableFinishes) && cardItem.availableFinishes.length > 0
+				? cardItem.availableFinishes
+				: cardItem.finish === 'etched'
+					? ['nonfoil', 'foil', 'etched']
+					: ['nonfoil', 'foil'];
+		const currentIdx = availFinishes.indexOf(cardItem.finish);
+		const newFinish =
+			currentIdx >= 0
+				? availFinishes[(currentIdx + 1) % availFinishes.length]
+				: cardItem.finish === 'foil'
+					? 'nonfoil'
+					: 'foil';
 		const newKey = `${cardItem.set_code}-${cardItem.collector_number}-${cardItem.language}-${newFinish}`;
+		// Prevent duplicate Svelte keyed-{#each} keys if another preview row already holds newKey
+		if (
+			newKey !== cardItem.previewKey &&
+			importPreviewCards.some((c) => c.previewKey === newKey)
+		) {
+			return;
+		}
 		const exists = existingKeySet.has(newKey);
 
 		importPreviewCards = importPreviewCards.map((c) => {
@@ -526,7 +545,15 @@
 		const existingKeySet = new Set(cards.map(getCardKey));
 		const normLang = String(newLang || 'en').toLowerCase();
 		const newKey = `${cardItem.set_code}-${cardItem.collector_number}-${normLang}-${cardItem.finish}`;
+		// Prevent duplicate Svelte keyed-{#each} keys if another preview row already holds newKey
+		if (
+			newKey !== cardItem.previewKey &&
+			importPreviewCards.some((c) => c.previewKey === newKey)
+		) {
+			return;
+		}
 		const exists = existingKeySet.has(newKey);
+		const langChanged = normLang !== String(cardItem.language || 'en').toLowerCase();
 
 		importPreviewCards = importPreviewCards.map((c) => {
 			if (c.previewKey === cardItem.previewKey) {
@@ -534,6 +561,15 @@
 					...c,
 					language: normLang,
 					previewKey: newKey,
+					// Clear language-specific upstream IDs on language change so backend/scrapers
+					// never receive wrong-language Scryfall/TCGPlayer/Cardmarket IDs
+					...(langChanged
+						? {
+								scryfall_id: null,
+								tcgplayer_id: null,
+								cardmarket_id: null
+							}
+						: {}),
 					alreadyExists: exists,
 					selected: exists ? false : c.selected
 				};

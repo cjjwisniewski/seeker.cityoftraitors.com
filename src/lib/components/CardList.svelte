@@ -150,6 +150,12 @@
 
 		card.set = newPrint.set_code;
 		card.collector_number = newPrint.collector_number;
+		// Clear any localized upstream IDs from the previous set/printing so failed
+		// language fetches can never leave stale cross-set IDs attached
+		card.localized_id = null;
+		card.localized_tcgplayer_id = null;
+		card.localized_tcgplayer_etched_id = null;
+		card.localized_cardmarket_id = null;
 		card.image_uris = {
 			grid: newPrint.image_uri,
 			normal: newPrint.image_uri
@@ -537,8 +543,10 @@
 	});
 
 	$: {
+		// Only eagerly resolve languages for the first 12 cards (matching CardSearchForm);
+		// remaining cards resolve lazily on hover/focus to avoid Scryfall N+1 rate-limit storms.
 		if (sortedCards && sortedCards.length > 0) {
-			for (const card of sortedCards) {
+			for (const card of sortedCards.slice(0, 12)) {
 				if (!card.available_languages || card.available_languages.length <= 1) {
 					ensureCardLanguages(card);
 				}
@@ -583,7 +591,11 @@
 				{@const cardImageUri = getActiveCardImage(card, currentPrint)}
 				{@const currentPrices = currentPrint?.prices || card.prices}
 
-				<div class="card-item">
+				<div
+					class="card-item"
+					on:mouseenter={() => ensureCardLanguages(card)}
+					on:focusin={() => ensureCardLanguages(card)}
+				>
 					<div class="card-image-section">
 						<div class="card-image-container">
 							{#if cardImageUri}

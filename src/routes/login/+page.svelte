@@ -9,13 +9,11 @@
 	let errorMessage = '';
 
 	onMount(() => {
-		// Error handling (keep this part)
+		// Error handling: strictly map error codes from an allowlist (never render arbitrary ?message= query text)
 		const error = $page.url.searchParams.get('error');
-		const message = $page.url.searchParams.get('message') || '';
-		// Removed duplicate declarations below
 
 		if (error) {
-			console.log('Login error detected:', { error, message });
+			console.log('Login error detected:', { error });
 			switch (error) {
 				case 'server_required':
 					errorMessage = 'Login failed: You must be a member of the required Discord server.';
@@ -25,25 +23,26 @@
 						'Login failed: You do not have the required "Seeker" role in the Discord server.';
 					break;
 				case 'callback_failed':
-					// This might now include role failures if fetchUserInfo returned 403
 					errorMessage =
-						message ||
 						'Authentication failed after callback. This might be due to missing roles or an issue fetching user details. Please ensure you have the "Seeker" role in Discord.';
 					break;
 				case 'discord_api_error':
-					errorMessage = message || 'Communication error with Discord. Please try again later.';
+					errorMessage = 'Communication error with Discord. Please try again later.';
 					break;
 				case 'config_error':
-					errorMessage = message || 'Server configuration error prevents login.';
+					errorMessage = 'Server configuration error prevents login.';
 					break;
 				case 'no_code':
-					errorMessage = message || 'Authorization code missing from Discord callback.';
+					errorMessage = 'Authorization code missing from Discord callback.';
 					break;
 				case 'invalid_state':
-					errorMessage = message || 'Your login session expired or was invalid. Please try again.';
+					errorMessage = 'Your login session expired or was invalid. Please try again.';
+					break;
+				case 'access_denied':
+					errorMessage = 'Access was denied. Please ensure you authorized Discord login and hold the required role.';
 					break;
 				default:
-					errorMessage = message || 'An unknown authentication error occurred.';
+					errorMessage = 'An unknown authentication error occurred. Please try logging in again.';
 			}
 		}
 	});
