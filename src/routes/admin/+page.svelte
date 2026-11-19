@@ -1480,17 +1480,6 @@
 													<i class="fa-regular fa-note-sticky"></i>
 													<span>{table.adminNotes ? 'Edit Note' : 'Add Note'}</span>
 												</button>
-												<button
-													type="button"
-													class="edit-pause-pill-btn"
-													class:is-paused={Boolean(table.scanningPaused)}
-													disabled={togglingPauseUserId === table.userId}
-													on:click|stopPropagation={() => toggleScanningPaused(table)}
-													title={table.scanningPaused ? 'Resume automated scanning & digests' : 'Pause automated scanning & digests'}
-												>
-													<i class="fa-solid {togglingPauseUserId === table.userId ? 'fa-spinner fa-spin' : table.scanningPaused ? 'fa-play' : 'fa-pause'}"></i>
-													<span>{table.scanningPaused ? 'Resume' : 'Pause'}</span>
-												</button>
 												{#if table.scanningPaused}
 													<span class="paused-status-pill" title="Scanning & digests paused{table.scanningPausedAt ? ` since ${formatLocalDate(table.scanningPausedAt)}` : ''}">
 														<i class="fa-solid fa-moon"></i> Paused
@@ -1616,10 +1605,22 @@
 											<i class="fa-solid {expandedTable === table.userId ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
 										</button>
 										<button
+											type="button"
+											class="pause-user-btn"
+											class:is-paused={Boolean(table.scanningPaused)}
+											on:click|stopPropagation={() => toggleScanningPaused(table)}
+											disabled={!token || togglingPauseUserId === table.userId}
+											title={table.scanningPaused ? 'Resume automated scanning & digests' : 'Pause automated scanning & digests'}
+											aria-label={table.scanningPaused ? 'Resume automated scanning & digests' : 'Pause automated scanning & digests'}
+										>
+											<i class="fa-solid {togglingPauseUserId === table.userId ? 'fa-spinner fa-spin' : table.scanningPaused ? 'fa-play' : 'fa-pause'}"></i>
+										</button>
+										<button
 											class="delete-user-btn"
 											on:click={() => promptDeleteAccount(table.userId)}
 											disabled={!token}
 											title="Delete user account and all wishlist data"
+											aria-label="Delete user account and all wishlist data"
 										>
 											<i class="fa-solid fa-trash-can"></i>
 										</button>
@@ -1658,7 +1659,6 @@
 														<tr>
 															<th class="col-name">Card Name</th>
 															<th class="col-set">Set</th>
-															<th class="col-num">#</th>
 															<th class="col-lang">Lang</th>
 															<th class="col-finish">Finish</th>
 															{#if isMarketplaceEnabled(table, 'cardtrader')}
@@ -1688,14 +1688,35 @@
 															{#if isMarketplaceEnabled(table, 'cardmarket')}
 																<th class="col-vendor">CardMarket</th>
 															{/if}
-															<th class="col-cond">Min Cond</th>
 														</tr>
 													</thead>
 													<tbody>
 														{#each expandedTableData as card}
 															<tr>
 																<td class="col-name" data-label="Name">
-																	<span class="card-name-text">{card.name}</span>
+																	<div class="admin-card-name-wrap">
+																		<span class="card-name-text">{card.name}</span>
+																		{#if card.max_price_cap > 0 || card.min_condition || (table.minCondition && table.minCondition !== 'ANY')}
+																			<div class="admin-card-tags">
+																				{#if card.max_price_cap > 0}
+																					<span class="admin-cap-tag" title="Max Price Cap: {formatCents(card.max_price_cap)}">
+																						Cap ≤ {formatCents(card.max_price_cap)}
+																					</span>
+																				{/if}
+																				{#if card.min_condition && card.min_condition !== 'ANY'}
+																					<span class="cond-req-pill cond-{card.min_condition.toLowerCase()}" title="Card Condition Override: {card.min_condition}+">
+																						{card.min_condition === 'NM' ? 'NM ONLY' : `MIN ${card.min_condition}+`}
+																					</span>
+																				{:else if card.min_condition === 'ANY'}
+																					<span class="cond-req-pill cond-any" title="Card Condition Override: Any Condition">ANY COND</span>
+																				{:else if table.minCondition && table.minCondition !== 'ANY'}
+																					<span class="cond-req-pill inherited cond-{table.minCondition.toLowerCase()}" title="Inherited Account Condition: {table.minCondition}+">
+																						{table.minCondition === 'NM' ? 'NM (Acct)' : `${table.minCondition}+ (Acct)`}
+																					</span>
+																				{/if}
+																			</div>
+																		{/if}
+																	</div>
 																</td>
 																<td class="col-set" data-label="Set">
 																	<div class="set-cell">
@@ -1706,19 +1727,19 @@
 																			loading="lazy"
 																		/>
 																		<span class="set-code">{card.set_code?.toUpperCase()}</span>
+																		{#if card.collector_number}
+																			<span class="collector-number">#{card.collector_number}</span>
+																		{/if}
 																	</div>
-																</td>
-																<td class="col-num" data-label="Number">
-																	<span class="collector-number">{card.collector_number}</span>
 																</td>
 																<td class="col-lang" data-label="Language">
 																	<span class="lang-pill">{card.language?.toUpperCase()}</span>
 																</td>
 																<td class="col-finish" data-label="Finish">
-																	{#if card.finish === 'foil'}
-																		<span class="finish-pill foil">
-																			<i class="fa-solid fa-sparkles"></i> Foil
-																		</span>
+																	{#if (card.finish || '').toLowerCase() === 'etched'}
+																		<span class="finish-pill foil">◈ Etched</span>
+																	{:else if (card.finish || '').toLowerCase() === 'foil'}
+																		<span class="finish-pill foil">✦ Foil</span>
 																	{:else}
 																		<span class="finish-pill nonfoil">Nonfoil</span>
 																	{/if}
@@ -1727,14 +1748,13 @@
 																	<td class="col-vendor" data-label="CardTrader">
 																		{#if card.cardtrader_stock}
 																			<span class="stock-pill in-stock">
-																				<i class="fa-solid fa-check"></i>
 																				{formatCents(card.cardtrader_low_price)}
 																				{#if card.cardtrader_condition}
 																					<span class="cond-pill">{card.cardtrader_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																			<span class="stock-oos-dash" title="Out of Stock">—</span>
 																		{/if}
 																	</td>
 																{/if}
@@ -1742,14 +1762,13 @@
 																	<td class="col-vendor" data-label="TCGPlayer">
 																		{#if card.tcgplayer_stock}
 																			<span class="stock-pill in-stock">
-																				<i class="fa-solid fa-check"></i>
 																				{formatCents(card.tcgplayer_low_price)}
 																				{#if card.tcgplayer_condition}
 																					<span class="cond-pill">{card.tcgplayer_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																			<span class="stock-oos-dash" title="Out of Stock">—</span>
 																		{/if}
 																	</td>
 																{/if}
@@ -1757,14 +1776,13 @@
 																	<td class="col-vendor" data-label="Mana Pool">
 																		{#if card.manapool_stock}
 																			<span class="stock-pill in-stock">
-																				<i class="fa-solid fa-check"></i>
 																				{formatCents(card.manapool_low_price)}
 																				{#if card.manapool_condition}
 																					<span class="cond-pill">{card.manapool_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																			<span class="stock-oos-dash" title="Out of Stock">—</span>
 																		{/if}
 																	</td>
 																{/if}
@@ -1772,14 +1790,13 @@
 																	<td class="col-vendor" data-label="Card Kingdom">
 																		{#if card.cardkingdom_stock}
 																			<span class="stock-pill in-stock">
-																				<i class="fa-solid fa-check"></i>
 																				{formatCents(card.cardkingdom_low_price)}
 																				{#if card.cardkingdom_condition}
 																					<span class="cond-pill">{card.cardkingdom_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																			<span class="stock-oos-dash" title="Out of Stock">—</span>
 																		{/if}
 																	</td>
 																{/if}
@@ -1787,14 +1804,13 @@
 																	<td class="col-vendor" data-label="eBay">
 																		{#if card.ebay_stock}
 																			<span class="stock-pill in-stock">
-																				<i class="fa-solid fa-check"></i>
 																				{formatCents(card.ebay_low_price)}
 																				{#if card.ebay_condition}
 																					<span class="cond-pill">{card.ebay_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																			<span class="stock-oos-dash" title="Out of Stock">—</span>
 																		{/if}
 																	</td>
 																{/if}
@@ -1802,14 +1818,13 @@
 																	<td class="col-vendor" data-label="HiMarket">
 																		{#if card.himarket_stock}
 																			<span class="stock-pill in-stock" title={card.himarket_price_hkd ? `HK$ ${Number(card.himarket_price_hkd).toFixed(2)}${card.himarket_condition ? ` (${card.himarket_condition})` : ''}` : ''}>
-																				<i class="fa-solid fa-check"></i>
 																				{formatCents(card.himarket_low_price)}
 																				{#if card.himarket_condition}
 																					<span class="cond-pill">{card.himarket_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																			<span class="stock-oos-dash" title="Out of Stock">—</span>
 																		{/if}
 																	</td>
 																{/if}
@@ -1817,31 +1832,29 @@
 																	<td class="col-vendor" data-label="Hareruya">
 																		{#if card.hareruya_stock}
 																			<span class="stock-pill in-stock" title={card.hareruya_price_jpy ? `¥${Number(card.hareruya_price_jpy).toLocaleString()}${card.hareruya_condition ? ` (${card.hareruya_condition})` : ''}` : ''}>
-																				<i class="fa-solid fa-check"></i>
 																				{formatCents(card.hareruya_low_price)}
 																				{#if card.hareruya_condition}
 																					<span class="cond-pill">{card.hareruya_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																			<span class="stock-oos-dash" title="Out of Stock">—</span>
 																		{/if}
 																	</td>
 																{/if}
 																{#if isMarketplaceEnabled(table, 'ruten')}
 																	<td class="col-vendor" data-label="Ruten">
 																		{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
-																			<span class="stock-pill out-of-stock" title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards">—</span>
+																			<span class="stock-oos-dash" title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards">—</span>
 																		{:else if card.ruten_stock}
 																			<span class="stock-pill in-stock" title={card.ruten_price_twd ? `NT$ ${Number(card.ruten_price_twd).toLocaleString()}${card.ruten_condition ? ` (${card.ruten_condition})` : ''}` : ''}>
-																				<i class="fa-solid fa-check"></i>
 																				{formatCents(card.ruten_low_price)}
 																				{#if card.ruten_condition}
 																					<span class="cond-pill">{card.ruten_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																			<span class="stock-oos-dash" title="Out of Stock">—</span>
 																		{/if}
 																	</td>
 																{/if}
@@ -1849,32 +1862,16 @@
 																	<td class="col-vendor" data-label="CardMarket">
 																		{#if card.cardmarket_stock}
 																			<span class="stock-pill in-stock" title={card.cardmarket_price_eur ? `€${Number(card.cardmarket_price_eur).toFixed(2)}${card.cardmarket_condition ? ` (${card.cardmarket_condition})` : ''}` : ''}>
-																				<i class="fa-solid fa-check"></i>
 																				{formatCents(card.cardmarket_low_price)}
 																				{#if card.cardmarket_condition}
 																					<span class="cond-pill">{card.cardmarket_condition}</span>
 																				{/if}
 																			</span>
 																		{:else}
-																			<span class="stock-pill out-of-stock">Out of Stock</span>
+																			<span class="stock-oos-dash" title="Out of Stock">—</span>
 																		{/if}
 																	</td>
 																{/if}
-																<td class="col-cond" data-label="Min Cond">
-																	{#if card.min_condition && card.min_condition !== 'ANY'}
-																		<span class="cond-req-pill cond-{card.min_condition.toLowerCase()}" title="Card Condition Override: {card.min_condition}+">
-																			{card.min_condition === 'NM' ? 'NM ONLY' : `MIN ${card.min_condition}+`}
-																		</span>
-																	{:else if card.min_condition === 'ANY'}
-																		<span class="cond-req-pill cond-any" title="Card Condition Override: Any Condition">ANY COND</span>
-																	{:else if table.minCondition && table.minCondition !== 'ANY'}
-																		<span class="cond-req-pill inherited cond-{table.minCondition.toLowerCase()}" title="Inherited Account Condition: {table.minCondition}+">
-																			{table.minCondition === 'NM' ? 'NM (Acct)' : `${table.minCondition}+ (Acct)`}
-																		</span>
-																	{:else}
-																		<span class="cond-req-pill cond-any inherited" title="Default: Any Condition">ANY</span>
-																	{/if}
-																</td>
 															</tr>
 														{/each}
 													</tbody>
@@ -3819,6 +3816,43 @@
 		color: var(--color-error);
 	}
 
+	.pause-user-btn {
+		width: 34px;
+		height: 34px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(245, 158, 11, 0.12);
+		border: 1px solid rgba(245, 158, 11, 0.3);
+		color: #f59e0b;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 0.85rem;
+		transition: all var(--transition-fast);
+	}
+
+	.pause-user-btn:hover:not(:disabled) {
+		background: #f59e0b;
+		color: white;
+		transform: translateY(-1px);
+	}
+
+	.pause-user-btn.is-paused {
+		background: rgba(16, 185, 129, 0.12);
+		border-color: rgba(16, 185, 129, 0.35);
+		color: #10b981;
+	}
+
+	.pause-user-btn.is-paused:hover:not(:disabled) {
+		background: #10b981;
+		color: white;
+	}
+
+	.pause-user-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
 	.delete-user-btn {
 		width: 34px;
 		height: 34px;
@@ -4011,13 +4045,37 @@
 		letter-spacing: 0.03em;
 	}
 
-	th.col-cond {
-		text-align: center;
-		width: 100px;
+	.admin-card-name-wrap {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
 	}
 
-	td.col-cond {
-		text-align: center;
+	.admin-card-tags {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+	}
+
+	.admin-cap-tag {
+		display: inline-flex;
+		align-items: center;
+		font-size: 0.66rem;
+		font-weight: 700;
+		padding: 0.12rem 0.42rem;
+		border-radius: 6px;
+		background: rgba(99, 102, 241, 0.14);
+		border: 1px solid rgba(99, 102, 241, 0.32);
+		color: var(--color-primary);
+		white-space: nowrap;
+	}
+
+	.stock-oos-dash {
+		color: var(--color-text-muted);
+		opacity: 0.45;
+		font-size: 0.85rem;
+		user-select: none;
 	}
 
 	.cond-req-pill {
@@ -4676,32 +4734,6 @@
 		color: var(--color-text-muted);
 		margin-top: 0.25rem;
 		margin-bottom: 0.75rem;
-	}
-
-	.edit-pause-pill-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		padding: 0.2rem 0.55rem;
-		border-radius: 999px;
-		font-size: 0.72rem;
-		font-weight: 600;
-		background: var(--color-bg-secondary);
-		border: 1px solid var(--color-border);
-		color: var(--color-text-secondary);
-		cursor: pointer;
-		transition: all var(--transition-fast);
-	}
-
-	.edit-pause-pill-btn:hover {
-		border-color: var(--color-primary);
-		color: var(--color-primary);
-	}
-
-	.edit-pause-pill-btn.is-paused {
-		border-color: rgba(34, 197, 94, 0.45);
-		color: #22c55e;
-		background: rgba(34, 197, 94, 0.1);
 	}
 
 	.paused-status-pill,
