@@ -1,0 +1,4 @@
+Contact: mailto:cameron@undo.is
+Expires: 2027-11-19T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://seeker.cityoftraitors.com/.well-known/security.txt

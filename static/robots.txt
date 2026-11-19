@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /account
+Disallow: /admin
+Disallow: /auth/
+Disallow: /callback
+Disallow: /seeking
+
+Sitemap: https://seeker.cityoftraitors.com/sitemap.xml
