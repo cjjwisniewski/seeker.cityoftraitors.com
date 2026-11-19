@@ -138,6 +138,11 @@
 		white-space: nowrap;
 	}
 
+	:global([data-theme='light']) .demo-pill {
+		color: #3b47c4;
+		background: rgba(88, 101, 242, 0.14);
+	}
+
 	.demo-copy {
 		color: var(--color-text-secondary);
 		line-height: 1.35;

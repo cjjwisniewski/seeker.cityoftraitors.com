@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { focusTrap } from '$lib/actions/focusTrap';
 
 	export let open = false;
 	export let inviteUrl = 'https://discord.gg/a5Kyrfekxd';
@@ -30,7 +31,7 @@
 			if (e.target === e.currentTarget) close();
 		}}
 	>
-		<div class="modal-card">
+		<div class="modal-card" use:focusTrap>
 			<button type="button" class="modal-close" aria-label="Close dialog" on:click={close}>
 				<i class="fa-solid fa-xmark"></i>
 			</button>

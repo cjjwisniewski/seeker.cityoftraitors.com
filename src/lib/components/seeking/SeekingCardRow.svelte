@@ -51,6 +51,7 @@
 	export let isCheckingCard = false;
 	export let cooldownSec = 0;
 	export let isAuthenticated = true;
+	export let isOtherOffersOpen = false;
 
 	// Single-pass lowest offer calculation per row (collapsing 8 separate calls to 1)
 	$: lowestOffer = !isCondensed
@@ -156,24 +157,13 @@
 		editingCond = true;
 	}
 
-	let showOtherOffers = false;
-	let bestOfferWrapEl = null;
-
-	$: if (!isCondensed || !bestOffer?.otherOffersCount) {
-		showOtherOffers = false;
-	}
+	$: showOtherOffers = Boolean(isOtherOffersOpen && isCondensed && bestOffer?.otherOffersCount);
 
 	$: otherOffersTooltip = bestOffer?.otherOffers?.length
 		? bestOffer.otherOffers
 				.map((o) => `${o.displayName} ${formatPrice(o.cents)}${o.condition ? ` (${o.condition})` : ''}`)
 				.join(' · ')
 		: '';
-
-	function handleWindowClick(e) {
-		if (showOtherOffers && bestOfferWrapEl && !bestOfferWrapEl.contains(e.target)) {
-			showOtherOffers = false;
-		}
-	}
 
 	function handleCondChange(e) {
 		const val = e.target.value;
@@ -184,11 +174,6 @@
 		}
 	}
 </script>
-
-<svelte:window
-	on:click={handleWindowClick}
-	on:keydown={(e) => e.key === 'Escape' && (showOtherOffers = false)}
-/>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -387,7 +372,7 @@
 	{#if isCondensed}
 		<td data-label="Best Price" class="vendor-stock-cell col-vendor col-best-price">
 			{#if bestOffer && bestOffer.inStock}
-				<div class="best-offer-wrap" bind:this={bestOfferWrapEl}>
+				<div class="best-offer-wrap">
 					<div class="best-offer-row">
 						{#if bestOffer.url}
 							<a
@@ -430,7 +415,7 @@
 								aria-expanded={showOtherOffers}
 								aria-label="Show {bestOffer.otherOffersCount} other in-stock offer{bestOffer.otherOffersCount > 1 ? 's' : ''}"
 								title="Other in-stock stores: {otherOffersTooltip}"
-								on:click|stopPropagation={() => (showOtherOffers = !showOtherOffers)}
+								on:click|stopPropagation={() => dispatch('toggleOtherOffers')}
 							>
 								+{bestOffer.otherOffersCount}
 							</button>

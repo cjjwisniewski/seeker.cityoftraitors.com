@@ -1,4 +1,5 @@
 <script>
+	import { focusTrap } from '$lib/actions/focusTrap';
 	import { auth } from '$lib/stores/auth';
 	import {
 		getWebpImageUri,
@@ -24,7 +25,7 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={onClose}>
-		<div class="modal-content hist-modal-content" role="dialog" aria-modal="true" aria-label="Historical Price Intelligence" on:click|stopPropagation>
+		<div class="modal-content hist-modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Historical Price Intelligence" on:click|stopPropagation>
 			<div class="modal-header">
 				<div class="hist-modal-title-group">
 					<h2>

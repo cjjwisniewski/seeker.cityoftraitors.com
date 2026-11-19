@@ -1,4 +1,5 @@
 <script>
+	import { focusTrap } from '$lib/actions/focusTrap';
 	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
 	import { SAMPLE_DEMO_DECKS } from '$lib/demo/demoSeed';
@@ -691,7 +692,7 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={handleClose}>
-		<div class="modal-content import-modal-content" role="dialog" aria-modal="true" aria-label="Import Decklist" on:click|stopPropagation>
+		<div class="modal-content import-modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Import Decklist" on:click|stopPropagation>
 			<div class="modal-header">
 				<div class="import-modal-title-group">
 					<h2>

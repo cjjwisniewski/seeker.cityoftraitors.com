@@ -1,4 +1,5 @@
 <script>
+	import { focusTrap } from '$lib/actions/focusTrap';
 	import { formatPrice } from '$lib/utils/seekingUtils';
 
 	export let selectedCount = 0;
@@ -55,7 +56,7 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}>
-		<div class="modal-content" role="dialog" aria-modal="true" aria-label="Set Price Cap" on:click|stopPropagation>
+		<div class="modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Set Price Cap" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>Set Price Cap ({selectedCount} Cards)</h2>
 				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}>
@@ -112,7 +113,7 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}>
-		<div class="modal-content" role="dialog" aria-modal="true" aria-label="Delete Selected Cards" on:click|stopPropagation>
+		<div class="modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Delete Selected Cards" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>Delete {selectedCount} Cards?</h2>
 				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}>

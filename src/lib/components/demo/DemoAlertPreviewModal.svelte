@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { focusTrap } from '$lib/actions/focusTrap';
 	import { auth } from '$lib/stores/auth';
 	import {
 		closeDemoAlertPreviews,
@@ -350,7 +351,7 @@
 		aria-label="Simulated Discord Alert & Digest Previews"
 		on:click|self={closeDemoAlertPreviews}
 	>
-		<div class="preview-modal">
+		<div class="preview-modal" use:focusTrap>
 			<div class="preview-header">
 				<div class="preview-title">
 					<i class="fa-brands fa-discord discord-icon" aria-hidden="true"></i>

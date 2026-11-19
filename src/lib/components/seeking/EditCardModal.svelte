@@ -1,4 +1,5 @@
 <script>
+	import { focusTrap } from '$lib/actions/focusTrap';
 	import { fetchWithAuth } from '$lib/utils/api';
 	import { getLanguageName } from '$lib/utils/languageUtils';
 	import { PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL } from '$env/static/public';
@@ -266,7 +267,7 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={() => !isSavingSettings && onClose()}>
-		<div class="modal-content" role="dialog" aria-modal="true" aria-label="Edit Card" on:click|stopPropagation>
+		<div class="modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Edit Card" on:click|stopPropagation>
 			<div class="modal-header">
 				<h2>Edit Card</h2>
 				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isSavingSettings && onClose()}>

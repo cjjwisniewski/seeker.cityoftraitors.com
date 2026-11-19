@@ -84,9 +84,14 @@
 
 	// Quick filter pills & search state
 	let filterInStockOnly = false;
+	let filterUnderCapOnly = false;
+	let filterOutOfStockOnly = false;
+	let filterFoilOnly = false;
 	let filterSetCode = '';
 	let searchQuery = '';
 	let enlargedCardImage = null;
+	let activeOtherOffersKey = null;
+	let pendingDelete = null; // { card, index, timerId }
 	$: previewEmpty = $page.url.searchParams.get('preview') === 'empty';
 
 	// Sorting state
@@ -169,8 +174,11 @@
 		activeMenuId = activeMenuId === id ? null : id;
 	}
 
-	function closeMenu() {
+	function closeMenu(e) {
 		activeMenuId = null;
+		if (activeOtherOffersKey && !e?.target?.closest?.('.best-offer-wrap')) {
+			activeOtherOffersKey = null;
+		}
 	}
 
 	function isInteractiveRowTarget(target) {
@@ -455,6 +463,8 @@
 				showBulkDeleteModal = false;
 			} else if (showBulkPriceCapModal && !isProcessingBulkAction) {
 				showBulkPriceCapModal = false;
+			} else if (activeOtherOffersKey) {
+				activeOtherOffersKey = null;
 			} else if (selectedKeys.size > 0) {
 				clearSelection();
 			}
@@ -470,6 +480,9 @@
 
 	function resetFilters() {
 		filterInStockOnly = false;
+		filterUnderCapOnly = false;
+		filterOutOfStockOnly = false;
+		filterFoilOnly = false;
 		filterSetCode = '';
 		searchQuery = '';
 	}
@@ -706,6 +719,9 @@
 		if (stockCheckToastTimer) {
 			clearTimeout(stockCheckToastTimer);
 		}
+		if (pendingDelete) {
+			flushPendingDelete();
+		}
 		clearAutoPollTimers();
 	});
 
@@ -764,7 +780,7 @@
 		}
 	}
 
-	async function handleDelete(card) {
+	async function commitCardDelete(card, restoreIndex = -1) {
 		error = null;
 		try {
 			const requestBody = {
@@ -781,6 +797,7 @@
 
 			if (!response) {
 				error = 'Authentication failed while attempting to delete card.';
+				restoreDeletedCard(card, restoreIndex);
 				return;
 			}
 
@@ -788,20 +805,68 @@
 				const text = await response.text();
 				throw new Error(`Failed to delete card (Status: ${response.status}): ${text}`);
 			}
-
-			cards = cards.filter(
-				(c) =>
-					!(
-						c.set_code === card.set_code &&
-						c.collector_number === card.collector_number &&
-						c.language === card.language &&
-						c.finish === card.finish
-					)
-			);
 		} catch (e) {
 			error = `Delete failed: ${e.message}`;
+			restoreDeletedCard(card, restoreIndex);
 			console.error('Error deleting card:', e);
 		}
+	}
+
+	function restoreDeletedCard(card, index) {
+		const key = getCardKey(card);
+		if (cards.some((c) => getCardKey(c) === key)) return;
+		const next = [...cards];
+		if (index >= 0 && index <= next.length) {
+			next.splice(index, 0, card);
+		} else {
+			next.unshift(card);
+		}
+		cards = next;
+	}
+
+	function flushPendingDelete() {
+		if (!pendingDelete) return;
+		const { card, index, timerId } = pendingDelete;
+		clearTimeout(timerId);
+		pendingDelete = null;
+		commitCardDelete(card, index);
+	}
+
+	function undoPendingDelete() {
+		if (!pendingDelete) return;
+		const { card, index, timerId } = pendingDelete;
+		clearTimeout(timerId);
+		pendingDelete = null;
+		restoreDeletedCard(card, index);
+		showStockCheckFeedback('success', `Restored ${card.name} to your seeking list.`);
+	}
+
+	function handleDelete(card) {
+		// Flush any prior pending delete before starting a new 5-second undo window
+		if (pendingDelete) {
+			flushPendingDelete();
+		}
+		const targetKey = getCardKey(card);
+		const prevIndex = cards.findIndex((c) => getCardKey(c) === targetKey);
+		cards = cards.filter((c) => getCardKey(c) !== targetKey);
+		if (selectedKeys.has(targetKey)) {
+			const nextSel = new Set(selectedKeys);
+			nextSel.delete(targetKey);
+			selectedKeys = nextSel;
+		}
+		const timerId = setTimeout(() => {
+			flushPendingDelete();
+		}, 5000);
+		pendingDelete = { card, index: prevIndex, timerId };
+		stockCheckToast = {
+			type: 'warning',
+			message: `Removed ${card.name}.`,
+			showUndoDeleteAction: true
+		};
+		if (stockCheckToastTimer) clearTimeout(stockCheckToastTimer);
+		stockCheckToastTimer = setTimeout(() => {
+			stockCheckToast = null;
+		}, 5200);
 	}
 
 	function sortBy(key) {
@@ -830,7 +895,7 @@
 			return false;
 		}
 
-		if (filterInStockOnly) {
+		if (filterInStockOnly || filterOutOfStockOnly || filterUnderCapOnly) {
 			const hasStock = hasEnabledStock(
 				card,
 				showCardTrader,
@@ -843,7 +908,29 @@
 				showCardmarket,
 				showCardkingdom
 			);
-			if (!hasStock) return false;
+			if (filterInStockOnly && !hasStock) return false;
+			if (filterOutOfStockOnly && hasStock) return false;
+			if (filterUnderCapOnly) {
+				if (!hasStock || !(card.max_price_cap > 0)) return false;
+				const lowest = getLowestOffer(
+					card,
+					showCardTrader,
+					showTCGPlayer,
+					showEbay,
+					showManapool,
+					showHimarket,
+					showHareruya,
+					showRuten,
+					showCardmarket,
+					showCardkingdom
+				);
+				if (!lowest || lowest.minPriceCents > card.max_price_cap) return false;
+			}
+		}
+
+		if (filterFoilOnly) {
+			const fin = String(card.finish || '').toLowerCase();
+			if (fin !== 'foil' && fin !== 'etched') return false;
 		}
 
 		return true;
@@ -1185,9 +1272,48 @@
 				type="button"
 				class="filter-pill"
 				class:active={filterInStockOnly}
-				on:click={() => (filterInStockOnly = !filterInStockOnly)}
+				on:click={() => {
+					filterInStockOnly = !filterInStockOnly;
+					if (filterInStockOnly) filterOutOfStockOnly = false;
+				}}
 			>
 				<i class="fa-solid fa-circle-check"></i> In Stock
+			</button>
+			<button
+				type="button"
+				class="filter-pill"
+				class:active={filterUnderCapOnly}
+				on:click={() => {
+					filterUnderCapOnly = !filterUnderCapOnly;
+					if (filterUnderCapOnly) filterOutOfStockOnly = false;
+				}}
+				title="Show only in-stock cards at or below your max price cap"
+			>
+				<i class="fa-solid fa-tag"></i> Under Cap
+			</button>
+			<button
+				type="button"
+				class="filter-pill"
+				class:active={filterOutOfStockOnly}
+				on:click={() => {
+					filterOutOfStockOnly = !filterOutOfStockOnly;
+					if (filterOutOfStockOnly) {
+						filterInStockOnly = false;
+						filterUnderCapOnly = false;
+					}
+				}}
+				title="Show only out-of-stock cards"
+			>
+				<i class="fa-regular fa-circle-xmark"></i> Out of Stock
+			</button>
+			<button
+				type="button"
+				class="filter-pill"
+				class:active={filterFoilOnly}
+				on:click={() => (filterFoilOnly = !filterFoilOnly)}
+				title="Show only foil and etched printings"
+			>
+				<i class="fa-solid fa-sparkles"></i> Foil
 			</button>
 			{#if availableSetCodes.length > 0}
 				<select bind:value={filterSetCode} class="set-select" aria-label="Filter by Set">
@@ -1197,7 +1323,7 @@
 					{/each}
 				</select>
 			{/if}
-			{#if filterInStockOnly || filterSetCode || searchQuery}
+			{#if filterInStockOnly || filterUnderCapOnly || filterOutOfStockOnly || filterFoilOnly || filterSetCode || searchQuery}
 				<button
 					type="button"
 					class="filter-pill reset"
@@ -1303,6 +1429,16 @@
 					: 'fa-circle-exclamation'}"
 		></i>
 		<span>{stockCheckToast.message}</span>
+		{#if stockCheckToast.showUndoDeleteAction && pendingDelete}
+			<button
+				type="button"
+				class="toast-preview-btn"
+				on:click={undoPendingDelete}
+			>
+				<i class="fa-solid fa-rotate-left"></i>
+				Undo
+			</button>
+		{/if}
 		{#if $auth.isDemo && stockCheckToast.showDemoPreviewAction}
 			<button
 				type="button"
@@ -1676,6 +1812,7 @@
 							isSelected={selectedKeys.has(cardKey)}
 							hasAnySelected={selectedKeys.size > 0}
 							isMenuOpen={activeMenuId === cardKey}
+							isOtherOffersOpen={activeOtherOffersKey === cardKey}
 							isDropUp={index >= displayedCards.length - 2}
 							{histBadge}
 							{showCardTrader}
@@ -1699,6 +1836,7 @@
 							on:rowTouchEnd={handleRowTouchEnd}
 							on:rowContextMenu={(e) => handleRowContextMenu(e.detail)}
 							on:toggleMenu={(e) => toggleMenu(cardKey, e.detail)}
+							on:toggleOtherOffers={() => (activeOtherOffersKey = activeOtherOffersKey === cardKey ? null : cardKey)}
 							on:closeMenu={closeMenu}
 							on:toggleSelect={(e) => toggleCardSelection(card, index, e.detail)}
 							on:manualStockCheck={() => handleManualStockCheck(card)}
