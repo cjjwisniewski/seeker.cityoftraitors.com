@@ -128,30 +128,51 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Clean existing blobs
+      - name: Sync Files to Azure Storage
         uses: azure/CLI@v2
         with:
           azcliversion: latest
           inlineScript: |
             ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}"
-            echo "Cleaning existing files in $web container"
-            az storage blob delete-batch \
+            echo "Syncing ./build to $web container (zero-downtime with stale-blob pruning)"
+            az storage blob sync \
+              --container '$web' \
               --account-name "$ACCOUNT_NAME" \
-              --source '$web' \
-              --auth-mode login
-
-      - name: Upload to blob storage
-        uses: azure/CLI@v2
-        with:
-          azcliversion: latest
-          inlineScript: |
-            ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}"
-            az storage blob upload-batch \
-              --account-name "$ACCOUNT_NAME" \
-              --destination '$web' \
               --source ./build \
               --auth-mode login \
-              --overwrite
+              --delete-destination true
+
+            # Immutable content-hashed SvelteKit assets: 1 year cache
+            az storage blob upload-batch \
+              --destination '$web' \
+              --destination-path '_app/immutable' \
+              --account-name "$ACCOUNT_NAME" \
+              --source ./build/_app/immutable \
+              --auth-mode login \
+              --overwrite \
+              --content-cache-control "public, max-age=31536000, immutable"
+
+            # HTML entry shell: revalidate at browser, short edge TTL
+            az storage blob upload-batch \
+              --destination '$web' \
+              --account-name "$ACCOUNT_NAME" \
+              --source ./build \
+              --pattern "*.html" \
+              --auth-mode login \
+              --overwrite \
+              --content-cache-control "public, max-age=0, s-maxage=300, must-revalidate"
+
+            # Static icons, manifest, sitemap, robots, security.txt
+            for ext in png svg ico webmanifest xml txt; do
+              az storage blob upload-batch \
+                --destination '$web' \
+                --account-name "$ACCOUNT_NAME" \
+                --source ./build \
+                --pattern "*.$ext" \
+                --auth-mode login \
+                --overwrite \
+                --content-cache-control "public, max-age=86400"
+            done
 
 
       - name: Azure Logout
