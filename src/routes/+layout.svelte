@@ -12,6 +12,10 @@
 	import DemoAlertPreviewModal from '$lib/components/demo/DemoAlertPreviewModal.svelte';
 	import { PUBLIC_GET_BANNER_FUNCTION_URL } from '$env/static/public';
 
+	// Self-hosted fonts & icons (GDPR-compliant, no external font/icon CDNs)
+	import '@fontsource-variable/montserrat';
+	import '@fortawesome/fontawesome-free/css/all.min.css';
+
 	// Import global styles
 	import '$lib/styles/theme.css';
 	import '$lib/styles/global.css';
