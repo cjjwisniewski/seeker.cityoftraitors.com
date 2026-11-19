@@ -375,6 +375,21 @@ export function createInitialDemoCards(nowMs = Date.now()): DemoCardRecord[] {
 		}
 
 		const simPatch = simulateVendorOffersForCard(baseRecord, spec.baselineCents, 1, null, nowMs);
+		if (simPatch.historical_pricing) {
+			const nmBase = simPatch.historical_pricing.nm_low_cents || spec.baselineCents;
+			const plBase = simPatch.historical_pricing.played_low_cents || Math.round(nmBase * 0.78);
+			const offsets = [1.09, 1.06, 1.08, 1.03, 1.05, 1.01, 1.0];
+			simPatch.historical_pricing.history = offsets.map((mult, idx) => {
+				const d = new Date(nowMs - (offsets.length - 1 - idx) * 86_400_000)
+					.toISOString()
+					.slice(0, 10);
+				return {
+					date: d,
+					nm_cents: Math.round(nmBase * mult),
+					played_cents: Math.round(plBase * (mult + 0.01))
+				};
+			});
+		}
 		return {
 			...baseRecord,
 			...simPatch

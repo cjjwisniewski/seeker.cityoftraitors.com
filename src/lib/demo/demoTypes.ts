@@ -60,6 +60,11 @@ export interface DemoHistoricalPricing {
 	last_seen_vendor: string | null;
 	last_seen_at: string | null;
 	vendor_lows: Record<string, DemoVendorLow>;
+	history?: Array<{
+		date: string;
+		nm_cents: number | null;
+		played_cents: number | null;
+	}>;
 }
 
 export interface DemoCardRecord {

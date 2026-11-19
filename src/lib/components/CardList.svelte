@@ -722,7 +722,7 @@
 								{/if}
 								{#if currentPrices?.usd_foil}
 									<span class="price-pill foil-price" title="Estimated Foil Market Price">
-										<i class="fa-solid fa-star"></i>
+										<span class="finish-glyph" aria-hidden="true">✦</span>
 										<span>Foil {formatCardPrice(currentPrices.usd_foil)}</span>
 									</span>
 								{/if}
@@ -833,7 +833,7 @@
 										disabled={currentPrint?.finishes && !currentPrint.finishes.includes('foil')}
 										on:click={() => handleFinishChange(card.id, 'foil')}
 									>
-										<i class="fa-solid fa-sparkles"></i>
+										<span class="finish-glyph" aria-hidden="true">✦</span>
 										<span>Foil</span>
 									</button>
 									{#if currentPrint?.finishes?.includes('etched')}
@@ -843,7 +843,7 @@
 											class:selected={selectedFinishes[card.id] === 'etched'}
 											on:click={() => handleFinishChange(card.id, 'etched')}
 										>
-											<i class="fa-solid fa-sparkles"></i>
+											<span class="finish-glyph" aria-hidden="true">◈</span>
 											<span>Etched</span>
 										</button>
 									{/if}
@@ -852,29 +852,38 @@
 
 							{#if $auth.isAuthenticated}
 								<div class="initial-prefs-inline">
-									<input
-										type="number"
-										step="0.01"
-										min="0"
-										class="initial-cap-input"
-										placeholder="Cap $"
-										aria-label="Optional max price cap in USD"
-										title="Optional max price cap ($)"
-										bind:value={initialCaps[card.id]}
-									/>
-									<select
-										class="initial-cond-select"
-										aria-label="Optional minimum condition"
-										title="Optional minimum condition override"
-										bind:value={initialConditions[card.id]}
-									>
-										<option value="">Cond: Default</option>
-										<option value="NM">NM</option>
-										<option value="SP">SP/LP</option>
-										<option value="MP">MP</option>
-										<option value="HP">HP</option>
-										<option value="ANY">Any</option>
-									</select>
+									<div class="pref-field">
+										<span class="finish-title">Cap:</span>
+										<div class="cap-input-group">
+											<span class="cap-prefix">$</span>
+											<input
+												type="number"
+												step="0.01"
+												min="0"
+												class="initial-cap-input"
+												placeholder="None"
+												aria-label="Optional max price cap in USD"
+												title="Optional max price cap ($)"
+												bind:value={initialCaps[card.id]}
+											/>
+										</div>
+									</div>
+									<div class="pref-field">
+										<span class="finish-title">Cond:</span>
+										<select
+											class="initial-cond-select"
+											aria-label="Optional minimum condition"
+											title="Optional minimum condition override"
+											bind:value={initialConditions[card.id]}
+										>
+											<option value="">Default</option>
+											<option value="NM">NM</option>
+											<option value="SP">SP / LP</option>
+											<option value="MP">MP</option>
+											<option value="HP">HP</option>
+											<option value="ANY">Any</option>
+										</select>
+									</div>
 								</div>
 							{/if}
 
@@ -1400,26 +1409,64 @@
 	.initial-prefs-inline {
 		display: flex;
 		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.pref-field {
+		display: inline-flex;
+		align-items: center;
 		gap: 0.4rem;
 	}
 
-	.initial-cap-input,
-	.initial-cond-select {
+	.cap-input-group {
+		display: inline-flex;
+		align-items: center;
 		height: 36px;
-		padding: 0 0.55rem;
 		border-radius: 8px;
 		border: 1px solid var(--color-border);
-		background: var(--color-bg-secondary);
-		color: var(--color-text-primary);
+		background: var(--color-bg-primary);
+		padding: 0 0.5rem;
+		gap: 0.25rem;
+		transition: border-color var(--transition-fast);
+	}
+
+	.cap-input-group:focus-within {
+		border-color: var(--color-primary);
+	}
+
+	.cap-prefix {
 		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		user-select: none;
 	}
 
 	.initial-cap-input {
-		width: 82px;
+		width: 68px;
+		border: none;
+		background: transparent;
+		color: var(--color-text-primary);
+		font-size: 0.84rem;
+		padding: 0;
+		outline: none;
 	}
 
 	.initial-cond-select {
-		max-width: 120px;
+		height: 36px;
+		min-width: 96px;
+		padding: 0 0.65rem;
+		border-radius: 8px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-primary);
+		color: var(--color-text-primary);
+		font-size: 0.84rem;
+		cursor: pointer;
+	}
+
+	.finish-glyph {
+		font-size: 0.9em;
+		line-height: 1;
 	}
 
 	.add-to-seeking-btn {
@@ -1554,31 +1601,10 @@
 		}
 
 		.initial-prefs-inline {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-	}
+			width: 100%;
+		}
 
-	.initial-cap-input,
-	.initial-cond-select {
-		height: 36px;
-		padding: 0 0.55rem;
-		border-radius: 8px;
-		border: 1px solid var(--color-border);
-		background: var(--color-bg-secondary);
-		color: var(--color-text-primary);
-		font-size: 0.82rem;
-	}
-
-	.initial-cap-input {
-		width: 82px;
-	}
-
-	.initial-cond-select {
-		max-width: 120px;
-	}
-
-	.add-to-seeking-btn {
+		.add-to-seeking-btn {
 			width: 100%;
 		}
 	}

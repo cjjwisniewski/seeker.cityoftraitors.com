@@ -1364,7 +1364,7 @@
 				on:click={() => (filterFoilOnly = !filterFoilOnly)}
 				title="Show only foil and etched printings"
 			>
-				<i class="fa-solid fa-star"></i> Foil
+				<span aria-hidden="true">✦</span> Foil
 			</button>
 			{#if availableSetCodes.length > 0}
 				<select bind:value={filterSetCode} class="set-select" aria-label="Filter by Set">
