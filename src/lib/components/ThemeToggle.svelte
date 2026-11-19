@@ -14,8 +14,9 @@
         <button
             class="theme-option"
             class:active={$theme === value}
+            role="radio"
+            aria-checked={$theme === value}
             on:click={() => $theme = value}
-            aria-pressed={$theme === value}
             aria-label="Set theme to {label}"
             title="Set theme to {label}"
         >

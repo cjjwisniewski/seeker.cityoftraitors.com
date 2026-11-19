@@ -319,6 +319,8 @@
 
 		const cardsToDelete = cards.filter((c) => selectedKeys.has(getCardKey(c)));
 		bulkActionProgress = { current: 0, total: cardsToDelete.length };
+		let deletedCount = 0;
+		let failedCount = 0;
 
 		for (const card of cardsToDelete) {
 			try {
@@ -331,12 +333,20 @@
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(requestBody)
 				});
-				if (res && res.ok) {
+				if (!res) {
+					// Session expired / 401 redirect triggered by fetchWithAuth — halt loop immediately
+					failedCount += cardsToDelete.length - bulkActionProgress.current;
+					break;
+				}
+				if (res.ok) {
 					cards = cards.filter((c) => getCardKey(c) !== getCardKey(card));
+					deletedCount++;
 				} else {
-					console.error(`Failed to delete card ${card.name}: HTTP ${res?.status}`);
+					failedCount++;
+					console.error(`Failed to delete card ${card.name}: HTTP ${res.status}`);
 				}
 			} catch (err) {
+				failedCount++;
 				console.error(`Failed to delete card ${card.name}:`, err);
 			}
 			bulkActionProgress.current++;
@@ -346,6 +356,17 @@
 		clearSelection();
 		showBulkDeleteModal = false;
 		isProcessingBulkAction = false;
+		if (failedCount > 0) {
+			showStockCheckFeedback(
+				'error',
+				`Deleted ${deletedCount} card${deletedCount === 1 ? '' : 's'}, but ${failedCount} failed.`
+			);
+		} else if (deletedCount > 0) {
+			showStockCheckFeedback(
+				'success',
+				`Removed ${deletedCount} card${deletedCount === 1 ? '' : 's'} from your seeking list.`
+			);
+		}
 	}
 
 	async function handleBulkSetPriceCap() {
@@ -355,6 +376,8 @@
 
 		const cardsToUpdate = cards.filter((c) => selectedKeys.has(getCardKey(c)));
 		bulkActionProgress = { current: 0, total: cardsToUpdate.length };
+		let updatedCount = 0;
+		let failedCount = 0;
 
 		let parsedCap = null;
 		if (bulkPriceCapInput && bulkPriceCapInput.trim() !== '') {
@@ -379,12 +402,19 @@
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(requestBody)
 				});
-				if (res && res.ok) {
+				if (!res) {
+					failedCount += cardsToUpdate.length - bulkActionProgress.current;
+					break;
+				}
+				if (res.ok) {
 					card.max_price_cap = parsedCap;
+					updatedCount++;
 				} else {
-					console.error(`Failed to set price cap for ${card.name}: HTTP ${res?.status}`);
+					failedCount++;
+					console.error(`Failed to set price cap for ${card.name}: HTTP ${res.status}`);
 				}
 			} catch (err) {
+				failedCount++;
 				console.error(`Failed to set price cap for ${card.name}:`, err);
 			}
 			bulkActionProgress.current++;
@@ -396,6 +426,19 @@
 		showBulkPriceCapModal = false;
 		isProcessingBulkAction = false;
 		bulkPriceCapInput = '';
+		if (failedCount > 0) {
+			showStockCheckFeedback(
+				'error',
+				`Updated price cap on ${updatedCount} card${updatedCount === 1 ? '' : 's'}, but ${failedCount} failed.`
+			);
+		} else if (updatedCount > 0) {
+			showStockCheckFeedback(
+				'success',
+				parsedCap === null
+					? `Cleared price cap on ${updatedCount} card${updatedCount === 1 ? '' : 's'}.`
+					: `Set price cap to $${(parsedCap / 100).toFixed(2)} on ${updatedCount} card${updatedCount === 1 ? '' : 's'}.`
+			);
+		}
 	}
 
 	function handleGlobalKeyDown(event) {
@@ -551,6 +594,20 @@
 	}
 
 	async function fetchScryfallSets() {
+		const CACHE_KEY = 'seeker_scryfall_sets_v1';
+		const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+		try {
+			const rawCached = localStorage.getItem(CACHE_KEY);
+			if (rawCached) {
+				const parsed = JSON.parse(rawCached);
+				if (parsed?.ts && Date.now() - parsed.ts < CACHE_TTL_MS && parsed.map) {
+					setCodeToNameMap = parsed.map;
+					return;
+				}
+			}
+		} catch {
+			/* ignore cache errors */
+		}
 		try {
 			const res = await fetch('https://api.scryfall.com/sets');
 			if (res.ok) {
@@ -562,6 +619,11 @@
 					}
 					return acc;
 				}, {});
+				try {
+					localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), map: setCodeToNameMap }));
+				} catch {
+					/* ignore storage quota errors */
+				}
 			}
 		} catch (e) {
 			console.error('Error fetching Scryfall sets:', e);
@@ -577,7 +639,7 @@
 			const rawPrefs = localStorage.getItem('seeker_seeking_prefs');
 			if (rawPrefs) {
 				const parsed = JSON.parse(rawPrefs);
-				if (typeof parsed.sortKey === 'string' && parsed.sortKey && parsed.sortKey !== 'best_price') {
+				if (typeof parsed.sortKey === 'string' && parsed.sortKey) {
 					sortKey = parsed.sortKey;
 				}
 				if (parsed.sortDirection === 'asc' || parsed.sortDirection === 'desc') {
@@ -791,13 +853,27 @@
 		let aValue = a[sortKey];
 		let bValue = b[sortKey];
 
-		if (sortKey.includes('_price')) {
+		if (sortKey === 'best_price') {
+			const getBest = (card) =>
+				getLowestOffer(
+					card,
+					showCardTrader,
+					showTCGPlayer,
+					showEbay,
+					showManapool,
+					showHimarket,
+					showHareruya,
+					showRuten,
+					showCardmarket,
+					showCardkingdom
+				)?.minPriceCents ?? null;
+			aValue = getBest(a) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+			bValue = getBest(b) ?? (sortDirection === 'asc' ? Infinity : -Infinity);
+		} else if (sortKey.includes('_price')) {
+			const stockKey = sortKey.replace('_low_price', '_stock');
 			const normalizePrice = (card, val) => {
 				if (val === null || val === undefined || val <= 0) return null;
-				if (
-					sortKey === 'tcgplayer_low_price' &&
-					getStockStatus(card.tcgplayer_stock) !== 'available'
-				) {
+				if (stockKey !== sortKey && getStockStatus(card[stockKey]) !== 'available') {
 					return null;
 				}
 				return val;
@@ -1334,11 +1410,23 @@
 						</th>
 						{#if isCondensed}
 						<th
-							class="th-vendor col-vendor col-best-price non-sortable-th"
-							title="Lowest price available across all enabled stores"
+							class="th-vendor col-vendor col-best-price"
+							tabindex="0"
+							aria-sort={sortKey === 'best_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+							on:click={() => sortBy('best_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('best_price'))}
+							class:active={sortKey === 'best_price'}
+							title="Sort by lowest price available across all enabled stores"
 						>
 							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">Best Price</span>
+								<span class="th-vendor-title">
+									Best Price
+									{#if sortKey === 'best_price'}
+										<i
+											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										></i>
+									{/if}
+								</span>
 							</div>
 						</th>
 						{:else}

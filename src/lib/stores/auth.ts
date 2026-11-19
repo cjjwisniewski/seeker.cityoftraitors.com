@@ -127,12 +127,14 @@ const createAuthStore = () => {
                 console.warn(`AuthStore: Session rejected by API (Status: ${response.status}).`);
                 return null;
             } else {
-                console.error(`AuthStore: API error fetching user info (Status: ${response.status}). Falling back to JWT.`);
-                return parseJwt(token);
+                console.error(`AuthStore: API error fetching user info (Status: ${response.status}). Preserving cached profile if available.`);
+                const cached = getCachedUser();
+                return cached || parseJwt(token);
             }
         } catch (error) {
-            console.error('AuthStore: Network error fetching user info. Falling back to JWT:', error);
-            return parseJwt(token);
+            console.error('AuthStore: Network error fetching user info. Preserving cached profile if available:', error);
+            const cached = getCachedUser();
+            return cached || parseJwt(token);
         }
     }
 

@@ -328,7 +328,7 @@
 				</div>
 				<div class="profile-title">
 					<div class="username-wrapper">
-						<h1>{user.global_name || user.username || 'User'}</h1>
+						<h1>{user.globalName || user.global_name || user.username || 'User'}</h1>
 						<span class="tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
 							<i
 								class="fa-solid {user.membershipTier === 'Legacy'
@@ -342,7 +342,7 @@
 							{user.membershipTier || 'Basic'}
 						</span>
 					</div>
-					{#if user.global_name && user.username}
+					{#if (user.globalName || user.global_name) && user.username}
 						<span class="handle-text">@{user.username}</span>
 					{/if}
 				</div>
@@ -611,11 +611,20 @@
 							<input
 								type="number"
 								min="1"
-								max="100"
+								max="99"
 								step="1"
 								class="threshold-input"
 								value={priceDropThreshold}
-								on:change={(e) => updateSetting('priceDropThreshold', parseInt(e.target.value))}
+								on:change={(e) => {
+									const parsed = parseInt(e.target.value, 10);
+									if (!Number.isFinite(parsed)) {
+										e.target.value = String(priceDropThreshold);
+										return;
+									}
+									const clamped = Math.min(99, Math.max(1, parsed));
+									e.target.value = String(clamped);
+									updateSetting('priceDropThreshold', clamped);
+								}}
 								disabled={isUpdatingSetting || !priceDropAlertEnabled}
 							/>
 							<span class="unit">%</span>

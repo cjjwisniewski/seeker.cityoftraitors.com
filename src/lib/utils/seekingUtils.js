@@ -817,6 +817,10 @@ export function buildSeekingCsvString(targetCards) {
 		'Ruten Price (USD)',
 		'Ruten Price (TWD)',
 		'Ruten Condition',
+		'Cardmarket Stock',
+		'Cardmarket Price (USD)',
+		'Cardmarket Price (EUR)',
+		'Cardmarket Condition',
 		'Historical Low NM/LP (USD)',
 		'Historical Low Played (USD)',
 		'Last Seen Price (USD)',
@@ -828,7 +832,7 @@ export function buildSeekingCsvString(targetCards) {
 	for (const card of targetCards) {
 		const hp = card.historical_pricing;
 		const row = [
-			`"${card.name.replace(/"/g, '""')}"`,
+			`"${String(card.name || '').replace(/"/g, '""')}"`,
 			card.set_code,
 			card.collector_number,
 			card.language,
@@ -885,6 +889,14 @@ export function buildSeekingCsvString(targetCards) {
 				? Math.round(Number(card.ruten_price_twd))
 				: '',
 			card.ruten_condition || '',
+			getStockStatus(card.cardmarket_stock),
+			card.cardmarket_low_price !== null && card.cardmarket_low_price !== undefined
+				? (card.cardmarket_low_price / 100).toFixed(2)
+				: '',
+			card.cardmarket_price_eur !== null && card.cardmarket_price_eur !== undefined
+				? Number(card.cardmarket_price_eur).toFixed(2)
+				: '',
+			card.cardmarket_condition || '',
 			hp?.nm_low_cents ? (hp.nm_low_cents / 100).toFixed(2) : '',
 			hp?.played_low_cents ? (hp.played_low_cents / 100).toFixed(2) : '',
 			hp?.last_seen_cents ? (hp.last_seen_cents / 100).toFixed(2) : '',

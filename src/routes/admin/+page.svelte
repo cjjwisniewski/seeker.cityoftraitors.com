@@ -231,6 +231,7 @@
 			const requeueUrl = publicEnv.PUBLIC_REQUEUE_USER_STOCK_CHECKS_FUNCTION_URL || 'https://seeker.azure-api.net/seeker/requeueUserStockChecks';
 			const response = await fetchWithAuth(requeueUrl, {
 				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ targetUserId })
 			});
 
@@ -297,6 +298,7 @@
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
 				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					targetUserId: userToEditTier.userId,
 					settingName: 'membershipTier',
@@ -352,6 +354,7 @@
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
 				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					targetUserId: userToEditNotes.userId,
 					settingName: 'adminNotes',
@@ -384,6 +387,7 @@
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
 				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					targetUserId: table.userId,
 					settingName: 'scanningPaused',
@@ -542,6 +546,7 @@
 			const requestBody = { targetUserIdToDelete: targetUserId };
 			const response = await fetchWithAuth(PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, {
 				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(requestBody)
 			});
 
@@ -634,6 +639,7 @@
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_BANNER_FUNCTION_URL, {
 				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					message: bannerMessage,
 					type: bannerType,
