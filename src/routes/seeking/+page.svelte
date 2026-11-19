@@ -84,8 +84,6 @@
 
 	// Quick filter pills & search state
 	let filterInStockOnly = false;
-	let filterUnderCapOnly = false;
-	let filterOutOfStockOnly = false;
 	let filterFoilOnly = false;
 	let filterSetCode = '';
 	let searchQuery = '';
@@ -480,8 +478,6 @@
 
 	function resetFilters() {
 		filterInStockOnly = false;
-		filterUnderCapOnly = false;
-		filterOutOfStockOnly = false;
 		filterFoilOnly = false;
 		filterSetCode = '';
 		searchQuery = '';
@@ -895,7 +891,7 @@
 			return false;
 		}
 
-		if (filterInStockOnly || filterOutOfStockOnly || filterUnderCapOnly) {
+		if (filterInStockOnly) {
 			const hasStock = hasEnabledStock(
 				card,
 				showCardTrader,
@@ -908,24 +904,7 @@
 				showCardmarket,
 				showCardkingdom
 			);
-			if (filterInStockOnly && !hasStock) return false;
-			if (filterOutOfStockOnly && hasStock) return false;
-			if (filterUnderCapOnly) {
-				if (!hasStock || !(card.max_price_cap > 0)) return false;
-				const lowest = getLowestOffer(
-					card,
-					showCardTrader,
-					showTCGPlayer,
-					showEbay,
-					showManapool,
-					showHimarket,
-					showHareruya,
-					showRuten,
-					showCardmarket,
-					showCardkingdom
-				);
-				if (!lowest || lowest.minPriceCents > card.max_price_cap) return false;
-			}
+			if (!hasStock) return false;
 		}
 
 		if (filterFoilOnly) {
@@ -1272,39 +1251,9 @@
 				type="button"
 				class="filter-pill"
 				class:active={filterInStockOnly}
-				on:click={() => {
-					filterInStockOnly = !filterInStockOnly;
-					if (filterInStockOnly) filterOutOfStockOnly = false;
-				}}
+				on:click={() => (filterInStockOnly = !filterInStockOnly)}
 			>
 				<i class="fa-solid fa-circle-check"></i> In Stock
-			</button>
-			<button
-				type="button"
-				class="filter-pill"
-				class:active={filterUnderCapOnly}
-				on:click={() => {
-					filterUnderCapOnly = !filterUnderCapOnly;
-					if (filterUnderCapOnly) filterOutOfStockOnly = false;
-				}}
-				title="Show only in-stock cards at or below your max price cap"
-			>
-				<i class="fa-solid fa-tag"></i> Under Cap
-			</button>
-			<button
-				type="button"
-				class="filter-pill"
-				class:active={filterOutOfStockOnly}
-				on:click={() => {
-					filterOutOfStockOnly = !filterOutOfStockOnly;
-					if (filterOutOfStockOnly) {
-						filterInStockOnly = false;
-						filterUnderCapOnly = false;
-					}
-				}}
-				title="Show only out-of-stock cards"
-			>
-				<i class="fa-regular fa-circle-xmark"></i> Out of Stock
 			</button>
 			<button
 				type="button"
@@ -1323,7 +1272,7 @@
 					{/each}
 				</select>
 			{/if}
-			{#if filterInStockOnly || filterUnderCapOnly || filterOutOfStockOnly || filterFoilOnly || filterSetCode || searchQuery}
+			{#if filterInStockOnly || filterFoilOnly || filterSetCode || searchQuery}
 				<button
 					type="button"
 					class="filter-pill reset"
