@@ -732,4 +732,14 @@
 			text-align: center;
 		}
 	}
+	@media (max-width: 580px) {
+		.hist-sparkline-header {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.hist-sparkline-svg {
+			height: 76px;
+		}
+	}
 </style>

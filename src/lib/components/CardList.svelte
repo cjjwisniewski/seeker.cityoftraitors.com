@@ -1601,7 +1601,28 @@
 		}
 
 		.initial-prefs-inline {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 0.65rem;
 			width: 100%;
+		}
+
+		.pref-field {
+			width: 100%;
+			min-width: 0;
+		}
+
+		.cap-input-group,
+		.initial-cond-select {
+			flex: 1;
+			min-width: 0;
+			width: 100%;
+			height: 40px;
+		}
+
+		.initial-cap-input {
+			width: 100%;
+			min-width: 0;
 		}
 
 		.add-to-seeking-btn {
