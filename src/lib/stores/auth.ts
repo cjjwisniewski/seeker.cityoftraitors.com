@@ -11,6 +11,7 @@ interface User {
     discordId?: string;
     username: string;
     globalName?: string;
+    global_name?: string;
     discriminator?: string;
     avatar?: string | null;
     roles?: string[]; // Add roles if your user info endpoint returns them
@@ -104,6 +105,17 @@ const createAuthStore = () => {
             };
         } catch (e) {
             console.error('Invalid token format:', e);
+            return null;
+        }
+    }
+
+    function getCachedUser(): User | null {
+        if (!browser) return null;
+        try {
+            const raw = localStorage.getItem('cachedUserInfo');
+            if (!raw) return null;
+            return normalizeUser(JSON.parse(raw));
+        } catch {
             return null;
         }
     }
