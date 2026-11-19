@@ -25,6 +25,8 @@
 	let selectedPrintId = '';
 	let selectedFinish = 'nonfoil';
 	let selectedLanguage = 'en';
+	let selectedPriceCap = '';
+	let selectedMinCondition = '';
 	let isAdding = false;
 	let inlineError = '';
 
@@ -253,13 +255,28 @@
 		availableLanguages = ['en'];
 		printLanguageVariants = {};
 		activeLangFetchKey = '';
+		selectedPriceCap = '';
+		selectedMinCondition = '';
 		inlineError = '';
 	}
 
 	async function handleQuickAdd() {
 		if (!selectedPrint || isAdding || disabled) return;
-		isAdding = true;
 		inlineError = '';
+
+		let parsedMaxPriceCap = null;
+		const rawCap = String(selectedPriceCap ?? '').trim();
+		if (rawCap !== '') {
+			const capFloat = parseFloat(rawCap);
+			if (!Number.isFinite(capFloat) || capFloat < 0) {
+				inlineError = 'Max cap must be a valid non-negative dollar amount.';
+				return;
+			}
+			parsedMaxPriceCap = Math.round(capFloat * 100);
+		}
+		const chosenMinCond = String(selectedMinCondition || '').trim() || null;
+
+		isAdding = true;
 
 		try {
 			const langVariant = printLanguageVariants[selectedLanguage] || selectedPrint;
@@ -283,6 +300,8 @@
 				image_uri: getScryfallImage(langVariant) || getScryfallImage(selectedPrint),
 				timestamp: new Date().toISOString(),
 				finish: selectedFinish,
+				max_price_cap: parsedMaxPriceCap,
+				min_condition: chosenMinCond,
 				tcgplayer_id:
 					selectedFinish === 'etched'
 						? langVariant.tcgplayer_etched_id || selectedPrint.tcgplayer_etched_id || null
@@ -424,7 +443,7 @@
 						<select bind:value={selectedFinish} class="quick-select" aria-label="Select finish">
 							{#each availableFinishes as fin}
 								<option value={fin}>
-									{fin === 'foil' ? 'Foil' : fin === 'etched' ? 'Etched' : 'Nonfoil'}
+									{fin === 'foil' ? '✦ Foil' : fin === 'etched' ? '◈ Etched' : 'Nonfoil'}
 								</option>
 							{/each}
 						</select>
@@ -443,6 +462,40 @@
 							{#each availableLanguages as lang}
 								<option value={lang}>{getLanguageName(lang)}</option>
 							{/each}
+						</select>
+					</label>
+				</div>
+
+				<div class="quick-controls-row">
+					<label class="quick-field">
+						<span class="quick-field-label">Max Cap</span>
+						<div class="quick-cap-group">
+							<span class="quick-cap-prefix">$</span>
+							<input
+								type="number"
+								step="0.01"
+								min="0"
+								bind:value={selectedPriceCap}
+								placeholder="None"
+								class="quick-cap-input"
+								aria-label="Optional max price cap in USD"
+							/>
+						</div>
+					</label>
+
+					<label class="quick-field">
+						<span class="quick-field-label">Min Condition</span>
+						<select
+							bind:value={selectedMinCondition}
+							class="quick-select"
+							aria-label="Optional minimum condition"
+						>
+							<option value="">Default</option>
+							<option value="NM">NM</option>
+							<option value="SP">SP / LP</option>
+							<option value="MP">MP</option>
+							<option value="HP">HP</option>
+							<option value="ANY">Any</option>
 						</select>
 					</label>
 				</div>
@@ -727,6 +780,41 @@
 
 	.quick-select:focus {
 		border-color: var(--color-primary);
+	}
+
+	.quick-cap-group {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		padding: 0 0.5rem;
+		border-radius: 6px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-primary);
+		height: 33px;
+		box-sizing: border-box;
+		transition: border-color var(--transition-fast);
+	}
+
+	.quick-cap-group:focus-within {
+		border-color: var(--color-primary);
+	}
+
+	.quick-cap-prefix {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		user-select: none;
+	}
+
+	.quick-cap-input {
+		width: 100%;
+		min-width: 0;
+		border: none;
+		background: transparent;
+		color: var(--color-text-primary);
+		font-size: 0.8rem;
+		padding: 0;
+		outline: none;
 	}
 
 	.quick-submit-btn {
