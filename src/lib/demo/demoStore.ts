@@ -720,6 +720,51 @@ export function initializeDemoStorage(): DemoUserSettings {
 	return settings;
 }
 
+let demoSnapshotHydrated = false;
+
+/**
+ * Best-effort, non-blocking refresh of seeded Demo Mode historical pricing from
+ * the daily static `/demo-snapshot.json` blob (if deployed to `$web`).
+ * Falls back silently to built-in `demoSeed.ts` data when absent or offline.
+ */
+export async function hydrateDemoFromLiveSnapshot(): Promise<boolean> {
+	if (!browser || typeof fetch !== 'function' || demoSnapshotHydrated) return false;
+	demoSnapshotHydrated = true;
+	try {
+		const res = await fetch('/demo-snapshot.json', { cache: 'default' });
+		if (!res.ok) return false;
+		const contentType = res.headers.get('content-type') || '';
+		if (!contentType.includes('application/json')) return false;
+		const snapshot = await res.json();
+		const cardMap = snapshot?.cards;
+		if (!cardMap || typeof cardMap !== 'object') return false;
+
+		const existing = loadDemoCards();
+		let updated = false;
+		const next = existing.map((card) => {
+			const key = `${String(card.set_code || '').toLowerCase()}|${card.collector_number}_${String(card.language || 'en').toLowerCase()}_${String(card.finish || 'nonfoil').toLowerCase()}`;
+			const live = cardMap[key];
+			if (live && live.historical_pricing && typeof live.historical_pricing === 'object') {
+				updated = true;
+				return {
+					...card,
+					historical_pricing: {
+						...(card.historical_pricing || {}),
+						...live.historical_pricing
+					}
+				};
+			}
+			return card;
+		});
+		if (updated) {
+			writeStorageItem(DEMO_STORAGE_KEYS.CARDS, JSON.stringify(next));
+		}
+		return updated;
+	} catch {
+		return false;
+	}
+}
+
 export function resetDemoWorkspace(): DemoUserSettings {
 	for (const timer of pendingTimers.values()) {
 		clearTimeout(timer);

@@ -18,6 +18,58 @@
 	$: vendorKeys = $auth.user?.isAdmin
 		? ['cardtrader', 'tcgplayer', 'manapool', 'cardkingdom', 'cardmarket', 'himarket', 'hareruya']
 		: ['cardtrader', 'tcgplayer', 'manapool', 'cardkingdom', 'himarket', 'hareruya'];
+
+	function buildSparklineData(history) {
+		if (!Array.isArray(history) || history.length < 2) return null;
+		const W = 440;
+		const H = 96;
+		const PAD_X = 8;
+		const PAD_Y = 10;
+		const allVals = [];
+		for (const pt of history) {
+			if (pt.nm_cents > 0) allVals.push(pt.nm_cents);
+			if (pt.played_cents > 0) allVals.push(pt.played_cents);
+		}
+		if (allVals.length < 2) return null;
+		const minVal = Math.min(...allVals);
+		const maxVal = Math.max(...allVals);
+		const span = Math.max(1, maxVal - minVal);
+		const xFor = (i) =>
+			history.length === 1
+				? W / 2
+				: PAD_X + (i / (history.length - 1)) * (W - PAD_X * 2);
+		const yFor = (v) => PAD_Y + (1 - (v - minVal) / span) * (H - PAD_Y * 2);
+
+		const nmPts = [];
+		const plPts = [];
+		history.forEach((pt, idx) => {
+			const x = Number(xFor(idx).toFixed(1));
+			if (pt.nm_cents > 0) {
+				nmPts.push({ x, y: Number(yFor(pt.nm_cents).toFixed(1)), cents: pt.nm_cents, date: pt.date });
+			}
+			if (pt.played_cents > 0) {
+				plPts.push({ x, y: Number(yFor(pt.played_cents).toFixed(1)), cents: pt.played_cents, date: pt.date });
+			}
+		});
+
+		const toPath = (pts) =>
+			pts.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+
+		return {
+			width: W,
+			height: H,
+			minVal,
+			maxVal,
+			startDate: history[0].date,
+			endDate: history[history.length - 1].date,
+			nmPts,
+			plPts,
+			nmPath: nmPts.length >= 2 ? toPath(nmPts) : '',
+			plPath: plPts.length >= 2 ? toPath(plPts) : ''
+		};
+	}
+
+	$: sparkline = buildSparklineData(card?.historical_pricing?.history);
 </script>
 
 {#if show && card}
@@ -140,6 +192,54 @@
 							{/if}
 						</div>
 					</div>
+
+					{#if sparkline}
+						<div class="hist-sparkline-section">
+							<div class="hist-sparkline-header">
+								<span class="hist-sparkline-title">
+									<i class="fa-solid fa-wave-square"></i>
+									Observed Floor Trend
+								</span>
+								<div class="hist-sparkline-legend">
+									{#if sparkline.nmPts.length >= 2}
+										<span class="legend-item nm"><span class="legend-dot"></span>NM/LP</span>
+									{/if}
+									{#if sparkline.plPts.length >= 2}
+										<span class="legend-item pl"><span class="legend-dot"></span>Played</span>
+									{/if}
+									<span class="legend-range">{formatPrice(sparkline.minVal)} – {formatPrice(sparkline.maxVal)}</span>
+								</div>
+							</div>
+							<svg
+								class="hist-sparkline-svg"
+								viewBox="0 0 {sparkline.width} {sparkline.height}"
+								preserveAspectRatio="none"
+								role="img"
+								aria-label="Historical floor price trend from {sparkline.startDate} to {sparkline.endDate}"
+							>
+								{#if sparkline.plPath}
+									<path d={sparkline.plPath} fill="none" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+								{/if}
+								{#if sparkline.nmPath}
+									<path d={sparkline.nmPath} fill="none" stroke="#10b981" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" />
+								{/if}
+								{#each sparkline.plPts as pt}
+									<circle cx={pt.x} cy={pt.y} r="3" fill="#f59e0b">
+										<title>{pt.date}: Played {formatPrice(pt.cents)}</title>
+									</circle>
+								{/each}
+								{#each sparkline.nmPts as pt}
+									<circle cx={pt.x} cy={pt.y} r="3" fill="#10b981">
+										<title>{pt.date}: NM/LP {formatPrice(pt.cents)}</title>
+									</circle>
+								{/each}
+							</svg>
+							<div class="hist-sparkline-dates">
+								<span>{sparkline.startDate}</span>
+								<span>{sparkline.endDate}</span>
+							</div>
+						</div>
+					{/if}
 
 					{#if hp.vendor_lows && Object.keys(hp.vendor_lows).length > 0}
 						<div class="hist-vendors-section">
@@ -381,6 +481,76 @@
 		color: var(--color-text-muted);
 		padding: 0.65rem 0;
 		font-style: italic;
+	}
+
+	.hist-sparkline-section {
+		margin-top: 1rem;
+		padding: 0.75rem 0.9rem;
+		border-radius: 10px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+	}
+
+	.hist-sparkline-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+		margin-bottom: 0.45rem;
+		font-size: 0.78rem;
+	}
+
+	.hist-sparkline-title {
+		font-weight: 600;
+		color: var(--color-text-primary);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.hist-sparkline-legend {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
+		color: var(--color-text-secondary);
+		font-size: 0.74rem;
+	}
+
+	.legend-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.legend-dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 999px;
+		display: inline-block;
+	}
+
+	.legend-item.nm .legend-dot {
+		background: #10b981;
+	}
+
+	.legend-item.pl .legend-dot {
+		background: #f59e0b;
+	}
+
+	.hist-sparkline-svg {
+		width: 100%;
+		height: 92px;
+		display: block;
+		overflow: visible;
+	}
+
+	.hist-sparkline-dates {
+		display: flex;
+		justify-content: space-between;
+		margin-top: 0.25rem;
+		font-size: 0.72rem;
+		color: var(--color-text-muted);
 	}
 
 	.hist-vendors-section {

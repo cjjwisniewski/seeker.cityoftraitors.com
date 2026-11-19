@@ -13,6 +13,8 @@
 	export let hasSearched = false;
 
 	let selectedFinishes = {};
+	let initialCaps = {};
+	let initialConditions = {};
 	let buttonStates = {};
 	let faceIndices = {};
 
@@ -374,6 +376,16 @@
 						cardPrices.eur ||
 						cardPrices.eur_foil)
 			);
+			const rawCapStr = String(initialCaps[card.id] ?? '').trim();
+			let parsedMaxPriceCap = null;
+			if (rawCapStr !== '') {
+				const capFloat = parseFloat(rawCapStr);
+				if (Number.isFinite(capFloat) && capFloat >= 0) {
+					parsedMaxPriceCap = Math.round(capFloat * 100);
+				}
+			}
+			const chosenMinCond = String(initialConditions[card.id] || '').trim() || null;
+
 			const payload = {
 				id: useBaseIds ? (currentPrint.id || card.id || crypto.randomUUID()) : (card.localized_id || crypto.randomUUID()),
 				name: card.name,
@@ -385,6 +397,8 @@
 				image_uri: getCardImageUri(card) || currentPrint.image_uri,
 				timestamp: new Date().toISOString(),
 				finish: selectedFinish,
+				max_price_cap: parsedMaxPriceCap,
+				min_condition: chosenMinCond,
 				tcgplayer_id:
 					selectedFinish === 'etched'
 						? useBaseIds
@@ -708,7 +722,7 @@
 								{/if}
 								{#if currentPrices?.usd_foil}
 									<span class="price-pill foil-price" title="Estimated Foil Market Price">
-										<i class="fa-solid fa-sparkles"></i>
+										<i class="fa-solid fa-star"></i>
 										<span>Foil {formatCardPrice(currentPrices.usd_foil)}</span>
 									</span>
 								{/if}
@@ -835,6 +849,34 @@
 									{/if}
 								</div>
 							</div>
+
+							{#if $auth.isAuthenticated}
+								<div class="initial-prefs-inline">
+									<input
+										type="number"
+										step="0.01"
+										min="0"
+										class="initial-cap-input"
+										placeholder="Cap $"
+										aria-label="Optional max price cap in USD"
+										title="Optional max price cap ($)"
+										bind:value={initialCaps[card.id]}
+									/>
+									<select
+										class="initial-cond-select"
+										aria-label="Optional minimum condition"
+										title="Optional minimum condition override"
+										bind:value={initialConditions[card.id]}
+									>
+										<option value="">Cond: Default</option>
+										<option value="NM">NM</option>
+										<option value="SP">SP/LP</option>
+										<option value="MP">MP</option>
+										<option value="HP">HP</option>
+										<option value="ANY">Any</option>
+									</select>
+								</div>
+							{/if}
 
 							<button
 								class="add-to-seeking-btn
@@ -1355,6 +1397,31 @@
 		text-decoration: line-through;
 	}
 
+	.initial-prefs-inline {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.initial-cap-input,
+	.initial-cond-select {
+		height: 36px;
+		padding: 0 0.55rem;
+		border-radius: 8px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		font-size: 0.82rem;
+	}
+
+	.initial-cap-input {
+		width: 82px;
+	}
+
+	.initial-cond-select {
+		max-width: 120px;
+	}
+
 	.add-to-seeking-btn {
 		display: inline-flex;
 		align-items: center;
@@ -1486,7 +1553,32 @@
 			width: 100%;
 		}
 
-		.add-to-seeking-btn {
+		.initial-prefs-inline {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.initial-cap-input,
+	.initial-cond-select {
+		height: 36px;
+		padding: 0 0.55rem;
+		border-radius: 8px;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-secondary);
+		color: var(--color-text-primary);
+		font-size: 0.82rem;
+	}
+
+	.initial-cap-input {
+		width: 82px;
+	}
+
+	.initial-cond-select {
+		max-width: 120px;
+	}
+
+	.add-to-seeking-btn {
 			width: 100%;
 		}
 	}

@@ -6,8 +6,11 @@
 	export let totalFilteredCount = 0;
 	export let selectedCostSummary = { inStockCount: 0, totalLowestCents: 0 };
 	export let showBulkPriceCapModal = false;
+	export let showBulkConditionModal = false;
 	export let showBulkDeleteModal = false;
 	export let bulkPriceCapInput = '';
+	export let bulkConditionInput = '';
+	export let canManualCheckStock = false;
 	export let isProcessingBulkAction = false;
 	export let bulkActionProgress = { current: 0, total: 0 };
 	export let onCopySelected = () => {};
@@ -15,6 +18,8 @@
 	export let onSelectAllFiltered = () => {};
 	export let onClearSelection = () => {};
 	export let onConfirmBulkPriceCap = () => {};
+	export let onConfirmBulkCondition = () => {};
+	export let onBulkStockCheck = () => {};
 	export let onConfirmBulkDelete = () => {};
 </script>
 
@@ -37,10 +42,23 @@
 				<i class="fa-solid fa-file-csv"></i> CSV ({selectedCount})
 			</button>
 			<button class="bulk-btn" on:click={() => (showBulkPriceCapModal = true)}>
-				<i class="fa-solid fa-tag"></i> Set Price Cap
+				<i class="fa-solid fa-tag"></i> Price Cap
 			</button>
+			<button class="bulk-btn" on:click={() => (showBulkConditionModal = true)}>
+				<i class="fa-solid fa-shield-halved"></i> Min Cond
+			</button>
+			{#if canManualCheckStock}
+				<button
+					class="bulk-btn"
+					on:click={onBulkStockCheck}
+					disabled={isProcessingBulkAction}
+					title="Queue on-demand stock checks for selected cards not on cooldown"
+				>
+					<i class="fa-solid fa-arrows-rotate"></i> Check Stock
+				</button>
+			{/if}
 			<button class="bulk-btn danger" on:click={() => (showBulkDeleteModal = true)}>
-				<i class="fa-solid fa-trash"></i> Delete Selected
+				<i class="fa-solid fa-trash"></i> Delete
 			</button>
 			<button class="bulk-btn secondary" on:click={onSelectAllFiltered}>
 				Select All ({totalFilteredCount})
@@ -103,6 +121,63 @@
 					disabled={isProcessingBulkAction}
 				>
 					{isProcessingBulkAction ? 'Applying...' : 'Apply Price Cap'}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if showBulkConditionModal}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkConditionModal = false)}>
+		<div class="modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Set Minimum Condition" on:click|stopPropagation>
+			<div class="modal-header">
+				<h2>Set Min Condition ({selectedCount} Cards)</h2>
+				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isProcessingBulkAction && (showBulkConditionModal = false)}>
+					<i class="fa-solid fa-times"></i>
+				</button>
+			</div>
+			<div class="modal-body">
+				<p class="setting-description">
+					Apply a minimum condition override to all <strong>{selectedCount}</strong> selected cards, or choose Account Default to clear overrides.
+				</p>
+				<div class="settings-group">
+					<label for="bulk-min-condition">Minimum Condition</label>
+					<select
+						id="bulk-min-condition"
+						bind:value={bulkConditionInput}
+						class="modal-input"
+						disabled={isProcessingBulkAction}
+					>
+						<option value="">Account Default (Clear Override)</option>
+						<option value="NM">NM (Near Mint)</option>
+						<option value="SP">SP / LP (Slightly Played)</option>
+						<option value="MP">MP (Moderately Played)</option>
+						<option value="HP">HP (Heavily Played)</option>
+						<option value="ANY">Any Condition</option>
+					</select>
+				</div>
+				{#if isProcessingBulkAction}
+					<div class="bulk-progress-text">
+						Updating {bulkActionProgress.current} of {bulkActionProgress.total}...
+					</div>
+				{/if}
+			</div>
+			<div class="modal-footer">
+				<button
+					class="modal-btn secondary"
+					on:click={() => (showBulkConditionModal = false)}
+					disabled={isProcessingBulkAction}
+				>
+					Cancel
+				</button>
+				<button
+					class="modal-btn primary"
+					on:click={onConfirmBulkCondition}
+					disabled={isProcessingBulkAction}
+				>
+					{isProcessingBulkAction ? 'Applying...' : 'Apply Condition'}
 				</button>
 			</div>
 		</div>

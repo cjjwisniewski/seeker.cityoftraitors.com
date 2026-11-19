@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
-	import { openDemoAlertPreviews, demoResetNonce } from '$lib/demo/demoStore';
+	import { openDemoAlertPreviews, demoResetNonce, hydrateDemoFromLiveSnapshot } from '$lib/demo/demoStore';
 	import { initExchangeRates } from '$lib/stores/exchangeRate';
 	import {
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
@@ -77,7 +77,9 @@
 	const TOUCH_MOVE_THRESHOLD_PX = 10;
 	let showBulkDeleteModal = false;
 	let showBulkPriceCapModal = false;
+	let showBulkConditionModal = false;
 	let bulkPriceCapInput = '';
+	let bulkConditionInput = '';
 	let isProcessingBulkAction = false;
 	let bulkActionProgress = { current: 0, total: 0 };
 	let autoPollTimers = [];
@@ -447,6 +449,99 @@
 		}
 	}
 
+	async function handleBulkSetCondition() {
+		if (selectedKeys.size === 0 || isProcessingBulkAction) return;
+		isProcessingBulkAction = true;
+		error = null;
+
+		const cardsToUpdate = cards.filter((c) => selectedKeys.has(getCardKey(c)));
+		bulkActionProgress = { current: 0, total: cardsToUpdate.length };
+		let updatedCount = 0;
+		let failedCount = 0;
+		const nextCond = bulkConditionInput && bulkConditionInput.trim() !== '' ? bulkConditionInput.trim() : null;
+
+		for (const card of cardsToUpdate) {
+			try {
+				const requestBody = {
+					partitionKey: card.set_code,
+					rowKey: `${card.collector_number}_${card.language}_${card.finish}`,
+					min_condition: nextCond
+				};
+				const res = await fetchWithAuth(PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(requestBody)
+				});
+				if (!res) {
+					failedCount += cardsToUpdate.length - bulkActionProgress.current;
+					break;
+				}
+				if (res.ok) {
+					card.min_condition = nextCond;
+					updatedCount++;
+				} else {
+					failedCount++;
+				}
+			} catch (err) {
+				failedCount++;
+				console.error(`Failed to set min condition for ${card.name}:`, err);
+			}
+			bulkActionProgress.current++;
+			bulkActionProgress = { ...bulkActionProgress };
+		}
+
+		cards = [...cards];
+		clearSelection();
+		showBulkConditionModal = false;
+		isProcessingBulkAction = false;
+		bulkConditionInput = '';
+		if (failedCount > 0) {
+			showStockCheckFeedback(
+				'error',
+				`Updated condition on ${updatedCount} card${updatedCount === 1 ? '' : 's'}, but ${failedCount} failed.`
+			);
+		} else if (updatedCount > 0) {
+			showStockCheckFeedback(
+				'success',
+				nextCond === null
+					? `Cleared condition override on ${updatedCount} card${updatedCount === 1 ? '' : 's'}.`
+					: `Set min condition to ${nextCond} on ${updatedCount} card${updatedCount === 1 ? '' : 's'}.`
+			);
+		}
+	}
+
+	async function handleBulkStockCheck() {
+		if (selectedKeys.size === 0 || isProcessingBulkAction || !canManualCheckStock) return;
+		const eligible = cards.filter((c) => {
+			if (!selectedKeys.has(getCardKey(c))) return false;
+			return getCardCooldownRemainingSec(c, isAdmin, Date.now()) <= 0;
+		});
+		if (eligible.length === 0) {
+			showStockCheckFeedback('warning', 'All selected cards are currently on manual check cooldown.');
+			return;
+		}
+
+		isProcessingBulkAction = true;
+		let queuedCount = 0;
+		let skippedCount = selectedKeys.size - eligible.length;
+		for (const card of eligible) {
+			try {
+				await handleManualStockCheck(card);
+				queuedCount++;
+			} catch {
+				/* individual errors surfaced by handleManualStockCheck */
+			}
+		}
+		isProcessingBulkAction = false;
+		clearSelection();
+		if (queuedCount > 0) {
+			showStockCheckFeedback(
+				'success',
+				`Queued stock checks for ${queuedCount} card${queuedCount === 1 ? '' : 's'}${skippedCount > 0 ? ` (${skippedCount} skipped on cooldown)` : ''}.`
+			);
+		}
+	}
+
 	function handleGlobalKeyDown(event) {
 		if (event.key === 'Escape') {
 			if (enlargedCardImage) {
@@ -461,6 +556,8 @@
 				showBulkDeleteModal = false;
 			} else if (showBulkPriceCapModal && !isProcessingBulkAction) {
 				showBulkPriceCapModal = false;
+			} else if (showBulkConditionModal && !isProcessingBulkAction) {
+				showBulkConditionModal = false;
 			} else if (activeOtherOffersKey) {
 				activeOtherOffersKey = null;
 			} else if (selectedKeys.size > 0) {
@@ -677,6 +774,11 @@
 				if (state.isAuthenticated) {
 					if (!hasFetchedInitialList) {
 						hasFetchedInitialList = true;
+						if (state.isDemo) {
+							hydrateDemoFromLiveSnapshot().then((updated) => {
+								if (updated) fetchSeekingList(true);
+							});
+						}
 						fetchSeekingList();
 					}
 				} else {
@@ -1870,8 +1972,11 @@
 	totalFilteredCount={sortedCards.length}
 	{selectedCostSummary}
 	bind:showBulkPriceCapModal
+	bind:showBulkConditionModal
 	bind:showBulkDeleteModal
 	bind:bulkPriceCapInput
+	bind:bulkConditionInput
+	{canManualCheckStock}
 	{isProcessingBulkAction}
 	{bulkActionProgress}
 	onCopySelected={() => copyDecklistToClipboard()}
@@ -1879,6 +1984,8 @@
 	onSelectAllFiltered={selectAllFiltered}
 	onClearSelection={clearSelection}
 	onConfirmBulkPriceCap={handleBulkSetPriceCap}
+	onConfirmBulkCondition={handleBulkSetCondition}
+	onBulkStockCheck={handleBulkStockCheck}
 	onConfirmBulkDelete={handleBulkDelete}
 />
 
