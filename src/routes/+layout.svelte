@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte'; // Import onMount
-	import { goto, replaceState } from '$app/navigation'; // Import replaceState
+	import { goto } from '$app/navigation';
 	import Footer from '$lib/components/Footer.svelte';
 	import { page } from '$app/stores'; // Import the page store
 	import { auth } from '$lib/stores/auth'; // Import the auth store
@@ -72,8 +72,15 @@
 
 			if (token) {
 				console.log('Layout onMount: Found token in URL fragment. Handling callback...');
-				// Always strip the sensitive #token=... fragment immediately from the URL
-				replaceState(window.location.pathname + window.location.search, history.state);
+				// Always strip the sensitive #token=... fragment immediately from the URL.
+				// Use native history.replaceState here because SvelteKit's replaceState()
+				// throws "Cannot call replaceState(...) before router is initialized"
+				// when called synchronously inside root onMount on initial page load.
+				window.history.replaceState(
+					window.history.state,
+					'',
+					window.location.pathname + window.location.search
+				);
 
 				const callbackResult = await auth.handleCallback(token);
 
