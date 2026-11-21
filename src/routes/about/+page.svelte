@@ -52,14 +52,14 @@
 	const featureList = Object.keys(tiers[0].features);
 
 	const supportedMarketplaces = [
-		{ name: 'CardTrader', region: 'Global', icon: 'fa-solid fa-cube' },
-		{ name: 'TCGPlayer', region: 'US', icon: 'fa-solid fa-store' },
-		{ name: 'Mana Pool', region: 'US', icon: 'fa-solid fa-droplet' },
-		{ name: 'Card Kingdom', region: 'US', icon: 'fa-solid fa-crown' },
-		{ name: 'eBay', region: 'US', icon: 'fa-brands fa-ebay' },
-		{ name: 'HiMarket', region: 'HK', icon: 'fa-solid fa-earth-asia' },
-		{ name: 'Hareruya', region: 'JP', icon: 'fa-solid fa-sun' },
-		{ name: 'Ruten', region: 'TW', icon: 'fa-solid fa-shop' }
+		{ name: 'CardTrader', region: 'Global', icon: 'fa-solid fa-cube', color: '#3b82f6' },
+		{ name: 'TCGPlayer', region: 'US', icon: 'fa-solid fa-store', color: '#10b981' },
+		{ name: 'Mana Pool', region: 'US', icon: 'fa-solid fa-droplet', color: '#8b5cf6' },
+		{ name: 'Card Kingdom', region: 'US', icon: 'fa-solid fa-crown', color: '#3b82f6' },
+		{ name: 'eBay', region: 'US', icon: 'fa-brands fa-ebay', color: '#f59e0b' },
+		{ name: 'HiMarket', region: 'HK', icon: 'fa-solid fa-earth-asia', color: '#ec4899' },
+		{ name: 'Hareruya', region: 'JP', icon: 'fa-solid fa-sun', color: '#f97316' },
+		{ name: 'Ruten', region: 'TW', icon: 'fa-solid fa-shop', color: '#14b8a6' }
 	];
 
 	const slashCommands = [
@@ -156,7 +156,7 @@
 			<div class="marketplace-pills-grid">
 				{#each supportedMarketplaces as mk}
 					<div class="marketplace-pill">
-						<span class="mk-pill-icon">
+						<span class="mk-pill-icon" style="color: {mk.color}; background: {mk.color}1a;">
 							<i class={mk.icon}></i>
 						</span>
 						<span class="mk-pill-name">{mk.name}</span>
@@ -465,14 +465,11 @@
 	.mk-pill-icon {
 		width: 28px;
 		height: 28px;
-		border-radius: 6px;
-		background: var(--color-bg-primary);
-		border: 1px solid var(--color-border);
-		color: var(--color-text-secondary);
+		border-radius: 7px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 0.82rem;
+		font-size: 0.85rem;
 		flex-shrink: 0;
 	}
 
