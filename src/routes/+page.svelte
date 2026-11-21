@@ -32,35 +32,29 @@
 		</div>
 
 		{#if !hasSearched}
-			<div class="instructions-grid">
-				<div class="instruction-card">
-					<div class="card-icon-badge">
-						<i class="fa-solid fa-magnifying-glass"></i>
-					</div>
-					<div class="card-body">
-						<h3>Find & Configure</h3>
+			<ol class="steps-strip">
+				<li class="step-item">
+					<span class="step-num">01</span>
+					<div class="step-body">
+						<h3>Find &amp; Configure</h3>
 						<p>Search any card by name, choose your target set, preferred finish, and set a maximum price cap.</p>
 					</div>
-				</div>
-				<div class="instruction-card">
-					<div class="card-icon-badge">
-						<i class="fa-solid fa-arrows-rotate"></i>
-					</div>
-					<div class="card-body">
+				</li>
+				<li class="step-item">
+					<span class="step-num">02</span>
+					<div class="step-body">
 						<h3>Automated Scanning</h3>
 						<p>Seeker continuously polls major domestic and international marketplaces around the clock.</p>
 					</div>
-				</div>
-				<div class="instruction-card">
-					<div class="card-icon-badge">
-						<i class="fa-brands fa-discord"></i>
-					</div>
-					<div class="card-body">
+				</li>
+				<li class="step-item">
+					<span class="step-num">03</span>
+					<div class="step-body">
 						<h3>Discord Restock Alerts</h3>
 						<p>Receive immediate Discord direct messages with direct buy links when a seller lists your card.</p>
 					</div>
-				</div>
-			</div>
+				</li>
+			</ol>
 
 			{#if !$auth.isAuthenticated}
 				<div class="demo-promo-banner">
@@ -121,9 +115,9 @@
 	.discord-community-banner {
 		margin-top: 1rem;
 		padding: 1rem 1.25rem;
-		border-radius: 12px;
-		background: var(--glass-bg);
-		border: 1px solid var(--border-color, var(--color-border));
+		border-radius: 10px;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -199,64 +193,59 @@
 		line-height: 1.5;
 	}
 
-	.instructions-grid {
+	.steps-strip {
+		list-style: none;
+		padding: 0;
+		margin: 2rem 0 0 0;
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
-		gap: 1.25rem;
-		margin-top: 2rem;
-		text-align: left;
-	}
-
-	.instruction-card {
-		background: var(--glass-bg, var(--color-bg-elevated));
-		backdrop-filter: blur(var(--backdrop-blur, 10px));
-		-webkit-backdrop-filter: blur(var(--backdrop-blur, 10px));
-		border: 1px solid var(--glass-border, var(--color-border));
-		border-radius: 12px;
-		padding: 1.25rem;
-		box-shadow: var(--shadow-sm);
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-		transition: transform var(--transition-fast), border-color var(--transition-fast);
-	}
-
-	.instruction-card:hover {
-		transform: translateY(-2px);
-		border-color: var(--color-primary);
-	}
-
-	.card-icon-badge {
-		width: 38px;
-		height: 38px;
-		border-radius: 10px;
 		background: var(--color-bg-secondary);
 		border: 1px solid var(--color-border);
-		color: var(--color-primary);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1rem;
+		border-radius: 10px;
+		text-align: left;
+		overflow: hidden;
 	}
 
-	.card-body h3 {
-		margin: 0 0 0.4rem 0;
-		font-size: 1.05rem;
+	.step-item {
+		padding: 1.15rem 1.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+	}
+
+	.step-item + .step-item {
+		border-left: 1px solid var(--color-border);
+	}
+
+	.step-num {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		color: var(--color-primary);
+	}
+
+	.step-body h3 {
+		margin: 0 0 0.35rem 0;
+		font-size: 0.98rem;
 		font-weight: 700;
 		color: var(--color-text-primary);
 	}
 
-	.card-body p {
+	.step-body p {
 		margin: 0;
-		font-size: 0.875rem;
+		font-size: 0.85rem;
 		color: var(--color-text-secondary);
 		line-height: 1.5;
 	}
 
 	@media (max-width: 768px) {
-		.instructions-grid {
+		.steps-strip {
 			grid-template-columns: 1fr;
-			gap: 1rem;
+		}
+
+		.step-item + .step-item {
+			border-left: none;
+			border-top: 1px solid var(--color-border);
 		}
 
 		.home-container {
@@ -265,11 +254,12 @@
 	}
 
 	.demo-promo-banner {
-		margin-top: 1.5rem;
+		margin-top: 1.25rem;
 		padding: 1rem 1.25rem;
-		border-radius: 12px;
-		background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(88, 101, 242, 0.1) 100%);
-		border: 1px solid rgba(16, 185, 129, 0.35);
+		border-radius: 10px;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border);
+		border-left: 3px solid var(--color-primary);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -289,35 +279,33 @@
 
 	.demo-promo-copy strong {
 		color: var(--color-text-primary);
-		font-size: 0.98rem;
+		font-size: 0.96rem;
 	}
 
 	.demo-promo-badge {
 		align-self: flex-start;
 		font-size: 0.72rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: #10b981;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+		color: var(--color-primary);
 	}
 
 	.demo-promo-cta {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.65rem 1.15rem;
+		padding: 0.62rem 1.1rem;
 		border-radius: 8px;
-		background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-		color: #fff;
+		background: var(--color-primary);
+		color: var(--color-text-on-primary, #fff);
 		text-decoration: none;
 		font-weight: 600;
-		font-size: 0.9rem;
+		font-size: 0.88rem;
 		white-space: nowrap;
-		transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+		transition: background-color var(--transition-fast);
 	}
 
 	.demo-promo-cta:hover {
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
+		background: var(--color-primary-dark);
 	}
 </style>

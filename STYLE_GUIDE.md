@@ -83,8 +83,8 @@ Maintain clear visual hierarchy on table rows (desktop) and card grids (mobile):
   - Last seen (out of stock): Neutral slate (`rgba(148, 163, 184, 0.12)`)
 - **Membership Tier Pills** (`global.css`):
   - `Basic`: Neutral secondary border/surface
-  - `Premium`: Purple-magenta gradient (`#8b5cf6` -> `#d946ef`)
-  - `Legacy`: Emerald-blue gradient (`#10b981` -> `#3b82f6`)
+  - `Premium`: Solid indigo (`#4f46e5`)
+  - `Legacy`: Solid emerald (`#059669`)
   - `Banned`: Soft red (`rgba(239, 68, 68, 0.15)`)
 - **Discord Embed Accents** (`DemoAlertPreviewModal.svelte` — match backend Discord embeds):
   - Restock: `#2563EB` · Price Drop: `#10B981` · Historical Low: `#FF4500` · Daily Digest: `#4F46E5`

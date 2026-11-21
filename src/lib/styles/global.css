@@ -83,15 +83,15 @@ h1 {
 }
 
 .tier-premium {
-  background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+  background-color: #4f46e5;
   color: white;
-  border: none;
+  border: 1px solid #4338ca;
 }
 
 .tier-legacy {
-  background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+  background-color: #059669;
   color: white;
-  border: none;
+  border: 1px solid #047857;
 }
 
 .tier-none {
