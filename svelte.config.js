@@ -11,7 +11,31 @@ const config = {
 			fallback: 'index.html', // or 404.html, or null if your host handles it
 			precompress: false,
 			strict: true
-		})
+		}),
+		csp: {
+			mode: 'hash',
+			directives: {
+				'default-src': ['self'],
+				'script-src': ['self'],
+				'style-src': ['self', 'unsafe-inline'],
+				'font-src': ['self', 'data:'],
+				'img-src': [
+					'self',
+					'https://cards.scryfall.io',
+					'https://svgs.scryfall.io',
+					'https://cdn.discordapp.com',
+					'data:'
+				],
+				'connect-src': [
+					'self',
+					'https://seeker.azure-api.net',
+					'https://api.scryfall.com',
+					'https://open.er-api.com'
+				],
+				'base-uri': ['self'],
+				'object-src': ['none']
+			}
+		}
 	},
 	preprocess: vitePreprocess()
 };

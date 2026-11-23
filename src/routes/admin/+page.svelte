@@ -14,9 +14,6 @@
 	} from '$env/static/public';
 	import * as publicEnv from '$env/static/public';
 
-	// Define Role ID
-	const ADMIN_ROLE_ID = '1352632325640294411';
-
 	// State variables
 	let userTables = [];
 	let userSearchQuery = '';
@@ -79,8 +76,8 @@
 	$: authLoading = $auth.isLoading;
 	$: isAuthenticated = $auth.isAuthenticated;
 
-	// Authorization check (strictly exclude demo sessions)
-	$: isAdmin = !$auth.isDemo && (user?.roles?.includes(ADMIN_ROLE_ID) ?? false);
+	// Authorization check (strictly exclude demo sessions; trust normalized auth store)
+	$: isAdmin = !$auth.isDemo && Boolean(user?.isAdmin);
 	$: isAuthorized = isAuthenticated && isAdmin;
 	$: showUnauthorized = !authLoading && (!isAuthenticated || !isAdmin);
 

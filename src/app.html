@@ -54,22 +54,7 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 	<meta name="apple-mobile-web-app-title" content="Seeker" />
 
-	<script>
-		(function () {
-			const themeKey = 'color-theme';
-			const storedTheme = localStorage.getItem(themeKey);
-			let themeToApply;
-
-			if (storedTheme && ['light', 'dark'].includes(storedTheme)) {
-				themeToApply = storedTheme;
-			} else {
-				const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-				themeToApply = prefersDark ? 'dark' : 'light';
-			}
-
-			document.documentElement.setAttribute('data-theme', themeToApply);
-		})();
-	</script>
+	<script src="%sveltekit.assets%/theme-init.js"></script>
 	%sveltekit.head%
 </head>
 
@@ -90,8 +75,6 @@
 			}
 		}
 	</style>
-	<script>
-	</script>
 </body>
 
 </html>
