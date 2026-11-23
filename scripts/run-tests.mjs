@@ -72,7 +72,8 @@ const svelteKitMocksPlugin = {
 						'export const PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL = "https://seeker.azure-api.net/seeker/deleteFromSeeking";',
 						'export const PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL = "https://seeker.azure-api.net/seeker/updateUserSetting";',
 						'export const PUBLIC_TRIGGER_STOCK_CHECK_FUNCTION_URL = "https://seeker.azure-api.net/seeker/triggerStockCheck";',
-						'export const PUBLIC_FETCH_MOXFIELD_DECK_FUNCTION_URL = "https://seeker.azure-api.net/seeker/fetchMoxfieldDeck";'
+						'export const PUBLIC_FETCH_MOXFIELD_DECK_FUNCTION_URL = "https://seeker.azure-api.net/seeker/fetchMoxfieldDeck";',
+						'export const PUBLIC_LOGOUT_ENDPOINT = "https://seeker.azure-api.net/auth/logout";'
 					].join('\n'),
 					loader: 'js'
 				};

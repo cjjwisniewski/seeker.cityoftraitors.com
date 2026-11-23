@@ -6,7 +6,13 @@
 import { build, files, version } from '$service-worker';
 
 const CACHE_NAME = `seeker-shell-${version}`;
-const PRECACHE_ASSETS = [...build, ...files];
+const EXCLUDED_PRECACHE_FILES = new Set([
+	'/og-card.png',
+	'/robots.txt',
+	'/sitemap.xml',
+	'/.well-known/security.txt'
+]);
+const PRECACHE_ASSETS = [...build, ...files.filter((file) => !EXCLUDED_PRECACHE_FILES.has(file))];
 const PRECACHE_SET = new Set(PRECACHE_ASSETS);
 
 // Auth callbacks and live API origins must never be served from or written to cache.

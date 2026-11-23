@@ -189,8 +189,8 @@
 										<i class="fa-solid fa-user"></i>
 										Account
 									</button>
-									<!-- Check roles from the auth store user object -->
-									{#if !$auth.isDemo && $auth.user?.roles?.includes('1352632325640294411')}
+									<!-- Check admin flag from the normalized auth store user object -->
+									{#if !$auth.isDemo && $auth.user?.isAdmin}
 										<button
 											class="dropdown-item"
 											role="menuitem"

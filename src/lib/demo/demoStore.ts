@@ -1,5 +1,4 @@
 import { browser } from '$app/environment';
-import { env as dynamicPublicEnv } from '$env/dynamic/public';
 import * as staticPublicEnvModule from '$env/static/public';
 import { writable } from 'svelte/store';
 import {
@@ -28,7 +27,24 @@ const MAX_STORED_ALERTS = 25;
 
 const ALLOWED_FINISHES = new Set<FinishType>(['nonfoil', 'foil', 'etched']);
 const ALLOWED_CONDITIONS = new Set(['ANY', 'NM', 'SP', 'MP', 'HP', 'DMG']);
-const ALLOWED_LANGUAGES = new Set(['en', 'ja', 'zht', 'zhs', 'de', 'fr', 'it', 'es', 'pt', 'ko', 'ru']);
+const ALLOWED_LANGUAGES = new Set([
+	'en',
+	'ja',
+	'zht',
+	'zhs',
+	'de',
+	'fr',
+	'it',
+	'es',
+	'pt',
+	'ko',
+	'ru',
+	'he',
+	'la',
+	'ar',
+	'sa',
+	'ph'
+]);
 
 const ALLOWED_DEMO_SETTING_KEYS = new Set<keyof DemoUserSettings>([
 	'stockAlertEnabled',
@@ -151,7 +167,7 @@ function sanitizeLanguage(raw: unknown, fallback = 'en'): string {
 function sanitizeDemoSettings(input: unknown): DemoUserSettings {
 	const src = input && typeof input === 'object' ? (input as Record<string, unknown>) : {};
 	const hour = clampBoundedInt(src.stockDigestHourUtc, 0, 23);
-	const threshold = clampBoundedInt(src.priceDropThreshold, 1, 90);
+	const threshold = clampBoundedInt(src.priceDropThreshold, 1, 99);
 	const minCond =
 		typeof src.minCondition === 'string' && ALLOWED_CONDITIONS.has(src.minCondition.toUpperCase())
 			? src.minCondition.toUpperCase()
@@ -806,8 +822,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 function getConfiguredUrl(name: string): string {
 	const staticMap = staticPublicEnvModule as unknown as Record<string, string | undefined>;
-	const dynMap = dynamicPublicEnv as unknown as Record<string, string | undefined>;
-	return (staticMap[name] || dynMap[name] || '').trim();
+	return (staticMap[name] || '').trim();
 }
 
 function matchesEndpoint(rawUrl: string, envName: string, slugFallback: string): boolean {
@@ -1026,7 +1041,7 @@ function validateSettingUpdate(settingName: unknown, settingValue: unknown): boo
 		case 'stockDigestHourUtc':
 			return clampBoundedInt(settingValue, 0, 23) !== null;
 		case 'priceDropThreshold':
-			return clampBoundedInt(settingValue, 1, 90) !== null;
+			return clampBoundedInt(settingValue, 1, 99) !== null;
 		case 'preferredLanguage':
 			return typeof settingValue === 'string' && ALLOWED_LANGUAGES.has(settingValue.toLowerCase());
 		case 'preferredFinish':
@@ -1200,7 +1215,12 @@ export async function handleDemoApiRequest(
 
 		const isRekey = nextLanguage !== prevCard.language || nextFinish !== prevCard.finish;
 		const nextRowKey = `${prevCard.collector_number}_${nextLanguage}_${nextFinish}`;
-		const nextKey = `${prevCard.set_code}-${nextRowKey}`;
+		const nextKey = getDemoCardKey({
+			set_code: prevCard.set_code,
+			collector_number: prevCard.collector_number,
+			language: nextLanguage,
+			finish: nextFinish
+		});
 
 		if (
 			isRekey &&

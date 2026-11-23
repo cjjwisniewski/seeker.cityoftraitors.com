@@ -4,7 +4,11 @@
 	import { auth } from '$lib/stores/auth';
 
 	onMount(() => {
-		auth.enterDemoMode(true);
+		if ($auth.isAuthenticated && !$auth.isDemo) {
+			goto('/seeking', { replaceState: true });
+			return;
+		}
+		auth.enterDemoMode(false);
 		goto('/seeking', { replaceState: true });
 	});
 </script>

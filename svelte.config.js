@@ -29,8 +29,7 @@ const config = {
 				'connect-src': [
 					'self',
 					'https://seeker.azure-api.net',
-					'https://api.scryfall.com',
-					'https://open.er-api.com'
+					'https://api.scryfall.com'
 				],
 				'base-uri': ['self'],
 				'object-src': ['none']

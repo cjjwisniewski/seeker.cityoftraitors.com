@@ -24,8 +24,12 @@
 	let expandedTableData = [];
 	let loading = true; // Loading state for user tables list
 	let tableDataLoading = false; // Separate loading state for expanded table data
+	let tableDataError = null; // Error display for expanded user table data
+	let tableDataRequestId = 0; // Monotonic guard against stale accordion responses
 	let statusLoading = true; // Loading state for system status
-	let error = null; // General error display
+	let error = null; // Top-level user list load error
+	let actionError = null; // Non-fatal error for single-user actions (tier, notes, pause, delete)
+	let failedAvatarIds = new Set(); // Track broken Discord avatar URLs to reveal fallback icon
 	let statusError = null; // Error display for system status
 	let systemStatus = null;
 	let activeTab = 'overview'; // 'overview' | 'health' | 'users' | 'banner'
@@ -157,6 +161,7 @@
 		if (!isAuthorized) return;
 		loading = true;
 		error = null;
+		actionError = null;
 		try {
 			const response = await fetchWithAuth(PUBLIC_GET_USER_TABLES_FUNCTION_URL);
 
@@ -181,16 +186,19 @@
 
 	async function loadTableData(targetUserId) {
 		if (!isAuthorized) return;
+		const requestId = ++tableDataRequestId;
 		tableDataLoading = true;
-		error = null;
+		tableDataError = null;
 		expandedTableData = [];
 		try {
 			const urlWithQuery = `${PUBLIC_GET_SEEKING_LIST_FUNCTION_URL}?targetUserId=${encodeURIComponent(targetUserId)}`;
 			const response = await fetchWithAuth(urlWithQuery);
 
+			if (requestId !== tableDataRequestId || expandedTable !== targetUserId) return;
+
 			if (!response) {
-				error = `Authentication failed while fetching data for user ${targetUserId}.`;
-				console.error(error);
+				tableDataError = `Authentication failed while fetching data for user ${targetUserId}.`;
+				console.error(tableDataError);
 				return;
 			}
 
@@ -201,13 +209,17 @@
 				);
 			}
 			const responseData = await response.json();
+			if (requestId !== tableDataRequestId || expandedTable !== targetUserId) return;
 			expandedTableData = responseData.cards || [];
 		} catch (e) {
+			if (requestId !== tableDataRequestId || expandedTable !== targetUserId) return;
 			console.error(`Error loading table data for ${targetUserId}:`, e);
-			error = e.message;
+			tableDataError = e.message;
 			expandedTableData = [];
 		} finally {
-			tableDataLoading = false;
+			if (requestId === tableDataRequestId) {
+				tableDataLoading = false;
+			}
 		}
 	}
 
@@ -282,8 +294,8 @@
 		showTierModal = true;
 	}
 
-	function closeTierModal() {
-		if (isUpdatingTier) return;
+	function closeTierModal(force = false) {
+		if (isUpdatingTier && force !== true) return;
 		showTierModal = false;
 		userToEditTier = null;
 	}
@@ -291,7 +303,7 @@
 	async function handleSaveTier() {
 		if (!userToEditTier || !isAuthorized) return;
 		isUpdatingTier = true;
-		error = null;
+		actionError = null;
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
 				method: 'POST',
@@ -316,10 +328,10 @@
 				}
 				return u;
 			});
-			closeTierModal();
+			closeTierModal(true);
 		} catch (e) {
 			console.error('Error updating user tier:', e);
-			error = e.message;
+			actionError = e.message;
 		} finally {
 			isUpdatingTier = false;
 		}
@@ -337,8 +349,8 @@
 		showNotesModal = true;
 	}
 
-	function closeNotesModal() {
-		if (isUpdatingNotes) return;
+	function closeNotesModal(force = false) {
+		if (isUpdatingNotes && force !== true) return;
 		showNotesModal = false;
 		userToEditNotes = null;
 	}
@@ -346,7 +358,7 @@
 	async function handleSaveNotes() {
 		if (!userToEditNotes || !isAuthorized) return;
 		isUpdatingNotes = true;
-		error = null;
+		actionError = null;
 		const trimmedNotes = notesDraft.trim();
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
@@ -365,10 +377,10 @@
 			userTables = userTables.map((u) =>
 				u.userId === userToEditNotes.userId ? { ...u, adminNotes: trimmedNotes } : u
 			);
-			closeNotesModal();
+			closeNotesModal(true);
 		} catch (e) {
 			console.error('Error updating admin notes:', e);
-			error = e.message;
+			actionError = e.message;
 		} finally {
 			isUpdatingNotes = false;
 		}
@@ -380,7 +392,7 @@
 		if (!table || !isAuthorized || togglingPauseUserId) return;
 		const nextPaused = !table.scanningPaused;
 		togglingPauseUserId = table.userId;
-		error = null;
+		actionError = null;
 		try {
 			const response = await fetchWithAuth(PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL, {
 				method: 'POST',
@@ -407,7 +419,7 @@
 			);
 		} catch (e) {
 			console.error('Error toggling scanningPaused:', e);
-			error = e.message;
+			actionError = e.message;
 		} finally {
 			togglingPauseUserId = null;
 		}
@@ -421,11 +433,13 @@
 	let poisonActionLoading = false;
 	let poisonFeedback = null;
 
-	async function openPoisonInspectModal(q) {
+	async function openPoisonInspectModal(q, preserveFeedback = false) {
 		activePoisonQueue = q;
 		showPoisonModal = true;
 		poisonLoading = true;
-		poisonFeedback = null;
+		if (!preserveFeedback) {
+			poisonFeedback = null;
+		}
 		poisonMessages = [];
 		try {
 			const url = `${PUBLIC_GET_SYSTEM_STATUS_FUNCTION_URL}?action=peek_poison&queue=${encodeURIComponent(q.name)}`;
@@ -465,7 +479,7 @@
 				await loadSystemStatus();
 				if (showPoisonModal && activePoisonQueue) {
 					const refreshQ = activePoisonQueue;
-					await openPoisonInspectModal(refreshQ);
+					await openPoisonInspectModal(refreshQ, true);
 				}
 			} else {
 				const errText = response ? await response.text() : 'Failed to replay poison messages';
@@ -507,7 +521,7 @@
 				await loadSystemStatus();
 				if (showPoisonModal && activePoisonQueue) {
 					const refreshQ = activePoisonQueue;
-					await openPoisonInspectModal(refreshQ);
+					await openPoisonInspectModal(refreshQ, true);
 				}
 			} else {
 				const errText = response ? await response.text() : 'Failed to clear poison queue';
@@ -538,7 +552,7 @@
 		if (!userToDelete || !isAuthorized) return;
 		const targetUserId = userToDelete;
 		isDeletingUser = true;
-		error = null;
+		actionError = null;
 		try {
 			const requestBody = { targetUserIdToDelete: targetUserId };
 			const response = await fetchWithAuth(PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL, {
@@ -548,8 +562,8 @@
 			});
 
 			if (!response) {
-				error = `Authentication failed while attempting to delete user ${targetUserId}.`;
-				console.error(error);
+				actionError = `Authentication failed while attempting to delete user ${targetUserId}.`;
+				console.error(actionError);
 				return;
 			}
 
@@ -566,7 +580,7 @@
 				expandedTableData = [];
 			}
 		} catch (e) {
-			error = e.message;
+			actionError = e.message;
 			console.error(`Error deleting account ${targetUserId}:`, e);
 		} finally {
 			isDeletingUser = false;
@@ -1400,6 +1414,24 @@
 					</div>
 				</div>
 
+				{#if actionError}
+					<div class="error-banner" style="margin-bottom: 1rem; justify-content: space-between;">
+						<div style="display: flex; align-items: center; gap: 0.65rem;">
+							<i class="fa-solid fa-triangle-exclamation"></i>
+							<span>{actionError}</span>
+						</div>
+						<button
+							type="button"
+							class="modal-close-icon-btn"
+							on:click={() => (actionError = null)}
+							aria-label="Dismiss error"
+							title="Dismiss"
+						>
+							<i class="fa-solid fa-xmark"></i>
+						</button>
+					</div>
+				{/if}
+
 				{#if loading}
 					<div class="section-loading">
 						<div class="loading-spinner small"></div>
@@ -1422,18 +1454,20 @@
 								<div class="user-card-header">
 									<div class="user-main-info">
 										<div class="user-avatar-badge">
-											{#if table.avatarUrl}
+											{#if table.avatarUrl && !failedAvatarIds.has(table.userId)}
 												<img
 													src={table.avatarUrl}
 													alt={table.username}
 													class="user-avatar-img"
 													loading="lazy"
-													on:error={(e) => {
-														e.currentTarget.style.display = 'none';
+													on:error={() => {
+														failedAvatarIds.add(table.userId);
+														failedAvatarIds = new Set(failedAvatarIds);
 													}}
 												/>
+											{:else}
+												<i class="fa-solid fa-user"></i>
 											{/if}
-											<i class="fa-solid fa-user" class:hidden={!!table.avatarUrl}></i>
 										</div>
 										<div class="user-titles">
 											<div class="user-name-line">
@@ -1588,8 +1622,11 @@
 											class="expand-btn"
 											on:click={() => {
 												if (expandedTable === table.userId) {
+													tableDataRequestId++;
 													expandedTable = null;
 													expandedTableData = [];
+													tableDataLoading = false;
+													tableDataError = null;
 												} else {
 													expandedTable = table.userId;
 													loadTableData(table.userId);
@@ -1639,10 +1676,10 @@
 												<div class="loading-spinner small"></div>
 												<span>Loading seeking list...</span>
 											</div>
-										{:else if error && expandedTable === table.userId}
+										{:else if tableDataError && expandedTable === table.userId}
 											<div class="error-banner">
 												<i class="fa-solid fa-triangle-exclamation"></i>
-												<span>{error}</span>
+												<span>{tableDataError}</span>
 											</div>
 										{:else if expandedTableData.length === 0}
 											<div class="empty-table-state">
@@ -3511,10 +3548,6 @@
 		height: 100%;
 		border-radius: 50%;
 		object-fit: cover;
-	}
-
-	.user-avatar-badge i.hidden {
-		display: none;
 	}
 
 	.user-titles {

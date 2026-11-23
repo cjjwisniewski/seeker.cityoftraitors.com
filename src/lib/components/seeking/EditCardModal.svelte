@@ -252,7 +252,7 @@
 				return c;
 			});
 
-			onCardUpdated(updatedCards);
+			onCardUpdated(updatedCards, Boolean(result?.rekeyed));
 			onClose();
 		} catch (e) {
 			settingsModalError = e.message;

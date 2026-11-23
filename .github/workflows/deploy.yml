@@ -134,15 +134,9 @@ jobs:
           azcliversion: latest
           inlineScript: |
             ACCOUNT_NAME="${{ secrets.STORAGE_ACCOUNT_NAME || vars.STORAGE_ACCOUNT_NAME }}"
-            echo "Syncing ./build to $web container (zero-downtime with stale-blob pruning)"
-            az storage blob sync \
-              --container '$web' \
-              --account-name "$ACCOUNT_NAME" \
-              --source ./build \
-              --auth-mode login \
-              --delete-destination true
+            echo "Deploying ./build to $web container (immutable assets first, then shell, then stale-blob pruning)"
 
-            # Immutable content-hashed SvelteKit assets: 1 year cache
+            # 1. Immutable content-hashed SvelteKit assets first (1 year cache) so active shells never 404
             az storage blob upload-batch \
               --destination '$web' \
               --destination-path '_app/immutable' \
@@ -152,17 +146,7 @@ jobs:
               --overwrite \
               --content-cache-control "public, max-age=31536000, immutable"
 
-            # HTML entry shell: revalidate at browser, short edge TTL
-            az storage blob upload-batch \
-              --destination '$web' \
-              --account-name "$ACCOUNT_NAME" \
-              --source ./build \
-              --pattern "*.html" \
-              --auth-mode login \
-              --overwrite \
-              --content-cache-control "public, max-age=0, s-maxage=300, must-revalidate"
-
-            # Static icons, manifest, sitemap, robots, security.txt
+            # 2. Static icons, manifest, sitemap, robots, security.txt
             for ext in png svg ico webmanifest xml txt; do
               az storage blob upload-batch \
                 --destination '$web' \
@@ -173,6 +157,46 @@ jobs:
                 --overwrite \
                 --content-cache-control "public, max-age=86400"
             done
+
+            # 3. Unhashed runtime/service-worker assets: always revalidate
+            for blob in service-worker.js theme-init.js _app/env.js _app/version.json; do
+              if [ -f "./build/$blob" ]; then
+                az storage blob upload \
+                  --container-name '$web' \
+                  --account-name "$ACCOUNT_NAME" \
+                  --name "$blob" \
+                  --file "./build/$blob" \
+                  --auth-mode login \
+                  --overwrite \
+                  --content-cache-control "public, max-age=0, must-revalidate"
+              fi
+            done
+
+            # 4. HTML entry shell last: revalidate at browser, short edge TTL
+            az storage blob upload-batch \
+              --destination '$web' \
+              --account-name "$ACCOUNT_NAME" \
+              --source ./build \
+              --pattern "*.html" \
+              --auth-mode login \
+              --overwrite \
+              --content-cache-control "public, max-age=0, s-maxage=300, must-revalidate"
+
+            # 5. Prune stale blobs only after new immutable assets and index.html are live
+            LOCAL_FILES=$(cd ./build && find . -type f | sed 's|^\./||' | sort)
+            REMOTE_BLOBS=$(az storage blob list --container-name '$web' --account-name "$ACCOUNT_NAME" --auth-mode login --query "[].name" -o tsv | sort)
+            STALE_BLOBS=$(comm -23 <(printf "%s\n" "$REMOTE_BLOBS") <(printf "%s\n" "$LOCAL_FILES"))
+            if [ -n "$STALE_BLOBS" ]; then
+              while IFS= read -r blob; do
+                [ -z "$blob" ] && continue
+                echo "Pruning stale blob: $blob"
+                az storage blob delete \
+                  --container-name '$web' \
+                  --account-name "$ACCOUNT_NAME" \
+                  --name "$blob" \
+                  --auth-mode login >/dev/null
+              done <<< "$STALE_BLOBS"
+            fi
 
 
       - name: Azure Logout

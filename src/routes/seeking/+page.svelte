@@ -4,13 +4,12 @@
 	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
 	import { openDemoAlertPreviews, demoResetNonce, hydrateDemoFromLiveSnapshot } from '$lib/demo/demoStore';
-	import { initExchangeRates } from '$lib/stores/exchangeRate';
 	import {
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
 		PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL,
 		PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL
 	} from '$env/static/public';
-	import { env as publicEnv } from '$env/dynamic/public';
+	import * as publicEnv from '$env/static/public';
 	import {
 		getCardKey,
 		formatRelativeTime,
@@ -763,7 +762,6 @@
 		demoResetWatchReady = true;
 
 		fetchScryfallSets();
-		initExchangeRates();
 		cooldownInterval = setInterval(() => {
 			nowTick = Date.now();
 		}, 15000);
@@ -1945,8 +1943,15 @@
 	{checkingStockCardKeys}
 	{nowTick}
 	onClose={() => (showSettingsModal = false)}
-	onCardUpdated={(updatedCards) => {
+	onCardUpdated={(updatedCards, rekeyed) => {
 		cards = updatedCards;
+		if (rekeyed) {
+			if ($auth.isDemo) {
+				fetchSeekingList(true);
+			} else {
+				scheduleAutoPoll();
+			}
+		}
 	}}
 	onManualStockCheck={(targetCard) => handleManualStockCheck(targetCard)}
 />

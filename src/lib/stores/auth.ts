@@ -1,6 +1,6 @@
 import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { env as publicEnv } from '$env/dynamic/public';
+import * as publicEnv from '$env/static/public';
 import { createDemoUser, DEMO_STORAGE_KEYS } from '$lib/demo/demoSeed';
 import { initializeDemoStorage, saveDemoSettings } from '$lib/demo/demoStore';
 import type { DemoUserSettings } from '$lib/demo/demoTypes';
@@ -51,7 +51,10 @@ interface AuthState {
 
 // Use environment variables for Azure Function URLs
 const LOGIN_URL = import.meta.env.VITE_LOGIN_URL;
-const LOGOUT_URL = import.meta.env.VITE_LOGOUT_URL || publicEnv.PUBLIC_LOGOUT_ENDPOINT || 'https://api.cityoftraitors.com/auth/logout';
+const LOGOUT_URL =
+	import.meta.env.VITE_LOGOUT_URL ||
+	(publicEnv as Record<string, string | undefined>).PUBLIC_LOGOUT_ENDPOINT ||
+	'https://seeker.azure-api.net/auth/logout';
 const USER_INFO_URL = import.meta.env.VITE_USER_INFO_URL;
 const ADMIN_ROLE_ID = '1352632325640294411';
 
