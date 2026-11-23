@@ -222,7 +222,8 @@ export function sanitizeExternalUrl(url, fallback = null) {
 }
 
 export function getCardmarketUrl(card) {
-	if (card.cardmarket_url) return sanitizeExternalUrl(card.cardmarket_url, 'https://www.cardmarket.com');
+	if (card.cardmarket_url)
+		return sanitizeExternalUrl(card.cardmarket_url, 'https://www.cardmarket.com');
 	if (!card.cardmarket_id) return 'https://www.cardmarket.com';
 	let url = `https://www.cardmarket.com/en/Magic/Products?idProduct=${card.cardmarket_id}`;
 	const params = [];
@@ -308,25 +309,49 @@ export function getLowestOffer(
 	ckEnabled = false
 ) {
 	const offers = [];
-	if (ctEnabled && getStockStatus(card.cardtrader_stock) === 'available' && card.cardtrader_low_price > 0) {
+	if (
+		ctEnabled &&
+		getStockStatus(card.cardtrader_stock) === 'available' &&
+		card.cardtrader_low_price > 0
+	) {
 		offers.push({ vendor: 'cardtrader', cents: Math.round(card.cardtrader_low_price) });
 	}
-	if (tcgEnabled && getStockStatus(card.tcgplayer_stock) === 'available' && card.tcgplayer_low_price > 0) {
+	if (
+		tcgEnabled &&
+		getStockStatus(card.tcgplayer_stock) === 'available' &&
+		card.tcgplayer_low_price > 0
+	) {
 		offers.push({ vendor: 'tcgplayer', cents: Math.round(Number(card.tcgplayer_low_price)) });
 	}
 	if (ebayEnabled && getStockStatus(card.ebay_stock) === 'available' && card.ebay_low_price > 0) {
 		offers.push({ vendor: 'ebay', cents: Math.round(card.ebay_low_price) });
 	}
-	if (mpEnabled && getStockStatus(card.manapool_stock) === 'available' && card.manapool_low_price > 0) {
+	if (
+		mpEnabled &&
+		getStockStatus(card.manapool_stock) === 'available' &&
+		card.manapool_low_price > 0
+	) {
 		offers.push({ vendor: 'manapool', cents: Math.round(card.manapool_low_price) });
 	}
-	if (ckEnabled && getStockStatus(card.cardkingdom_stock) === 'available' && card.cardkingdom_low_price > 0) {
+	if (
+		ckEnabled &&
+		getStockStatus(card.cardkingdom_stock) === 'available' &&
+		card.cardkingdom_low_price > 0
+	) {
 		offers.push({ vendor: 'cardkingdom', cents: Math.round(card.cardkingdom_low_price) });
 	}
-	if (hmEnabled && getStockStatus(card.himarket_stock) === 'available' && card.himarket_low_price > 0) {
+	if (
+		hmEnabled &&
+		getStockStatus(card.himarket_stock) === 'available' &&
+		card.himarket_low_price > 0
+	) {
 		offers.push({ vendor: 'himarket', cents: Math.round(card.himarket_low_price) });
 	}
-	if (hrEnabled && getStockStatus(card.hareruya_stock) === 'available' && card.hareruya_low_price > 0) {
+	if (
+		hrEnabled &&
+		getStockStatus(card.hareruya_stock) === 'available' &&
+		card.hareruya_low_price > 0
+	) {
 		offers.push({ vendor: 'hareruya', cents: Math.round(card.hareruya_low_price) });
 	}
 	if (
@@ -337,7 +362,11 @@ export function getLowestOffer(
 	) {
 		offers.push({ vendor: 'ruten', cents: Math.round(card.ruten_low_price) });
 	}
-	if (cmEnabled && getStockStatus(card.cardmarket_stock) === 'available' && card.cardmarket_low_price > 0) {
+	if (
+		cmEnabled &&
+		getStockStatus(card.cardmarket_stock) === 'available' &&
+		card.cardmarket_low_price > 0
+	) {
 		offers.push({ vendor: 'cardmarket', cents: Math.round(card.cardmarket_low_price) });
 	}
 
@@ -405,7 +434,11 @@ export function getBestOfferDetails(
 ) {
 	const offers = [];
 
-	if (ctEnabled && getStockStatus(card.cardtrader_stock) === 'available' && card.cardtrader_low_price > 0) {
+	if (
+		ctEnabled &&
+		getStockStatus(card.cardtrader_stock) === 'available' &&
+		card.cardtrader_low_price > 0
+	) {
 		offers.push({
 			vendor: 'cardtrader',
 			displayName: 'CardTrader',
@@ -414,7 +447,11 @@ export function getBestOfferDetails(
 			url: card.cardtrader_id ? `https://www.cardtrader.com/cards/${card.cardtrader_id}` : null
 		});
 	}
-	if (tcgEnabled && getStockStatus(card.tcgplayer_stock) === 'available' && card.tcgplayer_low_price > 0) {
+	if (
+		tcgEnabled &&
+		getStockStatus(card.tcgplayer_stock) === 'available' &&
+		card.tcgplayer_low_price > 0
+	) {
 		offers.push({
 			vendor: 'tcgplayer',
 			displayName: 'TCGPlayer',
@@ -423,7 +460,11 @@ export function getBestOfferDetails(
 			url: getTCGPlayerUrl(card)
 		});
 	}
-	if (mpEnabled && getStockStatus(card.manapool_stock) === 'available' && card.manapool_low_price > 0) {
+	if (
+		mpEnabled &&
+		getStockStatus(card.manapool_stock) === 'available' &&
+		card.manapool_low_price > 0
+	) {
 		offers.push({
 			vendor: 'manapool',
 			displayName: 'Mana Pool',
@@ -432,7 +473,11 @@ export function getBestOfferDetails(
 			url: sanitizeExternalUrl(card.manapool_url, 'https://manapool.com')
 		});
 	}
-	if (ckEnabled && getStockStatus(card.cardkingdom_stock) === 'available' && card.cardkingdom_low_price > 0) {
+	if (
+		ckEnabled &&
+		getStockStatus(card.cardkingdom_stock) === 'available' &&
+		card.cardkingdom_low_price > 0
+	) {
 		offers.push({
 			vendor: 'cardkingdom',
 			displayName: 'Card Kingdom',
@@ -441,7 +486,11 @@ export function getBestOfferDetails(
 			url: sanitizeExternalUrl(card.cardkingdom_url, 'https://www.cardkingdom.com')
 		});
 	}
-	if (cmEnabled && getStockStatus(card.cardmarket_stock) === 'available' && card.cardmarket_low_price > 0) {
+	if (
+		cmEnabled &&
+		getStockStatus(card.cardmarket_stock) === 'available' &&
+		card.cardmarket_low_price > 0
+	) {
 		offers.push({
 			vendor: 'cardmarket',
 			displayName: 'Cardmarket',
@@ -459,7 +508,11 @@ export function getBestOfferDetails(
 			url: getEbayUrl(card, setCodeToNameMap)
 		});
 	}
-	if (hmEnabled && getStockStatus(card.himarket_stock) === 'available' && card.himarket_low_price > 0) {
+	if (
+		hmEnabled &&
+		getStockStatus(card.himarket_stock) === 'available' &&
+		card.himarket_low_price > 0
+	) {
 		offers.push({
 			vendor: 'himarket',
 			displayName: 'HiMarket',
@@ -468,7 +521,11 @@ export function getBestOfferDetails(
 			url: sanitizeExternalUrl(card.himarket_url, 'https://himarket.com.hk')
 		});
 	}
-	if (hrEnabled && getStockStatus(card.hareruya_stock) === 'available' && card.hareruya_low_price > 0) {
+	if (
+		hrEnabled &&
+		getStockStatus(card.hareruya_stock) === 'available' &&
+		card.hareruya_low_price > 0
+	) {
 		offers.push({
 			vendor: 'hareruya',
 			displayName: 'Hareruya',
@@ -664,13 +721,19 @@ export function getCardHistoricalBadgeInfo(
 }
 
 export function isBasicLandCard(name, typeLine = '') {
-	const normName = String(name || '').trim().toLowerCase();
+	const normName = String(name || '')
+		.trim()
+		.toLowerCase();
 	if (BASIC_LAND_NAMES.has(normName)) return true;
 	const normType = String(typeLine || '').toLowerCase();
 	return normType.includes('basic land') || normType.includes('basic snow land');
 }
 
-export function parseDecklistText(rawText, importDefaultFinish = 'nonfoil', importDefaultLanguage = 'en') {
+export function parseDecklistText(
+	rawText,
+	importDefaultFinish = 'nonfoil',
+	importDefaultLanguage = 'en'
+) {
 	const lines = String(rawText || '').split(/\r?\n/);
 	const parsed = [];
 	const seen = new Set();
@@ -716,7 +779,9 @@ export function parseDecklistText(rawText, importDefaultFinish = 'nonfoil', impo
 		let set_code = '';
 		let collector_number = '';
 
-		const setAndCnMatch = line.match(/^(.+?)\s+[\(\[]([A-Za-z0-9]{2,6})[\)\]]\s+([A-Za-z0-9★†\-]+)$/);
+		const setAndCnMatch = line.match(
+			/^(.+?)\s+[\(\[]([A-Za-z0-9]{2,6})[\)\]]\s+([A-Za-z0-9★†\-]+)$/
+		);
 		if (setAndCnMatch) {
 			name = setAndCnMatch[1].trim();
 			set_code = setAndCnMatch[2].toLowerCase();
@@ -750,7 +815,9 @@ export function parseDecklistText(rawText, importDefaultFinish = 'nonfoil', impo
 export function extractScryfallImage(scryCard) {
 	if (!scryCard) return '';
 	if (scryCard.image_uris) {
-		return scryCard.image_uris.grid || scryCard.image_uris.normal || scryCard.image_uris.large || '';
+		return (
+			scryCard.image_uris.grid || scryCard.image_uris.normal || scryCard.image_uris.large || ''
+		);
 	}
 	if (scryCard.card_faces && scryCard.card_faces[0]?.image_uris) {
 		const faceUris = scryCard.card_faces[0].image_uris;

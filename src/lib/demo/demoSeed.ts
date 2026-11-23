@@ -519,12 +519,48 @@ export const SAMPLE_DEMO_DECKS: SampleDeckPreset[] = [
 		defaultLanguage: 'en',
 		defaultFinish: 'nonfoil',
 		cards: [
-			{ name: 'Mox Diamond', set_code: 'sth', collector_number: '138', finish: 'nonfoil', language: 'en' },
-			{ name: 'Ancient Tomb', set_code: 'tmp', collector_number: '315', finish: 'nonfoil', language: 'en' },
-			{ name: 'The Tabernacle at Pendrell Vale', set_code: 'leg', collector_number: '307', finish: 'nonfoil', language: 'en' },
-			{ name: 'Exploration', set_code: 'usg', collector_number: '250', finish: 'nonfoil', language: 'en' },
-			{ name: 'Crop Rotation', set_code: 'ulg', collector_number: '98', finish: 'foil', language: 'en' },
-			{ name: 'Wasteland', set_code: 'tmp', collector_number: '330', finish: 'nonfoil', language: 'en' }
+			{
+				name: 'Mox Diamond',
+				set_code: 'sth',
+				collector_number: '138',
+				finish: 'nonfoil',
+				language: 'en'
+			},
+			{
+				name: 'Ancient Tomb',
+				set_code: 'tmp',
+				collector_number: '315',
+				finish: 'nonfoil',
+				language: 'en'
+			},
+			{
+				name: 'The Tabernacle at Pendrell Vale',
+				set_code: 'leg',
+				collector_number: '307',
+				finish: 'nonfoil',
+				language: 'en'
+			},
+			{
+				name: 'Exploration',
+				set_code: 'usg',
+				collector_number: '250',
+				finish: 'nonfoil',
+				language: 'en'
+			},
+			{
+				name: 'Crop Rotation',
+				set_code: 'ulg',
+				collector_number: '98',
+				finish: 'foil',
+				language: 'en'
+			},
+			{
+				name: 'Wasteland',
+				set_code: 'tmp',
+				collector_number: '330',
+				finish: 'nonfoil',
+				language: 'en'
+			}
 		]
 	},
 	{
@@ -534,12 +570,48 @@ export const SAMPLE_DEMO_DECKS: SampleDeckPreset[] = [
 		defaultLanguage: 'en',
 		defaultFinish: 'nonfoil',
 		cards: [
-			{ name: 'Chrome Mox', set_code: 'mrd', collector_number: '152', finish: 'foil', language: 'en' },
-			{ name: 'Mystic Remora', set_code: 'ice', collector_number: '87', finish: 'nonfoil', language: 'en' },
-			{ name: 'Smothering Tithe', set_code: 'rna', collector_number: '22', finish: 'foil', language: 'en' },
-			{ name: 'Underworld Breach', set_code: 'thb', collector_number: '161', finish: 'foil', language: 'en' },
-			{ name: 'Intuition', set_code: 'tmp', collector_number: '70', finish: 'nonfoil', language: 'en' },
-			{ name: 'Vampiric Tutor', set_code: 'vis', collector_number: '72', finish: 'nonfoil', language: 'en' }
+			{
+				name: 'Chrome Mox',
+				set_code: 'mrd',
+				collector_number: '152',
+				finish: 'foil',
+				language: 'en'
+			},
+			{
+				name: 'Mystic Remora',
+				set_code: 'ice',
+				collector_number: '87',
+				finish: 'nonfoil',
+				language: 'en'
+			},
+			{
+				name: 'Smothering Tithe',
+				set_code: 'rna',
+				collector_number: '22',
+				finish: 'foil',
+				language: 'en'
+			},
+			{
+				name: 'Underworld Breach',
+				set_code: 'thb',
+				collector_number: '161',
+				finish: 'foil',
+				language: 'en'
+			},
+			{
+				name: 'Intuition',
+				set_code: 'tmp',
+				collector_number: '70',
+				finish: 'nonfoil',
+				language: 'en'
+			},
+			{
+				name: 'Vampiric Tutor',
+				set_code: 'vis',
+				collector_number: '72',
+				finish: 'nonfoil',
+				language: 'en'
+			}
 		]
 	},
 	{
@@ -549,12 +621,48 @@ export const SAMPLE_DEMO_DECKS: SampleDeckPreset[] = [
 		defaultLanguage: 'ja',
 		defaultFinish: 'etched',
 		cards: [
-			{ name: 'Time Warp', set_code: 'sta', collector_number: '85', finish: 'etched', language: 'ja' },
-			{ name: 'Tainted Pact', set_code: 'sta', collector_number: '96', finish: 'etched', language: 'ja' },
-			{ name: 'Dark Ritual', set_code: 'sta', collector_number: '89', finish: 'etched', language: 'ja' },
-			{ name: 'Misty Rainforest', set_code: 'mh2', collector_number: '438', finish: 'etched', language: 'en' },
-			{ name: 'Arid Mesa', set_code: 'mh2', collector_number: '436', finish: 'etched', language: 'en' },
-			{ name: 'Narset, Parter of Veils', set_code: 'war', collector_number: '61', finish: 'foil', language: 'ja' }
+			{
+				name: 'Time Warp',
+				set_code: 'sta',
+				collector_number: '85',
+				finish: 'etched',
+				language: 'ja'
+			},
+			{
+				name: 'Tainted Pact',
+				set_code: 'sta',
+				collector_number: '96',
+				finish: 'etched',
+				language: 'ja'
+			},
+			{
+				name: 'Dark Ritual',
+				set_code: 'sta',
+				collector_number: '89',
+				finish: 'etched',
+				language: 'ja'
+			},
+			{
+				name: 'Misty Rainforest',
+				set_code: 'mh2',
+				collector_number: '438',
+				finish: 'etched',
+				language: 'en'
+			},
+			{
+				name: 'Arid Mesa',
+				set_code: 'mh2',
+				collector_number: '436',
+				finish: 'etched',
+				language: 'en'
+			},
+			{
+				name: 'Narset, Parter of Veils',
+				set_code: 'war',
+				collector_number: '61',
+				finish: 'foil',
+				language: 'ja'
+			}
 		]
 	}
 ];

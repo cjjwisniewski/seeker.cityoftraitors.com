@@ -51,8 +51,11 @@
 	$: userIdChunks = $auth.user?.id?.match(/.{1,4}/g) || [];
 
 	// Default settings derived from user payload
-	$: isAdmin = !isDemo && (Boolean($auth.user?.isAdmin) || ($auth.user?.roles?.includes('1352632325640294411') ?? false));
-	$: isPremiumOrLegacy = $auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
+	$: isAdmin =
+		!isDemo &&
+		(Boolean($auth.user?.isAdmin) || ($auth.user?.roles?.includes('1352632325640294411') ?? false));
+	$: isPremiumOrLegacy =
+		$auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
 	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
 	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
 	$: stockDigestHourUtc = $auth.user?.settings?.stockDigestHourUtc ?? 13;
@@ -62,14 +65,30 @@
 	$: preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
 	$: minCondition = $auth.user?.settings?.minCondition || 'ANY';
 	$: marketplaceCardtraderEnabled = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
-	$: marketplaceTcgplayerEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true) : false;
-	$: marketplaceEbayEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceEbayEnabled ?? false) : false;
-	$: marketplaceManapoolEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true) : false;
-	$: marketplaceCardkingdomEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceCardkingdomEnabled ?? false) : false;
-	$: marketplaceHimarketEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false) : false;
-	$: marketplaceHareruyaEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false) : false;
-	$: marketplaceRutenEnabled = isPremiumOrLegacy ? ($auth.user?.settings?.marketplaceRutenEnabled ?? false) : false;
-	$: marketplaceCardmarketEnabled = isAdmin ? ($auth.user?.settings?.marketplaceCardmarketEnabled ?? false) : false;
+	$: marketplaceTcgplayerEnabled = isPremiumOrLegacy
+		? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true)
+		: false;
+	$: marketplaceEbayEnabled = isPremiumOrLegacy
+		? ($auth.user?.settings?.marketplaceEbayEnabled ?? false)
+		: false;
+	$: marketplaceManapoolEnabled = isPremiumOrLegacy
+		? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true)
+		: false;
+	$: marketplaceCardkingdomEnabled = isPremiumOrLegacy
+		? ($auth.user?.settings?.marketplaceCardkingdomEnabled ?? false)
+		: false;
+	$: marketplaceHimarketEnabled = isPremiumOrLegacy
+		? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false)
+		: false;
+	$: marketplaceHareruyaEnabled = isPremiumOrLegacy
+		? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false)
+		: false;
+	$: marketplaceRutenEnabled = isPremiumOrLegacy
+		? ($auth.user?.settings?.marketplaceRutenEnabled ?? false)
+		: false;
+	$: marketplaceCardmarketEnabled = isAdmin
+		? ($auth.user?.settings?.marketplaceCardmarketEnabled ?? false)
+		: false;
 	$: totalMarketplaceCount = isAdmin ? 9 : 8;
 	$: enabledMarketplaceCount = [
 		marketplaceCardtraderEnabled,
@@ -100,9 +119,11 @@
 		const options = [];
 		const now = new Date();
 		for (let utcHour = 0; utcHour < 24; utcHour++) {
-			const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), utcHour, 0, 0));
+			const d = new Date(
+				Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), utcHour, 0, 0)
+			);
 			const localTimeStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-			const isDefault = (utcHour === 13);
+			const isDefault = utcHour === 13;
 			const label = isDefault ? `${localTimeStr} (Default)` : localTimeStr;
 			options.push({ utcHour, localHour: d.getHours(), label });
 		}
@@ -186,7 +207,8 @@
 				if (settingName === 'marketplaceTcgplayerEnabled') marketplaceTcgplayerEnabled = oldValue;
 				if (settingName === 'marketplaceEbayEnabled') marketplaceEbayEnabled = oldValue;
 				if (settingName === 'marketplaceManapoolEnabled') marketplaceManapoolEnabled = oldValue;
-				if (settingName === 'marketplaceCardkingdomEnabled') marketplaceCardkingdomEnabled = oldValue;
+				if (settingName === 'marketplaceCardkingdomEnabled')
+					marketplaceCardkingdomEnabled = oldValue;
 				if (settingName === 'marketplaceHimarketEnabled') marketplaceHimarketEnabled = oldValue;
 				if (settingName === 'marketplaceHareruyaEnabled') marketplaceHareruyaEnabled = oldValue;
 				if (settingName === 'marketplaceRutenEnabled') marketplaceRutenEnabled = oldValue;
@@ -373,7 +395,10 @@
 				</div>
 				<div class="suspended-text">
 					<h3>Account Suspended</h3>
-					<p>Your account has been suspended by an administrator. Automated stock checks, Discord alerts, and adding cards to your seeking list are currently disabled.</p>
+					<p>
+						Your account has been suspended by an administrator. Automated stock checks, Discord
+						alerts, and adding cards to your seeking list are currently disabled.
+					</p>
 				</div>
 			</div>
 		{/if}
@@ -419,628 +444,684 @@
 		<!-- Profile Sections Grid -->
 		<div class="profile-content">
 			{#if activeTab === 'profile'}
-			<!-- Section 1: Account Information -->
-			<section class="profile-section">
-				<div class="section-title-row">
-					<div class="section-title-icon">
-						<i class="fa-solid fa-id-card"></i>
+				<!-- Section 1: Account Information -->
+				<section class="profile-section">
+					<div class="section-title-row">
+						<div class="section-title-icon">
+							<i class="fa-solid fa-id-card"></i>
+						</div>
+						<h2>Account Information</h2>
 					</div>
-					<h2>Account Information</h2>
-				</div>
-				<div class="info-grid">
-					<div class="info-card">
-						<span class="info-label">Username</span>
-						<span class="info-value">{user.username || 'N/A'}</span>
-					</div>
-					{#if user.global_name}
+					<div class="info-grid">
 						<div class="info-card">
-							<span class="info-label">Display Name</span>
-							<span class="info-value">{user.global_name}</span>
+							<span class="info-label">Username</span>
+							<span class="info-value">{user.username || 'N/A'}</span>
 						</div>
-					{/if}
-					<div class="info-card">
-						<span class="info-label">Membership Tier</span>
-						<div class="info-value">
-							<span class="tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
-								<i
-									class="fa-solid {user.membershipTier === 'Legacy'
-										? 'fa-crown'
-										: user.membershipTier === 'Premium'
-											? 'fa-gem'
-											: (user.membershipTier || '').toLowerCase() === 'banned'
-												? 'fa-ban'
-												: 'fa-certificate'}"
-								></i>
-								{user.membershipTier || 'Basic'}
-							</span>
+						{#if user.global_name}
+							<div class="info-card">
+								<span class="info-label">Display Name</span>
+								<span class="info-value">{user.global_name}</span>
+							</div>
+						{/if}
+						<div class="info-card">
+							<span class="info-label">Membership Tier</span>
+							<div class="info-value">
+								<span class="tier-badge tier-{(user.membershipTier || 'None').toLowerCase()}">
+									<i
+										class="fa-solid {user.membershipTier === 'Legacy'
+											? 'fa-crown'
+											: user.membershipTier === 'Premium'
+												? 'fa-gem'
+												: (user.membershipTier || '').toLowerCase() === 'banned'
+													? 'fa-ban'
+													: 'fa-certificate'}"
+									></i>
+									{user.membershipTier || 'Basic'}
+								</span>
+							</div>
+						</div>
+						<div class="info-card id-card">
+							<div class="id-header">
+								<span class="info-label">User ID</span>
+								<button
+									type="button"
+									class="copy-id-btn"
+									on:click={copyUserId}
+									title="Copy Discord User ID"
+								>
+									<i class="fa-solid {copiedUserId ? 'fa-check' : 'fa-copy'}"></i>
+									<span>{copiedUserId ? 'Copied' : 'Copy'}</span>
+								</button>
+							</div>
+							<div class="user-id-pill">
+								{#each userIdChunks as chunk}
+									<span class="id-chunk">{chunk}</span>
+								{/each}
+								{#if userIdChunks.length === 0}
+									<span>{$auth.user?.id || 'N/A'}</span>
+								{/if}
+							</div>
 						</div>
 					</div>
-					<div class="info-card id-card">
-						<div class="id-header">
-							<span class="info-label">User ID</span>
-							<button
-								type="button"
-								class="copy-id-btn"
-								on:click={copyUserId}
-								title="Copy Discord User ID"
-							>
-								<i class="fa-solid {copiedUserId ? 'fa-check' : 'fa-copy'}"></i>
-								<span>{copiedUserId ? 'Copied' : 'Copy'}</span>
-							</button>
-						</div>
-						<div class="user-id-pill">
-							{#each userIdChunks as chunk}
-								<span class="id-chunk">{chunk}</span>
-							{/each}
-							{#if userIdChunks.length === 0}
-								<span>{$auth.user?.id || 'N/A'}</span>
-							{/if}
-						</div>
-					</div>
-				</div>
-			</section>
+				</section>
 			{/if}
 
 			{#if activeTab === 'preferences'}
-			<!-- Section 2: User Settings -->
-			<section class="profile-section">
-				<div class="section-title-row">
-					<div class="section-title-icon">
-						<i class="fa-solid fa-sliders"></i>
+				<!-- Section 2: User Settings -->
+				<section class="profile-section">
+					<div class="section-title-row">
+						<div class="section-title-icon">
+							<i class="fa-solid fa-sliders"></i>
+						</div>
+						<h2>Notification &amp; Search Preferences</h2>
 					</div>
-					<h2>Notification &amp; Search Preferences</h2>
-				</div>
-				<div class="settings-content">
-					{#if settingsError}
-						<div class="error-message mini" role="alert">
-							<i class="fa-solid fa-triangle-exclamation"></i>
-							<span>{settingsError}</span>
-						</div>
-					{/if}
+					<div class="settings-content">
+						{#if settingsError}
+							<div class="error-message mini" role="alert">
+								<i class="fa-solid fa-triangle-exclamation"></i>
+								<span>{settingsError}</span>
+							</div>
+						{/if}
 
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="setting-icon-pill">
-								<i class="fa-solid fa-bell"></i>
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="setting-icon-pill">
+									<i class="fa-solid fa-bell"></i>
+								</div>
+								<div class="setting-info">
+									<span class="setting-title">Stock Alerts</span>
+									<span class="setting-desc"
+										>Receive immediate Direct Messages when a card on your list is found in stock at
+										a new low price.</span
+									>
+								</div>
 							</div>
-							<div class="setting-info">
-								<span class="setting-title">Stock Alerts</span>
-								<span class="setting-desc"
-									>Receive immediate Direct Messages when a card on your list is found in stock at a
-									new low price.</span
-								>
-							</div>
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={stockAlertEnabled}
+									on:change={() => updateSetting('stockAlertEnabled', !stockAlertEnabled)}
+									disabled={isUpdatingSetting}
+								/>
+								<span class="slider round"></span>
+							</label>
 						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={stockAlertEnabled}
-								on:change={() => updateSetting('stockAlertEnabled', !stockAlertEnabled)}
-								disabled={isUpdatingSetting}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
 
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="setting-icon-pill">
-								<i class="fa-solid fa-envelope-open-text"></i>
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="setting-icon-pill">
+									<i class="fa-solid fa-envelope-open-text"></i>
+								</div>
+								<div class="setting-info">
+									<span class="setting-title">Stock Digest</span>
+									<span class="setting-desc"
+										>Receive a periodic summary of all cards on your list that currently have stock.</span
+									>
+								</div>
 							</div>
-							<div class="setting-info">
-								<span class="setting-title">Stock Digest</span>
-								<span class="setting-desc"
-									>Receive a periodic summary of all cards on your list that currently have stock.</span
-								>
-							</div>
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={stockDigestEnabled}
+									on:change={() => updateSetting('stockDigestEnabled', !stockDigestEnabled)}
+									disabled={isUpdatingSetting}
+								/>
+								<span class="slider round"></span>
+							</label>
 						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={stockDigestEnabled}
-								on:change={() => updateSetting('stockDigestEnabled', !stockDigestEnabled)}
-								disabled={isUpdatingSetting}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
 
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="setting-icon-pill">
-								<i class="fa-solid fa-clock"></i>
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="setting-icon-pill">
+									<i class="fa-solid fa-clock"></i>
+								</div>
+								<div class="setting-info">
+									<span class="setting-title">Daily Digest Time</span>
+									<span class="setting-desc"
+										>Choose the time of day your in-stock summary is delivered to Discord DMs
+										(displayed in your local time).</span
+									>
+								</div>
 							</div>
-							<div class="setting-info">
-								<span class="setting-title">Daily Digest Time</span>
-								<span class="setting-desc"
-									>Choose the time of day your in-stock summary is delivered to Discord DMs (displayed in your local time).</span
+							<div class="select-wrapper">
+								<select
+									class="custom-select"
+									value={stockDigestHourUtc}
+									on:change={(e) => updateSetting('stockDigestHourUtc', parseInt(e.target.value))}
+									disabled={isUpdatingSetting || !stockDigestEnabled}
 								>
+									{#each digestTimeOptions as opt}
+										<option value={opt.utcHour}>{opt.label}</option>
+									{/each}
+								</select>
+								<i class="fa-solid fa-chevron-down select-chevron"></i>
 							</div>
 						</div>
-						<div class="select-wrapper">
-							<select
-								class="custom-select"
-								value={stockDigestHourUtc}
-								on:change={(e) => updateSetting('stockDigestHourUtc', parseInt(e.target.value))}
-								disabled={isUpdatingSetting || !stockDigestEnabled}
+
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="setting-icon-pill">
+									<i class="fa-solid fa-arrow-trend-down"></i>
+								</div>
+								<div class="setting-info">
+									<span class="setting-title">Price Drop Alerts</span>
+									<span class="setting-desc"
+										>Receive notifications when a card on your list drops in price by at least your
+										configured threshold.</span
+									>
+								</div>
+							</div>
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={priceDropAlertEnabled}
+									on:change={() => updateSetting('priceDropAlertEnabled', !priceDropAlertEnabled)}
+									disabled={isUpdatingSetting}
+								/>
+								<span class="slider round"></span>
+							</label>
+						</div>
+
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="setting-icon-pill">
+									<i class="fa-solid fa-percent"></i>
+								</div>
+								<div class="setting-info">
+									<span class="setting-title">Price Drop Threshold %</span>
+									<span class="setting-desc"
+										>Only alert if the price drops by at least this percentage of the original
+										price.</span
+									>
+								</div>
+							</div>
+							<div
+								class="threshold-input-wrapper {!priceDropAlertEnabled || isUpdatingSetting
+									? 'disabled'
+									: ''}"
 							>
-								{#each digestTimeOptions as opt}
-									<option value={opt.utcHour}>{opt.label}</option>
-								{/each}
-							</select>
-							<i class="fa-solid fa-chevron-down select-chevron"></i>
+								<input
+									type="number"
+									min="1"
+									max="99"
+									step="1"
+									class="threshold-input"
+									value={priceDropThreshold}
+									on:change={(e) => {
+										const parsed = parseInt(e.target.value, 10);
+										if (!Number.isFinite(parsed)) {
+											e.target.value = String(priceDropThreshold);
+											return;
+										}
+										const clamped = Math.min(99, Math.max(1, parsed));
+										e.target.value = String(clamped);
+										updateSetting('priceDropThreshold', clamped);
+									}}
+									disabled={isUpdatingSetting || !priceDropAlertEnabled}
+								/>
+								<span class="unit">%</span>
+							</div>
 						</div>
-					</div>
 
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="setting-icon-pill">
-								<i class="fa-solid fa-arrow-trend-down"></i>
+						<!-- Localization Setting -->
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="setting-icon-pill">
+									<i class="fa-solid fa-language"></i>
+								</div>
+								<div class="setting-info">
+									<span class="setting-title">Preferred Language</span>
+									<span class="setting-desc"
+										>Select the default language for card search results. Falls back to English if
+										unavailable.</span
+									>
+								</div>
 							</div>
-							<div class="setting-info">
-								<span class="setting-title">Price Drop Alerts</span>
-								<span class="setting-desc"
-									>Receive notifications when a card on your list drops in price by at least your
-									configured threshold.</span
+							<div class="select-wrapper">
+								<select
+									class="custom-select"
+									value={preferredLanguage}
+									on:change={(e) => updateSetting('preferredLanguage', e.target.value)}
+									disabled={isUpdatingSetting}
 								>
+									{#each Object.entries(languageNames) as [code, name]}
+										<option value={code}>{name}</option>
+									{/each}
+								</select>
+								<i class="fa-solid fa-chevron-down select-chevron"></i>
 							</div>
 						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={priceDropAlertEnabled}
-								on:change={() => updateSetting('priceDropAlertEnabled', !priceDropAlertEnabled)}
-								disabled={isUpdatingSetting}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
 
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="setting-icon-pill">
-								<i class="fa-solid fa-percent"></i>
+						<!-- Finish Setting -->
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="setting-icon-pill">
+									<i class="fa-solid fa-wand-magic-sparkles"></i>
+								</div>
+								<div class="setting-info">
+									<span class="setting-title">Preferred Finish</span>
+									<span class="setting-desc"
+										>Select your preferred card finish (foil vs nonfoil) to default to on card
+										searches.</span
+									>
+								</div>
 							</div>
-							<div class="setting-info">
-								<span class="setting-title">Price Drop Threshold %</span>
-								<span class="setting-desc"
-									>Only alert if the price drops by at least this percentage of the original price.</span
+							<div class="select-wrapper">
+								<select
+									class="custom-select"
+									value={preferredFinish}
+									on:change={(e) => updateSetting('preferredFinish', e.target.value)}
+									disabled={isUpdatingSetting}
 								>
+									<option value="nonfoil">Nonfoil</option>
+									<option value="foil">Foil</option>
+								</select>
+								<i class="fa-solid fa-chevron-down select-chevron"></i>
 							</div>
 						</div>
-						<div class="threshold-input-wrapper {(!priceDropAlertEnabled || isUpdatingSetting) ? 'disabled' : ''}">
-							<input
-								type="number"
-								min="1"
-								max="99"
-								step="1"
-								class="threshold-input"
-								value={priceDropThreshold}
-								on:change={(e) => {
-									const parsed = parseInt(e.target.value, 10);
-									if (!Number.isFinite(parsed)) {
-										e.target.value = String(priceDropThreshold);
-										return;
-									}
-									const clamped = Math.min(99, Math.max(1, parsed));
-									e.target.value = String(clamped);
-									updateSetting('priceDropThreshold', clamped);
-								}}
-								disabled={isUpdatingSetting || !priceDropAlertEnabled}
-							/>
-							<span class="unit">%</span>
-						</div>
-					</div>
 
-					<!-- Localization Setting -->
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="setting-icon-pill">
-								<i class="fa-solid fa-language"></i>
+						<!-- Minimum Condition Setting -->
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="setting-icon-pill">
+									<i class="fa-solid fa-certificate"></i>
+								</div>
+								<div class="setting-info">
+									<span class="setting-title">Minimum Card Condition</span>
+									<span class="setting-desc"
+										>Set the default minimum condition required for stock checks and alerts across
+										all marketplaces (can be overridden per card).</span
+									>
+								</div>
 							</div>
-							<div class="setting-info">
-								<span class="setting-title">Preferred Language</span>
-								<span class="setting-desc"
-									>Select the default language for card search results. Falls back to English if
-									unavailable.</span
+							<div class="select-wrapper">
+								<select
+									class="custom-select"
+									value={minCondition}
+									on:change={(e) => updateSetting('minCondition', e.target.value)}
+									disabled={isUpdatingSetting}
 								>
+									<option value="ANY">Any Condition</option>
+									<option value="HP">Heavily Played or Better (HP+)</option>
+									<option value="MP">Moderately Played or Better (MP+)</option>
+									<option value="SP">Slightly / Lightly Played or Better (SP+)</option>
+									<option value="NM">Near Mint Only (NM)</option>
+								</select>
+								<i class="fa-solid fa-chevron-down select-chevron"></i>
 							</div>
-						</div>
-						<div class="select-wrapper">
-							<select
-								class="custom-select"
-								value={preferredLanguage}
-								on:change={(e) => updateSetting('preferredLanguage', e.target.value)}
-								disabled={isUpdatingSetting}
-							>
-								{#each Object.entries(languageNames) as [code, name]}
-									<option value={code}>{name}</option>
-								{/each}
-							</select>
-							<i class="fa-solid fa-chevron-down select-chevron"></i>
 						</div>
 					</div>
-
-					<!-- Finish Setting -->
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="setting-icon-pill">
-								<i class="fa-solid fa-wand-magic-sparkles"></i>
-							</div>
-							<div class="setting-info">
-								<span class="setting-title">Preferred Finish</span>
-								<span class="setting-desc"
-									>Select your preferred card finish (foil vs nonfoil) to default to on card searches.</span
-								>
-							</div>
-						</div>
-						<div class="select-wrapper">
-							<select
-								class="custom-select"
-								value={preferredFinish}
-								on:change={(e) => updateSetting('preferredFinish', e.target.value)}
-								disabled={isUpdatingSetting}
-							>
-								<option value="nonfoil">Nonfoil</option>
-								<option value="foil">Foil</option>
-							</select>
-							<i class="fa-solid fa-chevron-down select-chevron"></i>
-						</div>
-					</div>
-
-					<!-- Minimum Condition Setting -->
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="setting-icon-pill">
-								<i class="fa-solid fa-certificate"></i>
-							</div>
-							<div class="setting-info">
-								<span class="setting-title">Minimum Card Condition</span>
-								<span class="setting-desc"
-									>Set the default minimum condition required for stock checks and alerts across all marketplaces (can be overridden per card).</span
-								>
-							</div>
-						</div>
-						<div class="select-wrapper">
-							<select
-								class="custom-select"
-								value={minCondition}
-								on:change={(e) => updateSetting('minCondition', e.target.value)}
-								disabled={isUpdatingSetting}
-							>
-								<option value="ANY">Any Condition</option>
-								<option value="HP">Heavily Played or Better (HP+)</option>
-								<option value="MP">Moderately Played or Better (MP+)</option>
-								<option value="SP">Slightly / Lightly Played or Better (SP+)</option>
-								<option value="NM">Near Mint Only (NM)</option>
-							</select>
-							<i class="fa-solid fa-chevron-down select-chevron"></i>
-						</div>
-					</div>
-				</div>
-			</section>
+				</section>
 			{/if}
 
 			{#if activeTab === 'marketplaces'}
-			<!-- Section 3: Marketplace Settings -->
-			<section class="profile-section">
-				<div class="section-title-row">
-					<div class="section-title-icon">
-						<i class="fa-solid fa-store"></i>
-					</div>
-					<h2>Marketplace Integrations</h2>
-				</div>
-				<div class="settings-content marketplace-grid">
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar ct-badge">
-								<i class="fa-solid fa-cube"></i>
-							</div>
-							<div class="setting-info">
-								<span class="setting-title">CardTrader</span>
-								<span class="setting-desc">Enable/disable stock checks and price tracking on CardTrader.</span>
-							</div>
+				<!-- Section 3: Marketplace Settings -->
+				<section class="profile-section">
+					<div class="section-title-row">
+						<div class="section-title-icon">
+							<i class="fa-solid fa-store"></i>
 						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceCardtraderEnabled}
-								on:change={() => updateSetting('marketplaceCardtraderEnabled', !marketplaceCardtraderEnabled)}
-								disabled={isUpdatingSetting}
-							/>
-							<span class="slider round"></span>
-						</label>
+						<h2>Marketplace Integrations</h2>
 					</div>
-
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar tcg-badge">
-								<i class="fa-solid fa-store"></i>
+					<div class="settings-content marketplace-grid">
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="vendor-avatar ct-badge">
+									<i class="fa-solid fa-cube"></i>
+								</div>
+								<div class="setting-info">
+									<span class="setting-title">CardTrader</span>
+									<span class="setting-desc"
+										>Enable/disable stock checks and price tracking on CardTrader.</span
+									>
+								</div>
 							</div>
-							<div class="setting-info">
-								<div class="label-with-tier">
-									<span class="setting-title">TCGPlayer</span>
-									{#if !isPremiumOrLegacy}
-										<span class="tier-pill-locked">
-											<i class="fa-solid fa-lock"></i> Premium
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={marketplaceCardtraderEnabled}
+									on:change={() =>
+										updateSetting('marketplaceCardtraderEnabled', !marketplaceCardtraderEnabled)}
+									disabled={isUpdatingSetting}
+								/>
+								<span class="slider round"></span>
+							</label>
+						</div>
+
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="vendor-avatar tcg-badge">
+									<i class="fa-solid fa-store"></i>
+								</div>
+								<div class="setting-info">
+									<div class="label-with-tier">
+										<span class="setting-title">TCGPlayer</span>
+										{#if !isPremiumOrLegacy}
+											<span class="tier-pill-locked">
+												<i class="fa-solid fa-lock"></i> Premium
+											</span>
+										{/if}
+									</div>
+									<span class="setting-desc"
+										>Enable/disable stock checks and price tracking on TCGPlayer.</span
+									>
+								</div>
+							</div>
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={marketplaceTcgplayerEnabled}
+									on:change={() =>
+										updateSetting('marketplaceTcgplayerEnabled', !marketplaceTcgplayerEnabled)}
+									disabled={isUpdatingSetting || !isPremiumOrLegacy}
+								/>
+								<span class="slider round"></span>
+							</label>
+						</div>
+
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="vendor-avatar manapool-badge">
+									<i class="fa-solid fa-droplet"></i>
+								</div>
+								<div class="setting-info">
+									<div class="label-with-tier">
+										<span class="setting-title">Mana Pool</span>
+										{#if !isPremiumOrLegacy}
+											<span class="tier-pill-locked">
+												<i class="fa-solid fa-lock"></i> Premium
+											</span>
+										{/if}
+									</div>
+									<span class="setting-desc"
+										>Enable/disable stock checks and price tracking on Mana Pool.</span
+									>
+								</div>
+							</div>
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={marketplaceManapoolEnabled}
+									on:change={() =>
+										updateSetting('marketplaceManapoolEnabled', !marketplaceManapoolEnabled)}
+									disabled={isUpdatingSetting || !isPremiumOrLegacy}
+								/>
+								<span class="slider round"></span>
+							</label>
+						</div>
+
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="vendor-avatar ebay-badge">
+									<i class="fa-brands fa-ebay"></i>
+								</div>
+								<div class="setting-info">
+									<div class="label-with-tier">
+										<span class="setting-title">eBay</span>
+										<span class="ebay-warn-badge">
+											<i class="fa-solid fa-triangle-exclamation"></i> High False-Positive Rate
 										</span>
-									{/if}
+										{#if !isPremiumOrLegacy}
+											<span class="tier-pill-locked">
+												<i class="fa-solid fa-lock"></i> Premium
+											</span>
+										{/if}
+									</div>
+									<span class="setting-desc"
+										>Enable/disable stock checks and price tracking on eBay. <em
+											>Note: Due to seller-authored listing titles on eBay, automated matching has a
+											higher rate of false positives.</em
+										></span
+									>
 								</div>
-								<span class="setting-desc">Enable/disable stock checks and price tracking on TCGPlayer.</span>
 							</div>
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={marketplaceEbayEnabled}
+									on:change={() => updateSetting('marketplaceEbayEnabled', !marketplaceEbayEnabled)}
+									disabled={isUpdatingSetting || !isPremiumOrLegacy}
+								/>
+								<span class="slider round"></span>
+							</label>
 						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceTcgplayerEnabled}
-								on:change={() => updateSetting('marketplaceTcgplayerEnabled', !marketplaceTcgplayerEnabled)}
-								disabled={isUpdatingSetting || !isPremiumOrLegacy}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
 
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar manapool-badge">
-								<i class="fa-solid fa-droplet"></i>
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="vendor-avatar cardkingdom-badge">
+									<i class="fa-solid fa-chess-rook"></i>
+								</div>
+								<div class="setting-info">
+									<div class="label-with-tier">
+										<span class="setting-title">Card Kingdom</span>
+										<span class="lang-scope-badge">EN · SPECIALTY PROMOS</span>
+										{#if !isPremiumOrLegacy}
+											<span class="tier-pill-locked">
+												<i class="fa-solid fa-lock"></i> Premium
+											</span>
+										{/if}
+									</div>
+									<span class="setting-desc"
+										>Enable/disable stock checks on Card Kingdom (US). Primarily intended for <strong
+											>English</strong
+										>
+										singles and <strong>Japanese/Phyrexian specialty promos</strong>.</span
+									>
+								</div>
 							</div>
-							<div class="setting-info">
-								<div class="label-with-tier">
-									<span class="setting-title">Mana Pool</span>
-									{#if !isPremiumOrLegacy}
-										<span class="tier-pill-locked">
-											<i class="fa-solid fa-lock"></i> Premium
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={marketplaceCardkingdomEnabled}
+									on:change={() =>
+										updateSetting('marketplaceCardkingdomEnabled', !marketplaceCardkingdomEnabled)}
+									disabled={isUpdatingSetting || !isPremiumOrLegacy}
+								/>
+								<span class="slider round"></span>
+							</label>
+						</div>
+
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="vendor-avatar himarket-badge">
+									<i class="fa-solid fa-earth-asia"></i>
+								</div>
+								<div class="setting-info">
+									<div class="label-with-tier">
+										<span class="setting-title">HiMarket</span>
+										<span class="lang-scope-badge">EN · JA · ZHT · ZHS</span>
+										{#if !isPremiumOrLegacy}
+											<span class="tier-pill-locked">
+												<i class="fa-solid fa-lock"></i> Premium
+											</span>
+										{/if}
+									</div>
+									<span class="setting-desc"
+										>Enable/disable stock checks on HiMarket (Hong Kong). Primarily intended for <strong
+											>English</strong
+										>, <strong>Japanese</strong>, and
+										<strong>Chinese (Traditional &amp; Simplified)</strong> printings.</span
+									>
+								</div>
+							</div>
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={marketplaceHimarketEnabled}
+									on:change={() =>
+										updateSetting('marketplaceHimarketEnabled', !marketplaceHimarketEnabled)}
+									disabled={isUpdatingSetting || !isPremiumOrLegacy}
+								/>
+								<span class="slider round"></span>
+							</label>
+						</div>
+
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="vendor-avatar hareruya-badge">
+									<i class="fa-solid fa-sun"></i>
+								</div>
+								<div class="setting-info">
+									<div class="label-with-tier">
+										<span class="setting-title">Hareruya</span>
+										<span class="lang-scope-badge">JA · EN</span>
+										{#if !isPremiumOrLegacy}
+											<span class="tier-pill-locked">
+												<i class="fa-solid fa-lock"></i> Premium
+											</span>
+										{/if}
+									</div>
+									<span class="setting-desc"
+										>Enable/disable stock checks on Hareruya (Japan). Primarily intended for <strong
+											>Japanese</strong
+										>
+										and <strong>English</strong> printings.</span
+									>
+								</div>
+							</div>
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={marketplaceHareruyaEnabled}
+									on:change={() =>
+										updateSetting('marketplaceHareruyaEnabled', !marketplaceHareruyaEnabled)}
+									disabled={isUpdatingSetting || !isPremiumOrLegacy}
+								/>
+								<span class="slider round"></span>
+							</label>
+						</div>
+
+						<div class="setting-item">
+							<div class="setting-item-left">
+								<div class="vendor-avatar ruten-badge">
+									<i class="fa-solid fa-shop"></i>
+								</div>
+								<div class="setting-info">
+									<div class="label-with-tier">
+										<span class="setting-title">Ruten</span>
+										<span class="lang-scope-badge">ZHT · EN ONLY</span>
+										<span class="ebay-warn-badge">
+											<i class="fa-solid fa-triangle-exclamation"></i> High False-Positive Rate
 										</span>
-									{/if}
+										{#if !isPremiumOrLegacy}
+											<span class="tier-pill-locked">
+												<i class="fa-solid fa-lock"></i> Premium
+											</span>
+										{/if}
+									</div>
+									<span class="setting-desc"
+										>Enable/disable stock checks on Ruten (Taiwan). Restricted strictly to <strong
+											>Traditional Chinese (ZHT)</strong
+										>
+										and <strong>English (EN)</strong> printings.
+										<em
+											>Note: Due to seller-authored listing titles on Ruten, automated matching has
+											a higher rate of false positives.</em
+										></span
+									>
 								</div>
-								<span class="setting-desc">Enable/disable stock checks and price tracking on Mana Pool.</span>
 							</div>
+							<label class="toggle-switch">
+								<input
+									type="checkbox"
+									checked={marketplaceRutenEnabled}
+									on:change={() =>
+										updateSetting('marketplaceRutenEnabled', !marketplaceRutenEnabled)}
+									disabled={isUpdatingSetting || !isPremiumOrLegacy}
+								/>
+								<span class="slider round"></span>
+							</label>
 						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceManapoolEnabled}
-								on:change={() => updateSetting('marketplaceManapoolEnabled', !marketplaceManapoolEnabled)}
-								disabled={isUpdatingSetting || !isPremiumOrLegacy}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
 
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar ebay-badge">
-								<i class="fa-brands fa-ebay"></i>
-							</div>
-							<div class="setting-info">
-								<div class="label-with-tier">
-									<span class="setting-title">eBay</span>
-									<span class="ebay-warn-badge">
-										<i class="fa-solid fa-triangle-exclamation"></i> High False-Positive Rate
-									</span>
-									{#if !isPremiumOrLegacy}
-										<span class="tier-pill-locked">
-											<i class="fa-solid fa-lock"></i> Premium
-										</span>
-									{/if}
+						{#if isAdmin}
+							<div class="setting-item">
+								<div class="setting-item-left">
+									<div class="vendor-avatar cardmarket-badge">
+										<i class="fa-solid fa-euro-sign"></i>
+									</div>
+									<div class="setting-info">
+										<div class="label-with-tier">
+											<span class="setting-title">CardMarket</span>
+											<span class="lang-scope-badge">ADMIN ONLY</span>
+										</div>
+										<span class="setting-desc"
+											>Enable/disable stock checks and price tracking on CardMarket (EU). Visible to
+											admins only.</span
+										>
+									</div>
 								</div>
-								<span class="setting-desc">Enable/disable stock checks and price tracking on eBay. <em>Note: Due to seller-authored listing titles on eBay, automated matching has a higher rate of false positives.</em></span>
+								<label class="toggle-switch">
+									<input
+										type="checkbox"
+										checked={marketplaceCardmarketEnabled}
+										on:change={() =>
+											updateSetting('marketplaceCardmarketEnabled', !marketplaceCardmarketEnabled)}
+										disabled={isUpdatingSetting}
+									/>
+									<span class="slider round"></span>
+								</label>
 							</div>
-						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceEbayEnabled}
-								on:change={() => updateSetting('marketplaceEbayEnabled', !marketplaceEbayEnabled)}
-								disabled={isUpdatingSetting || !isPremiumOrLegacy}
-							/>
-							<span class="slider round"></span>
-						</label>
+						{/if}
 					</div>
-
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar cardkingdom-badge">
-								<i class="fa-solid fa-chess-rook"></i>
-							</div>
-							<div class="setting-info">
-								<div class="label-with-tier">
-									<span class="setting-title">Card Kingdom</span>
-									<span class="lang-scope-badge">EN · SPECIALTY PROMOS</span>
-									{#if !isPremiumOrLegacy}
-										<span class="tier-pill-locked">
-											<i class="fa-solid fa-lock"></i> Premium
-										</span>
-									{/if}
-								</div>
-								<span class="setting-desc">Enable/disable stock checks on Card Kingdom (US). Primarily intended for <strong>English</strong> singles and <strong>Japanese/Phyrexian specialty promos</strong>.</span>
-							</div>
-						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceCardkingdomEnabled}
-								on:change={() => updateSetting('marketplaceCardkingdomEnabled', !marketplaceCardkingdomEnabled)}
-								disabled={isUpdatingSetting || !isPremiumOrLegacy}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar himarket-badge">
-								<i class="fa-solid fa-earth-asia"></i>
-							</div>
-							<div class="setting-info">
-								<div class="label-with-tier">
-									<span class="setting-title">HiMarket</span>
-									<span class="lang-scope-badge">EN · JA · ZHT · ZHS</span>
-									{#if !isPremiumOrLegacy}
-										<span class="tier-pill-locked">
-											<i class="fa-solid fa-lock"></i> Premium
-										</span>
-									{/if}
-								</div>
-								<span class="setting-desc">Enable/disable stock checks on HiMarket (Hong Kong). Primarily intended for <strong>English</strong>, <strong>Japanese</strong>, and <strong>Chinese (Traditional &amp; Simplified)</strong> printings.</span>
-							</div>
-						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceHimarketEnabled}
-								on:change={() => updateSetting('marketplaceHimarketEnabled', !marketplaceHimarketEnabled)}
-								disabled={isUpdatingSetting || !isPremiumOrLegacy}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar hareruya-badge">
-								<i class="fa-solid fa-sun"></i>
-							</div>
-							<div class="setting-info">
-								<div class="label-with-tier">
-									<span class="setting-title">Hareruya</span>
-									<span class="lang-scope-badge">JA · EN</span>
-									{#if !isPremiumOrLegacy}
-										<span class="tier-pill-locked">
-											<i class="fa-solid fa-lock"></i> Premium
-										</span>
-									{/if}
-								</div>
-								<span class="setting-desc">Enable/disable stock checks on Hareruya (Japan). Primarily intended for <strong>Japanese</strong> and <strong>English</strong> printings.</span>
-							</div>
-						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceHareruyaEnabled}
-								on:change={() => updateSetting('marketplaceHareruyaEnabled', !marketplaceHareruyaEnabled)}
-								disabled={isUpdatingSetting || !isPremiumOrLegacy}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar ruten-badge">
-								<i class="fa-solid fa-shop"></i>
-							</div>
-							<div class="setting-info">
-								<div class="label-with-tier">
-									<span class="setting-title">Ruten</span>
-									<span class="lang-scope-badge">ZHT · EN ONLY</span>
-									<span class="ebay-warn-badge">
-										<i class="fa-solid fa-triangle-exclamation"></i> High False-Positive Rate
-									</span>
-									{#if !isPremiumOrLegacy}
-										<span class="tier-pill-locked">
-											<i class="fa-solid fa-lock"></i> Premium
-										</span>
-									{/if}
-								</div>
-								<span class="setting-desc">Enable/disable stock checks on Ruten (Taiwan). Restricted strictly to <strong>Traditional Chinese (ZHT)</strong> and <strong>English (EN)</strong> printings. <em>Note: Due to seller-authored listing titles on Ruten, automated matching has a higher rate of false positives.</em></span>
-							</div>
-						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceRutenEnabled}
-								on:change={() => updateSetting('marketplaceRutenEnabled', !marketplaceRutenEnabled)}
-								disabled={isUpdatingSetting || !isPremiumOrLegacy}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
-
-					{#if isAdmin}
-					<div class="setting-item">
-						<div class="setting-item-left">
-							<div class="vendor-avatar cardmarket-badge">
-								<i class="fa-solid fa-euro-sign"></i>
-							</div>
-							<div class="setting-info">
-								<div class="label-with-tier">
-									<span class="setting-title">CardMarket</span>
-									<span class="lang-scope-badge">ADMIN ONLY</span>
-								</div>
-								<span class="setting-desc">Enable/disable stock checks and price tracking on CardMarket (EU). Visible to admins only.</span>
-							</div>
-						</div>
-						<label class="toggle-switch">
-							<input
-								type="checkbox"
-								checked={marketplaceCardmarketEnabled}
-								on:change={() => updateSetting('marketplaceCardmarketEnabled', !marketplaceCardmarketEnabled)}
-								disabled={isUpdatingSetting}
-							/>
-							<span class="slider round"></span>
-						</label>
-					</div>
-					{/if}
-				</div>
-			</section>
+				</section>
 			{/if}
 
 			{#if activeTab === 'profile'}
-			<!-- Section 4: Danger Zone / Demo Sandbox Reset -->
-			<section class="profile-section danger-zone">
-				<div class="section-title-row">
-					<div class="section-title-icon danger">
-						<i class="fa-solid fa-triangle-exclamation"></i>
+				<!-- Section 4: Danger Zone / Demo Sandbox Reset -->
+				<section class="profile-section danger-zone">
+					<div class="section-title-row">
+						<div class="section-title-icon danger">
+							<i class="fa-solid fa-triangle-exclamation"></i>
+						</div>
+						<h2>{isDemo ? 'Demo Sandbox Controls' : 'Danger Zone'}</h2>
 					</div>
-					<h2>{isDemo ? 'Demo Sandbox Controls' : 'Danger Zone'}</h2>
-				</div>
-				<div class="danger-content">
-					{#if isDemo}
-						<div class="danger-item">
-							<div class="danger-info">
-								<span class="danger-title">Reset Demo Data</span>
-								<span class="danger-desc"
-									>Restore the 12 curated demo cards, sample Discord alerts, and default sandbox settings in local storage.</span
+					<div class="danger-content">
+						{#if isDemo}
+							<div class="danger-item">
+								<div class="danger-info">
+									<span class="danger-title">Reset Demo Data</span>
+									<span class="danger-desc"
+										>Restore the 12 curated demo cards, sample Discord alerts, and default sandbox
+										settings in local storage.</span
+									>
+								</div>
+								<button
+									class="delete-btn"
+									on:click={() => {
+										const fresh = resetDemoWorkspace();
+										auth.updateSettings(fresh);
+										demoResetDone = true;
+										setTimeout(() => (demoResetDone = false), 3000);
+									}}
 								>
+									<i class="fa-solid fa-rotate-left"></i>
+									<span>{demoResetDone ? 'Demo Reset!' : 'Reset Demo Data'}</span>
+								</button>
 							</div>
-							<button
-								class="delete-btn"
-								on:click={() => {
-									const fresh = resetDemoWorkspace();
-									auth.updateSettings(fresh);
-									demoResetDone = true;
-									setTimeout(() => (demoResetDone = false), 3000);
-								}}
-							>
-								<i class="fa-solid fa-rotate-left"></i>
-								<span>{demoResetDone ? 'Demo Reset!' : 'Reset Demo Data'}</span>
-							</button>
-						</div>
-					{:else}
-						<div class="danger-item">
-							<div class="danger-info">
-								<span class="danger-title">Delete Account</span>
-								<span class="danger-desc"
-									>Permanently remove your account and all associated seeking cards and preferences from Seeker.</span
+						{:else}
+							<div class="danger-item">
+								<div class="danger-info">
+									<span class="danger-title">Delete Account</span>
+									<span class="danger-desc"
+										>Permanently remove your account and all associated seeking cards and
+										preferences from Seeker.</span
+									>
+								</div>
+								<button
+									class="delete-btn"
+									on:click={() => (showConfirmDialog = true)}
+									disabled={!token || !user}
+									title={!token || !user
+										? 'Cannot delete account: Authentication missing.'
+										: 'Delete your account'}
 								>
+									<i class="fa-solid fa-trash-can"></i>
+									<span>Delete Account</span>
+								</button>
 							</div>
-							<button
-								class="delete-btn"
-								on:click={() => (showConfirmDialog = true)}
-								disabled={!token || !user}
-								title={!token || !user
-									? 'Cannot delete account: Authentication missing.'
-									: 'Delete your account'}
-							>
-								<i class="fa-solid fa-trash-can"></i>
-								<span>Delete Account</span>
-							</button>
-						</div>
-					{/if}
-				</div>
-			</section>
+						{/if}
+					</div>
+				</section>
 			{/if}
 
 			{#if deleteError}
@@ -1062,7 +1143,8 @@
 			class="modal-overlay"
 			on:click={() => (showConfirmDialog = false)}
 			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) showConfirmDialog = false;
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' '))
+					showConfirmDialog = false;
 			}}
 			role="button"
 			tabindex="0"
@@ -1083,7 +1165,9 @@
 				</div>
 				<h3 id="dialog-title">Confirm Account Deletion</h3>
 				<p>Are you sure you want to delete your account? This action cannot be undone.</p>
-				<p class="modal-subtext">All your seeking list cards and settings within Seeker will be permanently deleted.</p>
+				<p class="modal-subtext">
+					All your seeking list cards and settings within Seeker will be permanently deleted.
+				</p>
 
 				<div class="modal-buttons">
 					<button class="cancel-btn" on:click={() => (showConfirmDialog = false)}>Cancel</button>
@@ -1331,8 +1415,15 @@
 	}
 
 	@keyframes pulseDiscord {
-		0%, 100% { opacity: 1; transform: scale(1); }
-		50% { opacity: 0.5; transform: scale(0.85); }
+		0%,
+		100% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 0.5;
+			transform: scale(0.85);
+		}
 	}
 
 	/* Sections */
@@ -1583,7 +1674,9 @@
 		background: var(--color-bg-secondary);
 		border: 1px solid var(--color-border);
 		border-radius: 12px;
-		transition: border-color var(--transition-fast), background-color var(--transition-fast);
+		transition:
+			border-color var(--transition-fast),
+			background-color var(--transition-fast);
 	}
 
 	.setting-item:hover {
@@ -1998,7 +2091,9 @@
 		background: var(--color-bg-elevated);
 		padding: 2rem;
 		border-radius: 16px;
-		box-shadow: var(--shadow-lg), 0 20px 30px rgba(0, 0, 0, 0.25);
+		box-shadow:
+			var(--shadow-lg),
+			0 20px 30px rgba(0, 0, 0, 0.25);
 		max-width: 480px;
 		width: 100%;
 		border: 1px solid var(--color-border);

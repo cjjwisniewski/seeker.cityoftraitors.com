@@ -3,7 +3,11 @@
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
-	import { openDemoAlertPreviews, demoResetNonce, hydrateDemoFromLiveSnapshot } from '$lib/demo/demoStore';
+	import {
+		openDemoAlertPreviews,
+		demoResetNonce,
+		hydrateDemoFromLiveSnapshot
+	} from '$lib/demo/demoStore';
 	import {
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
 		PUBLIC_DELETE_FROM_SEEKING_FUNCTION_URL,
@@ -457,7 +461,8 @@
 		bulkActionProgress = { current: 0, total: cardsToUpdate.length };
 		let updatedCount = 0;
 		let failedCount = 0;
-		const nextCond = bulkConditionInput && bulkConditionInput.trim() !== '' ? bulkConditionInput.trim() : null;
+		const nextCond =
+			bulkConditionInput && bulkConditionInput.trim() !== '' ? bulkConditionInput.trim() : null;
 
 		for (const card of cardsToUpdate) {
 			try {
@@ -516,7 +521,10 @@
 			return getCardCooldownRemainingSec(c, isAdmin, Date.now()) <= 0;
 		});
 		if (eligible.length === 0) {
-			showStockCheckFeedback('warning', 'All selected cards are currently on manual check cooldown.');
+			showStockCheckFeedback(
+				'warning',
+				'All selected cards are currently on manual check cooldown.'
+			);
 			return;
 		}
 
@@ -669,7 +677,9 @@
 			}
 
 			if (!response.ok) {
-				throw new Error(result?.message || `Failed to queue stock check (Status ${response.status})`);
+				throw new Error(
+					result?.message || `Failed to queue stock check (Status ${response.status})`
+				);
 			}
 
 			const checkedIso = result?.last_manual_check || new Date().toISOString();
@@ -732,7 +742,10 @@
 					return acc;
 				}, {});
 				try {
-					localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), map: setCodeToNameMap }));
+					localStorage.setItem(
+						CACHE_KEY,
+						JSON.stringify({ ts: Date.now(), map: setCodeToNameMap })
+					);
 				} catch {
 					/* ignore storage quota errors */
 				}
@@ -1122,13 +1135,7 @@
 		checkHeaderPinned();
 	}
 
-	$: if (
-		searchQuery ||
-		filterInStockOnly ||
-		filterSetCode ||
-		sortKey ||
-		sortDirection
-	) {
+	$: if (searchQuery || filterInStockOnly || filterSetCode || sortKey || sortDirection) {
 		displayLimit = 100;
 	}
 
@@ -1331,7 +1338,7 @@
 	on:click={closeMenu}
 	on:keydown={handleGlobalKeyDown}
 	on:resize={checkHeaderPinned}
-	bind:scrollY={scrollY}
+	bind:scrollY
 />
 
 {#if ($auth.user?.membershipTier || '').toLowerCase() === 'banned'}
@@ -1339,7 +1346,10 @@
 		<i class="fa-solid fa-triangle-exclamation"></i>
 		<div class="suspended-banner-content">
 			<strong>Account Suspended</strong>
-			<span>Your account has been suspended by an administrator. Stock checks are disabled and you cannot add new cards.</span>
+			<span
+				>Your account has been suspended by an administrator. Stock checks are disabled and you
+				cannot add new cards.</span
+			>
 		</div>
 	</div>
 {/if}
@@ -1424,7 +1434,9 @@
 				<span>
 					Est. <strong>{formatPrice(inStockSummary.totalLowestCents)}</strong>
 					<small>
-						({inStockSummary.inStockCount} in stock{#if inStockSummary.underCapCount > 0} &bull; <span class="under-cap-summary">{inStockSummary.underCapCount} under cap</span>{/if})
+						({inStockSummary.inStockCount} in stock{#if inStockSummary.underCapCount > 0}
+							&bull; <span class="under-cap-summary">{inStockSummary.underCapCount} under cap</span
+							>{/if})
 					</small>
 				</span>
 			</button>
@@ -1486,7 +1498,9 @@
 				on:click={toggleCondensed}
 				class="toolbar-icon-btn"
 				class:active={isCondensed}
-				title={isCondensed ? 'Switch to expanded view (all stores)' : 'Switch to compact view (best price)'}
+				title={isCondensed
+					? 'Switch to expanded view (all stores)'
+					: 'Switch to compact view (best price)'}
 			>
 				<i class="fa-solid {isCondensed ? 'fa-table-columns' : 'fa-compress'}"></i>
 			</button>
@@ -1505,11 +1519,7 @@
 		></i>
 		<span>{stockCheckToast.message}</span>
 		{#if stockCheckToast.showUndoDeleteAction && pendingDelete}
-			<button
-				type="button"
-				class="toast-preview-btn"
-				on:click={undoPendingDelete}
-			>
+			<button type="button" class="toast-preview-btn" on:click={undoPendingDelete}>
 				<i class="fa-solid fa-rotate-left"></i>
 				Undo
 			</button>
@@ -1575,23 +1585,34 @@
 	</div>
 {:else}
 	<div class="seeking-list">
-		<div class="table-scroll-container" class:is-pinned={isHeaderPinned} bind:this={tableContainerEl}>
+		<div
+			class="table-scroll-container"
+			class:is-pinned={isHeaderPinned}
+			bind:this={tableContainerEl}
+		>
 			<table>
 				<thead>
 					<tr>
 						<th
 							class="col-card"
 							tabindex="0"
-							aria-sort={sortKey === 'name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+							aria-sort={sortKey === 'name'
+								? sortDirection === 'asc'
+									? 'ascending'
+									: 'descending'
+								: 'none'}
 							on:click={() => sortBy('name')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('name'))}
+							on:keydown={(e) =>
+								(e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('name'))}
 							class:active={sortKey === 'name'}
 						>
 							<span class="th-header-wrap">
 								Card
 								{#if sortKey === 'name'}
 									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										class="sort-icon fa-solid {sortDirection === 'asc'
+											? 'fa-sort-up'
+											: 'fa-sort-down'}"
 									></i>
 								{/if}
 							</span>
@@ -1599,9 +1620,14 @@
 						<th
 							class="col-set"
 							tabindex="0"
-							aria-sort={sortKey === 'set_code' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+							aria-sort={sortKey === 'set_code'
+								? sortDirection === 'asc'
+									? 'ascending'
+									: 'descending'
+								: 'none'}
 							on:click={() => sortBy('set_code')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('set_code'))}
+							on:keydown={(e) =>
+								(e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('set_code'))}
 							class:active={sortKey === 'set_code'}
 							title="Set"
 						>
@@ -1609,7 +1635,9 @@
 								Set
 								{#if sortKey === 'set_code'}
 									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										class="sort-icon fa-solid {sortDirection === 'asc'
+											? 'fa-sort-up'
+											: 'fa-sort-down'}"
 									></i>
 								{/if}
 							</span>
@@ -1617,9 +1645,14 @@
 						<th
 							class="col-lang"
 							tabindex="0"
-							aria-sort={sortKey === 'language' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+							aria-sort={sortKey === 'language'
+								? sortDirection === 'asc'
+									? 'ascending'
+									: 'descending'
+								: 'none'}
 							on:click={() => sortBy('language')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('language'))}
+							on:keydown={(e) =>
+								(e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('language'))}
 							class:active={sortKey === 'language'}
 							title="Language"
 						>
@@ -1627,7 +1660,9 @@
 								Lang
 								{#if sortKey === 'language'}
 									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										class="sort-icon fa-solid {sortDirection === 'asc'
+											? 'fa-sort-up'
+											: 'fa-sort-down'}"
 									></i>
 								{/if}
 							</span>
@@ -1635,9 +1670,14 @@
 						<th
 							class="col-finish"
 							tabindex="0"
-							aria-sort={sortKey === 'finish' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+							aria-sort={sortKey === 'finish'
+								? sortDirection === 'asc'
+									? 'ascending'
+									: 'descending'
+								: 'none'}
 							on:click={() => sortBy('finish')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('finish'))}
+							on:keydown={(e) =>
+								(e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('finish'))}
 							class:active={sortKey === 'finish'}
 							title="Finish"
 						>
@@ -1645,276 +1685,385 @@
 								Finish
 								{#if sortKey === 'finish'}
 									<i
-										class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
+										class="sort-icon fa-solid {sortDirection === 'asc'
+											? 'fa-sort-up'
+											: 'fa-sort-down'}"
 									></i>
 								{/if}
 							</span>
 						</th>
 						{#if isCondensed}
-						<th
-							class="th-vendor col-vendor col-best-price"
-							tabindex="0"
-							aria-sort={sortKey === 'best_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('best_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('best_price'))}
-							class:active={sortKey === 'best_price'}
-							title="Sort by lowest price available across all enabled stores"
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									Best Price
-									{#if sortKey === 'best_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-							</div>
-						</th>
+							<th
+								class="th-vendor col-vendor col-best-price"
+								tabindex="0"
+								aria-sort={sortKey === 'best_price'
+									? sortDirection === 'asc'
+										? 'ascending'
+										: 'descending'
+									: 'none'}
+								on:click={() => sortBy('best_price')}
+								on:keydown={(e) =>
+									(e.key === 'Enter' || e.key === ' ') &&
+									(e.preventDefault(), sortBy('best_price'))}
+								class:active={sortKey === 'best_price'}
+								title="Sort by lowest price available across all enabled stores"
+							>
+								<div class="th-vendor-wrap">
+									<span class="th-vendor-title">
+										Best Price
+										{#if sortKey === 'best_price'}
+											<i
+												class="sort-icon fa-solid {sortDirection === 'asc'
+													? 'fa-sort-up'
+													: 'fa-sort-down'}"
+											></i>
+										{/if}
+									</span>
+								</div>
+							</th>
 						{:else}
-						{#if showCardTrader}
-						<th
-							class="th-vendor col-vendor"
-							tabindex="0"
-							aria-sort={sortKey === 'cardtrader_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('cardtrader_low_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('cardtrader_low_price'))}
-							class:active={sortKey === 'cardtrader_low_price'}
-							title={lastChecked.cardtrader ? `CardTrader last checked: ${formatExactTimestamp(lastChecked.cardtrader)}` : 'CardTrader stock & lowest price'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									CardTrader
-									{#if sortKey === 'cardtrader_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.cardtrader, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.cardtrader, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
-						{#if showTCGPlayer}
-						<th
-							class="th-vendor col-vendor"
-							tabindex="0"
-							aria-sort={sortKey === 'tcgplayer_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('tcgplayer_low_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('tcgplayer_low_price'))}
-							class:active={sortKey === 'tcgplayer_low_price'}
-							title={lastChecked.tcgplayer ? `TCGPlayer last checked: ${formatExactTimestamp(lastChecked.tcgplayer)}` : 'TCGPlayer stock & lowest price'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									TCGPlayer
-									{#if sortKey === 'tcgplayer_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.tcgplayer, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.tcgplayer, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
-						{#if showManapool}
-						<th
-							class="th-vendor col-vendor"
-							tabindex="0"
-							aria-sort={sortKey === 'manapool_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('manapool_low_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('manapool_low_price'))}
-							class:active={sortKey === 'manapool_low_price'}
-							title={lastChecked.manapool ? `Mana Pool last checked: ${formatExactTimestamp(lastChecked.manapool)}` : 'Mana Pool stock & lowest price'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									Mana Pool
-									{#if sortKey === 'manapool_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.manapool, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.manapool, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
-						{#if showCardkingdom}
-						<th
-							class="th-vendor col-vendor"
-							tabindex="0"
-							aria-sort={sortKey === 'cardkingdom_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('cardkingdom_low_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('cardkingdom_low_price'))}
-							class:active={sortKey === 'cardkingdom_low_price'}
-							title={lastChecked.cardkingdom ? `Card Kingdom last checked: ${formatExactTimestamp(lastChecked.cardkingdom)}` : 'Card Kingdom stock & lowest price'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									Card Kingdom
-									{#if sortKey === 'cardkingdom_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.cardkingdom, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.cardkingdom, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
-						{#if showCardmarket}
-						<th
-							class="th-vendor col-vendor"
-							tabindex="0"
-							aria-sort={sortKey === 'cardmarket_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('cardmarket_low_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('cardmarket_low_price'))}
-							class:active={sortKey === 'cardmarket_low_price'}
-							title={lastChecked.cardmarket ? `CardMarket last checked: ${formatExactTimestamp(lastChecked.cardmarket)}` : 'CardMarket stock & lowest price'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									CardMarket
-									{#if sortKey === 'cardmarket_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.cardmarket, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.cardmarket, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
-						{#if showEbay}
-						<th
-							class="th-vendor col-vendor"
-							tabindex="0"
-							aria-sort={sortKey === 'ebay_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('ebay_low_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('ebay_low_price'))}
-							class:active={sortKey === 'ebay_low_price'}
-							title={lastChecked.ebay ? `eBay last checked: ${formatExactTimestamp(lastChecked.ebay)}` : 'eBay stock & lowest price'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									eBay
-									{#if sortKey === 'ebay_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.ebay, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.ebay, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
-						{#if showHimarket}
-						<th
-							class="th-vendor col-vendor"
-							tabindex="0"
-							aria-sort={sortKey === 'himarket_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('himarket_low_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('himarket_low_price'))}
-							class:active={sortKey === 'himarket_low_price'}
-							title={lastChecked.himarket ? `HiMarket last checked: ${formatExactTimestamp(lastChecked.himarket)}` : 'HiMarket stock & lowest price'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									HiMarket
-									{#if sortKey === 'himarket_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.himarket, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.himarket, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
-						{#if showHareruya}
-						<th
-							class="th-vendor col-vendor"
-							tabindex="0"
-							aria-sort={sortKey === 'hareruya_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('hareruya_low_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('hareruya_low_price'))}
-							class:active={sortKey === 'hareruya_low_price'}
-							title={lastChecked.hareruya ? `Hareruya last checked: ${formatExactTimestamp(lastChecked.hareruya)}` : 'Hareruya stock & lowest price'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									Hareruya
-									{#if sortKey === 'hareruya_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.hareruya, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.hareruya, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
-						{#if showRuten}
-						<th
-							class="th-vendor col-vendor"
-							tabindex="0"
-							aria-sort={sortKey === 'ruten_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-							on:click={() => sortBy('ruten_low_price')}
-							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('ruten_low_price'))}
-							class:active={sortKey === 'ruten_low_price'}
-							title={lastChecked.ruten ? `Ruten last checked: ${formatExactTimestamp(lastChecked.ruten)}` : 'Ruten stock & lowest price (ZHT & EN only)'}
-						>
-							<div class="th-vendor-wrap">
-								<span class="th-vendor-title">
-									Ruten
-									{#if sortKey === 'ruten_low_price'}
-										<i
-											class="sort-icon fa-solid {sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down'}"
-										></i>
-									{/if}
-								</span>
-								{#if formatRelativeTime(lastChecked.ruten, nowTick)}
-									<span class="th-last-checked">
-										<i class="fa-regular fa-clock"></i> {formatRelativeTime(lastChecked.ruten, nowTick)}
-									</span>
-								{/if}
-							</div>
-						</th>
-						{/if}
+							{#if showCardTrader}
+								<th
+									class="th-vendor col-vendor"
+									tabindex="0"
+									aria-sort={sortKey === 'cardtrader_low_price'
+										? sortDirection === 'asc'
+											? 'ascending'
+											: 'descending'
+										: 'none'}
+									on:click={() => sortBy('cardtrader_low_price')}
+									on:keydown={(e) =>
+										(e.key === 'Enter' || e.key === ' ') &&
+										(e.preventDefault(), sortBy('cardtrader_low_price'))}
+									class:active={sortKey === 'cardtrader_low_price'}
+									title={lastChecked.cardtrader
+										? `CardTrader last checked: ${formatExactTimestamp(lastChecked.cardtrader)}`
+										: 'CardTrader stock & lowest price'}
+								>
+									<div class="th-vendor-wrap">
+										<span class="th-vendor-title">
+											CardTrader
+											{#if sortKey === 'cardtrader_low_price'}
+												<i
+													class="sort-icon fa-solid {sortDirection === 'asc'
+														? 'fa-sort-up'
+														: 'fa-sort-down'}"
+												></i>
+											{/if}
+										</span>
+										{#if formatRelativeTime(lastChecked.cardtrader, nowTick)}
+											<span class="th-last-checked">
+												<i class="fa-regular fa-clock"></i>
+												{formatRelativeTime(lastChecked.cardtrader, nowTick)}
+											</span>
+										{/if}
+									</div>
+								</th>
+							{/if}
+							{#if showTCGPlayer}
+								<th
+									class="th-vendor col-vendor"
+									tabindex="0"
+									aria-sort={sortKey === 'tcgplayer_low_price'
+										? sortDirection === 'asc'
+											? 'ascending'
+											: 'descending'
+										: 'none'}
+									on:click={() => sortBy('tcgplayer_low_price')}
+									on:keydown={(e) =>
+										(e.key === 'Enter' || e.key === ' ') &&
+										(e.preventDefault(), sortBy('tcgplayer_low_price'))}
+									class:active={sortKey === 'tcgplayer_low_price'}
+									title={lastChecked.tcgplayer
+										? `TCGPlayer last checked: ${formatExactTimestamp(lastChecked.tcgplayer)}`
+										: 'TCGPlayer stock & lowest price'}
+								>
+									<div class="th-vendor-wrap">
+										<span class="th-vendor-title">
+											TCGPlayer
+											{#if sortKey === 'tcgplayer_low_price'}
+												<i
+													class="sort-icon fa-solid {sortDirection === 'asc'
+														? 'fa-sort-up'
+														: 'fa-sort-down'}"
+												></i>
+											{/if}
+										</span>
+										{#if formatRelativeTime(lastChecked.tcgplayer, nowTick)}
+											<span class="th-last-checked">
+												<i class="fa-regular fa-clock"></i>
+												{formatRelativeTime(lastChecked.tcgplayer, nowTick)}
+											</span>
+										{/if}
+									</div>
+								</th>
+							{/if}
+							{#if showManapool}
+								<th
+									class="th-vendor col-vendor"
+									tabindex="0"
+									aria-sort={sortKey === 'manapool_low_price'
+										? sortDirection === 'asc'
+											? 'ascending'
+											: 'descending'
+										: 'none'}
+									on:click={() => sortBy('manapool_low_price')}
+									on:keydown={(e) =>
+										(e.key === 'Enter' || e.key === ' ') &&
+										(e.preventDefault(), sortBy('manapool_low_price'))}
+									class:active={sortKey === 'manapool_low_price'}
+									title={lastChecked.manapool
+										? `Mana Pool last checked: ${formatExactTimestamp(lastChecked.manapool)}`
+										: 'Mana Pool stock & lowest price'}
+								>
+									<div class="th-vendor-wrap">
+										<span class="th-vendor-title">
+											Mana Pool
+											{#if sortKey === 'manapool_low_price'}
+												<i
+													class="sort-icon fa-solid {sortDirection === 'asc'
+														? 'fa-sort-up'
+														: 'fa-sort-down'}"
+												></i>
+											{/if}
+										</span>
+										{#if formatRelativeTime(lastChecked.manapool, nowTick)}
+											<span class="th-last-checked">
+												<i class="fa-regular fa-clock"></i>
+												{formatRelativeTime(lastChecked.manapool, nowTick)}
+											</span>
+										{/if}
+									</div>
+								</th>
+							{/if}
+							{#if showCardkingdom}
+								<th
+									class="th-vendor col-vendor"
+									tabindex="0"
+									aria-sort={sortKey === 'cardkingdom_low_price'
+										? sortDirection === 'asc'
+											? 'ascending'
+											: 'descending'
+										: 'none'}
+									on:click={() => sortBy('cardkingdom_low_price')}
+									on:keydown={(e) =>
+										(e.key === 'Enter' || e.key === ' ') &&
+										(e.preventDefault(), sortBy('cardkingdom_low_price'))}
+									class:active={sortKey === 'cardkingdom_low_price'}
+									title={lastChecked.cardkingdom
+										? `Card Kingdom last checked: ${formatExactTimestamp(lastChecked.cardkingdom)}`
+										: 'Card Kingdom stock & lowest price'}
+								>
+									<div class="th-vendor-wrap">
+										<span class="th-vendor-title">
+											Card Kingdom
+											{#if sortKey === 'cardkingdom_low_price'}
+												<i
+													class="sort-icon fa-solid {sortDirection === 'asc'
+														? 'fa-sort-up'
+														: 'fa-sort-down'}"
+												></i>
+											{/if}
+										</span>
+										{#if formatRelativeTime(lastChecked.cardkingdom, nowTick)}
+											<span class="th-last-checked">
+												<i class="fa-regular fa-clock"></i>
+												{formatRelativeTime(lastChecked.cardkingdom, nowTick)}
+											</span>
+										{/if}
+									</div>
+								</th>
+							{/if}
+							{#if showCardmarket}
+								<th
+									class="th-vendor col-vendor"
+									tabindex="0"
+									aria-sort={sortKey === 'cardmarket_low_price'
+										? sortDirection === 'asc'
+											? 'ascending'
+											: 'descending'
+										: 'none'}
+									on:click={() => sortBy('cardmarket_low_price')}
+									on:keydown={(e) =>
+										(e.key === 'Enter' || e.key === ' ') &&
+										(e.preventDefault(), sortBy('cardmarket_low_price'))}
+									class:active={sortKey === 'cardmarket_low_price'}
+									title={lastChecked.cardmarket
+										? `CardMarket last checked: ${formatExactTimestamp(lastChecked.cardmarket)}`
+										: 'CardMarket stock & lowest price'}
+								>
+									<div class="th-vendor-wrap">
+										<span class="th-vendor-title">
+											CardMarket
+											{#if sortKey === 'cardmarket_low_price'}
+												<i
+													class="sort-icon fa-solid {sortDirection === 'asc'
+														? 'fa-sort-up'
+														: 'fa-sort-down'}"
+												></i>
+											{/if}
+										</span>
+										{#if formatRelativeTime(lastChecked.cardmarket, nowTick)}
+											<span class="th-last-checked">
+												<i class="fa-regular fa-clock"></i>
+												{formatRelativeTime(lastChecked.cardmarket, nowTick)}
+											</span>
+										{/if}
+									</div>
+								</th>
+							{/if}
+							{#if showEbay}
+								<th
+									class="th-vendor col-vendor"
+									tabindex="0"
+									aria-sort={sortKey === 'ebay_low_price'
+										? sortDirection === 'asc'
+											? 'ascending'
+											: 'descending'
+										: 'none'}
+									on:click={() => sortBy('ebay_low_price')}
+									on:keydown={(e) =>
+										(e.key === 'Enter' || e.key === ' ') &&
+										(e.preventDefault(), sortBy('ebay_low_price'))}
+									class:active={sortKey === 'ebay_low_price'}
+									title={lastChecked.ebay
+										? `eBay last checked: ${formatExactTimestamp(lastChecked.ebay)}`
+										: 'eBay stock & lowest price'}
+								>
+									<div class="th-vendor-wrap">
+										<span class="th-vendor-title">
+											eBay
+											{#if sortKey === 'ebay_low_price'}
+												<i
+													class="sort-icon fa-solid {sortDirection === 'asc'
+														? 'fa-sort-up'
+														: 'fa-sort-down'}"
+												></i>
+											{/if}
+										</span>
+										{#if formatRelativeTime(lastChecked.ebay, nowTick)}
+											<span class="th-last-checked">
+												<i class="fa-regular fa-clock"></i>
+												{formatRelativeTime(lastChecked.ebay, nowTick)}
+											</span>
+										{/if}
+									</div>
+								</th>
+							{/if}
+							{#if showHimarket}
+								<th
+									class="th-vendor col-vendor"
+									tabindex="0"
+									aria-sort={sortKey === 'himarket_low_price'
+										? sortDirection === 'asc'
+											? 'ascending'
+											: 'descending'
+										: 'none'}
+									on:click={() => sortBy('himarket_low_price')}
+									on:keydown={(e) =>
+										(e.key === 'Enter' || e.key === ' ') &&
+										(e.preventDefault(), sortBy('himarket_low_price'))}
+									class:active={sortKey === 'himarket_low_price'}
+									title={lastChecked.himarket
+										? `HiMarket last checked: ${formatExactTimestamp(lastChecked.himarket)}`
+										: 'HiMarket stock & lowest price'}
+								>
+									<div class="th-vendor-wrap">
+										<span class="th-vendor-title">
+											HiMarket
+											{#if sortKey === 'himarket_low_price'}
+												<i
+													class="sort-icon fa-solid {sortDirection === 'asc'
+														? 'fa-sort-up'
+														: 'fa-sort-down'}"
+												></i>
+											{/if}
+										</span>
+										{#if formatRelativeTime(lastChecked.himarket, nowTick)}
+											<span class="th-last-checked">
+												<i class="fa-regular fa-clock"></i>
+												{formatRelativeTime(lastChecked.himarket, nowTick)}
+											</span>
+										{/if}
+									</div>
+								</th>
+							{/if}
+							{#if showHareruya}
+								<th
+									class="th-vendor col-vendor"
+									tabindex="0"
+									aria-sort={sortKey === 'hareruya_low_price'
+										? sortDirection === 'asc'
+											? 'ascending'
+											: 'descending'
+										: 'none'}
+									on:click={() => sortBy('hareruya_low_price')}
+									on:keydown={(e) =>
+										(e.key === 'Enter' || e.key === ' ') &&
+										(e.preventDefault(), sortBy('hareruya_low_price'))}
+									class:active={sortKey === 'hareruya_low_price'}
+									title={lastChecked.hareruya
+										? `Hareruya last checked: ${formatExactTimestamp(lastChecked.hareruya)}`
+										: 'Hareruya stock & lowest price'}
+								>
+									<div class="th-vendor-wrap">
+										<span class="th-vendor-title">
+											Hareruya
+											{#if sortKey === 'hareruya_low_price'}
+												<i
+													class="sort-icon fa-solid {sortDirection === 'asc'
+														? 'fa-sort-up'
+														: 'fa-sort-down'}"
+												></i>
+											{/if}
+										</span>
+										{#if formatRelativeTime(lastChecked.hareruya, nowTick)}
+											<span class="th-last-checked">
+												<i class="fa-regular fa-clock"></i>
+												{formatRelativeTime(lastChecked.hareruya, nowTick)}
+											</span>
+										{/if}
+									</div>
+								</th>
+							{/if}
+							{#if showRuten}
+								<th
+									class="th-vendor col-vendor"
+									tabindex="0"
+									aria-sort={sortKey === 'ruten_low_price'
+										? sortDirection === 'asc'
+											? 'ascending'
+											: 'descending'
+										: 'none'}
+									on:click={() => sortBy('ruten_low_price')}
+									on:keydown={(e) =>
+										(e.key === 'Enter' || e.key === ' ') &&
+										(e.preventDefault(), sortBy('ruten_low_price'))}
+									class:active={sortKey === 'ruten_low_price'}
+									title={lastChecked.ruten
+										? `Ruten last checked: ${formatExactTimestamp(lastChecked.ruten)}`
+										: 'Ruten stock & lowest price (ZHT & EN only)'}
+								>
+									<div class="th-vendor-wrap">
+										<span class="th-vendor-title">
+											Ruten
+											{#if sortKey === 'ruten_low_price'}
+												<i
+													class="sort-icon fa-solid {sortDirection === 'asc'
+														? 'fa-sort-up'
+														: 'fa-sort-down'}"
+												></i>
+											{/if}
+										</span>
+										{#if formatRelativeTime(lastChecked.ruten, nowTick)}
+											<span class="th-last-checked">
+												<i class="fa-regular fa-clock"></i>
+												{formatRelativeTime(lastChecked.ruten, nowTick)}
+											</span>
+										{/if}
+									</div>
+								</th>
+							{/if}
 						{/if}
 						<th class="actions-header col-actions non-sortable-th"></th>
 					</tr>
@@ -1969,7 +2118,8 @@
 							on:rowTouchEnd={handleRowTouchEnd}
 							on:rowContextMenu={(e) => handleRowContextMenu(e.detail)}
 							on:toggleMenu={(e) => toggleMenu(cardKey, e.detail)}
-							on:toggleOtherOffers={() => (activeOtherOffersKey = activeOtherOffersKey === cardKey ? null : cardKey)}
+							on:toggleOtherOffers={() =>
+								(activeOtherOffersKey = activeOtherOffersKey === cardKey ? null : cardKey)}
 							on:closeMenu={closeMenu}
 							on:toggleSelect={(e) => toggleCardSelection(card, index, e.detail)}
 							on:manualStockCheck={() => handleManualStockCheck(card)}
@@ -1982,19 +2132,20 @@
 						/>
 					{/each}
 				</tbody>
-		</table>
-		{#if displayedCards.length < sortedCards.length}
-			<div class="list-load-trigger" use:setupObserver>
-				<span class="load-status-text">
-					Showing <strong>{displayedCards.length}</strong> of <strong>{sortedCards.length}</strong> cards
-				</span>
-				<button type="button" class="load-all-btn" on:click={loadAllCards}>
-					Load all ({sortedCards.length})
-				</button>
-			</div>
-		{/if}
+			</table>
+			{#if displayedCards.length < sortedCards.length}
+				<div class="list-load-trigger" use:setupObserver>
+					<span class="load-status-text">
+						Showing <strong>{displayedCards.length}</strong> of
+						<strong>{sortedCards.length}</strong> cards
+					</span>
+					<button type="button" class="load-all-btn" on:click={loadAllCards}>
+						Load all ({sortedCards.length})
+					</button>
+				</div>
+			{/if}
+		</div>
 	</div>
-</div>
 {/if}
 
 {#if showBackToTop}
@@ -2170,7 +2321,9 @@
 		height: 36px;
 		gap: 0.5rem;
 		box-sizing: border-box;
-		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 	}
 
 	.search-box:focus-within {
@@ -2717,7 +2870,6 @@
 		width: 50px;
 	}
 
-
 	.text-success {
 		color: var(--color-success);
 	}
@@ -2791,7 +2943,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
-		transition: opacity var(--transition-fast), transform var(--transition-fast);
+		transition:
+			opacity var(--transition-fast),
+			transform var(--transition-fast);
 	}
 
 	.clear-filters-btn:hover {
@@ -2846,8 +3000,6 @@
 			gap: 0.85rem;
 			width: 100%;
 		}
-
-
 	}
 
 	.overlay-backdrop {

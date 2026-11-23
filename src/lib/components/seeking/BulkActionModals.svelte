@@ -26,19 +26,33 @@
 {#if selectedCount > 0}
 	<aside class="floating-bulk-bar" aria-label="Bulk actions toolbar">
 		<div class="bulk-info">
-			<span class="bulk-count"><strong>{selectedCount}</strong> card{selectedCount === 1 ? '' : 's'} selected</span>
+			<span class="bulk-count"
+				><strong>{selectedCount}</strong> card{selectedCount === 1 ? '' : 's'} selected</span
+			>
 			{#if selectedCostSummary.inStockCount > 0}
-				<span class="bulk-cost-pill" title="Estimated lowest total for {selectedCostSummary.inStockCount} in-stock selected card(s)">
+				<span
+					class="bulk-cost-pill"
+					title="Estimated lowest total for {selectedCostSummary.inStockCount} in-stock selected card(s)"
+				>
 					<i class="fa-solid fa-sack-dollar"></i>
-					Est. {formatPrice(selectedCostSummary.totalLowestCents)} ({selectedCostSummary.inStockCount} in stock)
+					Est. {formatPrice(selectedCostSummary.totalLowestCents)} ({selectedCostSummary.inStockCount}
+					in stock)
 				</span>
 			{/if}
 		</div>
 		<div class="bulk-actions">
-			<button class="bulk-btn secondary" on:click={onCopySelected} title="Copy selected cards as Decklist (Moxfield / Text format)">
+			<button
+				class="bulk-btn secondary"
+				on:click={onCopySelected}
+				title="Copy selected cards as Decklist (Moxfield / Text format)"
+			>
 				<i class="fa-solid fa-copy"></i> Copy ({selectedCount})
 			</button>
-			<button class="bulk-btn secondary" on:click={onExportCsvSelected} title="Export selected cards as CSV">
+			<button
+				class="bulk-btn secondary"
+				on:click={onExportCsvSelected}
+				title="Export selected cards as CSV"
+			>
 				<i class="fa-solid fa-file-csv"></i> CSV ({selectedCount})
 			</button>
 			<button class="bulk-btn" on:click={() => (showBulkPriceCapModal = true)}>
@@ -63,7 +77,12 @@
 			<button class="bulk-btn secondary" on:click={onSelectAllFiltered}>
 				Select All ({totalFilteredCount})
 			</button>
-			<button class="bulk-btn secondary" on:click={onClearSelection} title="Clear selection (Esc)" aria-label="Clear selection">
+			<button
+				class="bulk-btn secondary"
+				on:click={onClearSelection}
+				title="Clear selection (Esc)"
+				aria-label="Clear selection"
+			>
 				<i class="fa-solid fa-xmark"></i>
 			</button>
 		</div>
@@ -73,17 +92,32 @@
 {#if showBulkPriceCapModal}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}>
-		<div class="modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Set Price Cap" on:click|stopPropagation>
+	<div
+		class="overlay-backdrop"
+		on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}
+	>
+		<div
+			class="modal-content"
+			use:focusTrap
+			role="dialog"
+			aria-modal="true"
+			aria-label="Set Price Cap"
+			on:click|stopPropagation
+		>
 			<div class="modal-header">
 				<h2>Set Price Cap ({selectedCount} Cards)</h2>
-				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}>
+				<button
+					class="close-modal-btn"
+					aria-label="Close modal"
+					on:click={() => !isProcessingBulkAction && (showBulkPriceCapModal = false)}
+				>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>
 			<div class="modal-body">
 				<p class="setting-description">
-					Apply a maximum price cap to all <strong>{selectedCount}</strong> selected cards. Leave empty to remove the cap on selected cards.
+					Apply a maximum price cap to all <strong>{selectedCount}</strong> selected cards. Leave empty
+					to remove the cap on selected cards.
 				</p>
 				<div class="settings-group">
 					<label for="bulk-price-cap">Max Price Cap ($)</label>
@@ -130,17 +164,32 @@
 {#if showBulkConditionModal}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkConditionModal = false)}>
-		<div class="modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Set Minimum Condition" on:click|stopPropagation>
+	<div
+		class="overlay-backdrop"
+		on:click={() => !isProcessingBulkAction && (showBulkConditionModal = false)}
+	>
+		<div
+			class="modal-content"
+			use:focusTrap
+			role="dialog"
+			aria-modal="true"
+			aria-label="Set Minimum Condition"
+			on:click|stopPropagation
+		>
 			<div class="modal-header">
 				<h2>Set Min Condition ({selectedCount} Cards)</h2>
-				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isProcessingBulkAction && (showBulkConditionModal = false)}>
+				<button
+					class="close-modal-btn"
+					aria-label="Close modal"
+					on:click={() => !isProcessingBulkAction && (showBulkConditionModal = false)}
+				>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>
 			<div class="modal-body">
 				<p class="setting-description">
-					Apply a minimum condition override to all <strong>{selectedCount}</strong> selected cards, or choose Account Default to clear overrides.
+					Apply a minimum condition override to all <strong>{selectedCount}</strong> selected cards,
+					or choose Account Default to clear overrides.
 				</p>
 				<div class="settings-group">
 					<label for="bulk-min-condition">Minimum Condition</label>
@@ -187,17 +236,32 @@
 {#if showBulkDeleteModal}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="overlay-backdrop" on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}>
-		<div class="modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Delete Selected Cards" on:click|stopPropagation>
+	<div
+		class="overlay-backdrop"
+		on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}
+	>
+		<div
+			class="modal-content"
+			use:focusTrap
+			role="dialog"
+			aria-modal="true"
+			aria-label="Delete Selected Cards"
+			on:click|stopPropagation
+		>
 			<div class="modal-header">
 				<h2>Delete {selectedCount} Cards?</h2>
-				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}>
+				<button
+					class="close-modal-btn"
+					aria-label="Close modal"
+					on:click={() => !isProcessingBulkAction && (showBulkDeleteModal = false)}
+				>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>
 			<div class="modal-body">
 				<p class="setting-description text-error-desc">
-					Are you sure you want to remove <strong>{selectedCount}</strong> selected cards from your Seeking list? This action cannot be undone.
+					Are you sure you want to remove <strong>{selectedCount}</strong> selected cards from your Seeking
+					list? This action cannot be undone.
 				</p>
 				{#if isProcessingBulkAction}
 					<div class="bulk-progress-text">
@@ -287,7 +351,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
-		transition: opacity var(--transition-fast), transform var(--transition-fast);
+		transition:
+			opacity var(--transition-fast),
+			transform var(--transition-fast);
 		white-space: nowrap;
 	}
 

@@ -1,11 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { auth } from '$lib/stores/auth';
-	import {
-		demoAlertsStore,
-		openDemoAlertPreviews,
-		resetDemoWorkspace
-	} from '$lib/demo/demoStore';
+	import { demoAlertsStore, openDemoAlertPreviews, resetDemoWorkspace } from '$lib/demo/demoStore';
 
 	let confirmReset = false;
 	let resetSuccess = false;
@@ -47,7 +43,8 @@
 					DEMO SANDBOX
 				</span>
 				<span class="demo-copy">
-					Explore Seeker using simulated multi-store stock seeded with live Scryfall prices. Saved locally in your browser &mdash; zero backend or Discord actions triggered.
+					Explore Seeker using simulated multi-store stock seeded with live Scryfall prices. Saved
+					locally in your browser &mdash; zero backend or Discord actions triggered.
 				</span>
 			</div>
 
@@ -82,11 +79,7 @@
 					</span>
 				</button>
 
-				<button
-					type="button"
-					class="demo-btn demo-btn-primary"
-					on:click={() => auth.login()}
-				>
+				<button type="button" class="demo-btn demo-btn-primary" on:click={() => auth.login()}>
 					<i class="fa-brands fa-discord" aria-hidden="true"></i>
 					<span>Login</span>
 				</button>

@@ -76,11 +76,11 @@
 	<div class="about-container">
 		<div class="about-content">
 			<p>
-				Seeker is designed to help Magic: The Gathering collectors efficiently find the
-				specific cards they need to complete their collections. Whether you're searching for a rare
-				foil, a specific language version, or that one missing card from a vintage set, Seeker
-				streamlines the process by continuously searching across multiple marketplaces and
-				notifying you directly via Discord when your card is listed.
+				Seeker is designed to help Magic: The Gathering collectors efficiently find the specific
+				cards they need to complete their collections. Whether you're searching for a rare foil, a
+				specific language version, or that one missing card from a vintage set, Seeker streamlines
+				the process by continuously searching across multiple marketplaces and notifying you
+				directly via Discord when your card is listed.
 			</p>
 
 			<div class="contact-card">
@@ -89,7 +89,13 @@
 				</div>
 				<div class="contact-details">
 					<strong>Have questions or feedback?</strong>
-					<span>Reach out to <a href="https://discord.com/users/213058259076913152" target="_blank" rel="noopener noreferrer">@undomian</a> on the City of Traitors Discord.</span>
+					<span
+						>Reach out to <a
+							href="https://discord.com/users/213058259076913152"
+							target="_blank"
+							rel="noopener noreferrer">@undomian</a
+						> on the City of Traitors Discord.</span
+					>
 				</div>
 				{#if !$auth.isAuthenticated}
 					<a href="/demo" data-sveltekit-preload-data="off" class="about-demo-cta">
@@ -152,7 +158,10 @@
 			</div>
 
 			<h2>Supported Marketplaces</h2>
-			<p>Seeker monitors domestic and international storefronts with exact set, finish, and language matching:</p>
+			<p>
+				Seeker monitors domestic and international storefronts with exact set, finish, and language
+				matching:
+			</p>
 			<div class="marketplace-pills-grid">
 				{#each supportedMarketplaces as mk}
 					<div class="marketplace-pill">
@@ -166,7 +175,10 @@
 			</div>
 
 			<h2>Discord Bot Commands</h2>
-			<p>Manage your seeking list and check prices directly from Discord using <code>/seeker</code> slash commands:</p>
+			<p>
+				Manage your seeking list and check prices directly from Discord using <code>/seeker</code> slash
+				commands:
+			</p>
 			<div class="commands-grid">
 				{#each slashCommands as item}
 					<div class="command-card">

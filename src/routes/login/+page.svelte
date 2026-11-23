@@ -39,13 +39,16 @@
 					errorMessage = 'Your login session expired or was invalid. Please try again.';
 					break;
 				case 'access_denied':
-					errorMessage = 'Access was denied. Please ensure you authorized Discord login and hold the required role.';
+					errorMessage =
+						'Access was denied. Please ensure you authorized Discord login and hold the required role.';
 					break;
 				case 'invalid_token':
-					errorMessage = 'Your authentication token was invalid or expired. Please try logging in again.';
+					errorMessage =
+						'Your authentication token was invalid or expired. Please try logging in again.';
 					break;
 				case 'no_token':
-					errorMessage = 'No authentication token was received from the login callback. Please try again.';
+					errorMessage =
+						'No authentication token was received from the login callback. Please try again.';
 					break;
 				case 'invalid_callback':
 					errorMessage = 'The login callback parameters were invalid. Please try logging in again.';
@@ -90,7 +93,8 @@
 			Try Interactive Demo (No Login Required)
 		</button>
 		<p class="demo-hint">
-			Browse 12 curated cards across 8 marketplaces, test live Scryfall search/import, and preview Discord alerts in your browser.
+			Browse 12 curated cards across 8 marketplaces, test live Scryfall search/import, and preview
+			Discord alerts in your browser.
 		</p>
 	</div>
 </div>

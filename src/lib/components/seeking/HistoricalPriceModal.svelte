@@ -35,9 +35,7 @@
 		const maxVal = Math.max(...allVals);
 		const span = Math.max(1, maxVal - minVal);
 		const xFor = (i) =>
-			history.length === 1
-				? W / 2
-				: PAD_X + (i / (history.length - 1)) * (W - PAD_X * 2);
+			history.length === 1 ? W / 2 : PAD_X + (i / (history.length - 1)) * (W - PAD_X * 2);
 		const yFor = (v) => PAD_Y + (1 - (v - minVal) / span) * (H - PAD_Y * 2);
 
 		const nmPts = [];
@@ -45,15 +43,24 @@
 		history.forEach((pt, idx) => {
 			const x = Number(xFor(idx).toFixed(1));
 			if (pt.nm_cents > 0) {
-				nmPts.push({ x, y: Number(yFor(pt.nm_cents).toFixed(1)), cents: pt.nm_cents, date: pt.date });
+				nmPts.push({
+					x,
+					y: Number(yFor(pt.nm_cents).toFixed(1)),
+					cents: pt.nm_cents,
+					date: pt.date
+				});
 			}
 			if (pt.played_cents > 0) {
-				plPts.push({ x, y: Number(yFor(pt.played_cents).toFixed(1)), cents: pt.played_cents, date: pt.date });
+				plPts.push({
+					x,
+					y: Number(yFor(pt.played_cents).toFixed(1)),
+					cents: pt.played_cents,
+					date: pt.date
+				});
 			}
 		});
 
-		const toPath = (pts) =>
-			pts.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+		const toPath = (pts) => pts.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
 
 		return {
 			width: W,
@@ -77,7 +84,14 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={onClose}>
-		<div class="modal-content hist-modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Historical Price Intelligence" on:click|stopPropagation>
+		<div
+			class="modal-content hist-modal-content"
+			use:focusTrap
+			role="dialog"
+			aria-modal="true"
+			aria-label="Historical Price Intelligence"
+			on:click|stopPropagation
+		>
 			<div class="modal-header">
 				<div class="hist-modal-title-group">
 					<h2>
@@ -112,7 +126,8 @@
 						</p>
 						{#if hp?.first_observed_at}
 							<span class="hist-tracked-since">
-								Tracked since {formatExactTimestamp(hp.first_observed_at)} ({hp.observation_count || 1} observation{hp.observation_count === 1 ? '' : 's'})
+								Tracked since {formatExactTimestamp(hp.first_observed_at)} ({hp.observation_count ||
+									1} observation{hp.observation_count === 1 ? '' : 's'})
 							</span>
 						{/if}
 					</div>
@@ -123,7 +138,10 @@
 						<i class="fa-solid fa-satellite-dish"></i>
 						<h4>No Verified In-Stock History Yet</h4>
 						<p>
-							This printing has not yet been observed in stock on a catalog-verified marketplace (CardTrader, TCGPlayer, Mana Pool, Card Kingdom, HiMarket, or Hareruya). As soon as a copy appears during any user's scan, Seeker will permanently record its price and date here.
+							This printing has not yet been observed in stock on a catalog-verified marketplace
+							(CardTrader, TCGPlayer, Mana Pool, Card Kingdom, HiMarket, or Hareruya). As soon as a
+							copy appears during any user's scan, Seeker will permanently record its price and date
+							here.
 						</p>
 					</div>
 				{:else}
@@ -152,7 +170,10 @@
 								</div>
 								{#if hp.nm_last_seen_cents > 0}
 									<div class="hist-tier-foot">
-										Last seen: <strong>{formatPrice(hp.nm_last_seen_cents)}</strong> ({hp.nm_last_seen_condition || 'NM'} on {formatVendorDisplayName(hp.nm_last_seen_vendor)}, {formatRelativeTime(hp.nm_last_seen_at, nowTick) || 'Recently'})
+										Last seen: <strong>{formatPrice(hp.nm_last_seen_cents)}</strong>
+										({hp.nm_last_seen_condition || 'NM'} on {formatVendorDisplayName(
+											hp.nm_last_seen_vendor
+										)}, {formatRelativeTime(hp.nm_last_seen_at, nowTick) || 'Recently'})
 									</div>
 								{/if}
 							{:else}
@@ -184,7 +205,10 @@
 								</div>
 								{#if hp.played_last_seen_cents > 0}
 									<div class="hist-tier-foot">
-										Last seen: <strong>{formatPrice(hp.played_last_seen_cents)}</strong> ({hp.played_last_seen_condition || 'MP'} on {formatVendorDisplayName(hp.played_last_seen_vendor)}, {formatRelativeTime(hp.played_last_seen_at, nowTick) || 'Recently'})
+										Last seen: <strong>{formatPrice(hp.played_last_seen_cents)}</strong>
+										({hp.played_last_seen_condition || 'MP'} on {formatVendorDisplayName(
+											hp.played_last_seen_vendor
+										)}, {formatRelativeTime(hp.played_last_seen_at, nowTick) || 'Recently'})
 									</div>
 								{/if}
 							{:else}
@@ -207,7 +231,9 @@
 									{#if sparkline.plPts.length >= 2}
 										<span class="legend-item pl"><span class="legend-dot"></span>Played</span>
 									{/if}
-									<span class="legend-range">{formatPrice(sparkline.minVal)} – {formatPrice(sparkline.maxVal)}</span>
+									<span class="legend-range"
+										>{formatPrice(sparkline.minVal)} – {formatPrice(sparkline.maxVal)}</span
+									>
 								</div>
 							</div>
 							<svg
@@ -218,10 +244,24 @@
 								aria-label="Historical floor price trend from {sparkline.startDate} to {sparkline.endDate}"
 							>
 								{#if sparkline.plPath}
-									<path d={sparkline.plPath} fill="none" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+									<path
+										d={sparkline.plPath}
+										fill="none"
+										stroke="#f59e0b"
+										stroke-width="2"
+										stroke-linejoin="round"
+										stroke-linecap="round"
+									/>
 								{/if}
 								{#if sparkline.nmPath}
-									<path d={sparkline.nmPath} fill="none" stroke="#10b981" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" />
+									<path
+										d={sparkline.nmPath}
+										fill="none"
+										stroke="#10b981"
+										stroke-width="2.2"
+										stroke-linejoin="round"
+										stroke-linecap="round"
+									/>
 								{/if}
 								{#each sparkline.plPts as pt}
 									<circle cx={pt.x} cy={pt.y} r="3" fill="#f59e0b">
@@ -259,7 +299,10 @@
 												</span>
 												{#if vData.last_cents > 0}
 													<span class="hist-vendor-stat muted">
-														Last: {formatPrice(vData.last_cents)} ({formatRelativeTime(vData.last_at, nowTick) || 'Recently'})
+														Last: {formatPrice(vData.last_cents)} ({formatRelativeTime(
+															vData.last_at,
+															nowTick
+														) || 'Recently'})
 													</span>
 												{/if}
 											</div>
@@ -274,7 +317,8 @@
 				<div class="hist-footnote">
 					<i class="fa-solid fa-circle-info"></i>
 					<span>
-						Out-of-stock scarce cards never lose their historical memory. Only deterministic catalog stores contribute to floors (eBay &amp; Ruten are excluded to prevent keyword noise).
+						Out-of-stock scarce cards never lose their historical memory. Only deterministic catalog
+						stores contribute to floors (eBay &amp; Ruten are excluded to prevent keyword noise).
 					</span>
 				</div>
 			</div>
@@ -291,9 +335,7 @@
 				>
 					<i class="fa-solid fa-sliders"></i> Edit Card Settings
 				</button>
-				<button type="button" class="modal-btn primary" on:click={onClose}>
-					Done
-				</button>
+				<button type="button" class="modal-btn primary" on:click={onClose}> Done </button>
 			</div>
 		</div>
 	</div>

@@ -33,42 +33,70 @@
 		const cardFaces = print.card_faces && print.card_faces.length > 0 ? print.card_faces : null;
 		const manaCost =
 			print.mana_cost ||
-			(cardFaces ? cardFaces.map((f: any) => f.mana_cost || '').filter(Boolean).join(' // ') : '') ||
+			(cardFaces
+				? cardFaces
+						.map((f: any) => f.mana_cost || '')
+						.filter(Boolean)
+						.join(' // ')
+				: '') ||
 			'';
 		const typeLine =
 			print.type_line ||
-			(cardFaces ? cardFaces.map((f: any) => f.type_line || '').filter(Boolean).join(' // ') : '') ||
+			(cardFaces
+				? cardFaces
+						.map((f: any) => f.type_line || '')
+						.filter(Boolean)
+						.join(' // ')
+				: '') ||
 			'';
 		const oracleText =
 			print.oracle_text ||
 			(cardFaces
 				? cardFaces
-						.map((f: any) => (cardFaces.length > 1 && f.name ? `[${f.name}]\n${f.oracle_text || ''}` : f.oracle_text || ''))
+						.map((f: any) =>
+							cardFaces.length > 1 && f.name
+								? `[${f.name}]\n${f.oracle_text || ''}`
+								: f.oracle_text || ''
+						)
 						.filter(Boolean)
 						.join('\n\n')
 				: '') ||
 			'';
 		const flavorText =
 			print.flavor_text ||
-			(cardFaces ? cardFaces.map((f: any) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+			(cardFaces
+				? cardFaces
+						.map((f: any) => f.flavor_text)
+						.filter(Boolean)
+						.join('\n\n')
+				: '') ||
 			'';
 		const power =
 			print.power !== undefined
 				? print.power
 				: cardFaces
-					? cardFaces.map((f: any) => f.power).filter((p: any) => p !== undefined).join(' // ')
+					? cardFaces
+							.map((f: any) => f.power)
+							.filter((p: any) => p !== undefined)
+							.join(' // ')
 					: null;
 		const toughness =
 			print.toughness !== undefined
 				? print.toughness
 				: cardFaces
-					? cardFaces.map((f: any) => f.toughness).filter((t: any) => t !== undefined).join(' // ')
+					? cardFaces
+							.map((f: any) => f.toughness)
+							.filter((t: any) => t !== undefined)
+							.join(' // ')
 					: null;
 		const loyalty =
 			print.loyalty !== undefined
 				? print.loyalty
 				: cardFaces
-					? cardFaces.map((f: any) => f.loyalty).filter((l: any) => l !== undefined).join(' // ')
+					? cardFaces
+							.map((f: any) => f.loyalty)
+							.filter((l: any) => l !== undefined)
+							.join(' // ')
 					: null;
 
 		return {
@@ -103,42 +131,70 @@
 		const cardFaces = card.card_faces && card.card_faces.length > 0 ? card.card_faces : null;
 		const manaCost =
 			card.mana_cost ||
-			(cardFaces ? cardFaces.map((f: any) => f.mana_cost || '').filter(Boolean).join(' // ') : '') ||
+			(cardFaces
+				? cardFaces
+						.map((f: any) => f.mana_cost || '')
+						.filter(Boolean)
+						.join(' // ')
+				: '') ||
 			'';
 		const typeLine =
 			card.type_line ||
-			(cardFaces ? cardFaces.map((f: any) => f.type_line || '').filter(Boolean).join(' // ') : '') ||
+			(cardFaces
+				? cardFaces
+						.map((f: any) => f.type_line || '')
+						.filter(Boolean)
+						.join(' // ')
+				: '') ||
 			'';
 		const oracleText =
 			card.oracle_text ||
 			(cardFaces
 				? cardFaces
-						.map((f: any) => (cardFaces.length > 1 && f.name ? `[${f.name}]\n${f.oracle_text || ''}` : f.oracle_text || ''))
+						.map((f: any) =>
+							cardFaces.length > 1 && f.name
+								? `[${f.name}]\n${f.oracle_text || ''}`
+								: f.oracle_text || ''
+						)
 						.filter(Boolean)
 						.join('\n\n')
 				: '') ||
 			'';
 		const flavorText =
 			card.flavor_text ||
-			(cardFaces ? cardFaces.map((f: any) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+			(cardFaces
+				? cardFaces
+						.map((f: any) => f.flavor_text)
+						.filter(Boolean)
+						.join('\n\n')
+				: '') ||
 			'';
 		const power =
 			card.power !== undefined
 				? card.power
 				: cardFaces
-					? cardFaces.map((f: any) => f.power).filter((p: any) => p !== undefined).join(' // ')
+					? cardFaces
+							.map((f: any) => f.power)
+							.filter((p: any) => p !== undefined)
+							.join(' // ')
 					: null;
 		const toughness =
 			card.toughness !== undefined
 				? card.toughness
 				: cardFaces
-					? cardFaces.map((f: any) => f.toughness).filter((t: any) => t !== undefined).join(' // ')
+					? cardFaces
+							.map((f: any) => f.toughness)
+							.filter((t: any) => t !== undefined)
+							.join(' // ')
 					: null;
 		const loyalty =
 			card.loyalty !== undefined
 				? card.loyalty
 				: cardFaces
-					? cardFaces.map((f: any) => f.loyalty).filter((l: any) => l !== undefined).join(' // ')
+					? cardFaces
+							.map((f: any) => f.loyalty)
+							.filter((l: any) => l !== undefined)
+							.join(' // ')
 					: null;
 
 		return {
@@ -187,19 +243,33 @@
 				data.oracle_text ||
 				(cardFaces
 					? cardFaces
-							.map((f: any) => (cardFaces.length > 1 && (f.printed_name || f.name) ? `[${f.printed_name || f.name}]\n${f.printed_text || f.oracle_text || ''}` : f.printed_text || f.oracle_text || ''))
+							.map((f: any) =>
+								cardFaces.length > 1 && (f.printed_name || f.name)
+									? `[${f.printed_name || f.name}]\n${f.printed_text || f.oracle_text || ''}`
+									: f.printed_text || f.oracle_text || ''
+							)
 							.filter(Boolean)
 							.join('\n\n')
 					: '') ||
 				'';
 			const flavor_text =
 				data.flavor_text ||
-				(cardFaces ? cardFaces.map((f: any) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+				(cardFaces
+					? cardFaces
+							.map((f: any) => f.flavor_text)
+							.filter(Boolean)
+							.join('\n\n')
+					: '') ||
 				'';
 			const type_line =
 				data.printed_type_line ||
 				data.type_line ||
-				(cardFaces ? cardFaces.map((f: any) => f.printed_type_line || f.type_line || '').filter(Boolean).join(' // ') : '') ||
+				(cardFaces
+					? cardFaces
+							.map((f: any) => f.printed_type_line || f.type_line || '')
+							.filter(Boolean)
+							.join(' // ')
+					: '') ||
 				'';
 			const printed_name =
 				data.printed_name ||
@@ -292,10 +362,9 @@
 			const controller = new AbortController();
 			autocompleteAbortController = controller;
 			try {
-				const response = await fetch(
-					`${AUTOCOMPLETE_URL}?q=${encodeURIComponent(termSnapshot)}`,
-					{ signal: controller.signal }
-				);
+				const response = await fetch(`${AUTOCOMPLETE_URL}?q=${encodeURIComponent(termSnapshot)}`, {
+					signal: controller.signal
+				});
 				const data = await response.json();
 				if (requestSeq !== autocompleteRequestSeq) return;
 				suggestions = data.data || [];
@@ -635,7 +704,9 @@
 		border-radius: 9999px;
 		padding: 0.35rem 0.45rem 0.35rem 1rem;
 		box-shadow: var(--shadow-sm);
-		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 	}
 
 	.input-group:focus-within {
@@ -759,7 +830,9 @@
 		color: var(--color-text-primary);
 		font-size: 0.9rem;
 		text-align: left;
-		transition: background-color var(--transition-fast), color var(--transition-fast);
+		transition:
+			background-color var(--transition-fast),
+			color var(--transition-fast);
 	}
 
 	.suggestion-icon {

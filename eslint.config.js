@@ -13,6 +13,8 @@ export default [
 				Headers: 'readonly',
 				Response: 'readonly',
 				URL: 'readonly',
+				URLSearchParams: 'readonly',
+				caches: 'readonly',
 				clearTimeout: 'readonly',
 				console: 'readonly',
 				document: 'readonly',
@@ -20,6 +22,7 @@ export default [
 				globalThis: 'readonly',
 				localStorage: 'readonly',
 				process: 'readonly',
+				self: 'readonly',
 				setTimeout: 'readonly',
 				window: 'readonly'
 			}

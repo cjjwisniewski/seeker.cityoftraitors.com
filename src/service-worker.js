@@ -32,9 +32,7 @@ self.addEventListener('activate', (event) => {
 		caches
 			.keys()
 			.then((keys) =>
-				Promise.all(
-					keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-				)
+				Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
 			)
 			.then(() => self.clients.claim())
 	);
@@ -54,9 +52,7 @@ self.addEventListener('fetch', (event) => {
 
 	// Cache-first for immutable versioned build assets and precached static files.
 	if (PRECACHE_SET.has(url.pathname)) {
-		event.respondWith(
-			caches.match(request).then((cached) => cached || fetch(request))
-		);
+		event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
 		return;
 	}
 
@@ -73,8 +69,7 @@ self.addEventListener('fetch', (event) => {
 					return response;
 				})
 				.catch(async () => {
-					const cachedShell =
-						(await caches.match('/index.html')) || (await caches.match('/'));
+					const cachedShell = (await caches.match('/index.html')) || (await caches.match('/'));
 					return (
 						cachedShell ||
 						new Response('Offline — please reconnect to load Seeker.', {

@@ -188,7 +188,10 @@ function sanitizeDemoSettings(input: unknown): DemoUserSettings {
 				? src.priceDropAlertEnabled
 				: DEFAULT_DEMO_SETTINGS.priceDropAlertEnabled,
 		priceDropThreshold: threshold ?? DEFAULT_DEMO_SETTINGS.priceDropThreshold,
-		preferredLanguage: sanitizeLanguage(src.preferredLanguage, DEFAULT_DEMO_SETTINGS.preferredLanguage),
+		preferredLanguage: sanitizeLanguage(
+			src.preferredLanguage,
+			DEFAULT_DEMO_SETTINGS.preferredLanguage
+		),
 		preferredFinish: sanitizeFinish(src.preferredFinish, DEFAULT_DEMO_SETTINGS.preferredFinish),
 		minCondition: minCond,
 		marketplaceCardtraderEnabled:
@@ -228,7 +231,9 @@ function sanitizeDemoSettings(input: unknown): DemoUserSettings {
 	};
 }
 
-function getDemoCardKey(card: Pick<DemoCardRecord, 'set_code' | 'collector_number' | 'language' | 'finish'>): string {
+function getDemoCardKey(
+	card: Pick<DemoCardRecord, 'set_code' | 'collector_number' | 'language' | 'finish'>
+): string {
 	return `${card.set_code}-${card.collector_number}-${card.language}-${card.finish}`;
 }
 
@@ -238,7 +243,8 @@ function sanitizeCardRecord(
 	if (!raw || typeof raw !== 'object') return null;
 	const r = raw as Record<string, unknown>;
 	const name = typeof r.name === 'string' ? r.name.trim().slice(0, 200) : '';
-	const setCode = typeof r.set_code === 'string' ? r.set_code.trim().toLowerCase().slice(0, 20) : '';
+	const setCode =
+		typeof r.set_code === 'string' ? r.set_code.trim().toLowerCase().slice(0, 20) : '';
 	const collectorNumber =
 		typeof r.collector_number === 'string' ? r.collector_number.trim().slice(0, 32) : '';
 	if (!name || !setCode || !collectorNumber) return null;
@@ -264,7 +270,8 @@ function sanitizeCardRecord(
 				: `${collectorNumber}_${language}_${finish}`,
 		name,
 		set_code: setCode,
-		set_name: typeof r.set_name === 'string' ? r.set_name.trim().slice(0, 150) : setCode.toUpperCase(),
+		set_name:
+			typeof r.set_name === 'string' ? r.set_name.trim().slice(0, 150) : setCode.toUpperCase(),
 		collector_number: collectorNumber,
 		language,
 		finish,
@@ -281,7 +288,9 @@ function sanitizeCardRecord(
 		cardtrader_low_price: sanitizePrice(r.cardtrader_low_price),
 		cardtrader_condition: sanitizeCond(r.cardtrader_condition),
 		tcgplayer_id:
-			typeof r.tcgplayer_id === 'string' || typeof r.tcgplayer_id === 'number' ? r.tcgplayer_id : '',
+			typeof r.tcgplayer_id === 'string' || typeof r.tcgplayer_id === 'number'
+				? r.tcgplayer_id
+				: '',
 		tcgplayer_stock: Boolean(r.tcgplayer_stock),
 		tcgplayer_low_price: sanitizePrice(r.tcgplayer_low_price),
 		tcgplayer_condition: sanitizeCond(r.tcgplayer_condition),
@@ -369,7 +378,9 @@ function loadRawDemoAlerts(seedCards: DemoCardRecord[]): DemoAlertPreview[] {
 	const parsed = safeJsonParse<unknown>(raw);
 	if (Array.isArray(parsed)) {
 		const valid = parsed
-			.filter((a): a is DemoAlertPreview => Boolean(a && typeof a === 'object' && typeof (a as DemoAlertPreview).cardName === 'string'))
+			.filter((a): a is DemoAlertPreview =>
+				Boolean(a && typeof a === 'object' && typeof (a as DemoAlertPreview).cardName === 'string')
+			)
 			.slice(0, MAX_STORED_ALERTS);
 		return valid;
 	}
@@ -416,7 +427,9 @@ function getBestQualifiedOffer(
 		zhs: 'Chinese (S)'
 	};
 	const tcgLang = encodeURIComponent(tcgLangMap[card.language.toLowerCase()] || 'English');
-	const tcgPrint = encodeURIComponent(card.finish === 'foil' || card.finish === 'etched' ? 'Foil' : 'Normal');
+	const tcgPrint = encodeURIComponent(
+		card.finish === 'foil' || card.finish === 'etched' ? 'Foil' : 'Normal'
+	);
 
 	const candidates: Array<{
 		vendor: string;
@@ -501,7 +514,8 @@ function getBestQualifiedOffer(
 		{
 			vendor: 'ruten',
 			label: 'Ruten',
-			enabled: settings.marketplaceRutenEnabled && ['zht', 'en'].includes(card.language.toLowerCase()),
+			enabled:
+				settings.marketplaceRutenEnabled && ['zht', 'en'].includes(card.language.toLowerCase()),
 			stock: card.ruten_stock,
 			price: card.ruten_low_price,
 			nativeText: card.ruten_price_twd
@@ -564,8 +578,8 @@ function recordAlertIfQualified(
 	const isPlayed = ['MP', 'HP', 'DMG', 'D'].includes(bestNext.condition.toUpperCase());
 	const tierLabel = isPlayed ? 'Played' : 'NM/LP';
 	const hp = nextCard.historical_pricing;
-	const tierFloorCents = isPlayed ? hp?.played_low_cents ?? null : hp?.nm_low_cents ?? null;
-	const tierFloorVendor = isPlayed ? hp?.played_low_vendor ?? null : hp?.nm_low_vendor ?? null;
+	const tierFloorCents = isPlayed ? (hp?.played_low_cents ?? null) : (hp?.nm_low_cents ?? null);
+	const tierFloorVendor = isPlayed ? (hp?.played_low_vendor ?? null) : (hp?.nm_low_vendor ?? null);
 
 	if (!bestPrev) {
 		kind = 'restock';
@@ -577,7 +591,9 @@ function recordAlertIfQualified(
 	) {
 		kind = 'price_drop';
 		oldPriceCents = bestPrev.priceCents;
-		percentageDrop = Math.round(((bestPrev.priceCents - bestNext.priceCents) / bestPrev.priceCents) * 100);
+		percentageDrop = Math.round(
+			((bestPrev.priceCents - bestNext.priceCents) / bestPrev.priceCents) * 100
+		);
 	} else if (tierFloorCents !== null && bestNext.priceCents <= tierFloorCents) {
 		kind = 'historical_low';
 		historicalLowCents = tierFloorCents;
@@ -664,13 +680,18 @@ function loadRawDemoCardsWithoutMaterialize(): StoredDemoCard[] {
 	return initial;
 }
 
-function materializePendingCards(cards: StoredDemoCard[], settings: DemoUserSettings): StoredDemoCard[] {
+function materializePendingCards(
+	cards: StoredDemoCard[],
+	settings: DemoUserSettings
+): StoredDemoCard[] {
 	const nowMs = Date.now();
 	let mutated = false;
 	const updated = cards.map((card) => {
 		if (card.demo_pending_until && nowMs >= card.demo_pending_until) {
 			mutated = true;
-			const baseline = card.demo_baseline_cents || extractScryfallBaselineCents(null, card.finish, getDemoCardKey(card));
+			const baseline =
+				card.demo_baseline_cents ||
+				extractScryfallBaselineCents(null, card.finish, getDemoCardKey(card));
 			const nextGen = (card.demo_generation ?? 0) + 1;
 			const patch = simulateVendorOffersForCard(
 				card,
@@ -841,7 +862,11 @@ function matchesEndpoint(rawUrl: string, envName: string, slugFallback: string):
 	try {
 		const parsed = new URL(rawUrl, 'https://seeker.cityoftraitors.com');
 		const pathLower = parsed.pathname.toLowerCase();
-		return pathLower === `/seeker/${slugFallback}` || pathLower === `/api/${slugFallback}` || pathLower.endsWith(`/${slugFallback}`);
+		return (
+			pathLower === `/seeker/${slugFallback}` ||
+			pathLower === `/api/${slugFallback}` ||
+			pathLower.endsWith(`/${slugFallback}`)
+		);
 	} catch {
 		return false;
 	}
@@ -861,9 +886,12 @@ function createPendingCardFromPayload(
 	nowMs: number
 ): StoredDemoCard | null {
 	const name = typeof payload.name === 'string' ? payload.name.trim().slice(0, 200) : '';
-	const setCode = typeof payload.set_code === 'string' ? payload.set_code.trim().toLowerCase().slice(0, 20) : '';
+	const setCode =
+		typeof payload.set_code === 'string' ? payload.set_code.trim().toLowerCase().slice(0, 20) : '';
 	const collectorNumber =
-		typeof payload.collector_number === 'string' ? payload.collector_number.trim().slice(0, 32) : '';
+		typeof payload.collector_number === 'string'
+			? payload.collector_number.trim().slice(0, 32)
+			: '';
 	if (!name || !setCode || !collectorNumber) return null;
 
 	const finish = sanitizeFinish(payload.finish, 'nonfoil');
@@ -877,7 +905,8 @@ function createPendingCardFromPayload(
 	const incomingTcgId =
 		typeof payload.tcgplayer_id === 'string' || typeof payload.tcgplayer_id === 'number'
 			? payload.tcgplayer_id
-			: typeof payload.demo_tcgplayer_id === 'string' || typeof payload.demo_tcgplayer_id === 'number'
+			: typeof payload.demo_tcgplayer_id === 'string' ||
+				  typeof payload.demo_tcgplayer_id === 'number'
 				? payload.demo_tcgplayer_id
 				: '';
 
@@ -896,7 +925,8 @@ function createPendingCardFromPayload(
 		timestamp: new Date(nowMs).toISOString(),
 		max_price_cap: clampBoundedInt(payload.max_price_cap, 1, 10_000_000),
 		min_condition:
-			typeof payload.min_condition === 'string' && ALLOWED_CONDITIONS.has(payload.min_condition.toUpperCase())
+			typeof payload.min_condition === 'string' &&
+			ALLOWED_CONDITIONS.has(payload.min_condition.toUpperCase())
 				? payload.min_condition.toUpperCase()
 				: null,
 		cardtrader_id: '',
@@ -993,7 +1023,8 @@ function handleTriggerDemoStockCheck(body: Record<string, unknown>): Response {
 	const checkedIso = new Date(nowMs).toISOString();
 	const nextGen = (card.demo_generation ?? 1) + 1;
 	const baseline =
-		card.demo_baseline_cents || extractScryfallBaselineCents(null, card.finish, getDemoCardKey(card));
+		card.demo_baseline_cents ||
+		extractScryfallBaselineCents(null, card.finish, getDemoCardKey(card));
 	const simPatch = simulateVendorOffersForCard(
 		card,
 		baseline,
@@ -1022,7 +1053,10 @@ function handleTriggerDemoStockCheck(body: Record<string, unknown>): Response {
 }
 
 function validateSettingUpdate(settingName: unknown, settingValue: unknown): boolean {
-	if (typeof settingName !== 'string' || !ALLOWED_DEMO_SETTING_KEYS.has(settingName as keyof DemoUserSettings)) {
+	if (
+		typeof settingName !== 'string' ||
+		!ALLOWED_DEMO_SETTING_KEYS.has(settingName as keyof DemoUserSettings)
+	) {
 		return false;
 	}
 	switch (settingName) {
@@ -1045,7 +1079,10 @@ function validateSettingUpdate(settingName: unknown, settingValue: unknown): boo
 		case 'preferredLanguage':
 			return typeof settingValue === 'string' && ALLOWED_LANGUAGES.has(settingValue.toLowerCase());
 		case 'preferredFinish':
-			return typeof settingValue === 'string' && ALLOWED_FINISHES.has(settingValue.toLowerCase() as FinishType);
+			return (
+				typeof settingValue === 'string' &&
+				ALLOWED_FINISHES.has(settingValue.toLowerCase() as FinishType)
+			);
 		case 'minCondition':
 			return typeof settingValue === 'string' && ALLOWED_CONDITIONS.has(settingValue.toUpperCase());
 		default:
@@ -1078,7 +1115,10 @@ export async function handleDemoApiRequest(
 		lowerUrl.includes('updatebanner') ||
 		lowerUrl.includes('requeueuserstockchecks')
 	) {
-		return jsonResponse({ error: 'Admin and account-destructive operations are disabled in Demo Mode.' }, 403);
+		return jsonResponse(
+			{ error: 'Admin and account-destructive operations are disabled in Demo Mode.' },
+			403
+		);
 	}
 
 	// Parse JSON body safely if supplied
@@ -1163,7 +1203,9 @@ export async function handleDemoApiRequest(
 
 		if (currentCards.length >= DEMO_MAX_CARDS) {
 			return jsonResponse(
-				{ message: `Demo Sandbox limit reached (${DEMO_MAX_CARDS} cards max). Reset or delete cards to add more.` },
+				{
+					message: `Demo Sandbox limit reached (${DEMO_MAX_CARDS} cards max). Reset or delete cards to add more.`
+				},
 				400
 			);
 		}
@@ -1222,11 +1264,11 @@ export async function handleDemoApiRequest(
 			finish: nextFinish
 		});
 
-		if (
-			isRekey &&
-			cards.some((c, i) => i !== idx && getDemoCardKey(c) === nextKey)
-		) {
-			return jsonResponse({ message: 'That language/finish printing already exists on your seeking list.' }, 409);
+		if (isRekey && cards.some((c, i) => i !== idx && getDemoCardKey(c) === nextKey)) {
+			return jsonResponse(
+				{ message: 'That language/finish printing already exists on your seeking list.' },
+				409
+			);
 		}
 
 		let nextMaxCap = prevCard.max_price_cap;
@@ -1263,7 +1305,12 @@ export async function handleDemoApiRequest(
 		};
 
 		if (isRekey) {
-			const finishMultiplier = nextFinish === 'foil' && prevCard.finish === 'nonfoil' ? 1.45 : nextFinish === 'nonfoil' && prevCard.finish !== 'nonfoil' ? 0.72 : 1;
+			const finishMultiplier =
+				nextFinish === 'foil' && prevCard.finish === 'nonfoil'
+					? 1.45
+					: nextFinish === 'nonfoil' && prevCard.finish !== 'nonfoil'
+						? 0.72
+						: 1;
 			const adjustedBase = Math.max(
 				25,
 				Math.round(

@@ -13,60 +13,64 @@ import { browser } from '$app/environment';
  * @param options Fetch options.
  * @returns The fetch Response object, or undefined if redirecting to login.
  */
-export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response | undefined> {
-    if (!browser) {
-        // Should not be called server-side in static mode, but good practice
-        console.error('fetchWithAuth called server-side');
-        return undefined;
-    }
+export async function fetchWithAuth(
+	url: string,
+	options: RequestInit = {}
+): Promise<Response | undefined> {
+	if (!browser) {
+		// Should not be called server-side in static mode, but good practice
+		console.error('fetchWithAuth called server-side');
+		return undefined;
+	}
 
-    let authState = get(auth);
+	let authState = get(auth);
 
-    // If the store indicates loading, wait briefly for initialization
-    // This is a simple mechanism; more robust solutions might use a promise in the store
-    let retries = 0;
-    while (authState.isLoading && retries < 5) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        authState = get(auth);
-        retries++;
-    }
+	// If the store indicates loading, wait briefly for initialization
+	// This is a simple mechanism; more robust solutions might use a promise in the store
+	let retries = 0;
+	while (authState.isLoading && retries < 5) {
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		authState = get(auth);
+		retries++;
+	}
 
-    // Hard security boundary: Demo sessions have token: null and must never hit Azure/APIM
-    if (authState.isDemo) {
-        return handleDemoApiRequest(url, options);
-    }
+	// Hard security boundary: Demo sessions have token: null and must never hit Azure/APIM
+	if (authState.isDemo) {
+		return handleDemoApiRequest(url, options);
+	}
 
-    // If still loading or not authenticated after waiting, trigger login
-    if (authState.isLoading || !authState.isAuthenticated || !authState.token) {
-        console.warn('fetchWithAuth: Not authenticated or token missing. Redirecting to login.');
-        auth.setIntendedPath(window.location.pathname + window.location.search);
-        auth.login();
-        return undefined;
-    }
+	// If still loading or not authenticated after waiting, trigger login
+	if (authState.isLoading || !authState.isAuthenticated || !authState.token) {
+		console.warn('fetchWithAuth: Not authenticated or token missing. Redirecting to login.');
+		auth.setIntendedPath(window.location.pathname + window.location.search);
+		auth.login();
+		return undefined;
+	}
 
-    const headers = new Headers(options.headers);
-    headers.set('Authorization', `Bearer ${authState.token}`);
+	const headers = new Headers(options.headers);
+	headers.set('Authorization', `Bearer ${authState.token}`);
 
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers: headers,
-        });
+	try {
+		const response = await fetch(url, {
+			...options,
+			headers: headers
+		});
 
-        // If unauthorized, clear stale tokens, preserve intendedPath, and trigger login
-        if (response.status === 401) {
-            console.warn('fetchWithAuth: Received 401 Unauthorized. Clearing stale auth and redirecting to login.');
-            auth.clearAuthData();
-            auth.setIntendedPath(window.location.pathname + window.location.search);
-            auth.login();
-            return undefined;
-        }
+		// If unauthorized, clear stale tokens, preserve intendedPath, and trigger login
+		if (response.status === 401) {
+			console.warn(
+				'fetchWithAuth: Received 401 Unauthorized. Clearing stale auth and redirecting to login.'
+			);
+			auth.clearAuthData();
+			auth.setIntendedPath(window.location.pathname + window.location.search);
+			auth.login();
+			return undefined;
+		}
 
-        return response;
-
-    } catch (error) {
-        console.error('fetchWithAuth: Network or other error during fetch:', error);
-        // You might want to handle network errors differently, e.g., show a message
-        throw error;
-    }
+		return response;
+	} catch (error) {
+		console.error('fetchWithAuth: Network or other error during fetch:', error);
+		// You might want to handle network errors differently, e.g., show a message
+		throw error;
+	}
 }

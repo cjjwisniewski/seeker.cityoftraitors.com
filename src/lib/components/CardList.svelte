@@ -44,7 +44,6 @@
 		faceIndices = { ...faceIndices };
 	}
 
-
 	function getSetIconCode(originalCode) {
 		if (!originalCode) return '';
 		const codeMap = {
@@ -72,45 +71,74 @@
 
 			const prints = printsData.data
 				.map((print) => {
-					const cardFaces = print.card_faces && print.card_faces.length > 0 ? print.card_faces : null;
+					const cardFaces =
+						print.card_faces && print.card_faces.length > 0 ? print.card_faces : null;
 					const manaCost =
 						print.mana_cost ||
-						(cardFaces ? cardFaces.map((f) => f.mana_cost || '').filter(Boolean).join(' // ') : '') ||
+						(cardFaces
+							? cardFaces
+									.map((f) => f.mana_cost || '')
+									.filter(Boolean)
+									.join(' // ')
+							: '') ||
 						'';
 					const typeLine =
 						print.type_line ||
-						(cardFaces ? cardFaces.map((f) => f.type_line || '').filter(Boolean).join(' // ') : '') ||
+						(cardFaces
+							? cardFaces
+									.map((f) => f.type_line || '')
+									.filter(Boolean)
+									.join(' // ')
+							: '') ||
 						'';
 					const oracleText =
 						print.oracle_text ||
 						(cardFaces
 							? cardFaces
-									.map((f) => (cardFaces.length > 1 && f.name ? `[${f.name}]\n${f.oracle_text || ''}` : f.oracle_text || ''))
+									.map((f) =>
+										cardFaces.length > 1 && f.name
+											? `[${f.name}]\n${f.oracle_text || ''}`
+											: f.oracle_text || ''
+									)
 									.filter(Boolean)
 									.join('\n\n')
 							: '') ||
 						'';
 					const flavorText =
 						print.flavor_text ||
-						(cardFaces ? cardFaces.map((f) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+						(cardFaces
+							? cardFaces
+									.map((f) => f.flavor_text)
+									.filter(Boolean)
+									.join('\n\n')
+							: '') ||
 						'';
 					const power =
 						print.power !== undefined
 							? print.power
 							: cardFaces
-								? cardFaces.map((f) => f.power).filter((p) => p !== undefined).join(' // ')
+								? cardFaces
+										.map((f) => f.power)
+										.filter((p) => p !== undefined)
+										.join(' // ')
 								: null;
 					const toughness =
 						print.toughness !== undefined
 							? print.toughness
 							: cardFaces
-								? cardFaces.map((f) => f.toughness).filter((t) => t !== undefined).join(' // ')
+								? cardFaces
+										.map((f) => f.toughness)
+										.filter((t) => t !== undefined)
+										.join(' // ')
 								: null;
 					const loyalty =
 						print.loyalty !== undefined
 							? print.loyalty
 							: cardFaces
-								? cardFaces.map((f) => f.loyalty).filter((l) => l !== undefined).join(' // ')
+								? cardFaces
+										.map((f) => f.loyalty)
+										.filter((l) => l !== undefined)
+										.join(' // ')
 								: null;
 
 					return {
@@ -245,24 +273,39 @@
 			const imageUri = getCardImageUri(cardData);
 			if (!imageUri) throw new Error('No image URI found');
 
-			const cardFaces = cardData.card_faces && cardData.card_faces.length > 0 ? cardData.card_faces : null;
+			const cardFaces =
+				cardData.card_faces && cardData.card_faces.length > 0 ? cardData.card_faces : null;
 			const oracle_text =
 				cardData.oracle_text ||
 				(cardFaces
 					? cardFaces
-							.map((f) => (cardFaces.length > 1 && (f.printed_name || f.name) ? `[${f.printed_name || f.name}]\n${f.printed_text || f.oracle_text || ''}` : f.printed_text || f.oracle_text || ''))
+							.map((f) =>
+								cardFaces.length > 1 && (f.printed_name || f.name)
+									? `[${f.printed_name || f.name}]\n${f.printed_text || f.oracle_text || ''}`
+									: f.printed_text || f.oracle_text || ''
+							)
 							.filter(Boolean)
 							.join('\n\n')
 					: '') ||
 				currentPrint.oracle_text;
 			const flavor_text =
 				cardData.flavor_text ||
-				(cardFaces ? cardFaces.map((f) => f.flavor_text).filter(Boolean).join('\n\n') : '') ||
+				(cardFaces
+					? cardFaces
+							.map((f) => f.flavor_text)
+							.filter(Boolean)
+							.join('\n\n')
+					: '') ||
 				currentPrint.flavor_text;
 			const type_line =
 				cardData.printed_type_line ||
 				cardData.type_line ||
-				(cardFaces ? cardFaces.map((f) => f.printed_type_line || f.type_line || '').filter(Boolean).join(' // ') : '') ||
+				(cardFaces
+					? cardFaces
+							.map((f) => f.printed_type_line || f.type_line || '')
+							.filter(Boolean)
+							.join(' // ')
+					: '') ||
 				currentPrint.type_line;
 			const printed_name =
 				cardData.printed_name ||
@@ -392,7 +435,9 @@
 			const chosenMinCond = String(initialConditions[card.id] || '').trim() || null;
 
 			const payload = {
-				id: useBaseIds ? (currentPrint.id || card.id || crypto.randomUUID()) : (card.localized_id || crypto.randomUUID()),
+				id: useBaseIds
+					? currentPrint.id || card.id || crypto.randomUUID()
+					: card.localized_id || crypto.randomUUID(),
 				name: card.name,
 				set_code: card.set,
 				set_name: currentPrint.set || card.set_name,
@@ -412,7 +457,9 @@
 						: useBaseIds
 							? currentPrint.tcgplayer_id || null
 							: card.localized_tcgplayer_id || null,
-				cardmarket_id: useBaseIds ? (currentPrint.cardmarket_id || null) : (card.localized_cardmarket_id || null),
+				cardmarket_id: useBaseIds
+					? currentPrint.cardmarket_id || null
+					: card.localized_cardmarket_id || null,
 				...($auth.isDemo
 					? { demo_scryfall_prices: hasCardPrice ? cardPrices : currentPrint.prices || null }
 					: {})
@@ -521,7 +568,8 @@
 
 	async function ensureCardLanguages(card) {
 		if (!card || !card.set || !card.collector_number) return;
-		if (card.languages_loaded || (card.available_languages && card.available_languages.length > 1)) return;
+		if (card.languages_loaded || (card.available_languages && card.available_languages.length > 1))
+			return;
 		const key = `${card.id || ''}:${card.set}:${card.collector_number}`;
 		if (languageFetchPromises.has(key)) return;
 
@@ -573,7 +621,10 @@
 		// remaining cards resolve lazily on hover/focus to avoid Scryfall N+1 rate-limit storms.
 		if (sortedCards && sortedCards.length > 0) {
 			for (const card of sortedCards.slice(0, 12)) {
-				if (!card.languages_loaded && (!card.available_languages || card.available_languages.length <= 1)) {
+				if (
+					!card.languages_loaded &&
+					(!card.available_languages || card.available_languages.length <= 1)
+				) {
 					ensureCardLanguages(card);
 				}
 			}
@@ -659,7 +710,7 @@
 										<option value="">Select a print...</option>
 										{#each [...new Map(card.all_prints
 													.filter((p) => p?.set_code && p?.set && p?.collector_number)
-													.map((p) => [`${p.set_code}|${p.collector_number}`, p])).values()] as print}
+													.map( (p) => [`${p.set_code}|${p.collector_number}`, p] )).values()] as print}
 											<option value="{print.set_code}|{print.collector_number}">
 												{print.set} ({print.collector_number})
 											</option>
@@ -699,9 +750,9 @@
 											{#if m.type === 'symbol'}
 												<img
 													class="mana-symbol-svg"
-													src="{m.svg}"
-													alt="{m.raw}"
-													title="{m.raw}"
+													src={m.svg}
+													alt={m.raw}
+													title={m.raw}
 													loading="lazy"
 												/>
 											{:else}
@@ -717,7 +768,7 @@
 									<span class="rarity-badge {card.rarity.toLowerCase()}">{card.rarity}</span>
 								{/if}
 								{#if card.set}
-									<span class="set-badge" title="{currentPrint?.set || card.set_name || card.set}">
+									<span class="set-badge" title={currentPrint?.set || card.set_name || card.set}>
 										<img
 											src="https://svgs.scryfall.io/sets/{getSetIconCode(card.set)}.svg"
 											alt=""
@@ -751,7 +802,8 @@
 													<span class="face-name">{face.name || face.printed_name}</span>
 													{#if face.type_line || face.printed_type_line}
 														<span class="face-type-sep">•</span>
-														<span class="face-type">{face.type_line || face.printed_type_line}</span>
+														<span class="face-type">{face.type_line || face.printed_type_line}</span
+														>
 													{/if}
 												</div>
 												{#if face.mana_cost}
@@ -760,9 +812,9 @@
 															{#if m.type === 'symbol'}
 																<img
 																	class="mana-symbol-svg small"
-																	src="{m.svg}"
-																	alt="{m.raw}"
-																	title="{m.raw}"
+																	src={m.svg}
+																	alt={m.raw}
+																	title={m.raw}
 																	loading="lazy"
 																/>
 															{:else}
@@ -774,7 +826,10 @@
 											</div>
 
 											{#if face.oracle_text || face.printed_text}
-												<CardText text="{face.oracle_text || face.printed_text}" className="face-oracle-text" />
+												<CardText
+													text={face.oracle_text || face.printed_text}
+													className="face-oracle-text"
+												/>
 											{/if}
 
 											{#if face.flavor_text}
@@ -787,7 +842,9 @@
 												</div>
 											{:else if face.loyalty}
 												<div class="stats-row">
-													<span class="loyalty-pill"><i class="fa-solid fa-shield-halved"></i> Loyalty: {face.loyalty}</span>
+													<span class="loyalty-pill"
+														><i class="fa-solid fa-shield-halved"></i> Loyalty: {face.loyalty}</span
+													>
 												</div>
 											{/if}
 										</div>
@@ -798,7 +855,7 @@
 									<p class="type-line-text">{card.type_line}</p>
 
 									{#if card.oracle_text}
-										<CardText text="{card.oracle_text}" className="oracle-text-display" />
+										<CardText text={card.oracle_text} className="oracle-text-display" />
 									{/if}
 
 									{#if card.flavor_text}
@@ -811,7 +868,9 @@
 										</div>
 									{:else if card.loyalty}
 										<div class="stats-row">
-											<span class="loyalty-pill"><i class="fa-solid fa-shield-halved"></i> Loyalty: {card.loyalty}</span>
+											<span class="loyalty-pill"
+												><i class="fa-solid fa-shield-halved"></i> Loyalty: {card.loyalty}</span
+											>
 										</div>
 									{/if}
 								</div>
@@ -914,7 +973,11 @@
 							>
 								{#if buttonStates[card.id]?.error}
 									<i class="fa-solid fa-triangle-exclamation"></i>
-									<span>Error {buttonStates[card.id]?.message ? `(${buttonStates[card.id].message})` : ''}</span>
+									<span
+										>Error {buttonStates[card.id]?.message
+											? `(${buttonStates[card.id].message})`
+											: ''}</span
+									>
 								{:else if buttonStates[card.id]?.success}
 									<i class="fa-solid fa-circle-check"></i>
 									<span>Added to Seeking</span>
@@ -937,7 +1000,10 @@
 				<i class="fa-solid fa-magnifying-glass"></i>
 			</div>
 			<p class="no-results-title">No cards found matching your search</p>
-			<span class="no-results-hint">Check for typos or try searching with card names like <em>Fire // Ice</em> or <em>Black Lotus</em>.</span>
+			<span class="no-results-hint"
+				>Check for typos or try searching with card names like <em>Fire // Ice</em> or
+				<em>Black Lotus</em>.</span
+			>
 		</div>
 	{/if}
 </div>
@@ -966,7 +1032,10 @@
 		border-radius: 16px;
 		box-shadow: var(--shadow-sm);
 		border: 1px solid var(--glass-border, var(--color-border));
-		transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+		transition:
+			transform var(--transition-fast),
+			box-shadow var(--transition-fast),
+			border-color var(--transition-fast);
 		text-align: left;
 	}
 
@@ -1017,7 +1086,9 @@
 		font-size: 0.75rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: background var(--transition-fast), transform var(--transition-fast);
+		transition:
+			background var(--transition-fast),
+			transform var(--transition-fast);
 	}
 
 	.flip-badge-btn:hover {
@@ -1058,7 +1129,9 @@
 		font-weight: 500;
 		outline: none;
 		cursor: pointer;
-		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 	}
 
 	.select-wrapper select:hover {
@@ -1528,16 +1601,35 @@
 	}
 
 	@keyframes shake {
-		10%, 90% { transform: translate3d(-1px, 0, 0); }
-		20%, 80% { transform: translate3d(2px, 0, 0); }
-		30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-		40%, 60% { transform: translate3d(4px, 0, 0); }
+		10%,
+		90% {
+			transform: translate3d(-1px, 0, 0);
+		}
+		20%,
+		80% {
+			transform: translate3d(2px, 0, 0);
+		}
+		30%,
+		50%,
+		70% {
+			transform: translate3d(-4px, 0, 0);
+		}
+		40%,
+		60% {
+			transform: translate3d(4px, 0, 0);
+		}
 	}
 
 	@keyframes pulse {
-		0% { transform: scale(1); }
-		50% { transform: scale(1.04); }
-		100% { transform: scale(1); }
+		0% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.04);
+		}
+		100% {
+			transform: scale(1);
+		}
 	}
 
 	/* Empty state */

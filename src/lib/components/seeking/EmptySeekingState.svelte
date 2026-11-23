@@ -15,8 +15,9 @@
 
 	<h2 class="hero-title">Your Seeking List is Empty</h2>
 	<p class="hero-subtitle">
-		Seeker monitors major domestic and international marketplaces around the clock and delivers instant
-		Discord restock alerts with direct buy links when your cards become available below your target price.
+		Seeker monitors major domestic and international marketplaces around the clock and delivers
+		instant Discord restock alerts with direct buy links when your cards become available below your
+		target price.
 	</p>
 
 	<!-- Primary Action Cards -->
@@ -67,7 +68,10 @@
 					<i class="fa-solid fa-list-check"></i>
 				</div>
 				<h4>Add Your Targets</h4>
-				<p>Configure desired finish, language, and price cap. Override condition thresholds per card at any time.</p>
+				<p>
+					Configure desired finish, language, and price cap. Override condition thresholds per card
+					at any time.
+				</p>
 			</div>
 
 			<div class="step-divider" aria-hidden="true">
@@ -80,7 +84,10 @@
 					<i class="fa-solid fa-arrows-rotate"></i>
 				</div>
 				<h4>Automated Sweeps</h4>
-				<p>Seeker continuously polls supported domestic and international marketplaces around the clock.</p>
+				<p>
+					Seeker continuously polls supported domestic and international marketplaces around the
+					clock.
+				</p>
 			</div>
 
 			<div class="step-divider" aria-hidden="true">
@@ -106,7 +113,9 @@
 		<div class="callout-content">
 			<div class="callout-title">Customize Marketplaces & Condition Filters</div>
 			<p class="callout-desc">
-				Core stores are active by default. You can enable additional domestic and international marketplaces, as well as set your global minimum card condition threshold (e.g. Near Mint or Lightly Played), in your account settings.
+				Core stores are active by default. You can enable additional domestic and international
+				marketplaces, as well as set your global minimum card condition threshold (e.g. Near Mint or
+				Lightly Played), in your account settings.
 			</p>
 		</div>
 		<a href="/account" class="callout-btn">
@@ -196,7 +205,8 @@
 		cursor: pointer;
 		text-decoration: none;
 		color: inherit;
-		transition: transform var(--transition-fast, 0.15s ease),
+		transition:
+			transform var(--transition-fast, 0.15s ease),
 			border-color var(--transition-fast, 0.15s ease),
 			box-shadow var(--transition-fast, 0.15s ease);
 		position: relative;
@@ -210,7 +220,11 @@
 	}
 
 	.action-card.primary-action {
-		background: linear-gradient(145deg, var(--color-bg-secondary, #1e293b), rgba(37, 99, 235, 0.08));
+		background: linear-gradient(
+			145deg,
+			var(--color-bg-secondary, #1e293b),
+			rgba(37, 99, 235, 0.08)
+		);
 		border-color: rgba(59, 130, 246, 0.4);
 	}
 
@@ -279,7 +293,9 @@
 	.action-arrow {
 		color: var(--color-text-muted, #64748b);
 		font-size: 0.95rem;
-		transition: transform var(--transition-fast, 0.15s ease), color var(--transition-fast, 0.15s ease);
+		transition:
+			transform var(--transition-fast, 0.15s ease),
+			color var(--transition-fast, 0.15s ease);
 		flex-shrink: 0;
 	}
 
@@ -436,7 +452,8 @@
 		text-decoration: none;
 		white-space: nowrap;
 		flex-shrink: 0;
-		transition: background var(--transition-fast, 0.15s ease),
+		transition:
+			background var(--transition-fast, 0.15s ease),
 			border-color var(--transition-fast, 0.15s ease),
 			color var(--transition-fast, 0.15s ease);
 	}

@@ -64,7 +64,9 @@
 			targetCard.max_price_cap !== null && targetCard.max_price_cap !== undefined
 				? (targetCard.max_price_cap / 100).toFixed(2)
 				: '';
-		minConditionInput = targetCard.min_condition ? String(targetCard.min_condition).toUpperCase() : '';
+		minConditionInput = targetCard.min_condition
+			? String(targetCard.min_condition).toUpperCase()
+			: '';
 		loadCardPrintVariants(targetCard);
 	}
 
@@ -86,7 +88,12 @@
 
 	async function loadCardPrintVariants(targetCard) {
 		const reqId = ++printVariantsRequestId;
-		if (!targetCard || !targetCard.set_code || !targetCard.collector_number || targetCard.collector_number === 'N/A') {
+		if (
+			!targetCard ||
+			!targetCard.set_code ||
+			!targetCard.collector_number ||
+			targetCard.collector_number === 'N/A'
+		) {
 			isLoadingCardPrintInfo = false;
 			return;
 		}
@@ -159,7 +166,11 @@
 
 		try {
 			let max_price_cap = null;
-			if (maxPriceInput !== null && maxPriceInput !== undefined && String(maxPriceInput).trim() !== '') {
+			if (
+				maxPriceInput !== null &&
+				maxPriceInput !== undefined &&
+				String(maxPriceInput).trim() !== ''
+			) {
 				max_price_cap = Math.round(parseFloat(maxPriceInput) * 100);
 				if (isNaN(max_price_cap) || max_price_cap < 0) throw new Error('Invalid price cap format.');
 			}
@@ -206,7 +217,9 @@
 					if (result?.rekeyed) {
 						return {
 							...c,
-							id: result.new_row_key || `${c.collector_number}_${editLanguageInput}_${editFinishInput}`,
+							id:
+								result.new_row_key ||
+								`${c.collector_number}_${editLanguageInput}_${editFinishInput}`,
 							language: editLanguageInput,
 							finish: editFinishInput,
 							image_uri: result.image_uri || editPreviewImageUri || c.image_uri,
@@ -276,10 +289,21 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={() => !isSavingSettings && onClose()}>
-		<div class="modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Edit Card" on:click|stopPropagation>
+		<div
+			class="modal-content"
+			use:focusTrap
+			role="dialog"
+			aria-modal="true"
+			aria-label="Edit Card"
+			on:click|stopPropagation
+		>
 			<div class="modal-header">
 				<h2>Edit Card</h2>
-				<button class="close-modal-btn" aria-label="Close modal" on:click={() => !isSavingSettings && onClose()}>
+				<button
+					class="close-modal-btn"
+					aria-label="Close modal"
+					on:click={() => !isSavingSettings && onClose()}
+				>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>
@@ -298,7 +322,11 @@
 						<p>
 							{card.set_code.toUpperCase()} #{card.collector_number}
 							• {editLanguageInput.toUpperCase()}
-							• {editFinishInput === 'etched' ? '✦ Etched' : editFinishInput === 'foil' ? '✦ Foil' : 'Nonfoil'}
+							• {editFinishInput === 'etched'
+								? '✦ Etched'
+								: editFinishInput === 'foil'
+									? '✦ Foil'
+									: 'Nonfoil'}
 						</p>
 					</div>
 				</div>
@@ -308,7 +336,10 @@
 						<label for="edit-card-language">
 							Language
 							{#if isLoadingCardPrintInfo}
-								<i class="fa-solid fa-circle-notch fa-spin" style="font-size: 0.75rem; margin-left: 0.35rem;"></i>
+								<i
+									class="fa-solid fa-circle-notch fa-spin"
+									style="font-size: 0.75rem; margin-left: 0.35rem;"
+								></i>
 							{/if}
 						</label>
 						<select
@@ -370,7 +401,10 @@
 				{:else if isEditVariantChanged}
 					<div class="edit-rekey-notice">
 						<i class="fa-solid fa-arrows-rotate"></i>
-						<span>Switching language or finish will reset current stock statuses for this card and trigger a fresh stock check.</span>
+						<span
+							>Switching language or finish will reset current stock statuses for this card and
+							trigger a fresh stock check.</span
+						>
 					</div>
 				{/if}
 
@@ -406,7 +440,9 @@
 						class="modal-input edit-select-input"
 						disabled={isSavingSettings}
 					>
-						<option value="">Account Default ({formatMinConditionLabel(accountMinCondition)})</option>
+						<option value=""
+							>Account Default ({formatMinConditionLabel(accountMinCondition)})</option
+						>
 						<option value="ANY">Any Condition</option>
 						<option value="HP">Heavily Played or Better (HP+)</option>
 						<option value="MP">Moderately Played or Better (MP+)</option>
@@ -425,7 +461,8 @@
 							</span>
 							<span class="manual-check-sub">
 								{#if card.last_manual_check}
-									Last manual check: {formatRelativeTime(card.last_manual_check, nowTick) || 'Recently'}
+									Last manual check: {formatRelativeTime(card.last_manual_check, nowTick) ||
+										'Recently'}
 								{:else}
 									Queue an immediate check across your enabled marketplaces.
 								{/if}
@@ -434,7 +471,10 @@
 						<button
 							type="button"
 							class="manual-check-btn"
-							disabled={isSavingSettings || isModalChecking || modalCooldownSec > 0 || isEditVariantChanged}
+							disabled={isSavingSettings ||
+								isModalChecking ||
+								modalCooldownSec > 0 ||
+								isEditVariantChanged}
 							title={isEditVariantChanged
 								? 'Save your language/finish changes to automatically queue a fresh check'
 								: modalCooldownSec > 0
@@ -445,7 +485,9 @@
 							{#if isModalChecking}
 								<i class="fa-solid fa-arrows-rotate fa-spin"></i> Checking...
 							{:else if modalCooldownSec > 0}
-								<i class="fa-regular fa-clock"></i> Cooldown ({formatCooldownRemaining(modalCooldownSec)})
+								<i class="fa-regular fa-clock"></i> Cooldown ({formatCooldownRemaining(
+									modalCooldownSec
+								)})
 							{:else}
 								<i class="fa-solid fa-arrows-rotate"></i> Check Now
 							{/if}
@@ -454,11 +496,7 @@
 				{/if}
 			</div>
 			<div class="modal-footer">
-				<button
-					class="modal-btn secondary"
-					on:click={onClose}
-					disabled={isSavingSettings}
-				>
+				<button class="modal-btn secondary" on:click={onClose} disabled={isSavingSettings}>
 					Cancel
 				</button>
 				<button

@@ -44,8 +44,8 @@
 			<h2 id="seeker-discord-modal-title">Join the City of Traitors Discord</h2>
 			<p class="modal-body">
 				This link is a <strong>temporary invite</strong> to the City of Traitors Discord server
-				(home of Seeker). Once you arrive, please <strong>select a role</strong> in the server so
-				your membership sticks permanently.
+				(home of Seeker). Once you arrive, please <strong>select a role</strong> in the server so your
+				membership sticks permanently.
 			</p>
 
 			<div class="modal-actions">

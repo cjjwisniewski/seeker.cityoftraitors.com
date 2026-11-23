@@ -37,21 +37,30 @@
 					<span class="step-num">01</span>
 					<div class="step-body">
 						<h3>Find &amp; Configure</h3>
-						<p>Search any card by name, choose your target set, preferred finish, and set a maximum price cap.</p>
+						<p>
+							Search any card by name, choose your target set, preferred finish, and set a maximum
+							price cap.
+						</p>
 					</div>
 				</li>
 				<li class="step-item">
 					<span class="step-num">02</span>
 					<div class="step-body">
 						<h3>Automated Scanning</h3>
-						<p>Seeker continuously polls major domestic and international marketplaces around the clock.</p>
+						<p>
+							Seeker continuously polls major domestic and international marketplaces around the
+							clock.
+						</p>
 					</div>
 				</li>
 				<li class="step-item">
 					<span class="step-num">03</span>
 					<div class="step-body">
 						<h3>Discord Restock Alerts</h3>
-						<p>Receive immediate Discord direct messages with direct buy links when a seller lists your card.</p>
+						<p>
+							Receive immediate Discord direct messages with direct buy links when a seller lists
+							your card.
+						</p>
 					</div>
 				</li>
 			</ol>
@@ -61,7 +70,10 @@
 					<div class="demo-promo-copy">
 						<span class="demo-promo-badge">No Discord Login Required</span>
 						<strong>Want to see Seeker in action first?</strong>
-						<span>Explore a live 12-card interactive watchlist across 8 marketplaces, import sample decklists, and preview Discord DM alerts.</span>
+						<span
+							>Explore a live 12-card interactive watchlist across 8 marketplaces, import sample
+							decklists, and preview Discord DM alerts.</span
+						>
 					</div>
 					<a href="/demo" data-sveltekit-preload-data="off" class="demo-promo-cta">
 						<i class="fa-solid fa-flask"></i>
@@ -72,7 +84,10 @@
 				<div class="discord-community-banner">
 					<div class="discord-community-copy">
 						<strong>Need an invite to the City of Traitors Discord?</strong>
-						<span>Seeker DM alerts and community discussions live on the City of Traitors Discord server.</span>
+						<span
+							>Seeker DM alerts and community discussions live on the City of Traitors Discord
+							server.</span
+						>
 					</div>
 					<button
 						type="button"
@@ -87,7 +102,10 @@
 				<div class="demo-promo-banner">
 					<div class="demo-promo-copy">
 						<span class="demo-promo-badge">Demo Sandbox Active</span>
-						<span>Search any card above and click <strong>Add to Seeking</strong> to test adding it with live Scryfall pricing, or jump back to your watchlist.</span>
+						<span
+							>Search any card above and click <strong>Add to Seeking</strong> to test adding it with
+							live Scryfall pricing, or jump back to your watchlist.</span
+						>
 					</div>
 					<a href="/seeking" class="demo-promo-cta">
 						<i class="fa-solid fa-sd-card"></i>

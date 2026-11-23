@@ -48,8 +48,7 @@ export function extractScryfallBaselineCents(
 				parseUsdStringToCents(prices.usd_foil) ??
 				parseUsdStringToCents(prices.usd);
 		} else if (finish === 'foil') {
-			candidateCents =
-				parseUsdStringToCents(prices.usd_foil) ?? parseUsdStringToCents(prices.usd);
+			candidateCents = parseUsdStringToCents(prices.usd_foil) ?? parseUsdStringToCents(prices.usd);
 		} else {
 			candidateCents = parseUsdStringToCents(prices.usd);
 		}
@@ -71,11 +70,7 @@ export function extractScryfallBaselineCents(
 	const hash = hashSeed(seedKey);
 	const tier = hash % 3;
 	const cents =
-		tier === 0
-			? 350 + (hash % 1200)
-			: tier === 1
-				? 1800 + (hash % 4500)
-				: 6500 + (hash % 12000);
+		tier === 0 ? 350 + (hash % 1200) : tier === 1 ? 1800 + (hash % 4500) : 6500 + (hash % 12000);
 	return Math.round(cents / 5) * 5;
 }
 
@@ -92,7 +87,17 @@ function buildSearchSlug(cardName: string): string {
  * show normal "Out of stock" rather than error "Card not found / Not searched" states.
  */
 export function buildDemoVendorIdentifiers(
-	card: Pick<DemoCardRecord, 'name' | 'set_code' | 'collector_number' | 'language' | 'finish' | 'tcgplayer_id' | 'cardtrader_id' | 'manapool_id'>
+	card: Pick<
+		DemoCardRecord,
+		| 'name'
+		| 'set_code'
+		| 'collector_number'
+		| 'language'
+		| 'finish'
+		| 'tcgplayer_id'
+		| 'cardtrader_id'
+		| 'manapool_id'
+	>
 ): Pick<
 	DemoCardRecord,
 	| 'cardtrader_id'
@@ -110,12 +115,16 @@ export function buildDemoVendorIdentifiers(
 	const langLower = String(card.language || 'en').toLowerCase();
 
 	const cardtraderId =
-		card.cardtrader_id !== undefined && card.cardtrader_id !== null && String(card.cardtrader_id).trim() !== ''
+		card.cardtrader_id !== undefined &&
+		card.cardtrader_id !== null &&
+		String(card.cardtrader_id).trim() !== ''
 			? String(card.cardtrader_id)
 			: String(200000 + (baseHash % 80000));
 
 	const tcgplayerId =
-		card.tcgplayer_id !== undefined && card.tcgplayer_id !== null && String(card.tcgplayer_id).trim() !== ''
+		card.tcgplayer_id !== undefined &&
+		card.tcgplayer_id !== null &&
+		String(card.tcgplayer_id).trim() !== ''
 			? card.tcgplayer_id
 			: String(300000 + (baseHash % 150000));
 
@@ -134,7 +143,14 @@ export function buildDemoVendorIdentifiers(
 export function simulateVendorOffersForCard(
 	card: Pick<
 		DemoCardRecord,
-		'name' | 'set_code' | 'collector_number' | 'language' | 'finish' | 'tcgplayer_id' | 'cardtrader_id' | 'manapool_id'
+		| 'name'
+		| 'set_code'
+		| 'collector_number'
+		| 'language'
+		| 'finish'
+		| 'tcgplayer_id'
+		| 'cardtrader_id'
+		| 'manapool_id'
 	>,
 	baselineCents: number,
 	generation = 0,
@@ -167,17 +183,23 @@ export function simulateVendorOffersForCard(
 	const ckInStock = (langLower === 'en' || card.finish === 'foil') && (h >> 3) % 3 !== 0;
 	const ebayInStock = (h >> 4) % 3 === 0;
 	const himarketInStock = ['zht', 'zhs', 'ja', 'en'].includes(langLower) && (h >> 5) % 2 === 0;
-	const hareruyaInStock = ['ja', 'en'].includes(langLower) && ((h >> 6) % 2 === 0 || langLower === 'ja');
+	const hareruyaInStock =
+		['ja', 'en'].includes(langLower) && ((h >> 6) % 2 === 0 || langLower === 'ja');
 	// Match Seeker backend rule: Ruten strictly tracks zht and en only
-	const rutenInStock = ['zht', 'en'].includes(langLower) && (langLower === 'zht' || (h >> 7) % 3 === 0);
+	const rutenInStock =
+		['zht', 'en'].includes(langLower) && (langLower === 'zht' || (h >> 7) % 3 === 0);
 
-	const cardtraderPrice = cardtraderInStock ? clampCents(safeBase * factorFor('ct', 91, 108)) : null;
+	const cardtraderPrice = cardtraderInStock
+		? clampCents(safeBase * factorFor('ct', 91, 108))
+		: null;
 	const tcgPrice = tcgInStock ? clampCents(safeBase * factorFor('tcg', 95, 112)) : null;
 	const manapoolPrice = manapoolInStock ? clampCents(safeBase * factorFor('mp', 93, 107)) : null;
 	const ckPrice = ckInStock ? clampCents(safeBase * factorFor('ck', 102, 122)) : null;
 	const ebayPrice = ebayInStock ? clampCents(safeBase * factorFor('ebay', 96, 125)) : null;
 	const himarketUsdCents = himarketInStock ? clampCents(safeBase * factorFor('hk', 94, 115)) : null;
-	const hareruyaUsdCents = hareruyaInStock ? clampCents(safeBase * factorFor('har', 90, 114)) : null;
+	const hareruyaUsdCents = hareruyaInStock
+		? clampCents(safeBase * factorFor('har', 90, 114))
+		: null;
 	const rutenUsdCents = rutenInStock ? clampCents(safeBase * factorFor('rt', 92, 118)) : null;
 
 	const cardtraderCond = cardtraderPrice ? pickCond('ct') : null;
@@ -190,12 +212,18 @@ export function simulateVendorOffersForCard(
 	const rutenCond = rutenUsdCents ? pickCond('rt') : null;
 
 	const vendorObservations: Array<{ key: string; price: number; cond: string }> = [];
-	if (cardtraderPrice && cardtraderCond) vendorObservations.push({ key: 'cardtrader', price: cardtraderPrice, cond: cardtraderCond });
-	if (tcgPrice && tcgCond) vendorObservations.push({ key: 'tcgplayer', price: tcgPrice, cond: tcgCond });
-	if (manapoolPrice && manapoolCond) vendorObservations.push({ key: 'manapool', price: manapoolPrice, cond: manapoolCond });
-	if (ckPrice && ckCond) vendorObservations.push({ key: 'cardkingdom', price: ckPrice, cond: ckCond });
-	if (himarketUsdCents && himarketCond) vendorObservations.push({ key: 'himarket', price: himarketUsdCents, cond: himarketCond });
-	if (hareruyaUsdCents && hareruyaCond) vendorObservations.push({ key: 'hareruya', price: hareruyaUsdCents, cond: hareruyaCond });
+	if (cardtraderPrice && cardtraderCond)
+		vendorObservations.push({ key: 'cardtrader', price: cardtraderPrice, cond: cardtraderCond });
+	if (tcgPrice && tcgCond)
+		vendorObservations.push({ key: 'tcgplayer', price: tcgPrice, cond: tcgCond });
+	if (manapoolPrice && manapoolCond)
+		vendorObservations.push({ key: 'manapool', price: manapoolPrice, cond: manapoolCond });
+	if (ckPrice && ckCond)
+		vendorObservations.push({ key: 'cardkingdom', price: ckPrice, cond: ckCond });
+	if (himarketUsdCents && himarketCond)
+		vendorObservations.push({ key: 'himarket', price: himarketUsdCents, cond: himarketCond });
+	if (hareruyaUsdCents && hareruyaCond)
+		vendorObservations.push({ key: 'hareruya', price: hareruyaUsdCents, cond: hareruyaCond });
 
 	const cleanObs = vendorObservations.filter((v) => v.cond === 'NM' || v.cond === 'SP');
 	const playedObs = vendorObservations.filter((v) => v.cond === 'MP' || v.cond === 'HP');
@@ -231,7 +259,7 @@ export function simulateVendorOffersForCard(
 		? prevPlayedLow !== null
 			? Math.min(prevPlayedLow, bestPlayed.price)
 			: bestPlayed.price
-		: prevPlayedLow ?? (bestClean ? clampCents(bestClean.price * 0.82) : null);
+		: (prevPlayedLow ?? (bestClean ? clampCents(bestClean.price * 0.82) : null));
 
 	const hist: DemoHistoricalPricing | null = bestAny
 		? {
@@ -241,19 +269,23 @@ export function simulateVendorOffersForCard(
 				nm_low_cents: simulatedNmLow,
 				nm_low_condition: bestClean?.cond || existingHist?.nm_low_condition || 'NM',
 				nm_low_vendor: bestClean?.key || existingHist?.nm_low_vendor || 'cardtrader',
-				nm_low_at: prevNmLow !== null && simulatedNmLow === prevNmLow ? existingHist?.nm_low_at || olderIso : nowIso,
+				nm_low_at:
+					prevNmLow !== null && simulatedNmLow === prevNmLow
+						? existingHist?.nm_low_at || olderIso
+						: nowIso,
 				nm_last_seen_cents: bestClean?.price ?? existingHist?.nm_last_seen_cents ?? null,
 				nm_last_seen_condition: bestClean?.cond ?? existingHist?.nm_last_seen_condition ?? null,
 				nm_last_seen_vendor: bestClean?.key ?? existingHist?.nm_last_seen_vendor ?? null,
-				nm_last_seen_at: bestClean ? nowIso : existingHist?.nm_last_seen_at ?? null,
+				nm_last_seen_at: bestClean ? nowIso : (existingHist?.nm_last_seen_at ?? null),
 				played_low_cents: simulatedPlayedLow,
 				played_low_condition: bestPlayed?.cond || existingHist?.played_low_condition || 'MP',
 				played_low_vendor: bestPlayed?.key || existingHist?.played_low_vendor || 'cardtrader',
 				played_low_at: olderIso,
 				played_last_seen_cents: bestPlayed?.price ?? existingHist?.played_last_seen_cents ?? null,
-				played_last_seen_condition: bestPlayed?.cond ?? existingHist?.played_last_seen_condition ?? null,
+				played_last_seen_condition:
+					bestPlayed?.cond ?? existingHist?.played_last_seen_condition ?? null,
 				played_last_seen_vendor: bestPlayed?.key ?? existingHist?.played_last_seen_vendor ?? null,
-				played_last_seen_at: bestPlayed ? nowIso : existingHist?.played_last_seen_at ?? null,
+				played_last_seen_at: bestPlayed ? nowIso : (existingHist?.played_last_seen_at ?? null),
 				last_seen_cents: bestAny.price,
 				last_seen_condition: bestAny.cond,
 				last_seen_vendor: bestAny.key,
@@ -287,11 +319,15 @@ export function simulateVendorOffersForCard(
 		ebay_condition: ebayCond,
 		himarket_stock: Boolean(himarketUsdCents),
 		himarket_low_price: himarketUsdCents,
-		himarket_price_hkd: himarketUsdCents ? Math.round((himarketUsdCents / 100) * FX_HKD_PER_USD * 100) / 100 : null,
+		himarket_price_hkd: himarketUsdCents
+			? Math.round((himarketUsdCents / 100) * FX_HKD_PER_USD * 100) / 100
+			: null,
 		himarket_condition: himarketCond,
 		hareruya_stock: Boolean(hareruyaUsdCents),
 		hareruya_low_price: hareruyaUsdCents,
-		hareruya_price_jpy: hareruyaUsdCents ? Math.round((hareruyaUsdCents / 100) * FX_JPY_PER_USD) : null,
+		hareruya_price_jpy: hareruyaUsdCents
+			? Math.round((hareruyaUsdCents / 100) * FX_JPY_PER_USD)
+			: null,
 		hareruya_condition: hareruyaCond,
 		ruten_stock: Boolean(rutenUsdCents),
 		ruten_low_price: rutenUsdCents,

@@ -45,26 +45,21 @@ describe('Virtual Demo Sandbox store, seed parity, and CRUD contracts', () => {
 			collector_number: '138',
 			language: 'en',
 			finish: 'nonfoil',
-			image_uri: 'https://cards.scryfall.io/normal/front/1/1/11111111-2222-3333-4444-555555555555.jpg'
+			image_uri:
+				'https://cards.scryfall.io/normal/front/1/1/11111111-2222-3333-4444-555555555555.jpg'
 		};
 
-		const addRes = await handleDemoApiRequest(
-			'https://seeker.azure-api.net/seeker/addToSeeking',
-			{
-				method: 'POST',
-				body: JSON.stringify(addPayload)
-			}
-		);
+		const addRes = await handleDemoApiRequest('https://seeker.azure-api.net/seeker/addToSeeking', {
+			method: 'POST',
+			body: JSON.stringify(addPayload)
+		});
 		assert.equal(addRes.status, 201);
 
 		// 2. Adding the exact same printing again returns 409 Conflict
-		const dupRes = await handleDemoApiRequest(
-			'https://seeker.azure-api.net/seeker/addToSeeking',
-			{
-				method: 'POST',
-				body: JSON.stringify(addPayload)
-			}
-		);
+		const dupRes = await handleDemoApiRequest('https://seeker.azure-api.net/seeker/addToSeeking', {
+			method: 'POST',
+			body: JSON.stringify(addPayload)
+		});
 		assert.equal(dupRes.status, 409);
 
 		// 3. Update price cap and rekey finish to foil

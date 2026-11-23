@@ -86,7 +86,9 @@
 		: null;
 
 	function isBestVendor(vendor) {
-		return Boolean(lowestOffer && lowestOffer.offerCount >= 2 && lowestOffer.bestVendors.has(vendor));
+		return Boolean(
+			lowestOffer && lowestOffer.offerCount >= 2 && lowestOffer.bestVendors.has(vendor)
+		);
 	}
 
 	$: hasStock = hasEnabledStock(
@@ -165,7 +167,9 @@
 
 	$: otherOffersTooltip = bestOffer?.otherOffers?.length
 		? bestOffer.otherOffers
-				.map((o) => `${o.displayName} ${formatPrice(o.cents)}${o.condition ? ` (${o.condition})` : ''}`)
+				.map(
+					(o) => `${o.displayName} ${formatPrice(o.cents)}${o.condition ? ` (${o.condition})` : ''}`
+				)
 				.join(' · ')
 		: '';
 
@@ -229,7 +233,9 @@
 					{#if isUnderCap}
 						<span
 							class="cap-badge under-cap-badge"
-							title="In stock at {formatPrice(activeLowestCents)} (at or below your {formatPrice(card.max_price_cap)} cap)"
+							title="In stock at {formatPrice(activeLowestCents)} (at or below your {formatPrice(
+								card.max_price_cap
+							)} cap)"
 						>
 							<i class="fa-solid fa-tag"></i> UNDER CAP
 						</span>
@@ -303,7 +309,9 @@
 						<button
 							type="button"
 							class="cap-badge cond-override-badge"
-							title="Minimum Condition Override: {formatMinConditionLabel(card.min_condition)} (Click to edit inline)"
+							title="Minimum Condition Override: {formatMinConditionLabel(
+								card.min_condition
+							)} (Click to edit inline)"
 							on:click|stopPropagation={startEditCond}
 						>
 							{card.min_condition === 'NM'
@@ -361,7 +369,8 @@
 		<button
 			type="button"
 			class="inline-variant-btn"
-			class:foil-variant={(card.finish || '').toLowerCase() === 'foil' || (card.finish || '').toLowerCase() === 'etched'}
+			class:foil-variant={(card.finish || '').toLowerCase() === 'foil' ||
+				(card.finish || '').toLowerCase() === 'etched'}
 			title="Click to edit finish or language"
 			on:click|stopPropagation={() => dispatch('openSettings')}
 		>
@@ -417,7 +426,10 @@
 								class="other-stores-chip"
 								class:open={showOtherOffers}
 								aria-expanded={showOtherOffers}
-								aria-label="Show {bestOffer.otherOffersCount} other in-stock offer{bestOffer.otherOffersCount > 1 ? 's' : ''}"
+								aria-label="Show {bestOffer.otherOffersCount} other in-stock offer{bestOffer.otherOffersCount >
+								1
+									? 's'
+									: ''}"
 								title="Other in-stock stores: {otherOffersTooltip}"
 								on:click|stopPropagation={() => dispatch('toggleOtherOffers')}
 							>
@@ -429,11 +441,7 @@
 					{#if showOtherOffers && bestOffer.otherOffers?.length}
 						<!-- svelte-ignore a11y-click-events-have-key-events -->
 						<!-- svelte-ignore a11y-no-static-element-interactions -->
-						<div
-							class="other-offers-popover"
-							class:drop-up={isDropUp}
-							on:click|stopPropagation
-						>
+						<div class="other-offers-popover" class:drop-up={isDropUp} on:click|stopPropagation>
 							<div class="other-offers-header">
 								<span>Other in-stock stores</span>
 							</div>
@@ -449,7 +457,9 @@
 										<span class="other-offer-store">{alt.displayName}</span>
 										<span class="other-offer-meta">
 											{#if alt.condition}
-												<span class="condition-bubble cond-{alt.conditionClass}">{alt.condition}</span>
+												<span class="condition-bubble cond-{alt.conditionClass}"
+													>{alt.condition}</span
+												>
 											{/if}
 											<strong>{formatPrice(alt.cents)}</strong>
 										</span>
@@ -459,7 +469,9 @@
 										<span class="other-offer-store">{alt.displayName}</span>
 										<span class="other-offer-meta">
 											{#if alt.condition}
-												<span class="condition-bubble cond-{alt.conditionClass}">{alt.condition}</span>
+												<span class="condition-bubble cond-{alt.conditionClass}"
+													>{alt.condition}</span
+												>
 											{/if}
 											<strong>{formatPrice(alt.cents)}</strong>
 										</span>
@@ -472,10 +484,13 @@
 			{:else if card?.historical_pricing?.last_seen_cents}
 				<div
 					class="oos-compact"
-					title="Out of stock. Last seen on {card.historical_pricing.last_seen_vendor || 'vendor'} at ${(card.historical_pricing.last_seen_cents / 100).toFixed(2)}"
+					title="Out of stock. Last seen on {card.historical_pricing.last_seen_vendor ||
+						'vendor'} at ${(card.historical_pricing.last_seen_cents / 100).toFixed(2)}"
 				>
 					<i class="fa-solid fa-circle-xmark text-danger"></i>
-					<span class="last-seen-text">Last: ${(card.historical_pricing.last_seen_cents / 100).toFixed(2)}</span>
+					<span class="last-seen-text"
+						>Last: ${(card.historical_pricing.last_seen_cents / 100).toFixed(2)}</span
+					>
 				</div>
 			{:else}
 				<div class="stock-indicator">
@@ -488,7 +503,11 @@
 		</td>
 	{:else}
 		{#if showCardTrader}
-			<td data-label="CardTrader" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('cardtrader')}>
+			<td
+				data-label="CardTrader"
+				class="vendor-stock-cell col-vendor"
+				class:is-best-price={isBestVendor('cardtrader')}
+			>
 				{#if card.cardtrader_id}
 					<a
 						href="https://www.cardtrader.com/cards/{card.cardtrader_id}"
@@ -496,10 +515,7 @@
 						rel="noopener noreferrer"
 						class="vendor-link"
 					>
-						<div
-							class="stock-indicator"
-							class:best-price={isBestVendor('cardtrader')}
-						>
+						<div class="stock-indicator" class:best-price={isBestVendor('cardtrader')}>
 							<i
 								class="{getStockIcon(getStockStatus(card.cardtrader_stock))} {getStockColor(
 									getStockStatus(card.cardtrader_stock)
@@ -522,9 +538,7 @@
 					</a>
 				{:else}
 					<div class="stock-indicator">
-						<i
-							class="fa-solid fa-circle-question text-muted"
-							title="Card not found on CardTrader"
+						<i class="fa-solid fa-circle-question text-muted" title="Card not found on CardTrader"
 						></i>
 					</div>
 				{/if}
@@ -532,7 +546,11 @@
 		{/if}
 
 		{#if showTCGPlayer}
-			<td data-label="TCGPlayer" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('tcgplayer')}>
+			<td
+				data-label="TCGPlayer"
+				class="vendor-stock-cell col-vendor"
+				class:is-best-price={isBestVendor('tcgplayer')}
+			>
 				{#if card.tcgplayer_id}
 					<a
 						href={getTCGPlayerUrl(card)}
@@ -540,10 +558,7 @@
 						rel="noopener noreferrer"
 						class="vendor-link"
 					>
-						<div
-							class="stock-indicator"
-							class:best-price={isBestVendor('tcgplayer')}
-						>
+						<div class="stock-indicator" class:best-price={isBestVendor('tcgplayer')}>
 							<i
 								class="{getStockIcon(getStockStatus(card.tcgplayer_stock))} {getStockColor(
 									getStockStatus(card.tcgplayer_stock)
@@ -566,9 +581,7 @@
 					</a>
 				{:else}
 					<div class="stock-indicator">
-						<i
-							class="fa-solid fa-circle-question text-muted"
-							title="Card not found on TCGPlayer"
+						<i class="fa-solid fa-circle-question text-muted" title="Card not found on TCGPlayer"
 						></i>
 					</div>
 				{/if}
@@ -576,7 +589,11 @@
 		{/if}
 
 		{#if showManapool}
-			<td data-label="Mana Pool" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('manapool')}>
+			<td
+				data-label="Mana Pool"
+				class="vendor-stock-cell col-vendor"
+				class:is-best-price={isBestVendor('manapool')}
+			>
 				{#if sanitizeExternalUrl(card.manapool_url)}
 					<a
 						href={sanitizeExternalUrl(card.manapool_url)}
@@ -584,10 +601,7 @@
 						rel="noopener noreferrer"
 						class="vendor-link"
 					>
-						<div
-							class="stock-indicator"
-							class:best-price={isBestVendor('manapool')}
-						>
+						<div class="stock-indicator" class:best-price={isBestVendor('manapool')}>
 							<i
 								class="{getStockIcon(getStockStatus(card.manapool_stock))} {getStockColor(
 									getStockStatus(card.manapool_stock)
@@ -610,9 +624,7 @@
 					</a>
 				{:else}
 					<div class="stock-indicator">
-						<i
-							class="fa-solid fa-circle-question text-muted"
-							title="Card not found on Mana Pool"
+						<i class="fa-solid fa-circle-question text-muted" title="Card not found on Mana Pool"
 						></i>
 					</div>
 				{/if}
@@ -620,7 +632,11 @@
 		{/if}
 
 		{#if showCardkingdom}
-			<td data-label="Card Kingdom" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('cardkingdom')}>
+			<td
+				data-label="Card Kingdom"
+				class="vendor-stock-cell col-vendor"
+				class:is-best-price={isBestVendor('cardkingdom')}
+			>
 				{#if sanitizeExternalUrl(card.cardkingdom_url)}
 					<a
 						href={sanitizeExternalUrl(card.cardkingdom_url)}
@@ -628,10 +644,7 @@
 						rel="noopener noreferrer"
 						class="vendor-link"
 					>
-						<div
-							class="stock-indicator"
-							class:best-price={isBestVendor('cardkingdom')}
-						>
+						<div class="stock-indicator" class:best-price={isBestVendor('cardkingdom')}>
 							<i
 								class="{getStockIcon(getStockStatus(card.cardkingdom_stock))} {getStockColor(
 									getStockStatus(card.cardkingdom_stock)
@@ -653,11 +666,7 @@
 						</div>
 					</a>
 				{:else}
-					<div
-						class="stock-indicator {getStockColor(
-							getStockStatus(card.cardkingdom_stock)
-						)}"
-					>
+					<div class="stock-indicator {getStockColor(getStockStatus(card.cardkingdom_stock))}">
 						<i
 							class="{getStockIcon(getStockStatus(card.cardkingdom_stock))} {getStockColor(
 								getStockStatus(card.cardkingdom_stock)
@@ -669,7 +678,11 @@
 		{/if}
 
 		{#if showCardmarket}
-			<td data-label="CardMarket" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('cardmarket')}>
+			<td
+				data-label="CardMarket"
+				class="vendor-stock-cell col-vendor"
+				class:is-best-price={isBestVendor('cardmarket')}
+			>
 				{#if card.cardmarket_id}
 					<a
 						href={getCardmarketUrl(card)}
@@ -677,10 +690,7 @@
 						rel="noopener noreferrer"
 						class="vendor-link"
 					>
-						<div
-							class="stock-indicator"
-							class:best-price={isBestVendor('cardmarket')}
-						>
+						<div class="stock-indicator" class:best-price={isBestVendor('cardmarket')}>
 							<i
 								class="{getStockIcon(getStockStatus(card.cardmarket_stock))} {getStockColor(
 									getStockStatus(card.cardmarket_stock)
@@ -691,8 +701,12 @@
 									{formatPrice(card.cardmarket_low_price)}
 									{#if card.cardmarket_condition}
 										<span
-											class="condition-bubble cond-{getCardmarketConditionClass(card.cardmarket_condition)}"
-											title="Condition: {card.cardmarket_condition}{card.cardmarket_price_eur ? ` (${formatEurPrice(card.cardmarket_price_eur)})` : ''}"
+											class="condition-bubble cond-{getCardmarketConditionClass(
+												card.cardmarket_condition
+											)}"
+											title="Condition: {card.cardmarket_condition}{card.cardmarket_price_eur
+												? ` (${formatEurPrice(card.cardmarket_price_eur)})`
+												: ''}"
 										>
 											{card.cardmarket_condition}
 										</span>
@@ -706,9 +720,7 @@
 					</a>
 				{:else}
 					<div class="stock-indicator">
-						<i
-							class="fa-solid fa-circle-question text-muted"
-							title="Card not found on CardMarket"
+						<i class="fa-solid fa-circle-question text-muted" title="Card not found on CardMarket"
 						></i>
 					</div>
 				{/if}
@@ -716,17 +728,18 @@
 		{/if}
 
 		{#if showEbay}
-			<td data-label="EBay" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('ebay')}>
+			<td
+				data-label="EBay"
+				class="vendor-stock-cell col-vendor"
+				class:is-best-price={isBestVendor('ebay')}
+			>
 				<a
 					href={getEbayUrl(card, setCodeToNameMap)}
 					target="_blank"
 					rel="noopener noreferrer"
 					class="vendor-link"
 				>
-					<div
-						class="stock-indicator"
-						class:best-price={isBestVendor('ebay')}
-					>
+					<div class="stock-indicator" class:best-price={isBestVendor('ebay')}>
 						<i
 							class="{getStockIcon(getStockStatus(card.ebay_stock))} {getStockColor(
 								getStockStatus(card.ebay_stock)
@@ -751,7 +764,11 @@
 		{/if}
 
 		{#if showHimarket}
-			<td data-label="HiMarket" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('himarket')}>
+			<td
+				data-label="HiMarket"
+				class="vendor-stock-cell col-vendor"
+				class:is-best-price={isBestVendor('himarket')}
+			>
 				{#if sanitizeExternalUrl(card.himarket_url)}
 					<a
 						href={sanitizeExternalUrl(card.himarket_url)}
@@ -759,10 +776,7 @@
 						rel="noopener noreferrer"
 						class="vendor-link"
 					>
-						<div
-							class="stock-indicator"
-							class:best-price={isBestVendor('himarket')}
-						>
+						<div class="stock-indicator" class:best-price={isBestVendor('himarket')}>
 							<i
 								class="{getStockIcon(getStockStatus(card.himarket_stock))} {getStockColor(
 									getStockStatus(card.himarket_stock)
@@ -774,7 +788,9 @@
 									{#if card.himarket_condition}
 										<span
 											class="condition-bubble cond-{card.himarket_condition.toLowerCase()}"
-											title="Condition: {card.himarket_condition}{card.himarket_price_hkd ? ` (${formatHkdPrice(card.himarket_price_hkd)})` : ''}"
+											title="Condition: {card.himarket_condition}{card.himarket_price_hkd
+												? ` (${formatHkdPrice(card.himarket_price_hkd)})`
+												: ''}"
 										>
 											{card.himarket_condition}
 										</span>
@@ -792,7 +808,9 @@
 							class="{getStockIcon(getStockStatus(card.himarket_stock))} {getStockColor(
 								getStockStatus(card.himarket_stock)
 							)}"
-							title={getStockStatus(card.himarket_stock) === 'unavailable' ? 'Out of stock on HiMarket' : 'Not searched on HiMarket'}
+							title={getStockStatus(card.himarket_stock) === 'unavailable'
+								? 'Out of stock on HiMarket'
+								: 'Not searched on HiMarket'}
 						></i>
 					</div>
 				{/if}
@@ -800,7 +818,11 @@
 		{/if}
 
 		{#if showHareruya}
-			<td data-label="Hareruya" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('hareruya')}>
+			<td
+				data-label="Hareruya"
+				class="vendor-stock-cell col-vendor"
+				class:is-best-price={isBestVendor('hareruya')}
+			>
 				{#if sanitizeExternalUrl(card.hareruya_url)}
 					<a
 						href={sanitizeExternalUrl(card.hareruya_url)}
@@ -808,10 +830,7 @@
 						rel="noopener noreferrer"
 						class="vendor-link"
 					>
-						<div
-							class="stock-indicator"
-							class:best-price={isBestVendor('hareruya')}
-						>
+						<div class="stock-indicator" class:best-price={isBestVendor('hareruya')}>
 							<i
 								class="{getStockIcon(getStockStatus(card.hareruya_stock))} {getStockColor(
 									getStockStatus(card.hareruya_stock)
@@ -823,7 +842,9 @@
 									{#if card.hareruya_condition}
 										<span
 											class="condition-bubble cond-{card.hareruya_condition.toLowerCase()}"
-											title="Condition: {card.hareruya_condition}{card.hareruya_price_jpy ? ` (${formatJpyPrice(card.hareruya_price_jpy)})` : ''}"
+											title="Condition: {card.hareruya_condition}{card.hareruya_price_jpy
+												? ` (${formatJpyPrice(card.hareruya_price_jpy)})`
+												: ''}"
 										>
 											{card.hareruya_condition}
 										</span>
@@ -841,7 +862,9 @@
 							class="{getStockIcon(getStockStatus(card.hareruya_stock))} {getStockColor(
 								getStockStatus(card.hareruya_stock)
 							)}"
-							title={getStockStatus(card.hareruya_stock) === 'unavailable' ? 'Out of stock on Hareruya' : 'Not searched on Hareruya'}
+							title={getStockStatus(card.hareruya_stock) === 'unavailable'
+								? 'Out of stock on Hareruya'
+								: 'Not searched on Hareruya'}
 						></i>
 					</div>
 				{/if}
@@ -849,13 +872,17 @@
 		{/if}
 
 		{#if showRuten}
-			<td data-label="Ruten" class="vendor-stock-cell col-vendor" class:is-best-price={isBestVendor('ruten')}>
+			<td
+				data-label="Ruten"
+				class="vendor-stock-cell col-vendor"
+				class:is-best-price={isBestVendor('ruten')}
+			>
 				{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
 					<div class="stock-indicator">
 						<span
 							class="unsupported-lang-dash"
-							title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards"
-						>—</span>
+							title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards">—</span
+						>
 					</div>
 				{:else if sanitizeExternalUrl(card.ruten_url)}
 					<a
@@ -864,10 +891,7 @@
 						rel="noopener noreferrer"
 						class="vendor-link"
 					>
-						<div
-							class="stock-indicator"
-							class:best-price={isBestVendor('ruten')}
-						>
+						<div class="stock-indicator" class:best-price={isBestVendor('ruten')}>
 							<i
 								class="{getStockIcon(getStockStatus(card.ruten_stock))} {getStockColor(
 									getStockStatus(card.ruten_stock)
@@ -879,7 +903,9 @@
 									{#if card.ruten_condition}
 										<span
 											class="condition-bubble cond-{card.ruten_condition.toLowerCase()}"
-											title="Condition: {card.ruten_condition}{card.ruten_price_twd ? ` (${formatTwdPrice(card.ruten_price_twd)})` : ''}"
+											title="Condition: {card.ruten_condition}{card.ruten_price_twd
+												? ` (${formatTwdPrice(card.ruten_price_twd)})`
+												: ''}"
 										>
 											{card.ruten_condition}
 										</span>
@@ -897,7 +923,9 @@
 							class="{getStockIcon(getStockStatus(card.ruten_stock))} {getStockColor(
 								getStockStatus(card.ruten_stock)
 							)}"
-							title={getStockStatus(card.ruten_stock) === 'unavailable' ? 'Out of stock on Ruten' : 'Not searched on Ruten'}
+							title={getStockStatus(card.ruten_stock) === 'unavailable'
+								? 'Out of stock on Ruten'
+								: 'Not searched on Ruten'}
 						></i>
 					</div>
 				{/if}
@@ -1115,24 +1143,28 @@
 		}
 
 		tr.in-stock:not(.selected) td.col-card {
-			background: linear-gradient(0deg, rgba(34, 197, 94, 0.06), rgba(34, 197, 94, 0.06)),
+			background:
+				linear-gradient(0deg, rgba(34, 197, 94, 0.06), rgba(34, 197, 94, 0.06)),
 				var(--color-bg-primary);
 			box-shadow: inset 3px 0 0 rgba(34, 197, 94, 0.5);
 		}
 
 		tr.in-stock:not(.selected):hover td.col-card {
-			background: linear-gradient(0deg, rgba(34, 197, 94, 0.11), rgba(34, 197, 94, 0.11)),
+			background:
+				linear-gradient(0deg, rgba(34, 197, 94, 0.11), rgba(34, 197, 94, 0.11)),
 				var(--color-bg-primary);
 		}
 
 		tr.under-cap:not(.selected) td.col-card {
-			background: linear-gradient(0deg, rgba(34, 197, 94, 0.09), rgba(34, 197, 94, 0.09)),
+			background:
+				linear-gradient(0deg, rgba(34, 197, 94, 0.09), rgba(34, 197, 94, 0.09)),
 				var(--color-bg-primary);
 			box-shadow: inset 3px 0 0 #22c55e;
 		}
 
 		tr.under-cap:not(.selected):hover td.col-card {
-			background: linear-gradient(0deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.14)),
+			background:
+				linear-gradient(0deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.14)),
 				var(--color-bg-primary);
 		}
 
@@ -1835,8 +1867,8 @@
 		}
 
 		tr.in-stock:not(.selected) {
-			background: linear-gradient(0deg, rgba(34, 197, 94, 0.07), rgba(34, 197, 94, 0.07)),
-				var(--glass-bg);
+			background:
+				linear-gradient(0deg, rgba(34, 197, 94, 0.07), rgba(34, 197, 94, 0.07)), var(--glass-bg);
 			border-color: rgba(34, 197, 94, 0.35);
 			box-shadow:
 				inset 3px 0 0 rgba(34, 197, 94, 0.5),
@@ -1844,8 +1876,8 @@
 		}
 
 		tr.under-cap:not(.selected) {
-			background: linear-gradient(0deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.1)),
-				var(--glass-bg);
+			background:
+				linear-gradient(0deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.1)), var(--glass-bg);
 			border-color: rgba(34, 197, 94, 0.55);
 			box-shadow:
 				inset 3px 0 0 #22c55e,

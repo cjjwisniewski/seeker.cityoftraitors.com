@@ -179,7 +179,8 @@
 					price: card.himarket_low_price,
 					nativeText: card.himarket_price_hkd ? `(HK$${card.himarket_price_hkd.toFixed(2)})` : null,
 					cond: card.himarket_condition,
-					url: card.himarket_url || `https://www.himarket.hk/search?q=${encodeURIComponent(card.name)}`
+					url:
+						card.himarket_url || `https://www.himarket.hk/search?q=${encodeURIComponent(card.name)}`
 				},
 				{
 					enabled: settings.marketplaceCardkingdomEnabled,
@@ -287,7 +288,9 @@
 		for (const [key, list] of map.entries()) {
 			const sorted = [...list].sort((a, b) => a.priceCents - b.priceCents);
 			const base = sorted[0];
-			const hasAtl = sorted.some((o) => o.kind === 'historical_low' || o.historicalContext?.isLowBreakthrough);
+			const hasAtl = sorted.some(
+				(o) => o.kind === 'historical_low' || o.historicalContext?.isLowBreakthrough
+			);
 			const hasDrop = sorted.some((o) => o.kind === 'price_drop');
 			const badge = hasAtl ? '🔥' : hasDrop ? '🔻' : '🟢';
 			groups.push({
@@ -357,7 +360,10 @@
 					<i class="fa-brands fa-discord discord-icon" aria-hidden="true"></i>
 					<div>
 						<h2>Simulated Discord DM Previews</h2>
-						<p>Faithful 1:1 embed previews rendered from your demo watchlist, caps, and Account settings.</p>
+						<p>
+							Faithful 1:1 embed previews rendered from your demo watchlist, caps, and Account
+							settings.
+						</p>
 					</div>
 				</div>
 				<button
@@ -419,14 +425,15 @@
 					{#if currentSettings && !currentSettings.stockAlertEnabled}
 						<div class="paused-note">
 							Instant stock alerts are currently toggled OFF in your
-							<a href="/account" on:click={closeDemoAlertPreviews}>Account Settings</a>.
-							Historical samples triggered before pausing remain below.
+							<a href="/account" on:click={closeDemoAlertPreviews}>Account Settings</a>. Historical
+							samples triggered before pausing remain below.
 						</div>
 					{/if}
 
 					{#if orderedAlerts.length === 0}
 						<div class="empty-preview">
-							No simulated DM alerts recorded yet. Run a manual stock check or adjust a Price Cap on any card to trigger a live DM preview.
+							No simulated DM alerts recorded yet. Run a manual stock check or adjust a Price Cap on
+							any card to trigger a live DM preview.
 						</div>
 					{:else if alertViewMode === 'batched'}
 						<div class="discord-message">
@@ -438,16 +445,20 @@
 										<i class="fa-solid fa-check bot-check" aria-hidden="true"></i>
 										APP
 									</span>
-									<span class="msg-time">{formatDiscordTimestamp(orderedAlerts[0]?.createdAt)}</span>
+									<span class="msg-time">{formatDiscordTimestamp(orderedAlerts[0]?.createdAt)}</span
+									>
 								</div>
 
 								<div class="discord-embed {getBatchEmbedColorClass(orderedAlerts)}">
 									<div class="embed-content">
 										<div class="embed-title-plain">
-											📦 Restock Alert: {batchedGroups.length} Card{batchedGroups.length === 1 ? '' : 's'} Available
+											📦 Restock Alert: {batchedGroups.length} Card{batchedGroups.length === 1
+												? ''
+												: 's'} Available
 										</div>
 										<div class="embed-desc">
-											<strong>{batchedGroups.length}</strong> card(s) on your Seeking list are now available in stock:
+											<strong>{batchedGroups.length}</strong> card(s) on your Seeking list are now available
+											in stock:
 										</div>
 
 										<div class="embed-fields-stack">
@@ -457,25 +468,43 @@
 													<div class="discord-field-name">{grp.fieldTitle}</div>
 													<div class="discord-field-val">
 														<div>
-															<strong>{grp.setUpper}</strong> &middot; <code>#{grp.collectorNumber}</code> &middot; <strong>{grp.languageUpper}</strong> &middot; {grp.finishLabel}
+															<strong>{grp.setUpper}</strong> &middot;
+															<code>#{grp.collectorNumber}</code>
+															&middot; <strong>{grp.languageUpper}</strong> &middot; {grp.finishLabel}
 														</div>
 														{#each grp.offers as off (off.id)}
 															{@const safeBuy = sanitizeExternalUrl(off.buyUrl, '#')}
 															<div>
-																&bull; <strong><a href={safeBuy} target="_blank" rel="noopener noreferrer" class="discord-link">{off.vendorDisplayName}</a></strong>:
-																{#if off.condition}<code>{off.condition}</code> {/if}<strong>{formatPrice(off.priceCents)}</strong>{#if off.nativePriceText} <em class="native-fx">{off.nativePriceText}</em>{/if}
+																&bull; <strong
+																	><a
+																		href={safeBuy}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																		class="discord-link">{off.vendorDisplayName}</a
+																	></strong
+																>:
+																{#if off.condition}<code>{off.condition}</code>
+																{/if}<strong>{formatPrice(off.priceCents)}</strong
+																>{#if off.nativePriceText}
+																	<em class="native-fx">{off.nativePriceText}</em>{/if}
 															</div>
 														{/each}
 														{#if hist}
 															{#if hist.isLowBreakthrough && hist.previousLowCents}
 																<div>
-																	🔥 <strong>New {hist.tierLabel} Floor!</strong> (Beat <strong>{formatPrice(hist.previousLowCents)}</strong> on {formatVendorDisplayName(hist.previousLowVendor || '')})
+																	🔥 <strong>New {hist.tierLabel} Floor!</strong> (Beat
+																	<strong>{formatPrice(hist.previousLowCents)}</strong>
+																	on {formatVendorDisplayName(hist.previousLowVendor || '')})
 																</div>
 															{:else if hist.activeLowCents}
 																<div>
-																	Floor ({hist.tierLabel}): <strong>{formatPrice(hist.activeLowCents)}</strong> on {formatVendorDisplayName(hist.activeLowVendor || '')}
+																	Floor ({hist.tierLabel}):
+																	<strong>{formatPrice(hist.activeLowCents)}</strong>
+																	on {formatVendorDisplayName(hist.activeLowVendor || '')}
 																	{#if hist.prevLastSeenCents && hist.prevLastSeenAt && formatRelativeAgeDays(hist.prevLastSeenAt)}
-																		&middot; Last seen {formatRelativeAgeDays(hist.prevLastSeenAt)}: <strong>{formatPrice(hist.prevLastSeenCents)}</strong> ({formatVendorDisplayName(hist.prevLastSeenVendor || '')})
+																		&middot; Last seen {formatRelativeAgeDays(hist.prevLastSeenAt)}:
+																		<strong>{formatPrice(hist.prevLastSeenCents)}</strong>
+																		({formatVendorDisplayName(hist.prevLastSeenVendor || '')})
 																	{/if}
 																</div>
 															{/if}
@@ -497,7 +526,10 @@
 						</div>
 					{:else}
 						{#each orderedAlerts as alert (alert.id)}
-							{@const safeThumb = sanitizeExternalUrl(getWebpImageUri(alert.imageUri) || alert.imageUri, '')}
+							{@const safeThumb = sanitizeExternalUrl(
+								getWebpImageUri(alert.imageUri) || alert.imageUri,
+								''
+							)}
 							{@const safeBuyUrl = sanitizeExternalUrl(alert.buyUrl, '')}
 							{@const hist = alert.historicalContext}
 							<div class="discord-message" class:highlighted={alert.id === $demoSelectedAlertId}>
@@ -517,34 +549,58 @@
 											<div class="embed-top-row">
 												<div class="embed-main-col">
 													{#if safeBuyUrl}
-														<a href={safeBuyUrl} target="_blank" rel="noopener noreferrer" class="embed-title-link">
+														<a
+															href={safeBuyUrl}
+															target="_blank"
+															rel="noopener noreferrer"
+															class="embed-title-link"
+														>
 															{getEmbedTitle(alert.kind, alert.cardName)}
 														</a>
 													{:else}
-														<div class="embed-title-plain">{getEmbedTitle(alert.kind, alert.cardName)}</div>
+														<div class="embed-title-plain">
+															{getEmbedTitle(alert.kind, alert.cardName)}
+														</div>
 													{/if}
 
 													<div class="embed-desc">
 														{#if alert.kind === 'price_drop' && alert.oldPriceCents}
 															<strong>
 																{#if safeBuyUrl}
-																	<a href={safeBuyUrl} target="_blank" rel="noopener noreferrer" class="discord-link">{alert.vendorDisplayName}</a>
+																	<a
+																		href={safeBuyUrl}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																		class="discord-link">{alert.vendorDisplayName}</a
+																	>
 																{:else}
 																	{alert.vendorDisplayName}
 																{/if}
 															</strong>
 															dropped from <s>{formatPrice(alert.oldPriceCents)}</s> to
-															<strong>{formatPrice(alert.priceCents)}</strong>{#if alert.nativePriceText} <em class="native-fx">{alert.nativePriceText}</em>{/if}{#if alert.percentageDrop} (-{alert.percentageDrop}%){/if}
+															<strong>{formatPrice(alert.priceCents)}</strong
+															>{#if alert.nativePriceText}
+																<em class="native-fx">{alert.nativePriceText}</em
+																>{/if}{#if alert.percentageDrop}
+																(-{alert.percentageDrop}%){/if}
 														{:else}
 															Now available on
 															<strong>
 																{#if safeBuyUrl}
-																	<a href={safeBuyUrl} target="_blank" rel="noopener noreferrer" class="discord-link">{alert.vendorDisplayName}</a>
+																	<a
+																		href={safeBuyUrl}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																		class="discord-link">{alert.vendorDisplayName}</a
+																	>
 																{:else}
 																	{alert.vendorDisplayName}
 																{/if}
 															</strong>
-															for <strong>{formatPrice(alert.priceCents)}</strong>{#if alert.nativePriceText} <em class="native-fx">{alert.nativePriceText}</em>{/if}
+															for
+															<strong>{formatPrice(alert.priceCents)}</strong
+															>{#if alert.nativePriceText}
+																<em class="native-fx">{alert.nativePriceText}</em>{/if}
 														{/if}
 													</div>
 
@@ -553,7 +609,8 @@
 															<div class="discord-field-name">Card</div>
 															<div class="discord-field-val">
 																<strong>{alert.setCode.toUpperCase()}</strong>
-																{#if alert.collectorNumber} &middot; <code>#{alert.collectorNumber}</code>{/if}
+																{#if alert.collectorNumber}
+																	&middot; <code>#{alert.collectorNumber}</code>{/if}
 																&middot; <strong>{alert.language.toUpperCase()}</strong>
 																&middot; {formatDiscordFinish(alert.finish)}
 															</div>
@@ -563,9 +620,15 @@
 															<div class="discord-field inline-field">
 																<div class="discord-field-name">Listing</div>
 																<div class="discord-field-val">
-																	{#if alert.condition}<code>{alert.condition}</code> {/if}
+																	{#if alert.condition}<code>{alert.condition}</code>
+																	{/if}
 																	{#if safeBuyUrl}
-																		<a href={safeBuyUrl} target="_blank" rel="noopener noreferrer" class="discord-link">
+																		<a
+																			href={safeBuyUrl}
+																			target="_blank"
+																			rel="noopener noreferrer"
+																			class="discord-link"
+																		>
 																			View on {alert.vendorDisplayName}
 																		</a>
 																	{:else}
@@ -577,15 +640,23 @@
 															<div class="discord-field inline-field">
 																<div class="discord-field-name">Price &amp; Condition</div>
 																<div class="discord-field-val">
-																	{#if alert.condition}<code>{alert.condition}</code> {/if}
-																	<strong>{formatPrice(alert.priceCents)}</strong>{#if alert.nativePriceText} <em class="native-fx">{alert.nativePriceText}</em>{/if}
+																	{#if alert.condition}<code>{alert.condition}</code>
+																	{/if}
+																	<strong>{formatPrice(alert.priceCents)}</strong
+																	>{#if alert.nativePriceText}
+																		<em class="native-fx">{alert.nativePriceText}</em>{/if}
 																</div>
 															</div>
 															<div class="discord-field inline-field">
 																<div class="discord-field-name">Marketplace</div>
 																<div class="discord-field-val">
 																	{#if safeBuyUrl}
-																		<a href={safeBuyUrl} target="_blank" rel="noopener noreferrer" class="discord-link">
+																		<a
+																			href={safeBuyUrl}
+																			target="_blank"
+																			rel="noopener noreferrer"
+																			class="discord-link"
+																		>
 																			View on {alert.vendorDisplayName}
 																		</a>
 																	{:else}
@@ -598,20 +669,33 @@
 														{#if hist}
 															{#if hist.isLowBreakthrough && hist.previousLowCents}
 																<div class="discord-field full-width">
-																	<div class="discord-field-name">Historical Floor ({hist.tierLabel})</div>
+																	<div class="discord-field-name">
+																		Historical Floor ({hist.tierLabel})
+																	</div>
 																	<div class="discord-field-val">
-																		🔥 <strong>New {hist.tierLabel} Low!</strong> (Beat <strong>{formatPrice(hist.previousLowCents)}</strong> on {formatVendorDisplayName(hist.previousLowVendor || '')})
+																		🔥 <strong>New {hist.tierLabel} Low!</strong> (Beat
+																		<strong>{formatPrice(hist.previousLowCents)}</strong>
+																		on {formatVendorDisplayName(hist.previousLowVendor || '')})
 																	</div>
 																</div>
 															{:else if hist.activeLowCents}
 																<div class="discord-field full-width">
-																	<div class="discord-field-name">Historical Floor ({hist.tierLabel})</div>
+																	<div class="discord-field-name">
+																		Historical Floor ({hist.tierLabel})
+																	</div>
 																	<div class="discord-field-val">
-																		<strong>{formatPrice(hist.activeLowCents)}</strong> on {formatVendorDisplayName(hist.activeLowVendor || '')}
+																		<strong>{formatPrice(hist.activeLowCents)}</strong> on {formatVendorDisplayName(
+																			hist.activeLowVendor || ''
+																		)}
 																		{#if alert.kind === 'restock' && hist.prevLastSeenCents && hist.prevLastSeenAt && formatRelativeAgeDays(hist.prevLastSeenAt)}
-																			&middot; Last seen {formatRelativeAgeDays(hist.prevLastSeenAt)}:
+																			&middot; Last seen {formatRelativeAgeDays(
+																				hist.prevLastSeenAt
+																			)}:
 																			<strong>{formatPrice(hist.prevLastSeenCents)}</strong>
-																			{#if hist.prevLastSeenCondition}<code>{hist.prevLastSeenCondition}</code> {/if}
+																			{#if hist.prevLastSeenCondition}<code
+																					>{hist.prevLastSeenCondition}</code
+																				>
+																			{/if}
 																			({formatVendorDisplayName(hist.prevLastSeenVendor || '')})
 																		{/if}
 																	</div>
@@ -642,14 +726,17 @@
 					{#if currentSettings && !currentSettings.stockDigestEnabled}
 						<div class="paused-note">
 							Scheduled Stock Digests are currently disabled in your
-							<a href="/account" on:click={closeDemoAlertPreviews}>Account Settings</a>.
-							Enable the toggle to schedule daily digests at {String(currentSettings.stockDigestHourUtc).padStart(2, '0')}:00 UTC.
+							<a href="/account" on:click={closeDemoAlertPreviews}>Account Settings</a>. Enable the
+							toggle to schedule daily digests at {String(
+								currentSettings.stockDigestHourUtc
+							).padStart(2, '0')}:00 UTC.
 						</div>
 					{/if}
 
 					{#if digestPages.length === 0}
 						<div class="empty-preview">
-							No currently enabled marketplaces match your demo watchlist, minimum condition, and price caps. Adjust filters in Account or Seeking to populate your digest.
+							No currently enabled marketplaces match your demo watchlist, minimum condition, and
+							price caps. Adjust filters in Account or Seeking to populate your digest.
 						</div>
 					{:else}
 						<div class="discord-message">
@@ -662,7 +749,10 @@
 										APP
 									</span>
 									<span class="msg-time">
-										Scheduled daily at {String(currentSettings?.stockDigestHourUtc ?? 14).padStart(2, '0')}:00 UTC
+										Scheduled daily at {String(currentSettings?.stockDigestHourUtc ?? 14).padStart(
+											2,
+											'0'
+										)}:00 UTC
 									</span>
 								</div>
 
@@ -670,11 +760,13 @@
 									<div class="discord-embed embed-digest">
 										<div class="embed-content">
 											<div class="embed-title-plain">
-												📦 Seeker In-Stock Digest{#if digestPages.length > 1} (Part {idx + 1} of {digestPages.length}){/if}
+												📦 Seeker In-Stock Digest{#if digestPages.length > 1}
+													(Part {idx + 1} of {digestPages.length}){/if}
 											</div>
 											{#if idx === 0}
 												<div class="embed-desc">
-													Found <strong>{digestEntries.length}</strong> matching card(s) in stock for you:
+													Found <strong>{digestEntries.length}</strong> matching card(s) in stock for
+													you:
 												</div>
 											{/if}
 
@@ -688,8 +780,18 @@
 															</div>
 															{#each cardEntry.offers as offer (`${cardEntry.key}-${offer.vendorName}`)}
 																<div>
-																	&bull; <strong><a href={offer.url} target="_blank" rel="noopener noreferrer" class="discord-link">{offer.vendorName}</a></strong>:
-																	{#if offer.condition}<code>{offer.condition}</code> {/if}<strong>{formatPrice(offer.priceCents)}</strong>{#if offer.nativeText} <em class="native-fx">{offer.nativeText}</em>{/if}
+																	&bull; <strong
+																		><a
+																			href={offer.url}
+																			target="_blank"
+																			rel="noopener noreferrer"
+																			class="discord-link">{offer.vendorName}</a
+																		></strong
+																	>:
+																	{#if offer.condition}<code>{offer.condition}</code>
+																	{/if}<strong>{formatPrice(offer.priceCents)}</strong
+																	>{#if offer.nativeText}
+																		<em class="native-fx">{offer.nativeText}</em>{/if}
 																</div>
 															{/each}
 														</div>
@@ -701,7 +803,12 @@
 												<img src="/favicon.png" alt="" class="footer-icon" />
 												<span>Seeker &middot; City of Traitors</span>
 												<span>&bull;</span>
-												<span>Today at {String(currentSettings?.stockDigestHourUtc ?? 14).padStart(2, '0')}:00 UTC</span>
+												<span
+													>Today at {String(currentSettings?.stockDigestHourUtc ?? 14).padStart(
+														2,
+														'0'
+													)}:00 UTC</span
+												>
 											</div>
 										</div>
 									</div>

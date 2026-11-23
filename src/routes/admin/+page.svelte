@@ -239,7 +239,9 @@
 		requeuingUser = targetUserId;
 		requeueFeedback = null;
 		try {
-			const requeueUrl = publicEnv.PUBLIC_REQUEUE_USER_STOCK_CHECKS_FUNCTION_URL || 'https://seeker.azure-api.net/seeker/requeueUserStockChecks';
+			const requeueUrl =
+				publicEnv.PUBLIC_REQUEUE_USER_STOCK_CHECKS_FUNCTION_URL ||
+				'https://seeker.azure-api.net/seeker/requeueUserStockChecks';
 			const response = await fetchWithAuth(requeueUrl, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -477,7 +479,10 @@
 			const response = await fetchWithAuth(url, { method: 'POST' });
 			if (response && response.ok) {
 				const data = await response.json();
-				poisonFeedback = { type: 'success', text: data.message || 'Messages replayed successfully.' };
+				poisonFeedback = {
+					type: 'success',
+					text: data.message || 'Messages replayed successfully.'
+				};
 				await loadSystemStatus();
 				if (showPoisonModal && activePoisonQueue) {
 					const refreshQ = activePoisonQueue;
@@ -686,21 +691,81 @@
 
 	// Statistics Logic
 	const MARKETPLACE_METRICS = [
-		{ key: 'cardtrader', label: 'CardTrader', badgeClass: 'ct', iconClass: 'fa-solid fa-cube', secPerCard: 2 },
-		{ key: 'tcgplayer', label: 'TCGPlayer', badgeClass: 'tcg', iconClass: 'fa-solid fa-store', secPerCard: 2 },
-		{ key: 'manapool', label: 'Mana Pool', badgeClass: 'manapool', iconClass: 'fa-solid fa-droplet', secPerCard: 1 },
-		{ key: 'cardkingdom', label: 'Card Kingdom', badgeClass: 'cardkingdom', iconClass: 'fa-solid fa-crown', secPerCard: 1 },
-		{ key: 'ebay', label: 'eBay', badgeClass: 'ebay', iconClass: 'fa-brands fa-ebay', secPerCard: 1 },
-		{ key: 'himarket', label: 'HiMarket', badgeClass: 'himarket', iconClass: 'fa-solid fa-earth-asia', secPerCard: 1 },
-		{ key: 'hareruya', label: 'Hareruya', badgeClass: 'hareruya', iconClass: 'fa-solid fa-sun', secPerCard: 2 },
-		{ key: 'ruten', label: 'Ruten', badgeClass: 'ruten', iconClass: 'fa-solid fa-shop', secPerCard: 2 },
-		{ key: 'cardmarket', label: 'CardMarket', badgeClass: 'cardmarket', iconClass: 'fa-solid fa-euro-sign', secPerCard: 12 }
+		{
+			key: 'cardtrader',
+			label: 'CardTrader',
+			badgeClass: 'ct',
+			iconClass: 'fa-solid fa-cube',
+			secPerCard: 2
+		},
+		{
+			key: 'tcgplayer',
+			label: 'TCGPlayer',
+			badgeClass: 'tcg',
+			iconClass: 'fa-solid fa-store',
+			secPerCard: 2
+		},
+		{
+			key: 'manapool',
+			label: 'Mana Pool',
+			badgeClass: 'manapool',
+			iconClass: 'fa-solid fa-droplet',
+			secPerCard: 1
+		},
+		{
+			key: 'cardkingdom',
+			label: 'Card Kingdom',
+			badgeClass: 'cardkingdom',
+			iconClass: 'fa-solid fa-crown',
+			secPerCard: 1
+		},
+		{
+			key: 'ebay',
+			label: 'eBay',
+			badgeClass: 'ebay',
+			iconClass: 'fa-brands fa-ebay',
+			secPerCard: 1
+		},
+		{
+			key: 'himarket',
+			label: 'HiMarket',
+			badgeClass: 'himarket',
+			iconClass: 'fa-solid fa-earth-asia',
+			secPerCard: 1
+		},
+		{
+			key: 'hareruya',
+			label: 'Hareruya',
+			badgeClass: 'hareruya',
+			iconClass: 'fa-solid fa-sun',
+			secPerCard: 2
+		},
+		{
+			key: 'ruten',
+			label: 'Ruten',
+			badgeClass: 'ruten',
+			iconClass: 'fa-solid fa-shop',
+			secPerCard: 2
+		},
+		{
+			key: 'cardmarket',
+			label: 'CardMarket',
+			badgeClass: 'cardmarket',
+			iconClass: 'fa-solid fa-euro-sign',
+			secPerCard: 12
+		}
 	];
 
 	$: totalUsers = userTables.length;
 	$: totalItems = userTables.reduce((sum, table) => sum + (table.itemCount || 0), 0);
-	$: totalQueuedMessages = (systemStatus?.queues || []).reduce((sum, q) => sum + (q.active_messages || 0), 0);
-	$: totalPoisonMessages = (systemStatus?.queues || []).reduce((sum, q) => sum + (q.poison_messages || 0), 0);
+	$: totalQueuedMessages = (systemStatus?.queues || []).reduce(
+		(sum, q) => sum + (q.active_messages || 0),
+		0
+	);
+	$: totalPoisonMessages = (systemStatus?.queues || []).reduce(
+		(sum, q) => sum + (q.poison_messages || 0),
+		0
+	);
 
 	$: marketplaceAdoption = MARKETPLACE_METRICS.map((mk) => {
 		let users = 0;
@@ -756,7 +821,15 @@
 	<title>Admin Console - Seeker</title>
 </svelte:head>
 
-<svelte:window on:keydown={(showDeleteModal || showTierModal || showNotesModal || showPoisonModal || showClearPoisonModal) ? handleKeydown : null} />
+<svelte:window
+	on:keydown={showDeleteModal ||
+	showTierModal ||
+	showNotesModal ||
+	showPoisonModal ||
+	showClearPoisonModal
+		? handleKeydown
+		: null}
+/>
 
 {#if authLoading}
 	<div class="loading-container">
@@ -795,11 +868,19 @@
 			<div class="toolbar-right">
 				{#if systemStatus}
 					<div
-						class="status-indicator-pill {systemStatus.state?.toLowerCase() === 'degraded' ? 'degraded' : ''}"
+						class="status-indicator-pill {systemStatus.state?.toLowerCase() === 'degraded'
+							? 'degraded'
+							: ''}"
 						title="System Status: {systemStatus.state || 'Active'}"
 					>
-						<span class="pulse-dot {systemStatus.state?.toLowerCase() === 'degraded' ? 'degraded' : ''}"></span>
-						<span>{systemStatus.state?.toLowerCase() === 'degraded' ? 'System Degraded' : 'System Healthy'}</span>
+						<span
+							class="pulse-dot {systemStatus.state?.toLowerCase() === 'degraded' ? 'degraded' : ''}"
+						></span>
+						<span
+							>{systemStatus.state?.toLowerCase() === 'degraded'
+								? 'System Degraded'
+								: 'System Healthy'}</span
+						>
 					</div>
 				{/if}
 				<div class="card-counter" title="Total registered users">
@@ -815,7 +896,8 @@
 					}}
 					title="Refresh All Admin Data"
 				>
-					<i class="fa-solid fa-rotate {loading || statusLoading || bannerLoading ? 'fa-spin' : ''}"></i>
+					<i class="fa-solid fa-rotate {loading || statusLoading || bannerLoading ? 'fa-spin' : ''}"
+					></i>
 				</button>
 			</div>
 		</div>
@@ -879,1048 +961,1184 @@
 
 		<div class="admin-content">
 			{#if activeTab === 'overview'}
-			<!-- Section 1: Overview Statistics -->
-			<section class="admin-section">
-				<div class="section-title-row">
-					<div class="section-title-icon">
-						<i class="fa-solid fa-chart-pie"></i>
-					</div>
-					<h2>Overview Statistics</h2>
-				</div>
-
-				{#if loading}
-					<div class="section-loading">
-						<div class="loading-spinner small"></div>
-						<span>Calculating stats...</span>
-					</div>
-				{:else}
-					<div class="kpi-grid">
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">Total Users</span>
-								<div class="stat-icon-badge users">
-									<i class="fa-solid fa-users"></i>
-								</div>
-							</div>
-							<div class="stat-value">{totalUsers}</div>
-							<div class="stat-sub">Registered accounts</div>
+				<!-- Section 1: Overview Statistics -->
+				<section class="admin-section">
+					<div class="section-title-row">
+						<div class="section-title-icon">
+							<i class="fa-solid fa-chart-pie"></i>
 						</div>
-
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">Tracked Cards</span>
-								<div class="stat-icon-badge items">
-									<i class="fa-solid fa-layer-group"></i>
-								</div>
-							</div>
-							<div class="stat-value">{totalItems}</div>
-							<div class="stat-sub">Across all wishlists</div>
-						</div>
-
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">Queued Checks</span>
-								<div class="stat-icon-badge ct">
-									<i class="fa-solid fa-list-check"></i>
-								</div>
-							</div>
-							<div class="stat-value">{totalQueuedMessages}</div>
-							<div class="stat-sub">Active across {systemStatus?.queues?.length || 0} queues</div>
-						</div>
-
-						<div class="stat-card">
-							<div class="stat-card-header">
-								<span class="stat-title">Poison Queue</span>
-								<div class="stat-icon-badge {totalPoisonMessages > 0 ? 'poison' : 'health'}">
-									<i class="fa-solid {totalPoisonMessages > 0 ? 'fa-skull-crossbones' : 'fa-shield-halved'}"></i>
-								</div>
-							</div>
-							<div class="stat-value">{totalPoisonMessages}</div>
-							<div class="stat-sub">{totalPoisonMessages > 0 ? 'Needs inspection' : 'All queues clean'}</div>
-						</div>
+						<h2>Overview Statistics</h2>
 					</div>
 
-					<div class="subsection">
-						<div class="subsection-header-row">
-							<h3 class="subsection-title">Marketplace Adoption &amp; Est. Scan Time</h3>
-							<span class="subsection-hint">Based on enabled user lists</span>
+					{#if loading}
+						<div class="section-loading">
+							<div class="loading-spinner small"></div>
+							<span>Calculating stats...</span>
 						</div>
-						<div class="marketplace-grid">
-							{#each marketplaceAdoption as mk}
-								<div class="mk-stat-card">
-									<div class="mk-stat-top">
-										<div class="mk-stat-identity">
-											<div class="stat-icon-badge {mk.badgeClass}">
-												<i class={mk.iconClass}></i>
+					{:else}
+						<div class="kpi-grid">
+							<div class="stat-card">
+								<div class="stat-card-header">
+									<span class="stat-title">Total Users</span>
+									<div class="stat-icon-badge users">
+										<i class="fa-solid fa-users"></i>
+									</div>
+								</div>
+								<div class="stat-value">{totalUsers}</div>
+								<div class="stat-sub">Registered accounts</div>
+							</div>
+
+							<div class="stat-card">
+								<div class="stat-card-header">
+									<span class="stat-title">Tracked Cards</span>
+									<div class="stat-icon-badge items">
+										<i class="fa-solid fa-layer-group"></i>
+									</div>
+								</div>
+								<div class="stat-value">{totalItems}</div>
+								<div class="stat-sub">Across all wishlists</div>
+							</div>
+
+							<div class="stat-card">
+								<div class="stat-card-header">
+									<span class="stat-title">Queued Checks</span>
+									<div class="stat-icon-badge ct">
+										<i class="fa-solid fa-list-check"></i>
+									</div>
+								</div>
+								<div class="stat-value">{totalQueuedMessages}</div>
+								<div class="stat-sub">Active across {systemStatus?.queues?.length || 0} queues</div>
+							</div>
+
+							<div class="stat-card">
+								<div class="stat-card-header">
+									<span class="stat-title">Poison Queue</span>
+									<div class="stat-icon-badge {totalPoisonMessages > 0 ? 'poison' : 'health'}">
+										<i
+											class="fa-solid {totalPoisonMessages > 0
+												? 'fa-skull-crossbones'
+												: 'fa-shield-halved'}"
+										></i>
+									</div>
+								</div>
+								<div class="stat-value">{totalPoisonMessages}</div>
+								<div class="stat-sub">
+									{totalPoisonMessages > 0 ? 'Needs inspection' : 'All queues clean'}
+								</div>
+							</div>
+						</div>
+
+						<div class="subsection">
+							<div class="subsection-header-row">
+								<h3 class="subsection-title">Marketplace Adoption &amp; Est. Scan Time</h3>
+								<span class="subsection-hint">Based on enabled user lists</span>
+							</div>
+							<div class="marketplace-grid">
+								{#each marketplaceAdoption as mk}
+									<div class="mk-stat-card">
+										<div class="mk-stat-top">
+											<div class="mk-stat-identity">
+												<div class="stat-icon-badge {mk.badgeClass}">
+													<i class={mk.iconClass}></i>
+												</div>
+												<span class="mk-stat-name">{mk.label}</span>
 											</div>
-											<span class="mk-stat-name">{mk.label}</span>
+											<span class="mk-stat-time">{formatDuration(mk.estSeconds)}</span>
 										</div>
-										<span class="mk-stat-time">{formatDuration(mk.estSeconds)}</span>
+										<div class="mk-stat-meta">
+											<span
+												>{mk.users}
+												{mk.users === 1 ? 'user' : 'users'} &bull; {mk.items} cards</span
+											>
+											<span>@{mk.secPerCard}s/card</span>
+										</div>
 									</div>
-									<div class="mk-stat-meta">
-										<span>{mk.users} {mk.users === 1 ? 'user' : 'users'} &bull; {mk.items} cards</span>
-										<span>@{mk.secPerCard}s/card</span>
-									</div>
-								</div>
-							{/each}
+								{/each}
+							</div>
 						</div>
-					</div>
-				{/if}
-			</section>
+					{/if}
+				</section>
 			{/if}
 
 			{#if activeTab === 'banner'}
-			<!-- Section 2: Notification Banner -->
-			<section class="admin-section">
-				<div class="section-title-row">
-					<div class="section-title-icon">
-						<i class="fa-solid fa-bullhorn"></i>
-					</div>
-					<h2>Notification Banner</h2>
-				</div>
-
-				{#if bannerLoading}
-					<div class="section-loading">
-						<div class="loading-spinner small"></div>
-						<span>Loading banner settings...</span>
-					</div>
-				{:else}
-					<div class="banner-manager">
-						<div class="form-group">
-							<label for="banner-message">Banner Message</label>
-							<input
-								id="banner-message"
-								type="text"
-								bind:value={bannerMessage}
-								placeholder="e.g. Scheduled maintenance in 15 minutes..."
-								class="styled-input"
-							/>
+				<!-- Section 2: Notification Banner -->
+				<section class="admin-section">
+					<div class="section-title-row">
+						<div class="section-title-icon">
+							<i class="fa-solid fa-bullhorn"></i>
 						</div>
+						<h2>Notification Banner</h2>
+					</div>
 
-						<div class="form-row">
+					{#if bannerLoading}
+						<div class="section-loading">
+							<div class="loading-spinner small"></div>
+							<span>Loading banner settings...</span>
+						</div>
+					{:else}
+						<div class="banner-manager">
 							<div class="form-group">
-								<label for="banner-type">Banner Alert Style</label>
-								<div class="select-wrapper">
-									<select id="banner-type" bind:value={bannerType} class="styled-select">
-										<option value="info">Info (Blue)</option>
-										<option value="warning">Warning (Amber)</option>
-										<option value="error">Error (Red)</option>
-									</select>
-									<i class="fa-solid fa-chevron-down select-chevron"></i>
+								<label for="banner-message">Banner Message</label>
+								<input
+									id="banner-message"
+									type="text"
+									bind:value={bannerMessage}
+									placeholder="e.g. Scheduled maintenance in 15 minutes..."
+									class="styled-input"
+								/>
+							</div>
+
+							<div class="form-row">
+								<div class="form-group">
+									<label for="banner-type">Banner Alert Style</label>
+									<div class="select-wrapper">
+										<select id="banner-type" bind:value={bannerType} class="styled-select">
+											<option value="info">Info (Blue)</option>
+											<option value="warning">Warning (Amber)</option>
+											<option value="error">Error (Red)</option>
+										</select>
+										<i class="fa-solid fa-chevron-down select-chevron"></i>
+									</div>
+								</div>
+
+								<div class="form-group toggle-group">
+									<label class="toggle-control-label" for="banner-toggle-switch"
+										>Display Active</label
+									>
+									<div class="toggle-wrapper">
+										<label class="toggle-switch">
+											<input
+												type="checkbox"
+												id="banner-toggle-switch"
+												bind:checked={bannerEnabled}
+											/>
+											<span class="slider round"></span>
+										</label>
+										<span class="toggle-status-text {bannerEnabled ? 'active' : ''}">
+											{bannerEnabled ? 'Visible' : 'Hidden'}
+										</span>
+									</div>
+								</div>
+
+								<div class="form-group toggle-group">
+									<label class="toggle-control-label" for="banner-dm-switch"
+										>Broadcast Discord DM</label
+									>
+									<div class="toggle-wrapper">
+										<label class="toggle-switch">
+											<input type="checkbox" id="banner-dm-switch" bind:checked={bannerSendDm} />
+											<span class="slider round"></span>
+										</label>
+										<span class="toggle-status-text {bannerSendDm ? 'active' : ''}">
+											{bannerSendDm ? 'Send to All Users' : 'Off'}
+										</span>
+									</div>
 								</div>
 							</div>
 
-							<div class="form-group toggle-group">
-								<label class="toggle-control-label" for="banner-toggle-switch">Display Active</label>
-								<div class="toggle-wrapper">
-									<label class="toggle-switch">
-										<input type="checkbox" id="banner-toggle-switch" bind:checked={bannerEnabled} />
-										<span class="slider round"></span>
-									</label>
-									<span class="toggle-status-text {bannerEnabled ? 'active' : ''}">
-										{bannerEnabled ? 'Visible' : 'Hidden'}
-									</span>
-								</div>
-							</div>
+							<div class="banner-actions">
+								<button class="save-btn" on:click={saveBanner} disabled={bannerSaving}>
+									<i class="fa-solid {bannerSaving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}"></i>
+									<span>{bannerSaving ? 'Saving...' : 'Save Banner'}</span>
+								</button>
 
-							<div class="form-group toggle-group">
-								<label class="toggle-control-label" for="banner-dm-switch">Broadcast Discord DM</label>
-								<div class="toggle-wrapper">
-									<label class="toggle-switch">
-										<input type="checkbox" id="banner-dm-switch" bind:checked={bannerSendDm} />
-										<span class="slider round"></span>
-									</label>
-									<span class="toggle-status-text {bannerSendDm ? 'active' : ''}">
-										{bannerSendDm ? 'Send to All Users' : 'Off'}
-									</span>
-								</div>
+								{#if bannerStatusMessage}
+									<div class="banner-feedback {bannerStatusType}" role="status">
+										<i
+											class="fa-solid {bannerStatusType === 'success'
+												? 'fa-circle-check'
+												: 'fa-circle-exclamation'}"
+										></i>
+										<span>{bannerStatusMessage}</span>
+									</div>
+								{/if}
 							</div>
 						</div>
-
-						<div class="banner-actions">
-							<button class="save-btn" on:click={saveBanner} disabled={bannerSaving}>
-								<i class="fa-solid {bannerSaving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}"></i>
-								<span>{bannerSaving ? 'Saving...' : 'Save Banner'}</span>
-							</button>
-
-							{#if bannerStatusMessage}
-								<div class="banner-feedback {bannerStatusType}" role="status">
-									<i class="fa-solid {bannerStatusType === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
-									<span>{bannerStatusMessage}</span>
-								</div>
-							{/if}
-						</div>
-					</div>
-				{/if}
-			</section>
+					{/if}
+				</section>
 			{/if}
 
 			{#if activeTab === 'health'}
-			<!-- Section 3: System Status -->
-			<section class="admin-section">
-				<div class="section-title-row">
-					<div class="section-title-icon">
-						<i class="fa-solid fa-heart-pulse"></i>
-					</div>
-					<h2>System Status &amp; Microservices</h2>
-					<button
-						class="header-refresh-btn"
-						on:click={loadSystemStatus}
-						disabled={statusLoading}
-						title="Refresh system status"
-					>
-						<i class="fa-solid fa-arrows-rotate {statusLoading ? 'fa-spin' : ''}"></i>
-					</button>
-				</div>
-
-				{#if statusLoading}
-					<div class="section-loading">
-						<div class="loading-spinner small"></div>
-						<span>Querying system status...</span>
-					</div>
-				{:else if statusError}
-					<div class="error-banner">
-						<i class="fa-solid fa-triangle-exclamation"></i>
-						<span>{statusError}</span>
-					</div>
-				{:else if systemStatus}
-					<div class="status-summary-row">
-						<div class="status-chip">
-							<span class="chip-label">State</span>
-							<span class="status-badge {systemStatus.state?.toLowerCase() || 'unknown'}">
-								<span class="dot"></span>
-								{systemStatus.state || 'N/A'}
-							</span>
+				<!-- Section 3: System Status -->
+				<section class="admin-section">
+					<div class="section-title-row">
+						<div class="section-title-icon">
+							<i class="fa-solid fa-heart-pulse"></i>
 						</div>
-						<div class="status-chip">
-							<span class="chip-label">Availability</span>
-							<span class="status-badge {systemStatus.availability?.toLowerCase() || 'unknown'}">
-								<span class="dot"></span>
-								{systemStatus.availability || 'N/A'}
-							</span>
-						</div>
-						<div class="status-chip">
-							<span class="chip-label">Last Checked</span>
-							<span class="chip-value">
-								<i class="fa-regular fa-clock"></i>
-								{formatLocalDate(systemStatus.last_checked)}
-							</span>
-						</div>
+						<h2>System Status &amp; Microservices</h2>
+						<button
+							class="header-refresh-btn"
+							on:click={loadSystemStatus}
+							disabled={statusLoading}
+							title="Refresh system status"
+						>
+							<i class="fa-solid fa-arrows-rotate {statusLoading ? 'fa-spin' : ''}"></i>
+						</button>
 					</div>
 
-					{#if systemStatus.functions && systemStatus.functions.length > 0}
-						<div class="subsection">
-							<h3 class="subsection-title">Azure Functions</h3>
-							<div class="function-grid">
-								{#each systemStatus.functions as func}
-									{#if func.name !== 'callback'}
+					{#if statusLoading}
+						<div class="section-loading">
+							<div class="loading-spinner small"></div>
+							<span>Querying system status...</span>
+						</div>
+					{:else if statusError}
+						<div class="error-banner">
+							<i class="fa-solid fa-triangle-exclamation"></i>
+							<span>{statusError}</span>
+						</div>
+					{:else if systemStatus}
+						<div class="status-summary-row">
+							<div class="status-chip">
+								<span class="chip-label">State</span>
+								<span class="status-badge {systemStatus.state?.toLowerCase() || 'unknown'}">
+									<span class="dot"></span>
+									{systemStatus.state || 'N/A'}
+								</span>
+							</div>
+							<div class="status-chip">
+								<span class="chip-label">Availability</span>
+								<span class="status-badge {systemStatus.availability?.toLowerCase() || 'unknown'}">
+									<span class="dot"></span>
+									{systemStatus.availability || 'N/A'}
+								</span>
+							</div>
+							<div class="status-chip">
+								<span class="chip-label">Last Checked</span>
+								<span class="chip-value">
+									<i class="fa-regular fa-clock"></i>
+									{formatLocalDate(systemStatus.last_checked)}
+								</span>
+							</div>
+						</div>
+
+						{#if systemStatus.functions && systemStatus.functions.length > 0}
+							<div class="subsection">
+								<h3 class="subsection-title">Azure Functions</h3>
+								<div class="function-grid">
+									{#each systemStatus.functions as func}
+										{#if func.name !== 'callback'}
+											<div class="function-card">
+												<div class="func-header">
+													<span class="func-name">{func.name}</span>
+													<span class="status-badge {func.status}">
+														<span class="dot"></span>
+														{func.status}
+													</span>
+												</div>
+												<div class="func-details">
+													{#if func.response_time}
+														<span class="metric-pill">
+															<i class="fa-solid fa-stopwatch"></i>
+															{func.response_time}
+														</span>
+													{/if}
+													{#if func.status_code}
+														<span class="metric-pill">
+															<i class="fa-solid fa-signal"></i>
+															{func.status_code}
+														</span>
+													{/if}
+													{#if func.error}
+														<span class="error-pill">
+															<i class="fa-solid fa-triangle-exclamation"></i>
+															{func.error}
+														</span>
+													{/if}
+												</div>
+											</div>
+										{/if}
+									{/each}
+								</div>
+							</div>
+						{/if}
+
+						{#if systemStatus.queues && systemStatus.queues.length > 0}
+							<div class="subsection">
+								<h3 class="subsection-title">Queue Health &amp; Backlog</h3>
+								<div class="function-grid">
+									{#each systemStatus.queues as q}
 										<div class="function-card">
 											<div class="func-header">
-												<span class="func-name">{func.name}</span>
-												<span class="status-badge {func.status}">
+												<span class="func-name">{q.label || q.name}</span>
+												<span class="status-badge {q.poison_messages > 0 ? 'degraded' : 'running'}">
 													<span class="dot"></span>
-													{func.status}
+													{q.poison_messages > 0 ? `${q.poison_messages} poison` : 'healthy'}
 												</span>
 											</div>
 											<div class="func-details">
-												{#if func.response_time}
-													<span class="metric-pill">
-														<i class="fa-solid fa-stopwatch"></i>
-														{func.response_time}
-													</span>
-												{/if}
-												{#if func.status_code}
-													<span class="metric-pill">
-														<i class="fa-solid fa-signal"></i>
-														{func.status_code}
-													</span>
-												{/if}
-												{#if func.error}
+												<span class="metric-pill">
+													<i class="fa-solid fa-layer-group"></i>
+													Queued: {q.active_messages}
+												</span>
+												{#if q.poison_messages > 0}
 													<span class="error-pill">
-														<i class="fa-solid fa-triangle-exclamation"></i>
-														{func.error}
+														<i class="fa-solid fa-skull-crossbones"></i>
+														Poison: {q.poison_messages}
+													</span>
+												{/if}
+											</div>
+											<div class="queue-actions-row">
+												<button
+													type="button"
+													class="queue-action-btn inspect-btn"
+													on:click={() => openPoisonInspectModal(q)}
+													title="Inspect messages in poison queue"
+												>
+													<i class="fa-solid fa-eye"></i>
+													<span>Inspect</span>
+												</button>
+												{#if q.poison_messages > 0}
+													<button
+														type="button"
+														class="queue-action-btn replay-btn"
+														on:click={() => handleReplayPoison(q.name)}
+														disabled={poisonActionLoading}
+														title="Replay all poison messages back to active queue"
+													>
+														<i class="fa-solid fa-rotate-left"></i>
+														<span>Replay All</span>
+													</button>
+													<button
+														type="button"
+														class="queue-action-btn clear-btn"
+														on:click={() => requestClearPoison(q.name)}
+														disabled={poisonActionLoading}
+														title="Permanently purge poison messages"
+													>
+														<i class="fa-solid fa-trash-can"></i>
+														<span>Purge</span>
+													</button>
+												{/if}
+											</div>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
+
+						{#if systemStatus.workers && systemStatus.workers.length > 0}
+							<div class="subsection">
+								<h3 class="subsection-title">Worker Nodes &amp; Scrapers</h3>
+								<div class="function-grid">
+									{#each systemStatus.workers as worker}
+										<div class="function-card">
+											<div class="func-header">
+												<span class="func-name">{worker.name}</span>
+												<span class="status-badge {worker.status?.toLowerCase() || 'unknown'}">
+													<span class="dot"></span>
+													{worker.status || 'unknown'}
+												</span>
+											</div>
+											<div class="func-details">
+												{#if worker.egress_ip}
+													<span class="metric-pill" title="VPN Egress Location">
+														<i class="fa-solid fa-shield-halved"></i>
+														{worker.egress_country
+															? `${worker.egress_country} • `
+															: ''}{worker.egress_ip}
+													</span>
+												{/if}
+												<span class="metric-pill" title="Last Heartbeat">
+													<i class="fa-regular fa-clock"></i>
+													{#if worker.minutes_since_heartbeat !== null && worker.minutes_since_heartbeat !== undefined}
+														Heartbeat: {worker.minutes_since_heartbeat}m ago
+													{:else if worker.last_heartbeat}
+														{formatLocalDate(worker.last_heartbeat)}
+													{:else}
+														No heartbeat
+													{/if}
+												</span>
+												{#if worker.total_processed !== undefined && worker.total_processed !== null}
+													<span class="metric-pill" title="Total processed cards this run">
+														<i class="fa-solid fa-check-double"></i>
+														Processed: {worker.total_processed}
+													</span>
+												{/if}
+												{#if worker.last_card_name}
+													<span class="metric-pill" title="Last processed card">
+														<i class="fa-solid fa-bullseye"></i>
+														Last: {worker.last_card_name}
+													</span>
+												{/if}
+												{#if worker.active_queue_messages > 0}
+													<span class="metric-pill" title="Active messages queued for this worker">
+														<i class="fa-solid fa-layer-group"></i>
+														Queued: {worker.active_queue_messages}
+													</span>
+												{/if}
+												{#if worker.details}
+													<span class="metric-pill" title={worker.details}>
+														<i class="fa-solid fa-circle-info"></i>
+														{worker.details}
 													</span>
 												{/if}
 											</div>
 										</div>
-									{/if}
-								{/each}
+									{/each}
+								</div>
 							</div>
-						</div>
+						{/if}
 					{/if}
-
-					{#if systemStatus.queues && systemStatus.queues.length > 0}
-						<div class="subsection">
-							<h3 class="subsection-title">Queue Health &amp; Backlog</h3>
-							<div class="function-grid">
-								{#each systemStatus.queues as q}
-									<div class="function-card">
-										<div class="func-header">
-											<span class="func-name">{q.label || q.name}</span>
-											<span class="status-badge {q.poison_messages > 0 ? 'degraded' : 'running'}">
-												<span class="dot"></span>
-												{q.poison_messages > 0 ? `${q.poison_messages} poison` : 'healthy'}
-											</span>
-										</div>
-										<div class="func-details">
-											<span class="metric-pill">
-												<i class="fa-solid fa-layer-group"></i>
-												Queued: {q.active_messages}
-											</span>
-											{#if q.poison_messages > 0}
-												<span class="error-pill">
-													<i class="fa-solid fa-skull-crossbones"></i>
-													Poison: {q.poison_messages}
-												</span>
-											{/if}
-										</div>
-										<div class="queue-actions-row">
-											<button
-												type="button"
-												class="queue-action-btn inspect-btn"
-												on:click={() => openPoisonInspectModal(q)}
-												title="Inspect messages in poison queue"
-											>
-												<i class="fa-solid fa-eye"></i>
-												<span>Inspect</span>
-											</button>
-											{#if q.poison_messages > 0}
-												<button
-													type="button"
-													class="queue-action-btn replay-btn"
-													on:click={() => handleReplayPoison(q.name)}
-													disabled={poisonActionLoading}
-													title="Replay all poison messages back to active queue"
-												>
-													<i class="fa-solid fa-rotate-left"></i>
-													<span>Replay All</span>
-												</button>
-												<button
-													type="button"
-													class="queue-action-btn clear-btn"
-													on:click={() => requestClearPoison(q.name)}
-													disabled={poisonActionLoading}
-													title="Permanently purge poison messages"
-												>
-													<i class="fa-solid fa-trash-can"></i>
-													<span>Purge</span>
-												</button>
-											{/if}
-										</div>
-									</div>
-								{/each}
-							</div>
-						</div>
-					{/if}
-
-					{#if systemStatus.workers && systemStatus.workers.length > 0}
-						<div class="subsection">
-							<h3 class="subsection-title">Worker Nodes &amp; Scrapers</h3>
-							<div class="function-grid">
-								{#each systemStatus.workers as worker}
-									<div class="function-card">
-										<div class="func-header">
-											<span class="func-name">{worker.name}</span>
-											<span class="status-badge {worker.status?.toLowerCase() || 'unknown'}">
-												<span class="dot"></span>
-												{worker.status || 'unknown'}
-											</span>
-										</div>
-										<div class="func-details">
-											{#if worker.egress_ip}
-												<span class="metric-pill" title="VPN Egress Location">
-													<i class="fa-solid fa-shield-halved"></i>
-													{worker.egress_country ? `${worker.egress_country} • ` : ''}{worker.egress_ip}
-												</span>
-											{/if}
-											<span class="metric-pill" title="Last Heartbeat">
-												<i class="fa-regular fa-clock"></i>
-												{#if worker.minutes_since_heartbeat !== null && worker.minutes_since_heartbeat !== undefined}
-													Heartbeat: {worker.minutes_since_heartbeat}m ago
-												{:else if worker.last_heartbeat}
-													{formatLocalDate(worker.last_heartbeat)}
-												{:else}
-													No heartbeat
-												{/if}
-											</span>
-											{#if worker.total_processed !== undefined && worker.total_processed !== null}
-												<span class="metric-pill" title="Total processed cards this run">
-													<i class="fa-solid fa-check-double"></i>
-													Processed: {worker.total_processed}
-												</span>
-											{/if}
-											{#if worker.last_card_name}
-												<span class="metric-pill" title="Last processed card">
-													<i class="fa-solid fa-bullseye"></i>
-													Last: {worker.last_card_name}
-												</span>
-											{/if}
-											{#if worker.active_queue_messages > 0}
-												<span class="metric-pill" title="Active messages queued for this worker">
-													<i class="fa-solid fa-layer-group"></i>
-													Queued: {worker.active_queue_messages}
-												</span>
-											{/if}
-											{#if worker.details}
-												<span class="metric-pill" title={worker.details}>
-													<i class="fa-solid fa-circle-info"></i>
-													{worker.details}
-												</span>
-											{/if}
-										</div>
-									</div>
-								{/each}
-							</div>
-						</div>
-					{/if}
-				{/if}
-			</section>
+				</section>
 			{/if}
 
 			{#if activeTab === 'users'}
-			<!-- Section 4: User Management -->
-			<section class="admin-section">
-				<div class="section-title-row">
-					<div class="section-title-icon">
-						<i class="fa-solid fa-users-gear"></i>
-					</div>
-					<h2>User Management</h2>
-					<span class="user-count-badge">
-						{filteredUserTables.length} of {userTables.length} {userTables.length === 1 ? 'user' : 'users'}
-					</span>
-				</div>
-
-				<!-- User Filter & Sort Toolbar -->
-				<div class="user-toolbar-card">
-					<div class="toolbar-top-row">
-						<div class="search-input-wrapper">
-							<i class="fa-solid fa-magnifying-glass search-icon"></i>
-							<input
-								type="text"
-								bind:value={userSearchQuery}
-								placeholder="Filter by username, user ID, tier, or notes..."
-								class="user-search-input"
-							/>
-							{#if userSearchQuery}
-								<button class="clear-search-btn" on:click={() => (userSearchQuery = '')} title="Clear search">
-									<i class="fa-solid fa-xmark"></i>
-								</button>
-							{/if}
+				<!-- Section 4: User Management -->
+				<section class="admin-section">
+					<div class="section-title-row">
+						<div class="section-title-icon">
+							<i class="fa-solid fa-users-gear"></i>
 						</div>
-
-						<!-- Sort Controls -->
-						<div class="sort-controls-wrapper">
-							<span class="sort-label"><i class="fa-solid fa-arrow-down-short-wide"></i> Sort:</span>
-							<button
-								type="button"
-								class="sort-pill"
-								class:active={sortBy === 'username'}
-								on:click={() => toggleSort('username')}
-								title="Sort by Username"
-							>
-								<span>User</span>
-								{#if sortBy === 'username'}
-									<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
-								{/if}
-							</button>
-							<button
-								type="button"
-								class="sort-pill"
-								class:active={sortBy === 'itemCount'}
-								on:click={() => toggleSort('itemCount')}
-								title="Sort by Card Count"
-							>
-								<span>Cards</span>
-								{#if sortBy === 'itemCount'}
-									<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
-								{/if}
-							</button>
-							<button
-								type="button"
-								class="sort-pill"
-								class:active={sortBy === 'tier'}
-								on:click={() => toggleSort('tier')}
-								title="Sort by Tier"
-							>
-								<span>Tier</span>
-								{#if sortBy === 'tier'}
-									<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
-								{/if}
-							</button>
-							<button
-								type="button"
-								class="sort-pill"
-								class:active={sortBy === 'lastAccessed'}
-								on:click={() => toggleSort('lastAccessed')}
-								title="Sort by Last Activity"
-							>
-								<span>Activity</span>
-								{#if sortBy === 'lastAccessed'}
-									<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
-								{/if}
-							</button>
-						</div>
+						<h2>User Management</h2>
+						<span class="user-count-badge">
+							{filteredUserTables.length} of {userTables.length}
+							{userTables.length === 1 ? 'user' : 'users'}
+						</span>
 					</div>
 
-					<!-- Tier Filter Pills -->
-					<div class="tier-pills-row">
-						<span class="filter-pills-label"><i class="fa-solid fa-filter"></i> Tier:</span>
-						<button
-							type="button"
-							class="tier-filter-pill"
-							class:active={tierFilter === 'all'}
-							on:click={() => (tierFilter = 'all')}
-						>
-							All ({tierCounts.all})
-						</button>
-						<button
-							type="button"
-							class="tier-filter-pill tier-basic"
-							class:active={tierFilter === 'basic'}
-							on:click={() => (tierFilter = 'basic')}
-						>
-							Basic ({tierCounts.basic})
-						</button>
-						<button
-							type="button"
-							class="tier-filter-pill tier-premium"
-							class:active={tierFilter === 'premium'}
-							on:click={() => (tierFilter = 'premium')}
-						>
-							Premium ({tierCounts.premium})
-						</button>
-						<button
-							type="button"
-							class="tier-filter-pill tier-legacy"
-							class:active={tierFilter === 'legacy'}
-							on:click={() => (tierFilter = 'legacy')}
-						>
-							Legacy ({tierCounts.legacy})
-						</button>
-						<button
-							type="button"
-							class="tier-filter-pill tier-banned"
-							class:active={tierFilter === 'banned'}
-							on:click={() => (tierFilter = 'banned')}
-						>
-							Banned ({tierCounts.banned})
-						</button>
-						<button
-							type="button"
-							class="tier-filter-pill tier-paused"
-							class:active={tierFilter === 'paused'}
-							on:click={() => (tierFilter = 'paused')}
-						>
-							Paused ({tierCounts.paused})
-						</button>
-					</div>
-				</div>
-
-				{#if actionError}
-					<div class="error-banner" style="margin-bottom: 1rem; justify-content: space-between;">
-						<div style="display: flex; align-items: center; gap: 0.65rem;">
-							<i class="fa-solid fa-triangle-exclamation"></i>
-							<span>{actionError}</span>
-						</div>
-						<button
-							type="button"
-							class="modal-close-icon-btn"
-							on:click={() => (actionError = null)}
-							aria-label="Dismiss error"
-							title="Dismiss"
-						>
-							<i class="fa-solid fa-xmark"></i>
-						</button>
-					</div>
-				{/if}
-
-				{#if loading}
-					<div class="section-loading">
-						<div class="loading-spinner small"></div>
-						<span>Loading registered user directories...</span>
-					</div>
-				{:else if error}
-					<div class="error-banner">
-						<i class="fa-solid fa-triangle-exclamation"></i>
-						<span>{error}</span>
-					</div>
-				{:else if filteredUserTables.length === 0}
-					<div class="empty-state">
-						<i class="fa-solid fa-user-slash"></i>
-						<p>No user accounts found matching "{userSearchQuery}".</p>
-					</div>
-				{:else}
-					<div class="user-accordion-list">
-						{#each filteredUserTables as table}
-							<div class="user-card {expandedTable === table.userId ? 'is-expanded' : ''}">
-								<div class="user-card-header">
-									<div class="user-main-info">
-										<div class="user-avatar-badge">
-											{#if table.avatarUrl && !failedAvatarIds.has(table.userId)}
-												<img
-													src={table.avatarUrl}
-													alt={table.username}
-													class="user-avatar-img"
-													loading="lazy"
-													on:error={() => {
-														failedAvatarIds.add(table.userId);
-														failedAvatarIds = new Set(failedAvatarIds);
-													}}
-												/>
-											{:else}
-												<i class="fa-solid fa-user"></i>
-											{/if}
-										</div>
-										<div class="user-titles">
-											<div class="user-name-line">
-												<span class="user-name">{table.globalName || table.username}</span>
-												{#if table.globalName && table.username && table.globalName !== table.username}
-													<span class="user-handle">@{table.username}</span>
-												{/if}
-												<span class="tier-badge tier-{(table.membershipTier || 'Basic').toLowerCase()}">
-													<i
-														class="fa-solid {table.membershipTier === 'Legacy'
-															? 'fa-crown'
-															: table.membershipTier === 'Premium'
-																? 'fa-gem'
-																: table.membershipTier === 'Banned'
-																	? 'fa-ban'
-																	: 'fa-certificate'}"
-													></i>
-													{table.membershipTier || 'Basic'}
-												</span>
-												{#if table.tierOverride}
-													<span class="override-pill" title="Tier manually overridden by administrator">
-														<i class="fa-solid fa-user-pen"></i> Override
-													</span>
-												{/if}
-												<button
-													type="button"
-													class="edit-tier-pill-btn"
-													on:click|stopPropagation={() => openTierModal(table)}
-													title="Change or override membership tier"
-												>
-													<i class="fa-solid fa-pen-to-square"></i>
-													<span>Edit Tier</span>
-												</button>
-												<button
-													type="button"
-													class="edit-note-pill-btn"
-													class:has-note={Boolean(table.adminNotes)}
-													on:click|stopPropagation={() => openNotesModal(table)}
-													title={table.adminNotes ? 'Edit admin note' : 'Add admin note'}
-												>
-													<i class="fa-regular fa-note-sticky"></i>
-													<span>{table.adminNotes ? 'Edit Note' : 'Add Note'}</span>
-												</button>
-												{#if table.scanningPaused}
-													<span class="paused-status-pill" title="Scanning & digests paused{table.scanningPausedAt ? ` since ${formatLocalDate(table.scanningPausedAt)}` : ''}">
-														<i class="fa-solid fa-moon"></i> Paused
-													</span>
-												{:else if table.inactivityWarningSentAt}
-													<span class="warned-status-pill" title="Inactivity warning DM sent on {formatLocalDate(table.inactivityWarningSentAt)}">
-														<i class="fa-solid fa-hourglass-half"></i> Warned
-													</span>
-												{/if}
-											</div>
-											<div class="user-meta-column">
-												<div class="user-meta-line">
-													<span class="user-id-chip" title="User ID: {table.userId}">
-														<i class="fa-solid fa-id-badge"></i>
-														{table.userId}
-													</span>
-													<div class="user-marketplaces-row">
-														{#if isMarketplaceEnabled(table, 'cardtrader')}
-															<span class="mk-icon-badge ct" title="CardTrader: Enabled">
-																<i class="fa-solid fa-cube"></i> CT
-															</span>
-														{/if}
-														{#if isMarketplaceEnabled(table, 'tcgplayer')}
-															<span class="mk-icon-badge tcg" title="TCGPlayer: Enabled">
-																<i class="fa-solid fa-store"></i> TCG
-															</span>
-														{/if}
-														{#if isMarketplaceEnabled(table, 'manapool')}
-															<span class="mk-icon-badge manapool" title="Mana Pool: Enabled">
-																<i class="fa-solid fa-droplet"></i> MP
-															</span>
-														{/if}
-														{#if isMarketplaceEnabled(table, 'cardkingdom')}
-															<span class="mk-icon-badge cardkingdom" title="Card Kingdom: Enabled">
-																<i class="fa-solid fa-chess-rook"></i> CK
-															</span>
-														{/if}
-														{#if isMarketplaceEnabled(table, 'ebay')}
-															<span class="mk-icon-badge ebay" title="eBay: Enabled">
-																<i class="fa-brands fa-ebay"></i> EB
-															</span>
-														{/if}
-														{#if isMarketplaceEnabled(table, 'himarket')}
-															<span class="mk-icon-badge himarket" title="HiMarket: Enabled">
-																<i class="fa-solid fa-earth-asia"></i> HM
-															</span>
-														{/if}
-														{#if isMarketplaceEnabled(table, 'hareruya')}
-															<span class="mk-icon-badge hareruya" title="Hareruya: Enabled">
-																<i class="fa-solid fa-sun"></i> HR
-															</span>
-														{/if}
-														{#if isMarketplaceEnabled(table, 'ruten')}
-															<span class="mk-icon-badge ruten" title="Ruten: Enabled">
-																<i class="fa-solid fa-shop"></i> RT
-															</span>
-														{/if}
-														{#if isMarketplaceEnabled(table, 'cardmarket')}
-															<span class="mk-icon-badge cardmarket" title="CardMarket: Enabled">
-																<i class="fa-solid fa-euro-sign"></i> CM
-															</span>
-														{/if}
-														{#if table.minCondition && table.minCondition !== 'ANY'}
-															<span class="user-cond-badge" title="Account Default Minimum Condition: {table.minCondition}+">
-																<i class="fa-solid fa-certificate"></i> {table.minCondition === 'NM' ? 'NM' : `${table.minCondition}+`}
-															</span>
-														{:else if table.minCondition === 'ANY'}
-															<span class="user-cond-badge any" title="Account Default Minimum Condition: Any Condition">
-																<i class="fa-solid fa-certificate"></i> ANY
-															</span>
-														{/if}
-													</div>
-												</div>
-												<div class="user-meta-subline">
-													<span class="user-activity-timestamp">
-														<i class="fa-regular fa-clock"></i>
-														Last Login: {formatLocalDate(table.lastAccessed)}
-													</span>
-												</div>
-												{#if table.adminNotes}
-													<div class="admin-note-preview" title="Admin Note (click Edit Note to modify)">
-														<i class="fa-regular fa-note-sticky"></i>
-														<span>{table.adminNotes}</span>
-													</div>
-												{/if}
-											</div>
-										</div>
-									</div>
-
-									<div class="user-actions">
-										<span class="item-count-chip">
-											<i class="fa-solid fa-layer-group"></i>
-											{table.itemCount} items
-										</span>
-										<button
-											class="requeue-user-btn"
-											on:click={() => handleRequeueChecks(table.userId, table.username)}
-											disabled={!token || requeuingUser === table.userId}
-											title="Requeue all stock checks for this user"
-											aria-label="Requeue all stock checks for this user"
-										>
-											{#if requeuingUser === table.userId}
-												<i class="fa-solid fa-spinner fa-spin"></i>
-											{:else}
-												<i class="fa-solid fa-paper-plane"></i>
-											{/if}
-										</button>
-										<button
-											class="expand-btn"
-											on:click={() => {
-												if (expandedTable === table.userId) {
-													tableDataRequestId++;
-													expandedTable = null;
-													expandedTableData = [];
-													tableDataLoading = false;
-													tableDataError = null;
-												} else {
-													expandedTable = table.userId;
-													loadTableData(table.userId);
-												}
-											}}
-											disabled={!token}
-											title={expandedTable === table.userId ? 'Collapse card list' : 'Expand card list'}
-											aria-label={expandedTable === table.userId ? 'Collapse card list' : 'Expand card list'}
-										>
-											<i class="fa-solid {expandedTable === table.userId ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
-										</button>
-										<button
-											type="button"
-											class="pause-user-btn"
-											class:is-paused={Boolean(table.scanningPaused)}
-											on:click|stopPropagation={() => toggleScanningPaused(table)}
-											disabled={!token || togglingPauseUserId === table.userId}
-											title={table.scanningPaused ? 'Resume automated scanning & digests' : 'Pause automated scanning & digests'}
-											aria-label={table.scanningPaused ? 'Resume automated scanning & digests' : 'Pause automated scanning & digests'}
-										>
-											<i class="fa-solid {togglingPauseUserId === table.userId ? 'fa-spinner fa-spin' : table.scanningPaused ? 'fa-play' : 'fa-pause'}"></i>
-										</button>
-										<button
-											class="delete-user-btn"
-											on:click={() => promptDeleteAccount(table.userId)}
-											disabled={!token}
-											title="Delete user account and all wishlist data"
-											aria-label="Delete user account and all wishlist data"
-										>
-											<i class="fa-solid fa-trash-can"></i>
-										</button>
-									</div>
-								</div>
-
-								{#if requeueFeedback && requeueFeedback.userId === table.userId}
-									<div class="requeue-feedback-banner {requeueFeedback.type}">
-										<i class="fa-solid {requeueFeedback.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
-										<span>{requeueFeedback.text}</span>
-									</div>
-								{/if}
-
-								<!-- Expanded Seeking Table -->
-								{#if expandedTable === table.userId}
-									<div class="user-table-wrapper">
-										{#if tableDataLoading}
-											<div class="section-loading">
-												<div class="loading-spinner small"></div>
-												<span>Loading seeking list...</span>
-											</div>
-										{:else if tableDataError && expandedTable === table.userId}
-											<div class="error-banner">
-												<i class="fa-solid fa-triangle-exclamation"></i>
-												<span>{tableDataError}</span>
-											</div>
-										{:else if expandedTableData.length === 0}
-											<div class="empty-table-state">
-												<i class="fa-solid fa-box-open"></i>
-												<p>No cards found in this user's seeking list.</p>
-											</div>
-										{:else}
-											<div class="table-scroll-container">
-												<table class="modern-table">
-													<thead>
-														<tr>
-															<th class="col-name">Card Name</th>
-															<th class="col-set">Set</th>
-															<th class="col-lang">Lang</th>
-															<th class="col-finish">Finish</th>
-															{#if isMarketplaceEnabled(table, 'cardtrader')}
-																<th class="col-vendor">CardTrader</th>
-															{/if}
-															{#if isMarketplaceEnabled(table, 'tcgplayer')}
-																<th class="col-vendor">TCGPlayer</th>
-															{/if}
-															{#if isMarketplaceEnabled(table, 'manapool')}
-																<th class="col-vendor">Mana Pool</th>
-															{/if}
-															{#if isMarketplaceEnabled(table, 'cardkingdom')}
-																<th class="col-vendor">Card Kingdom</th>
-															{/if}
-															{#if isMarketplaceEnabled(table, 'ebay')}
-																<th class="col-vendor">eBay</th>
-															{/if}
-															{#if isMarketplaceEnabled(table, 'himarket')}
-																<th class="col-vendor">HiMarket</th>
-															{/if}
-															{#if isMarketplaceEnabled(table, 'hareruya')}
-																<th class="col-vendor">Hareruya</th>
-															{/if}
-															{#if isMarketplaceEnabled(table, 'ruten')}
-																<th class="col-vendor">Ruten</th>
-															{/if}
-															{#if isMarketplaceEnabled(table, 'cardmarket')}
-																<th class="col-vendor">CardMarket</th>
-															{/if}
-														</tr>
-													</thead>
-													<tbody>
-														{#each expandedTableData as card}
-															<tr>
-																<td class="col-name" data-label="Name">
-																	<div class="admin-card-name-wrap">
-																		<span class="card-name-text">{card.name}</span>
-																		{#if card.max_price_cap > 0 || card.min_condition || (table.minCondition && table.minCondition !== 'ANY')}
-																			<div class="admin-card-tags">
-																				{#if card.max_price_cap > 0}
-																					<span class="admin-cap-tag" title="Max Price Cap: {formatCents(card.max_price_cap)}">
-																						Cap ≤ {formatCents(card.max_price_cap)}
-																					</span>
-																				{/if}
-																				{#if card.min_condition && card.min_condition !== 'ANY'}
-																					<span class="cond-req-pill cond-{card.min_condition.toLowerCase()}" title="Card Condition Override: {card.min_condition}+">
-																						{card.min_condition === 'NM' ? 'NM ONLY' : `MIN ${card.min_condition}+`}
-																					</span>
-																				{:else if card.min_condition === 'ANY'}
-																					<span class="cond-req-pill cond-any" title="Card Condition Override: Any Condition">ANY COND</span>
-																				{:else if table.minCondition && table.minCondition !== 'ANY'}
-																					<span class="cond-req-pill inherited cond-{table.minCondition.toLowerCase()}" title="Inherited Account Condition: {table.minCondition}+">
-																						{table.minCondition === 'NM' ? 'NM (Acct)' : `${table.minCondition}+ (Acct)`}
-																					</span>
-																				{/if}
-																			</div>
-																		{/if}
-																	</div>
-																</td>
-																<td class="col-set" data-label="Set">
-																	<div class="set-cell">
-																		<img
-																			class="set-icon"
-																			src="https://svgs.scryfall.io/sets/{getSetIconCode(card.set_code)}.svg"
-																			alt="{card.set_code}"
-																			loading="lazy"
-																		/>
-																		<span class="set-code">{card.set_code?.toUpperCase()}</span>
-																		{#if card.collector_number}
-																			<span class="collector-number">#{card.collector_number}</span>
-																		{/if}
-																	</div>
-																</td>
-																<td class="col-lang" data-label="Language">
-																	<span class="lang-pill">{card.language?.toUpperCase()}</span>
-																</td>
-																<td class="col-finish" data-label="Finish">
-																	{#if (card.finish || '').toLowerCase() === 'etched'}
-																		<span class="finish-pill foil">◈ Etched</span>
-																	{:else if (card.finish || '').toLowerCase() === 'foil'}
-																		<span class="finish-pill foil">✦ Foil</span>
-																	{:else}
-																		<span class="finish-pill nonfoil">Nonfoil</span>
-																	{/if}
-																</td>
-																{#if isMarketplaceEnabled(table, 'cardtrader')}
-																	<td class="col-vendor" data-label="CardTrader">
-																		{#if card.cardtrader_stock}
-																			<span class="stock-pill in-stock">
-																				{formatCents(card.cardtrader_low_price)}
-																				{#if card.cardtrader_condition}
-																					<span class="cond-pill">{card.cardtrader_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-oos-dash" title="Out of Stock">—</span>
-																		{/if}
-																	</td>
-																{/if}
-																{#if isMarketplaceEnabled(table, 'tcgplayer')}
-																	<td class="col-vendor" data-label="TCGPlayer">
-																		{#if card.tcgplayer_stock}
-																			<span class="stock-pill in-stock">
-																				{formatCents(card.tcgplayer_low_price)}
-																				{#if card.tcgplayer_condition}
-																					<span class="cond-pill">{card.tcgplayer_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-oos-dash" title="Out of Stock">—</span>
-																		{/if}
-																	</td>
-																{/if}
-																{#if isMarketplaceEnabled(table, 'manapool')}
-																	<td class="col-vendor" data-label="Mana Pool">
-																		{#if card.manapool_stock}
-																			<span class="stock-pill in-stock">
-																				{formatCents(card.manapool_low_price)}
-																				{#if card.manapool_condition}
-																					<span class="cond-pill">{card.manapool_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-oos-dash" title="Out of Stock">—</span>
-																		{/if}
-																	</td>
-																{/if}
-																{#if isMarketplaceEnabled(table, 'cardkingdom')}
-																	<td class="col-vendor" data-label="Card Kingdom">
-																		{#if card.cardkingdom_stock}
-																			<span class="stock-pill in-stock">
-																				{formatCents(card.cardkingdom_low_price)}
-																				{#if card.cardkingdom_condition}
-																					<span class="cond-pill">{card.cardkingdom_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-oos-dash" title="Out of Stock">—</span>
-																		{/if}
-																	</td>
-																{/if}
-																{#if isMarketplaceEnabled(table, 'ebay')}
-																	<td class="col-vendor" data-label="eBay">
-																		{#if card.ebay_stock}
-																			<span class="stock-pill in-stock">
-																				{formatCents(card.ebay_low_price)}
-																				{#if card.ebay_condition}
-																					<span class="cond-pill">{card.ebay_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-oos-dash" title="Out of Stock">—</span>
-																		{/if}
-																	</td>
-																{/if}
-																{#if isMarketplaceEnabled(table, 'himarket')}
-																	<td class="col-vendor" data-label="HiMarket">
-																		{#if card.himarket_stock}
-																			<span class="stock-pill in-stock" title={card.himarket_price_hkd ? `HK$ ${Number(card.himarket_price_hkd).toFixed(2)}${card.himarket_condition ? ` (${card.himarket_condition})` : ''}` : ''}>
-																				{formatCents(card.himarket_low_price)}
-																				{#if card.himarket_condition}
-																					<span class="cond-pill">{card.himarket_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-oos-dash" title="Out of Stock">—</span>
-																		{/if}
-																	</td>
-																{/if}
-																{#if isMarketplaceEnabled(table, 'hareruya')}
-																	<td class="col-vendor" data-label="Hareruya">
-																		{#if card.hareruya_stock}
-																			<span class="stock-pill in-stock" title={card.hareruya_price_jpy ? `¥${Number(card.hareruya_price_jpy).toLocaleString()}${card.hareruya_condition ? ` (${card.hareruya_condition})` : ''}` : ''}>
-																				{formatCents(card.hareruya_low_price)}
-																				{#if card.hareruya_condition}
-																					<span class="cond-pill">{card.hareruya_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-oos-dash" title="Out of Stock">—</span>
-																		{/if}
-																	</td>
-																{/if}
-																{#if isMarketplaceEnabled(table, 'ruten')}
-																	<td class="col-vendor" data-label="Ruten">
-																		{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
-																			<span class="stock-oos-dash" title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards">—</span>
-																		{:else if card.ruten_stock}
-																			<span class="stock-pill in-stock" title={card.ruten_price_twd ? `NT$ ${Number(card.ruten_price_twd).toLocaleString()}${card.ruten_condition ? ` (${card.ruten_condition})` : ''}` : ''}>
-																				{formatCents(card.ruten_low_price)}
-																				{#if card.ruten_condition}
-																					<span class="cond-pill">{card.ruten_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-oos-dash" title="Out of Stock">—</span>
-																		{/if}
-																	</td>
-																{/if}
-																{#if isMarketplaceEnabled(table, 'cardmarket')}
-																	<td class="col-vendor" data-label="CardMarket">
-																		{#if card.cardmarket_stock}
-																			<span class="stock-pill in-stock" title={card.cardmarket_price_eur ? `€${Number(card.cardmarket_price_eur).toFixed(2)}${card.cardmarket_condition ? ` (${card.cardmarket_condition})` : ''}` : ''}>
-																				{formatCents(card.cardmarket_low_price)}
-																				{#if card.cardmarket_condition}
-																					<span class="cond-pill">{card.cardmarket_condition}</span>
-																				{/if}
-																			</span>
-																		{:else}
-																			<span class="stock-oos-dash" title="Out of Stock">—</span>
-																		{/if}
-																	</td>
-																{/if}
-															</tr>
-														{/each}
-													</tbody>
-												</table>
-											</div>
-										{/if}
-									</div>
+					<!-- User Filter & Sort Toolbar -->
+					<div class="user-toolbar-card">
+						<div class="toolbar-top-row">
+							<div class="search-input-wrapper">
+								<i class="fa-solid fa-magnifying-glass search-icon"></i>
+								<input
+									type="text"
+									bind:value={userSearchQuery}
+									placeholder="Filter by username, user ID, tier, or notes..."
+									class="user-search-input"
+								/>
+								{#if userSearchQuery}
+									<button
+										class="clear-search-btn"
+										on:click={() => (userSearchQuery = '')}
+										title="Clear search"
+									>
+										<i class="fa-solid fa-xmark"></i>
+									</button>
 								{/if}
 							</div>
-						{/each}
+
+							<!-- Sort Controls -->
+							<div class="sort-controls-wrapper">
+								<span class="sort-label"
+									><i class="fa-solid fa-arrow-down-short-wide"></i> Sort:</span
+								>
+								<button
+									type="button"
+									class="sort-pill"
+									class:active={sortBy === 'username'}
+									on:click={() => toggleSort('username')}
+									title="Sort by Username"
+								>
+									<span>User</span>
+									{#if sortBy === 'username'}
+										<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
+									{/if}
+								</button>
+								<button
+									type="button"
+									class="sort-pill"
+									class:active={sortBy === 'itemCount'}
+									on:click={() => toggleSort('itemCount')}
+									title="Sort by Card Count"
+								>
+									<span>Cards</span>
+									{#if sortBy === 'itemCount'}
+										<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
+									{/if}
+								</button>
+								<button
+									type="button"
+									class="sort-pill"
+									class:active={sortBy === 'tier'}
+									on:click={() => toggleSort('tier')}
+									title="Sort by Tier"
+								>
+									<span>Tier</span>
+									{#if sortBy === 'tier'}
+										<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
+									{/if}
+								</button>
+								<button
+									type="button"
+									class="sort-pill"
+									class:active={sortBy === 'lastAccessed'}
+									on:click={() => toggleSort('lastAccessed')}
+									title="Sort by Last Activity"
+								>
+									<span>Activity</span>
+									{#if sortBy === 'lastAccessed'}
+										<i class="fa-solid fa-arrow-{sortDirection === 'asc' ? 'up' : 'down'}"></i>
+									{/if}
+								</button>
+							</div>
+						</div>
+
+						<!-- Tier Filter Pills -->
+						<div class="tier-pills-row">
+							<span class="filter-pills-label"><i class="fa-solid fa-filter"></i> Tier:</span>
+							<button
+								type="button"
+								class="tier-filter-pill"
+								class:active={tierFilter === 'all'}
+								on:click={() => (tierFilter = 'all')}
+							>
+								All ({tierCounts.all})
+							</button>
+							<button
+								type="button"
+								class="tier-filter-pill tier-basic"
+								class:active={tierFilter === 'basic'}
+								on:click={() => (tierFilter = 'basic')}
+							>
+								Basic ({tierCounts.basic})
+							</button>
+							<button
+								type="button"
+								class="tier-filter-pill tier-premium"
+								class:active={tierFilter === 'premium'}
+								on:click={() => (tierFilter = 'premium')}
+							>
+								Premium ({tierCounts.premium})
+							</button>
+							<button
+								type="button"
+								class="tier-filter-pill tier-legacy"
+								class:active={tierFilter === 'legacy'}
+								on:click={() => (tierFilter = 'legacy')}
+							>
+								Legacy ({tierCounts.legacy})
+							</button>
+							<button
+								type="button"
+								class="tier-filter-pill tier-banned"
+								class:active={tierFilter === 'banned'}
+								on:click={() => (tierFilter = 'banned')}
+							>
+								Banned ({tierCounts.banned})
+							</button>
+							<button
+								type="button"
+								class="tier-filter-pill tier-paused"
+								class:active={tierFilter === 'paused'}
+								on:click={() => (tierFilter = 'paused')}
+							>
+								Paused ({tierCounts.paused})
+							</button>
+						</div>
 					</div>
-				{/if}
-			</section>
+
+					{#if actionError}
+						<div class="error-banner" style="margin-bottom: 1rem; justify-content: space-between;">
+							<div style="display: flex; align-items: center; gap: 0.65rem;">
+								<i class="fa-solid fa-triangle-exclamation"></i>
+								<span>{actionError}</span>
+							</div>
+							<button
+								type="button"
+								class="modal-close-icon-btn"
+								on:click={() => (actionError = null)}
+								aria-label="Dismiss error"
+								title="Dismiss"
+							>
+								<i class="fa-solid fa-xmark"></i>
+							</button>
+						</div>
+					{/if}
+
+					{#if loading}
+						<div class="section-loading">
+							<div class="loading-spinner small"></div>
+							<span>Loading registered user directories...</span>
+						</div>
+					{:else if error}
+						<div class="error-banner">
+							<i class="fa-solid fa-triangle-exclamation"></i>
+							<span>{error}</span>
+						</div>
+					{:else if filteredUserTables.length === 0}
+						<div class="empty-state">
+							<i class="fa-solid fa-user-slash"></i>
+							<p>No user accounts found matching "{userSearchQuery}".</p>
+						</div>
+					{:else}
+						<div class="user-accordion-list">
+							{#each filteredUserTables as table}
+								<div class="user-card {expandedTable === table.userId ? 'is-expanded' : ''}">
+									<div class="user-card-header">
+										<div class="user-main-info">
+											<div class="user-avatar-badge">
+												{#if table.avatarUrl && !failedAvatarIds.has(table.userId)}
+													<img
+														src={table.avatarUrl}
+														alt={table.username}
+														class="user-avatar-img"
+														loading="lazy"
+														on:error={() => {
+															failedAvatarIds.add(table.userId);
+															failedAvatarIds = new Set(failedAvatarIds);
+														}}
+													/>
+												{:else}
+													<i class="fa-solid fa-user"></i>
+												{/if}
+											</div>
+											<div class="user-titles">
+												<div class="user-name-line">
+													<span class="user-name">{table.globalName || table.username}</span>
+													{#if table.globalName && table.username && table.globalName !== table.username}
+														<span class="user-handle">@{table.username}</span>
+													{/if}
+													<span
+														class="tier-badge tier-{(
+															table.membershipTier || 'Basic'
+														).toLowerCase()}"
+													>
+														<i
+															class="fa-solid {table.membershipTier === 'Legacy'
+																? 'fa-crown'
+																: table.membershipTier === 'Premium'
+																	? 'fa-gem'
+																	: table.membershipTier === 'Banned'
+																		? 'fa-ban'
+																		: 'fa-certificate'}"
+														></i>
+														{table.membershipTier || 'Basic'}
+													</span>
+													{#if table.tierOverride}
+														<span
+															class="override-pill"
+															title="Tier manually overridden by administrator"
+														>
+															<i class="fa-solid fa-user-pen"></i> Override
+														</span>
+													{/if}
+													<button
+														type="button"
+														class="edit-tier-pill-btn"
+														on:click|stopPropagation={() => openTierModal(table)}
+														title="Change or override membership tier"
+													>
+														<i class="fa-solid fa-pen-to-square"></i>
+														<span>Edit Tier</span>
+													</button>
+													<button
+														type="button"
+														class="edit-note-pill-btn"
+														class:has-note={Boolean(table.adminNotes)}
+														on:click|stopPropagation={() => openNotesModal(table)}
+														title={table.adminNotes ? 'Edit admin note' : 'Add admin note'}
+													>
+														<i class="fa-regular fa-note-sticky"></i>
+														<span>{table.adminNotes ? 'Edit Note' : 'Add Note'}</span>
+													</button>
+													{#if table.scanningPaused}
+														<span
+															class="paused-status-pill"
+															title="Scanning & digests paused{table.scanningPausedAt
+																? ` since ${formatLocalDate(table.scanningPausedAt)}`
+																: ''}"
+														>
+															<i class="fa-solid fa-moon"></i> Paused
+														</span>
+													{:else if table.inactivityWarningSentAt}
+														<span
+															class="warned-status-pill"
+															title="Inactivity warning DM sent on {formatLocalDate(
+																table.inactivityWarningSentAt
+															)}"
+														>
+															<i class="fa-solid fa-hourglass-half"></i> Warned
+														</span>
+													{/if}
+												</div>
+												<div class="user-meta-column">
+													<div class="user-meta-line">
+														<span class="user-id-chip" title="User ID: {table.userId}">
+															<i class="fa-solid fa-id-badge"></i>
+															{table.userId}
+														</span>
+														<div class="user-marketplaces-row">
+															{#if isMarketplaceEnabled(table, 'cardtrader')}
+																<span class="mk-icon-badge ct" title="CardTrader: Enabled">
+																	<i class="fa-solid fa-cube"></i> CT
+																</span>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'tcgplayer')}
+																<span class="mk-icon-badge tcg" title="TCGPlayer: Enabled">
+																	<i class="fa-solid fa-store"></i> TCG
+																</span>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'manapool')}
+																<span class="mk-icon-badge manapool" title="Mana Pool: Enabled">
+																	<i class="fa-solid fa-droplet"></i> MP
+																</span>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'cardkingdom')}
+																<span
+																	class="mk-icon-badge cardkingdom"
+																	title="Card Kingdom: Enabled"
+																>
+																	<i class="fa-solid fa-chess-rook"></i> CK
+																</span>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'ebay')}
+																<span class="mk-icon-badge ebay" title="eBay: Enabled">
+																	<i class="fa-brands fa-ebay"></i> EB
+																</span>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'himarket')}
+																<span class="mk-icon-badge himarket" title="HiMarket: Enabled">
+																	<i class="fa-solid fa-earth-asia"></i> HM
+																</span>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'hareruya')}
+																<span class="mk-icon-badge hareruya" title="Hareruya: Enabled">
+																	<i class="fa-solid fa-sun"></i> HR
+																</span>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'ruten')}
+																<span class="mk-icon-badge ruten" title="Ruten: Enabled">
+																	<i class="fa-solid fa-shop"></i> RT
+																</span>
+															{/if}
+															{#if isMarketplaceEnabled(table, 'cardmarket')}
+																<span class="mk-icon-badge cardmarket" title="CardMarket: Enabled">
+																	<i class="fa-solid fa-euro-sign"></i> CM
+																</span>
+															{/if}
+															{#if table.minCondition && table.minCondition !== 'ANY'}
+																<span
+																	class="user-cond-badge"
+																	title="Account Default Minimum Condition: {table.minCondition}+"
+																>
+																	<i class="fa-solid fa-certificate"></i>
+																	{table.minCondition === 'NM' ? 'NM' : `${table.minCondition}+`}
+																</span>
+															{:else if table.minCondition === 'ANY'}
+																<span
+																	class="user-cond-badge any"
+																	title="Account Default Minimum Condition: Any Condition"
+																>
+																	<i class="fa-solid fa-certificate"></i> ANY
+																</span>
+															{/if}
+														</div>
+													</div>
+													<div class="user-meta-subline">
+														<span class="user-activity-timestamp">
+															<i class="fa-regular fa-clock"></i>
+															Last Login: {formatLocalDate(table.lastAccessed)}
+														</span>
+													</div>
+													{#if table.adminNotes}
+														<div
+															class="admin-note-preview"
+															title="Admin Note (click Edit Note to modify)"
+														>
+															<i class="fa-regular fa-note-sticky"></i>
+															<span>{table.adminNotes}</span>
+														</div>
+													{/if}
+												</div>
+											</div>
+										</div>
+
+										<div class="user-actions">
+											<span class="item-count-chip">
+												<i class="fa-solid fa-layer-group"></i>
+												{table.itemCount} items
+											</span>
+											<button
+												class="requeue-user-btn"
+												on:click={() => handleRequeueChecks(table.userId, table.username)}
+												disabled={!token || requeuingUser === table.userId}
+												title="Requeue all stock checks for this user"
+												aria-label="Requeue all stock checks for this user"
+											>
+												{#if requeuingUser === table.userId}
+													<i class="fa-solid fa-spinner fa-spin"></i>
+												{:else}
+													<i class="fa-solid fa-paper-plane"></i>
+												{/if}
+											</button>
+											<button
+												class="expand-btn"
+												on:click={() => {
+													if (expandedTable === table.userId) {
+														tableDataRequestId++;
+														expandedTable = null;
+														expandedTableData = [];
+														tableDataLoading = false;
+														tableDataError = null;
+													} else {
+														expandedTable = table.userId;
+														loadTableData(table.userId);
+													}
+												}}
+												disabled={!token}
+												title={expandedTable === table.userId
+													? 'Collapse card list'
+													: 'Expand card list'}
+												aria-label={expandedTable === table.userId
+													? 'Collapse card list'
+													: 'Expand card list'}
+											>
+												<i
+													class="fa-solid {expandedTable === table.userId
+														? 'fa-chevron-up'
+														: 'fa-chevron-down'}"
+												></i>
+											</button>
+											<button
+												type="button"
+												class="pause-user-btn"
+												class:is-paused={Boolean(table.scanningPaused)}
+												on:click|stopPropagation={() => toggleScanningPaused(table)}
+												disabled={!token || togglingPauseUserId === table.userId}
+												title={table.scanningPaused
+													? 'Resume automated scanning & digests'
+													: 'Pause automated scanning & digests'}
+												aria-label={table.scanningPaused
+													? 'Resume automated scanning & digests'
+													: 'Pause automated scanning & digests'}
+											>
+												<i
+													class="fa-solid {togglingPauseUserId === table.userId
+														? 'fa-spinner fa-spin'
+														: table.scanningPaused
+															? 'fa-play'
+															: 'fa-pause'}"
+												></i>
+											</button>
+											<button
+												class="delete-user-btn"
+												on:click={() => promptDeleteAccount(table.userId)}
+												disabled={!token}
+												title="Delete user account and all wishlist data"
+												aria-label="Delete user account and all wishlist data"
+											>
+												<i class="fa-solid fa-trash-can"></i>
+											</button>
+										</div>
+									</div>
+
+									{#if requeueFeedback && requeueFeedback.userId === table.userId}
+										<div class="requeue-feedback-banner {requeueFeedback.type}">
+											<i
+												class="fa-solid {requeueFeedback.type === 'success'
+													? 'fa-circle-check'
+													: 'fa-circle-exclamation'}"
+											></i>
+											<span>{requeueFeedback.text}</span>
+										</div>
+									{/if}
+
+									<!-- Expanded Seeking Table -->
+									{#if expandedTable === table.userId}
+										<div class="user-table-wrapper">
+											{#if tableDataLoading}
+												<div class="section-loading">
+													<div class="loading-spinner small"></div>
+													<span>Loading seeking list...</span>
+												</div>
+											{:else if tableDataError && expandedTable === table.userId}
+												<div class="error-banner">
+													<i class="fa-solid fa-triangle-exclamation"></i>
+													<span>{tableDataError}</span>
+												</div>
+											{:else if expandedTableData.length === 0}
+												<div class="empty-table-state">
+													<i class="fa-solid fa-box-open"></i>
+													<p>No cards found in this user's seeking list.</p>
+												</div>
+											{:else}
+												<div class="table-scroll-container">
+													<table class="modern-table">
+														<thead>
+															<tr>
+																<th class="col-name">Card Name</th>
+																<th class="col-set">Set</th>
+																<th class="col-lang">Lang</th>
+																<th class="col-finish">Finish</th>
+																{#if isMarketplaceEnabled(table, 'cardtrader')}
+																	<th class="col-vendor">CardTrader</th>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'tcgplayer')}
+																	<th class="col-vendor">TCGPlayer</th>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'manapool')}
+																	<th class="col-vendor">Mana Pool</th>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'cardkingdom')}
+																	<th class="col-vendor">Card Kingdom</th>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'ebay')}
+																	<th class="col-vendor">eBay</th>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'himarket')}
+																	<th class="col-vendor">HiMarket</th>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'hareruya')}
+																	<th class="col-vendor">Hareruya</th>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'ruten')}
+																	<th class="col-vendor">Ruten</th>
+																{/if}
+																{#if isMarketplaceEnabled(table, 'cardmarket')}
+																	<th class="col-vendor">CardMarket</th>
+																{/if}
+															</tr>
+														</thead>
+														<tbody>
+															{#each expandedTableData as card}
+																<tr>
+																	<td class="col-name" data-label="Name">
+																		<div class="admin-card-name-wrap">
+																			<span class="card-name-text">{card.name}</span>
+																			{#if card.max_price_cap > 0 || card.min_condition || (table.minCondition && table.minCondition !== 'ANY')}
+																				<div class="admin-card-tags">
+																					{#if card.max_price_cap > 0}
+																						<span
+																							class="admin-cap-tag"
+																							title="Max Price Cap: {formatCents(
+																								card.max_price_cap
+																							)}"
+																						>
+																							Cap ≤ {formatCents(card.max_price_cap)}
+																						</span>
+																					{/if}
+																					{#if card.min_condition && card.min_condition !== 'ANY'}
+																						<span
+																							class="cond-req-pill cond-{card.min_condition.toLowerCase()}"
+																							title="Card Condition Override: {card.min_condition}+"
+																						>
+																							{card.min_condition === 'NM'
+																								? 'NM ONLY'
+																								: `MIN ${card.min_condition}+`}
+																						</span>
+																					{:else if card.min_condition === 'ANY'}
+																						<span
+																							class="cond-req-pill cond-any"
+																							title="Card Condition Override: Any Condition"
+																							>ANY COND</span
+																						>
+																					{:else if table.minCondition && table.minCondition !== 'ANY'}
+																						<span
+																							class="cond-req-pill inherited cond-{table.minCondition.toLowerCase()}"
+																							title="Inherited Account Condition: {table.minCondition}+"
+																						>
+																							{table.minCondition === 'NM'
+																								? 'NM (Acct)'
+																								: `${table.minCondition}+ (Acct)`}
+																						</span>
+																					{/if}
+																				</div>
+																			{/if}
+																		</div>
+																	</td>
+																	<td class="col-set" data-label="Set">
+																		<div class="set-cell">
+																			<img
+																				class="set-icon"
+																				src="https://svgs.scryfall.io/sets/{getSetIconCode(
+																					card.set_code
+																				)}.svg"
+																				alt={card.set_code}
+																				loading="lazy"
+																			/>
+																			<span class="set-code">{card.set_code?.toUpperCase()}</span>
+																			{#if card.collector_number}
+																				<span class="collector-number"
+																					>#{card.collector_number}</span
+																				>
+																			{/if}
+																		</div>
+																	</td>
+																	<td class="col-lang" data-label="Language">
+																		<span class="lang-pill">{card.language?.toUpperCase()}</span>
+																	</td>
+																	<td class="col-finish" data-label="Finish">
+																		{#if (card.finish || '').toLowerCase() === 'etched'}
+																			<span class="finish-pill foil">◈ Etched</span>
+																		{:else if (card.finish || '').toLowerCase() === 'foil'}
+																			<span class="finish-pill foil">✦ Foil</span>
+																		{:else}
+																			<span class="finish-pill nonfoil">Nonfoil</span>
+																		{/if}
+																	</td>
+																	{#if isMarketplaceEnabled(table, 'cardtrader')}
+																		<td class="col-vendor" data-label="CardTrader">
+																			{#if card.cardtrader_stock}
+																				<span class="stock-pill in-stock">
+																					{formatCents(card.cardtrader_low_price)}
+																					{#if card.cardtrader_condition}
+																						<span class="cond-pill"
+																							>{card.cardtrader_condition}</span
+																						>
+																					{/if}
+																				</span>
+																			{:else}
+																				<span class="stock-oos-dash" title="Out of Stock">—</span>
+																			{/if}
+																		</td>
+																	{/if}
+																	{#if isMarketplaceEnabled(table, 'tcgplayer')}
+																		<td class="col-vendor" data-label="TCGPlayer">
+																			{#if card.tcgplayer_stock}
+																				<span class="stock-pill in-stock">
+																					{formatCents(card.tcgplayer_low_price)}
+																					{#if card.tcgplayer_condition}
+																						<span class="cond-pill">{card.tcgplayer_condition}</span
+																						>
+																					{/if}
+																				</span>
+																			{:else}
+																				<span class="stock-oos-dash" title="Out of Stock">—</span>
+																			{/if}
+																		</td>
+																	{/if}
+																	{#if isMarketplaceEnabled(table, 'manapool')}
+																		<td class="col-vendor" data-label="Mana Pool">
+																			{#if card.manapool_stock}
+																				<span class="stock-pill in-stock">
+																					{formatCents(card.manapool_low_price)}
+																					{#if card.manapool_condition}
+																						<span class="cond-pill">{card.manapool_condition}</span>
+																					{/if}
+																				</span>
+																			{:else}
+																				<span class="stock-oos-dash" title="Out of Stock">—</span>
+																			{/if}
+																		</td>
+																	{/if}
+																	{#if isMarketplaceEnabled(table, 'cardkingdom')}
+																		<td class="col-vendor" data-label="Card Kingdom">
+																			{#if card.cardkingdom_stock}
+																				<span class="stock-pill in-stock">
+																					{formatCents(card.cardkingdom_low_price)}
+																					{#if card.cardkingdom_condition}
+																						<span class="cond-pill"
+																							>{card.cardkingdom_condition}</span
+																						>
+																					{/if}
+																				</span>
+																			{:else}
+																				<span class="stock-oos-dash" title="Out of Stock">—</span>
+																			{/if}
+																		</td>
+																	{/if}
+																	{#if isMarketplaceEnabled(table, 'ebay')}
+																		<td class="col-vendor" data-label="eBay">
+																			{#if card.ebay_stock}
+																				<span class="stock-pill in-stock">
+																					{formatCents(card.ebay_low_price)}
+																					{#if card.ebay_condition}
+																						<span class="cond-pill">{card.ebay_condition}</span>
+																					{/if}
+																				</span>
+																			{:else}
+																				<span class="stock-oos-dash" title="Out of Stock">—</span>
+																			{/if}
+																		</td>
+																	{/if}
+																	{#if isMarketplaceEnabled(table, 'himarket')}
+																		<td class="col-vendor" data-label="HiMarket">
+																			{#if card.himarket_stock}
+																				<span
+																					class="stock-pill in-stock"
+																					title={card.himarket_price_hkd
+																						? `HK$ ${Number(card.himarket_price_hkd).toFixed(2)}${card.himarket_condition ? ` (${card.himarket_condition})` : ''}`
+																						: ''}
+																				>
+																					{formatCents(card.himarket_low_price)}
+																					{#if card.himarket_condition}
+																						<span class="cond-pill">{card.himarket_condition}</span>
+																					{/if}
+																				</span>
+																			{:else}
+																				<span class="stock-oos-dash" title="Out of Stock">—</span>
+																			{/if}
+																		</td>
+																	{/if}
+																	{#if isMarketplaceEnabled(table, 'hareruya')}
+																		<td class="col-vendor" data-label="Hareruya">
+																			{#if card.hareruya_stock}
+																				<span
+																					class="stock-pill in-stock"
+																					title={card.hareruya_price_jpy
+																						? `¥${Number(card.hareruya_price_jpy).toLocaleString()}${card.hareruya_condition ? ` (${card.hareruya_condition})` : ''}`
+																						: ''}
+																				>
+																					{formatCents(card.hareruya_low_price)}
+																					{#if card.hareruya_condition}
+																						<span class="cond-pill">{card.hareruya_condition}</span>
+																					{/if}
+																				</span>
+																			{:else}
+																				<span class="stock-oos-dash" title="Out of Stock">—</span>
+																			{/if}
+																		</td>
+																	{/if}
+																	{#if isMarketplaceEnabled(table, 'ruten')}
+																		<td class="col-vendor" data-label="Ruten">
+																			{#if !['zht', 'en'].includes((card.language || '').toLowerCase())}
+																				<span
+																					class="stock-oos-dash"
+																					title="Ruten only checks Traditional Chinese (ZHT) and English (EN) cards"
+																					>—</span
+																				>
+																			{:else if card.ruten_stock}
+																				<span
+																					class="stock-pill in-stock"
+																					title={card.ruten_price_twd
+																						? `NT$ ${Number(card.ruten_price_twd).toLocaleString()}${card.ruten_condition ? ` (${card.ruten_condition})` : ''}`
+																						: ''}
+																				>
+																					{formatCents(card.ruten_low_price)}
+																					{#if card.ruten_condition}
+																						<span class="cond-pill">{card.ruten_condition}</span>
+																					{/if}
+																				</span>
+																			{:else}
+																				<span class="stock-oos-dash" title="Out of Stock">—</span>
+																			{/if}
+																		</td>
+																	{/if}
+																	{#if isMarketplaceEnabled(table, 'cardmarket')}
+																		<td class="col-vendor" data-label="CardMarket">
+																			{#if card.cardmarket_stock}
+																				<span
+																					class="stock-pill in-stock"
+																					title={card.cardmarket_price_eur
+																						? `€${Number(card.cardmarket_price_eur).toFixed(2)}${card.cardmarket_condition ? ` (${card.cardmarket_condition})` : ''}`
+																						: ''}
+																				>
+																					{formatCents(card.cardmarket_low_price)}
+																					{#if card.cardmarket_condition}
+																						<span class="cond-pill"
+																							>{card.cardmarket_condition}</span
+																						>
+																					{/if}
+																				</span>
+																			{:else}
+																				<span class="stock-oos-dash" title="Out of Stock">—</span>
+																			{/if}
+																		</td>
+																	{/if}
+																</tr>
+															{/each}
+														</tbody>
+													</table>
+												</div>
+											{/if}
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</section>
 			{/if}
 		</div>
 	</div>
@@ -1932,7 +2150,8 @@
 			class="modal-overlay"
 			on:click={closeDeleteModal}
 			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closeDeleteModal();
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' '))
+					closeDeleteModal();
 			}}
 			role="button"
 			tabindex="0"
@@ -1953,9 +2172,13 @@
 				</div>
 				<h3 id="admin-delete-dialog-title">Confirm User Account Deletion</h3>
 				<p>
-					Are you sure you want to delete user account <strong class="delete-user-id">{userToDelete}</strong>?
+					Are you sure you want to delete user account <strong class="delete-user-id"
+						>{userToDelete}</strong
+					>?
 				</p>
-				<p class="modal-subtext">This action is irreversible and deletes all seeking list cards associated with this user.</p>
+				<p class="modal-subtext">
+					This action is irreversible and deletes all seeking list cards associated with this user.
+				</p>
 
 				<div class="modal-buttons">
 					<button class="cancel-btn" on:click={closeDeleteModal} disabled={isDeletingUser}>
@@ -1998,18 +2221,16 @@
 				</div>
 				<h3 id="admin-tier-dialog-title">Override Membership Tier</h3>
 				<p>
-					Update membership tier for user <strong class="tier-target-user">{userToEditTier.username || userToEditTier.userId}</strong>
+					Update membership tier for user <strong class="tier-target-user"
+						>{userToEditTier.username || userToEditTier.userId}</strong
+					>
 				</p>
-				<p class="modal-subtext">Setting an explicit tier will override Discord role synchronization until reset to 'None'.</p>
+				<p class="modal-subtext">
+					Setting an explicit tier will override Discord role synchronization until reset to 'None'.
+				</p>
 
 				<div class="tier-select-options">
-					{#each [
-						{ id: 'Basic', label: 'Basic', desc: 'Standard free tier (25 cards)', icon: 'fa-certificate' },
-						{ id: 'Premium', label: 'Premium', desc: 'Premium tier (150 cards, all marketplaces)', icon: 'fa-gem' },
-						{ id: 'Legacy', label: 'Legacy', desc: 'Legacy supporter (unlimited cards)', icon: 'fa-crown' },
-						{ id: 'Banned', label: 'Banned', desc: 'Suspended (cannot add cards, checks disabled)', icon: 'fa-ban' },
-						{ id: 'None', label: 'Reset (Discord Sync)', desc: 'Remove manual override, sync with Discord roles', icon: 'fa-rotate' }
-					] as opt}
+					{#each [{ id: 'Basic', label: 'Basic', desc: 'Standard free tier (25 cards)', icon: 'fa-certificate' }, { id: 'Premium', label: 'Premium', desc: 'Premium tier (150 cards, all marketplaces)', icon: 'fa-gem' }, { id: 'Legacy', label: 'Legacy', desc: 'Legacy supporter (unlimited cards)', icon: 'fa-crown' }, { id: 'Banned', label: 'Banned', desc: 'Suspended (cannot add cards, checks disabled)', icon: 'fa-ban' }, { id: 'None', label: 'Reset (Discord Sync)', desc: 'Remove manual override, sync with Discord roles', icon: 'fa-rotate' }] as opt}
 						<button
 							type="button"
 							class="tier-choice-btn tier-btn-{opt.id.toLowerCase()}"
@@ -2032,7 +2253,11 @@
 					<button class="cancel-btn" on:click={closeTierModal} disabled={isUpdatingTier}>
 						Cancel
 					</button>
-					<button class="confirm-btn save-tier-btn" on:click={handleSaveTier} disabled={isUpdatingTier}>
+					<button
+						class="confirm-btn save-tier-btn"
+						on:click={handleSaveTier}
+						disabled={isUpdatingTier}
+					>
 						<i class="fa-solid {isUpdatingTier ? 'fa-spinner fa-spin' : 'fa-check'}"></i>
 						<span>{isUpdatingTier ? 'Saving...' : 'Save Tier'}</span>
 					</button>
@@ -2069,7 +2294,11 @@
 				</div>
 				<h3 id="admin-notes-dialog-title">Admin User Notes</h3>
 				<p>
-					Private notes for <strong class="tier-target-user">{userToEditNotes.globalName || userToEditNotes.username || userToEditNotes.userId}</strong>
+					Private notes for <strong class="tier-target-user"
+						>{userToEditNotes.globalName ||
+							userToEditNotes.username ||
+							userToEditNotes.userId}</strong
+					>
 				</p>
 				<textarea
 					bind:value={notesDraft}
@@ -2085,7 +2314,11 @@
 					<button class="cancel-btn" on:click={closeNotesModal} disabled={isUpdatingNotes}>
 						Cancel
 					</button>
-					<button class="confirm-btn save-tier-btn" on:click={handleSaveNotes} disabled={isUpdatingNotes}>
+					<button
+						class="confirm-btn save-tier-btn"
+						on:click={handleSaveNotes}
+						disabled={isUpdatingNotes}
+					>
 						<i class="fa-solid {isUpdatingNotes ? 'fa-spinner fa-spin' : 'fa-check'}"></i>
 						<span>{isUpdatingNotes ? 'Saving...' : 'Save Note'}</span>
 					</button>
@@ -2101,7 +2334,8 @@
 			class="modal-overlay"
 			on:click={closePoisonModal}
 			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closePoisonModal();
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' '))
+					closePoisonModal();
 			}}
 			role="button"
 			tabindex="0"
@@ -2124,7 +2358,9 @@
 						</div>
 						<div>
 							<h3 id="admin-poison-dialog-title">Poison Queue: {activePoisonQueue.name}-poison</h3>
-							<span class="modal-subtitle">Dead-letter messages that failed execution multiple times</span>
+							<span class="modal-subtitle"
+								>Dead-letter messages that failed execution multiple times</span
+							>
 						</div>
 					</div>
 					<button class="modal-close-icon-btn" on:click={closePoisonModal} title="Close">
@@ -2134,7 +2370,11 @@
 
 				{#if poisonFeedback}
 					<div class="poison-feedback-banner {poisonFeedback.type}">
-						<i class="fa-solid {poisonFeedback.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i>
+						<i
+							class="fa-solid {poisonFeedback.type === 'error'
+								? 'fa-circle-exclamation'
+								: 'fa-circle-check'}"
+						></i>
 						<span>{poisonFeedback.text}</span>
 					</div>
 				{/if}
@@ -2154,8 +2394,13 @@
 						{#each poisonMessages as msg, idx}
 							<div class="poison-message-card">
 								<div class="poison-msg-header">
-									<span class="poison-msg-id"><i class="fa-solid fa-envelope"></i> Msg #{idx + 1} ({msg.id || 'N/A'})</span>
-									<span class="poison-msg-time">{msg.inserted_on ? new Date(msg.inserted_on).toLocaleString() : ''} (Deq: {msg.dequeue_count ?? 'N/A'})</span>
+									<span class="poison-msg-id"
+										><i class="fa-solid fa-envelope"></i> Msg #{idx + 1} ({msg.id || 'N/A'})</span
+									>
+									<span class="poison-msg-time"
+										>{msg.inserted_on ? new Date(msg.inserted_on).toLocaleString() : ''} (Deq: {msg.dequeue_count ??
+											'N/A'})</span
+									>
 								</div>
 								<div class="poison-msg-content">
 									<pre><code>{msg.content || '(empty)'}</code></pre>
@@ -2185,7 +2430,11 @@
 							disabled={poisonActionLoading || poisonMessages.length === 0}
 							title="Re-enqueue all poison messages back to active queue"
 						>
-							<i class="fa-solid {poisonActionLoading ? 'fa-spinner fa-spin' : 'fa-arrow-rotate-right'}"></i>
+							<i
+								class="fa-solid {poisonActionLoading
+									? 'fa-spinner fa-spin'
+									: 'fa-arrow-rotate-right'}"
+							></i>
 							<span>Replay All</span>
 						</button>
 					</div>
@@ -2201,7 +2450,8 @@
 			class="modal-overlay"
 			on:click={closeClearPoisonModal}
 			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closeClearPoisonModal();
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' '))
+					closeClearPoisonModal();
 			}}
 			role="button"
 			tabindex="0"
@@ -2222,15 +2472,27 @@
 				</div>
 				<h3 id="admin-clear-poison-dialog-title">Purge Poison Queue</h3>
 				<p>
-					Are you sure you want to permanently clear all poison messages for <strong class="delete-user-id">{poisonQueueToClear}-poison</strong>?
+					Are you sure you want to permanently clear all poison messages for <strong
+						class="delete-user-id">{poisonQueueToClear}-poison</strong
+					>?
 				</p>
-				<p class="modal-subtext">This action is irreversible and discards all dead-letter messages in this queue.</p>
+				<p class="modal-subtext">
+					This action is irreversible and discards all dead-letter messages in this queue.
+				</p>
 
 				<div class="modal-buttons">
-					<button class="cancel-btn" on:click={closeClearPoisonModal} disabled={poisonActionLoading}>
+					<button
+						class="cancel-btn"
+						on:click={closeClearPoisonModal}
+						disabled={poisonActionLoading}
+					>
 						Cancel
 					</button>
-					<button class="confirm-btn" on:click={() => handleClearPoison(poisonQueueToClear)} disabled={poisonActionLoading}>
+					<button
+						class="confirm-btn"
+						on:click={() => handleClearPoison(poisonQueueToClear)}
+						disabled={poisonActionLoading}
+					>
 						<i class="fa-solid {poisonActionLoading ? 'fa-spinner fa-spin' : 'fa-trash-can'}"></i>
 						<span>{poisonActionLoading ? 'Purging...' : 'Yes, Purge Queue'}</span>
 					</button>
@@ -2514,8 +2776,15 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% { opacity: 1; transform: scale(1); }
-		50% { opacity: 0.5; transform: scale(0.85); }
+		0%,
+		100% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 0.5;
+			transform: scale(0.85);
+		}
 	}
 
 	.card-counter {
@@ -2677,7 +2946,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.45rem;
-		transition: transform var(--transition-fast), border-color var(--transition-fast);
+		transition:
+			transform var(--transition-fast),
+			border-color var(--transition-fast);
 	}
 
 	.mk-stat-card:hover {
@@ -2738,7 +3009,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.4rem;
-		transition: transform var(--transition-fast), border-color var(--transition-fast);
+		transition:
+			transform var(--transition-fast),
+			border-color var(--transition-fast);
 	}
 
 	.stat-card:hover {
@@ -3500,7 +3773,9 @@
 		border: 1px solid var(--color-border);
 		border-radius: 14px;
 		overflow: hidden;
-		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 	}
 
 	.user-card:hover {
@@ -4214,7 +4489,9 @@
 		background: var(--color-bg-elevated);
 		padding: 2rem;
 		border-radius: 16px;
-		box-shadow: var(--shadow-lg), 0 20px 30px rgba(0, 0, 0, 0.25);
+		box-shadow:
+			var(--shadow-lg),
+			0 20px 30px rgba(0, 0, 0, 0.25);
 		max-width: 480px;
 		width: 100%;
 		border: 1px solid var(--color-border);

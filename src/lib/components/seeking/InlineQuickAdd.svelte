@@ -198,7 +198,8 @@
 	function getScryfallImage(cardObj) {
 		if (cardObj?.image_uris?.normal) return cardObj.image_uris.normal;
 		if (cardObj?.image_uris?.small) return cardObj.image_uris.small;
-		if (cardObj?.card_faces?.[0]?.image_uris?.normal) return cardObj.card_faces[0].image_uris.normal;
+		if (cardObj?.card_faces?.[0]?.image_uris?.normal)
+			return cardObj.card_faces[0].image_uris.normal;
 		if (cardObj?.card_faces?.[0]?.image_uris?.small) return cardObj.card_faces[0].image_uris.small;
 		return '';
 	}
@@ -566,7 +567,10 @@
 		background: var(--color-bg-secondary, var(--glass-bg));
 		border: 1px solid rgba(99, 102, 241, 0.35);
 		border-radius: 8px;
-		transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast),
+			background var(--transition-fast);
 	}
 
 	@media (max-width: 768px) {
@@ -847,7 +851,9 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.45rem;
-		transition: filter var(--transition-fast), transform var(--transition-fast);
+		transition:
+			filter var(--transition-fast),
+			transform var(--transition-fast);
 	}
 
 	.quick-submit-btn:hover:not(:disabled) {

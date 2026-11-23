@@ -68,7 +68,10 @@
 			const hashParams = new URLSearchParams(window.location.hash.substring(1));
 			const token = hashParams.get('token');
 			const rawState = hashParams.get('state') || '/';
-			const state = rawState.startsWith('/') && !rawState.startsWith('//') && !rawState.includes('\\') ? rawState : '/';
+			const state =
+				rawState.startsWith('/') && !rawState.startsWith('//') && !rawState.includes('\\')
+					? rawState
+					: '/';
 
 			if (token) {
 				console.log('Layout onMount: Found token in URL fragment. Handling callback...');
@@ -218,7 +221,9 @@
 						</div>
 					{:else if !$auth.isLoading}
 						<!-- Offer both Demo Sandbox and Discord Login for public visitors -->
-						<a href="/demo" data-sveltekit-preload-data="off" class="login-button demo-nav-btn">Try Demo</a>
+						<a href="/demo" data-sveltekit-preload-data="off" class="login-button demo-nav-btn"
+							>Try Demo</a
+						>
 						<a href="/login" class="login-button">Login</a>
 					{/if}
 				</div>

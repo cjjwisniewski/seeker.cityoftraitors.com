@@ -46,9 +46,12 @@ describe('auth store and fetchWithAuth fail-closed Demo Mode interception', () =
 		const adminRes = await fetchWithAuth('https://seeker.azure-api.net/seeker/getSystemStatus');
 		assert.equal(adminRes?.status, 403);
 
-		const delAcctRes = await fetchWithAuth('https://seeker.azure-api.net/seeker/deleteUserAccount', {
-			method: 'POST'
-		});
+		const delAcctRes = await fetchWithAuth(
+			'https://seeker.azure-api.net/seeker/deleteUserAccount',
+			{
+				method: 'POST'
+			}
+		);
 		assert.equal(delAcctRes?.status, 403);
 
 		const crossUserRes = await fetchWithAuth(

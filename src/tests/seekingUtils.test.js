@@ -149,10 +149,7 @@ describe('seekingUtils core pricing, badges, decklist parser, and CSV export', (
 		});
 		assert.equal(parsed[1].finish, 'nonfoil');
 		assert.equal(parsed[2].finish, 'foil');
-		assert.equal(
-			formatCardAsDecklistLine(parsed[0]),
-			'1 Morophon, the Boundless (CMM) 3 *E*'
-		);
+		assert.equal(formatCardAsDecklistLine(parsed[0]), '1 Morophon, the Boundless (CMM) 3 *E*');
 	});
 
 	it('maps Cardmarket etched and foil printings to isFoil=Y and sanitizes external URLs', () => {
@@ -165,13 +162,16 @@ describe('seekingUtils core pricing, badges, decklist parser, and CSV export', (
 			urlEtched,
 			'https://www.cardmarket.com/en/Magic/Products?idProduct=4242&language=11&isFoil=Y'
 		);
-		assert.equal(sanitizeExternalUrl('javascript:alert(1)', 'https://safe.example'), 'https://safe.example');
+		assert.equal(
+			sanitizeExternalUrl('javascript:alert(1)', 'https://safe.example'),
+			'https://safe.example'
+		);
 	});
 
 	it('escapes spreadsheet formula injection prefixes in buildSeekingCsvString', () => {
 		const csv = buildSeekingCsvString([
 			{
-				name: '=CMD|\' /C calc\'!A0',
+				name: "=CMD|' /C calc'!A0",
 				set_code: '+exo',
 				collector_number: '-143',
 				language: 'en',
@@ -196,9 +196,9 @@ describe('seekingUtils core pricing, badges, decklist parser, and CSV export', (
 		assert.equal(lines.length, 2);
 		const dataRow = lines[1];
 		assert.equal(dataRow.includes('"\'=CMD|'), true);
-		assert.equal(dataRow.includes(',\'+exo,'), true);
-		assert.equal(dataRow.includes(',\'-143,'), true);
-		assert.equal(dataRow.includes(',\'@NM,'), true);
+		assert.equal(dataRow.includes(",'+exo,"), true);
+		assert.equal(dataRow.includes(",'-143,"), true);
+		assert.equal(dataRow.includes(",'@NM,"), true);
 		assert.equal(dataRow.includes('"\'=HYPERLINK('), true);
 	});
 });

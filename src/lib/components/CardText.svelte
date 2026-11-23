@@ -15,9 +15,9 @@
 					{#if token.type === 'symbol'}
 						<img
 							class="card-symbol"
-							src="{token.svg}"
-							alt="{token.alt || token.raw}"
-							title="{token.raw}"
+							src={token.svg}
+							alt={token.alt || token.raw}
+							title={token.raw}
 							loading="lazy"
 						/>
 					{:else}

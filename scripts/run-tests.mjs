@@ -52,7 +52,8 @@ const svelteKitMocksPlugin = {
 		buildInstance.onLoad({ filter: /.*/, namespace: 'sveltekit-virtual' }, (args) => {
 			if (args.path === '$app/environment') {
 				return {
-					contents: 'export const browser = true; export const dev = false; export const building = false;',
+					contents:
+						'export const browser = true; export const dev = false; export const building = false;',
 					loader: 'js'
 				};
 			}

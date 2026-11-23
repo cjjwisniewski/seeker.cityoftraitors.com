@@ -79,7 +79,10 @@
 				return {
 					idx,
 					item,
-					identifier: { set: item.set_code.toLowerCase(), collector_number: String(item.collector_number) },
+					identifier: {
+						set: item.set_code.toLowerCase(),
+						collector_number: String(item.collector_number)
+					},
 					mode: 'set_cn'
 				};
 			}
@@ -187,7 +190,8 @@
 
 			const set_code = (scry.set || item.set_code || '').toLowerCase();
 			const collector_number = String(scry.collector_number || item.collector_number || 'N/A');
-			const finish = item.finish === 'etched' ? 'etched' : (item.finish === 'foil' ? 'foil' : 'nonfoil');
+			const finish =
+				item.finish === 'etched' ? 'etched' : item.finish === 'foil' ? 'foil' : 'nonfoil';
 			const name = scry.name || item.name;
 			const type_line = scry.type_line || item.type_line || '';
 			const oracle_id = scry.oracle_id || item.oracle_id || scry.id;
@@ -224,10 +228,15 @@
 		for (let i = 0; i < uniquePrints.length; i += LANG_BATCH_SIZE) {
 			const chunk = uniquePrints.slice(i, i + LANG_BATCH_SIZE);
 			const query = chunk
-				.map((p) => `(cn:${encodeURIComponent(p.collector_number)}+set:${encodeURIComponent(p.set_code)})`)
+				.map(
+					(p) =>
+						`(cn:${encodeURIComponent(p.collector_number)}+set:${encodeURIComponent(p.set_code)})`
+				)
 				.join('+OR+');
 			try {
-				const res = await fetch(`https://api.scryfall.com/cards/search?q=${query}&include_multilingual=true&unique=prints`);
+				const res = await fetch(
+					`https://api.scryfall.com/cards/search?q=${query}&include_multilingual=true&unique=prints`
+				);
 				if (res.ok) {
 					const data = await res.json();
 					if (Array.isArray(data?.data)) {
@@ -253,78 +262,99 @@
 		const finalPreview = [];
 		const previewDedup = new Set();
 
-		candidates.forEach(({ item, scry, set_code, collector_number, finish, name, type_line, oracle_id, image_uri }) => {
-			const set_name = scry.set_name || item.set_name || setCodeToNameMap[set_code] || set_code.toUpperCase();
-			const pKey = `${set_code}-${collector_number.toLowerCase()}`;
-			const langsSet = printingsMap.get(pKey);
-
-			let availableLanguages = [];
-			if (langsSet && langsSet.size > 0) {
-				availableLanguages = Array.from(langsSet).filter((l) => languageMap[l] && l !== 'jp' && l !== 'kr');
-			}
-			if (availableLanguages.length === 0) {
-				availableLanguages = ['en'];
-			}
-			if (!availableLanguages.includes('en') && (langsSet?.has('en') || availableLanguages.length === 0)) {
-				availableLanguages.unshift('en');
-			}
-
-			const requestedLang = (item.preset_language
-				? item.preset_language
-				: importMode === 'moxfield'
-					? (importDefaultLanguage || 'en')
-					: (item.language || importDefaultLanguage || 'en')
-			).toLowerCase();
-
-			const language = availableLanguages.includes(requestedLang)
-				? requestedLang
-				: (availableLanguages.includes('en') ? 'en' : (availableLanguages[0] || 'en'));
-
-			const cardKey = `${set_code}-${collector_number}-${language}-${finish}`;
-			if (previewDedup.has(cardKey)) return;
-			previewDedup.add(cardKey);
-
-			const alreadyExists = existingKeySet.has(cardKey);
-			const isBasicLand = isBasicLandCard(name, type_line);
-
-			const scryLang = String(scry.lang || 'en').toLowerCase();
-			const sameLang = language === scryLang;
-
-			finalPreview.push({
-				previewKey: cardKey,
-				id: crypto.randomUUID(),
-				scryfall_id: sameLang ? (scry.id || item.scryfall_id || null) : null,
-				name,
+		candidates.forEach(
+			({
+				item,
+				scry,
 				set_code,
-				set_name,
 				collector_number,
-				language,
-				availableLanguages,
 				finish,
-				availableFinishes:
-					Array.isArray(scry.finishes) && scry.finishes.length > 0
-						? scry.finishes
-						: ['nonfoil', 'foil'],
+				name,
+				type_line,
 				oracle_id,
-				image_uri,
-				tcgplayer_id: sameLang
-					? finish === 'etched'
-						? scry.tcgplayer_etched_id || null
-						: scry.tcgplayer_id || item.tcgplayer_id || null
-					: null,
-				cardmarket_id: sameLang ? (scry.cardmarket_id || item.cardmarket_id || null) : null,
-				demo_scryfall_prices: scry.prices || null,
-				demo_tcgplayer_id:
-					(finish === 'etched'
-						? scry.tcgplayer_etched_id || scry.tcgplayer_id
-						: scry.tcgplayer_id) ||
-					item.tcgplayer_id ||
-					null,
-				isBasicLand,
-				alreadyExists,
-				selected: !alreadyExists && !(excludeBasicLands && isBasicLand)
-			});
-		});
+				image_uri
+			}) => {
+				const set_name =
+					scry.set_name || item.set_name || setCodeToNameMap[set_code] || set_code.toUpperCase();
+				const pKey = `${set_code}-${collector_number.toLowerCase()}`;
+				const langsSet = printingsMap.get(pKey);
+
+				let availableLanguages = [];
+				if (langsSet && langsSet.size > 0) {
+					availableLanguages = Array.from(langsSet).filter(
+						(l) => languageMap[l] && l !== 'jp' && l !== 'kr'
+					);
+				}
+				if (availableLanguages.length === 0) {
+					availableLanguages = ['en'];
+				}
+				if (
+					!availableLanguages.includes('en') &&
+					(langsSet?.has('en') || availableLanguages.length === 0)
+				) {
+					availableLanguages.unshift('en');
+				}
+
+				const requestedLang = (
+					item.preset_language
+						? item.preset_language
+						: importMode === 'moxfield'
+							? importDefaultLanguage || 'en'
+							: item.language || importDefaultLanguage || 'en'
+				).toLowerCase();
+
+				const language = availableLanguages.includes(requestedLang)
+					? requestedLang
+					: availableLanguages.includes('en')
+						? 'en'
+						: availableLanguages[0] || 'en';
+
+				const cardKey = `${set_code}-${collector_number}-${language}-${finish}`;
+				if (previewDedup.has(cardKey)) return;
+				previewDedup.add(cardKey);
+
+				const alreadyExists = existingKeySet.has(cardKey);
+				const isBasicLand = isBasicLandCard(name, type_line);
+
+				const scryLang = String(scry.lang || 'en').toLowerCase();
+				const sameLang = language === scryLang;
+
+				finalPreview.push({
+					previewKey: cardKey,
+					id: crypto.randomUUID(),
+					scryfall_id: sameLang ? scry.id || item.scryfall_id || null : null,
+					name,
+					set_code,
+					set_name,
+					collector_number,
+					language,
+					availableLanguages,
+					finish,
+					availableFinishes:
+						Array.isArray(scry.finishes) && scry.finishes.length > 0
+							? scry.finishes
+							: ['nonfoil', 'foil'],
+					oracle_id,
+					image_uri,
+					tcgplayer_id: sameLang
+						? finish === 'etched'
+							? scry.tcgplayer_etched_id || null
+							: scry.tcgplayer_id || item.tcgplayer_id || null
+						: null,
+					cardmarket_id: sameLang ? scry.cardmarket_id || item.cardmarket_id || null : null,
+					demo_scryfall_prices: scry.prices || null,
+					demo_tcgplayer_id:
+						(finish === 'etched'
+							? scry.tcgplayer_etched_id || scry.tcgplayer_id
+							: scry.tcgplayer_id) ||
+						item.tcgplayer_id ||
+						null,
+					isBasicLand,
+					alreadyExists,
+					selected: !alreadyExists && !(excludeBasicLands && isBasicLand)
+				});
+			}
+		);
 
 		return finalPreview;
 	}
@@ -347,7 +377,9 @@
 				const publicId = urlMatch ? urlMatch[1] : rawIdMatch ? rawIdMatch[0] : null;
 
 				if (!publicId) {
-					throw new Error('Invalid Moxfield deck URL. Expected format: https://www.moxfield.com/decks/{deckId}');
+					throw new Error(
+						'Invalid Moxfield deck URL. Expected format: https://www.moxfield.com/decks/{deckId}'
+					);
 				}
 
 				importResolveStatus = 'Fetching decklist from Moxfield...';
@@ -381,7 +413,10 @@
 							errJson = null;
 						}
 					}
-					if (!response || (response.status === 404 && (!errJson || errJson.error !== 'DECK_NOT_FOUND'))) {
+					if (
+						!response ||
+						(response.status === 404 && (!errJson || errJson.error !== 'DECK_NOT_FOUND'))
+					) {
 						const fallbackRes = await fetchWithAuth(PUBLIC_ADD_TO_SEEKING_FUNCTION_URL, {
 							method: 'POST',
 							headers: { 'Content-Type': 'application/json' },
@@ -399,14 +434,18 @@
 							if (errJson?.error === 'MOXFIELD_UNAVAILABLE') {
 								importMode = 'text';
 							}
-							throw new Error(errJson?.message || `Failed to fetch Moxfield deck (Status ${fallbackRes.status}).`);
+							throw new Error(
+								errJson?.message || `Failed to fetch Moxfield deck (Status ${fallbackRes.status}).`
+							);
 						}
 						data = errJson;
 					} else {
 						if (errJson?.error === 'MOXFIELD_UNAVAILABLE') {
 							importMode = 'text';
 						}
-						throw new Error(errJson?.message || `Failed to fetch Moxfield deck (Status ${response.status}).`);
+						throw new Error(
+							errJson?.message || `Failed to fetch Moxfield deck (Status ${response.status}).`
+						);
 					}
 				}
 
@@ -429,7 +468,9 @@
 
 			const resolved = await resolveCardsWithScryfall(rawItems);
 			if (resolved.length === 0) {
-				throw new Error('None of the cards could be matched on Scryfall. Please check your card names or format.');
+				throw new Error(
+					'None of the cards could be matched on Scryfall. Please check your card names or format.'
+				);
 			}
 
 			if (isCapped) {
@@ -529,10 +570,7 @@
 					: 'foil';
 		const newKey = `${cardItem.set_code}-${cardItem.collector_number}-${cardItem.language}-${newFinish}`;
 		// Prevent duplicate Svelte keyed-{#each} keys if another preview row already holds newKey
-		if (
-			newKey !== cardItem.previewKey &&
-			importPreviewCards.some((c) => c.previewKey === newKey)
-		) {
+		if (newKey !== cardItem.previewKey && importPreviewCards.some((c) => c.previewKey === newKey)) {
 			return;
 		}
 		const exists = existingKeySet.has(newKey);
@@ -556,10 +594,7 @@
 		const normLang = String(newLang || 'en').toLowerCase();
 		const newKey = `${cardItem.set_code}-${cardItem.collector_number}-${normLang}-${cardItem.finish}`;
 		// Prevent duplicate Svelte keyed-{#each} keys if another preview row already holds newKey
-		if (
-			newKey !== cardItem.previewKey &&
-			importPreviewCards.some((c) => c.previewKey === newKey)
-		) {
+		if (newKey !== cardItem.previewKey && importPreviewCards.some((c) => c.previewKey === newKey)) {
 			return;
 		}
 		const exists = existingKeySet.has(newKey);
@@ -596,7 +631,7 @@
 
 	$: selectedImportCards = visibleImportPreviewCards.filter((c) => c.selected && !c.alreadyExists);
 
-	$: tierLimit = membershipTier === 'Legacy' ? Infinity : (membershipTier === 'Premium' ? 150 : 25);
+	$: tierLimit = membershipTier === 'Legacy' ? Infinity : membershipTier === 'Premium' ? 150 : 25;
 	$: isCapped = tierLimit !== Infinity;
 	$: remainingSlots = isCapped ? Math.max(0, tierLimit - cards.length) : Infinity;
 
@@ -623,9 +658,7 @@
 		isImportingCards = true;
 		importError = null;
 
-		const toImport = isCapped
-			? selectedImportCards.slice(0, remainingSlots)
-			: selectedImportCards;
+		const toImport = isCapped ? selectedImportCards.slice(0, remainingSlots) : selectedImportCards;
 
 		importProgress = { current: 0, total: toImport.length, added: 0, skipped: 0 };
 		const batchSize = 20;
@@ -701,7 +734,14 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={handleClose}>
-		<div class="modal-content import-modal-content" use:focusTrap role="dialog" aria-modal="true" aria-label="Import Decklist" on:click|stopPropagation>
+		<div
+			class="modal-content import-modal-content"
+			use:focusTrap
+			role="dialog"
+			aria-modal="true"
+			aria-label="Import Decklist"
+			on:click|stopPropagation
+		>
 			<div class="modal-header">
 				<div class="import-modal-title-group">
 					<h2>
@@ -710,11 +750,18 @@
 					</h2>
 					{#if importStep === 'preview'}
 						<span class="import-subtitle-badge">
-							{visibleImportPreviewCards.length} card{visibleImportPreviewCards.length === 1 ? '' : 's'} shown
+							{visibleImportPreviewCards.length} card{visibleImportPreviewCards.length === 1
+								? ''
+								: 's'} shown
 						</span>
 					{/if}
 				</div>
-				<button class="close-modal-btn" aria-label="Close modal" on:click={handleClose} disabled={isResolvingImport || isImportingCards}>
+				<button
+					class="close-modal-btn"
+					aria-label="Close modal"
+					on:click={handleClose}
+					disabled={isResolvingImport || isImportingCards}
+				>
 					<i class="fa-solid fa-times"></i>
 				</button>
 			</div>
@@ -764,7 +811,11 @@
 									<i class="fa-solid fa-shield-halved"></i>
 									<div>
 										<strong>Demo Sample Decks</strong>
-										<span>Live Moxfield URL proxying is disabled in Demo Mode to keep the sandbox strictly client-side. Pick a Sample Deck below (resolved live via Scryfall) or switch to the <strong>Text / Clipboard</strong> tab!</span>
+										<span
+											>Live Moxfield URL proxying is disabled in Demo Mode to keep the sandbox
+											strictly client-side. Pick a Sample Deck below (resolved live via Scryfall) or
+											switch to the <strong>Text / Clipboard</strong> tab!</span
+										>
 									</div>
 								</div>
 
@@ -789,7 +840,8 @@
 							{:else}
 								<label for="moxfield-url-input">Public Moxfield Deck URL</label>
 								<p class="setting-description">
-									Paste a link to any public Moxfield deck to import its exact printings, set codes, collector numbers, and foil finishes.
+									Paste a link to any public Moxfield deck to import its exact printings, set codes,
+									collector numbers, and foil finishes.
 								</p>
 								<input
 									id="moxfield-url-input"
@@ -804,7 +856,12 @@
 								<div class="import-defaults-row" style="margin-top: 0.75rem;">
 									<div class="import-default-field">
 										<label for="moxfield-default-lang">Language</label>
-										<select id="moxfield-default-lang" bind:value={importDefaultLanguage} class="import-select" disabled={isResolvingImport}>
+										<select
+											id="moxfield-default-lang"
+											bind:value={importDefaultLanguage}
+											class="import-select"
+											disabled={isResolvingImport}
+										>
 											{#each Object.entries(languageMap) as [code, label]}
 												{#if code !== 'jp' && code !== 'kr'}
 													<option value={code}>{label}</option>
@@ -819,13 +876,14 @@
 						<div class="settings-group">
 							<label for="decklist-text-input">Paste Decklist Text</label>
 							<p class="setting-description">
-								Supports Moxfield (<code>1 Card Name (SET) 123 *F*</code>), Archidekt, MTGO, Arena, or plain card names (one per line).
+								Supports Moxfield (<code>1 Card Name (SET) 123 *F*</code>), Archidekt, MTGO, Arena,
+								or plain card names (one per line).
 							</p>
 							<textarea
 								id="decklist-text-input"
 								rows="8"
 								bind:value={decklistTextInput}
-								placeholder={"1 City of Traitors (EXO) 143\n1 Lightning Bolt (LEA) 161 *F*\n1 Lotus Petal (TMP) 294"}
+								placeholder={'1 City of Traitors (EXO) 143\n1 Lightning Bolt (LEA) 161 *F*\n1 Lotus Petal (TMP) 294'}
 								class="modal-input import-textarea"
 								disabled={isResolvingImport}
 							></textarea>
@@ -833,7 +891,12 @@
 							<div class="import-defaults-row">
 								<div class="import-default-field">
 									<label for="import-default-finish">Default Finish</label>
-									<select id="import-default-finish" bind:value={importDefaultFinish} class="import-select" disabled={isResolvingImport}>
+									<select
+										id="import-default-finish"
+										bind:value={importDefaultFinish}
+										class="import-select"
+										disabled={isResolvingImport}
+									>
 										<option value="nonfoil">Non-Foil</option>
 										<option value="foil">Foil</option>
 										<option value="etched">Etched</option>
@@ -841,7 +904,12 @@
 								</div>
 								<div class="import-default-field">
 									<label for="import-default-lang">Language</label>
-									<select id="import-default-lang" bind:value={importDefaultLanguage} class="import-select" disabled={isResolvingImport}>
+									<select
+										id="import-default-lang"
+										bind:value={importDefaultLanguage}
+										class="import-select"
+										disabled={isResolvingImport}
+									>
 										{#each Object.entries(languageMap) as [code, label]}
 											{#if code !== 'jp' && code !== 'kr'}
 												<option value={code}>{label}</option>
@@ -854,12 +922,10 @@
 					{/if}
 
 					<label class="import-checkbox-row">
-						<input
-							type="checkbox"
-							bind:checked={excludeBasicLands}
-							disabled={isResolvingImport}
-						/>
-						<span>Exclude standard Basic Lands (Plains, Island, Swamp, Mountain, Forest, Wastes)</span>
+						<input type="checkbox" bind:checked={excludeBasicLands} disabled={isResolvingImport} />
+						<span
+							>Exclude standard Basic Lands (Plains, Island, Swamp, Mountain, Forest, Wastes)</span
+						>
 					</label>
 
 					{#if isResolvingImport && importResolveStatus}
@@ -880,7 +946,11 @@
 							<span>
 								Exclude Basic Lands
 								{#if hiddenBasicLandCount > 0}
-									<small>({hiddenBasicLandCount} basic land{hiddenBasicLandCount === 1 ? '' : 's'})</small>
+									<small
+										>({hiddenBasicLandCount} basic land{hiddenBasicLandCount === 1
+											? ''
+											: 's'})</small
+									>
 								{/if}
 							</span>
 						</label>
@@ -906,12 +976,17 @@
 					</div>
 
 					{#if isCapped}
-						<div class="import-slot-notice" class:warning={remainingSlots === 0 || selectedImportCards.length >= remainingSlots}>
+						<div
+							class="import-slot-notice"
+							class:warning={remainingSlots === 0 || selectedImportCards.length >= remainingSlots}
+						>
 							<i class="fa-solid fa-circle-info"></i>
 							<span>
-								{membershipTier} Tier: <strong>{cards.length} / {tierLimit}</strong> slots used ({remainingSlots} remaining).
+								{membershipTier} Tier: <strong>{cards.length} / {tierLimit}</strong> slots used ({remainingSlots}
+								remaining).
 								{#if selectedImportCards.length > 0}
-									Importing <strong>{Math.min(selectedImportCards.length, remainingSlots)}</strong> card{Math.min(selectedImportCards.length, remainingSlots) === 1 ? '' : 's'}.
+									Importing <strong>{Math.min(selectedImportCards.length, remainingSlots)}</strong>
+									card{Math.min(selectedImportCards.length, remainingSlots) === 1 ? '' : 's'}.
 								{/if}
 							</span>
 						</div>
@@ -928,7 +1003,9 @@
 									<input
 										type="checkbox"
 										checked={item.selected && !item.alreadyExists}
-										disabled={item.alreadyExists || isImportingCards || (!item.selected && isCapped && selectedImportCards.length >= remainingSlots)}
+										disabled={item.alreadyExists ||
+											isImportingCards ||
+											(!item.selected && isCapped && selectedImportCards.length >= remainingSlots)}
 										on:change={(e) => {
 											item.selected = e.currentTarget.checked;
 											importPreviewCards = [...importPreviewCards];
@@ -973,7 +1050,10 @@
 													{/each}
 												</select>
 											{:else}
-												<span class="import-lang-static-badge" title="Card printing is {item.language.toUpperCase()} only">
+												<span
+													class="import-lang-static-badge"
+													title="Card printing is {item.language.toUpperCase()} only"
+												>
 													{item.language.toUpperCase()}
 												</span>
 											{/if}
@@ -986,7 +1066,11 @@
 												disabled={isImportingCards}
 												title="Click to toggle Finish"
 											>
-												{item.finish === 'etched' ? '✦ Etched' : item.finish === 'foil' ? '✦ Foil' : 'Nonfoil'}
+												{item.finish === 'etched'
+													? '✦ Etched'
+													: item.finish === 'foil'
+														? '✦ Foil'
+														: 'Nonfoil'}
 											</button>
 										{/if}
 									</div>
@@ -999,12 +1083,18 @@
 						<div class="import-progress-box">
 							<div class="import-progress-label">
 								<span>Importing cards ({importProgress.current} / {importProgress.total})...</span>
-								<span>{Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}%</span>
+								<span
+									>{Math.round(
+										(importProgress.current / Math.max(1, importProgress.total)) * 100
+									)}%</span
+								>
 							</div>
 							<div class="import-progress-track">
 								<div
 									class="import-progress-fill"
-									style="width: {Math.round((importProgress.current / Math.max(1, importProgress.total)) * 100)}%"
+									style="width: {Math.round(
+										(importProgress.current / Math.max(1, importProgress.total)) * 100
+									)}%"
 								></div>
 							</div>
 						</div>
@@ -1029,12 +1119,20 @@
 						type="button"
 						class="modal-btn primary"
 						on:click={handleConfirmImport}
-						disabled={isImportingCards || selectedImportCards.length === 0 || (isCapped && remainingSlots === 0)}
+						disabled={isImportingCards ||
+							selectedImportCards.length === 0 ||
+							(isCapped && remainingSlots === 0)}
 					>
 						{#if isImportingCards}
 							<i class="fa-solid fa-circle-notch fa-spin"></i> Importing...
 						{:else}
-							Import {isCapped ? Math.min(selectedImportCards.length, remainingSlots) : selectedImportCards.length} Card{(isCapped ? Math.min(selectedImportCards.length, remainingSlots) : selectedImportCards.length) === 1 ? '' : 's'}
+							Import {isCapped
+								? Math.min(selectedImportCards.length, remainingSlots)
+								: selectedImportCards.length} Card{(isCapped
+								? Math.min(selectedImportCards.length, remainingSlots)
+								: selectedImportCards.length) === 1
+								? ''
+								: 's'}
 						{/if}
 					</button>
 				{:else}
@@ -1359,7 +1457,9 @@
 		border-radius: 8px;
 		border: 1px solid var(--color-border);
 		background: var(--color-bg-secondary);
-		transition: border-color 0.15s ease, background 0.15s ease;
+		transition:
+			border-color 0.15s ease,
+			background 0.15s ease;
 	}
 
 	.import-preview-row.selected {
