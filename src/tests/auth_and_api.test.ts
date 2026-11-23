@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+import { beforeEach, describe, it } from 'node:test';
 import { get } from 'svelte/store';
 import { auth } from '$lib/stores/auth';
 import { fetchWithAuth } from '$lib/utils/api';
@@ -8,12 +8,9 @@ describe('auth store and fetchWithAuth fail-closed Demo Mode interception', () =
 	const originalFetch = globalThis.fetch;
 
 	beforeEach(() => {
+		globalThis.fetch = originalFetch;
 		globalThis.localStorage.clear();
 		auth.clearAuthData();
-	});
-
-	afterEach(() => {
-		globalThis.fetch = originalFetch;
 	});
 
 	it('enters Demo Mode with token: null, isAdmin: false, and Cardmarket disabled', () => {
@@ -92,11 +89,15 @@ describe('auth store and fetchWithAuth fail-closed Demo Mode interception', () =
 			return new Response(JSON.stringify({ error: 'expired' }), { status: 401 });
 		};
 
-		const res = await fetchWithAuth('https://seeker.azure-api.net/seeker/getSeekingList');
-		assert.equal(capturedAuthHeader, 'Bearer signed-jwt-token');
-		assert.equal(res, undefined);
-		assert.equal(get(auth).isAuthenticated, false);
-		assert.equal(get(auth).token, null);
-		assert.equal(get(auth).intendedPath, '/seeking');
+		try {
+			const res = await fetchWithAuth('https://seeker.azure-api.net/seeker/getSeekingList');
+			assert.equal(capturedAuthHeader, 'Bearer signed-jwt-token');
+			assert.equal(res, undefined);
+			assert.equal(get(auth).isAuthenticated, false);
+			assert.equal(get(auth).token, null);
+			assert.equal(get(auth).intendedPath, '/seeking');
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
 	});
 });
