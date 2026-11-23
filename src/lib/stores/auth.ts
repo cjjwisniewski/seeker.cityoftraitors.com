@@ -67,8 +67,35 @@ function normalizeUser(user: User | null, isDemo = false): User | null {
 }
 
 
+function safeStorageGet(key: string): string | null {
+    if (!browser) return null;
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function safeStorageSet(key: string, value: string): void {
+    if (!browser) return;
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        /* ignore storage quota / privacy mode errors */
+    }
+}
+
+function safeStorageRemove(key: string): void {
+    if (!browser) return;
+    try {
+        localStorage.removeItem(key);
+    } catch {
+        /* ignore storage access errors */
+    }
+}
+
 const createAuthStore = () => {
-    const initialToken = browser ? localStorage.getItem('authToken') : null;
+    const initialToken = safeStorageGet('authToken');
 
     const { subscribe, set, update } = writable<AuthState>({
         isAuthenticated: !!initialToken,
@@ -112,12 +139,16 @@ const createAuthStore = () => {
         }
     }
 
-    function getCachedUser(): User | null {
+    function getCachedUser(expectedUserId?: string): User | null {
         if (!browser) return null;
         try {
-            const raw = localStorage.getItem('cachedUserInfo');
+            const raw = safeStorageGet('cachedUserInfo');
             if (!raw) return null;
-            return normalizeUser(JSON.parse(raw));
+            const parsed = normalizeUser(JSON.parse(raw));
+            if (expectedUserId && parsed && parsed.id !== expectedUserId) {
+                return null;
+            }
+            return parsed;
         } catch {
             return null;
         }
@@ -143,35 +174,33 @@ const createAuthStore = () => {
                 return null;
             } else {
                 console.error(`AuthStore: API error fetching user info (Status: ${response.status}). Preserving cached profile if available.`);
-                const cached = getCachedUser();
-                return cached || parseJwt(token);
+                const jwtUser = parseJwt(token);
+                const cached = getCachedUser(jwtUser?.id);
+                return cached || jwtUser;
             }
         } catch (error) {
             console.error('AuthStore: Network error fetching user info. Preserving cached profile if available:', error);
-            const cached = getCachedUser();
-            return cached || parseJwt(token);
+            const jwtUser = parseJwt(token);
+            const cached = getCachedUser(jwtUser?.id);
+            return cached || jwtUser;
         }
     }
 
     // Function to clear auth state and localStorage
     function clearAuthData() {
-        if (browser) {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('cachedUserInfo');
-            localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
-        }
+        safeStorageRemove('authToken');
+        safeStorageRemove('cachedUserInfo');
+        safeStorageRemove(DEMO_STORAGE_KEYS.ACTIVE);
         set({ isAuthenticated: false, token: null, user: null, isLoading: false, intendedPath: null, isDemo: false });
     }
 
     function setAuthData(token: string, user: User | null) {
         const normalizedUser = normalizeUser(user, false);
-        if (browser) {
-            localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
-            localStorage.setItem('authToken', token);
-            if (normalizedUser) {
-                localStorage.setItem('cachedUserInfo', JSON.stringify(normalizedUser));
-            }
+        safeStorageRemove(DEMO_STORAGE_KEYS.ACTIVE);
+        if (normalizedUser) {
+            safeStorageSet('cachedUserInfo', JSON.stringify(normalizedUser));
         }
+        safeStorageSet('authToken', token);
         // Keep existing intendedPath when setting auth data
         update(state => ({ ...state, isAuthenticated: true, token: token, user: normalizedUser, isLoading: false, isDemo: false }));
     }
@@ -183,11 +212,11 @@ const createAuthStore = () => {
             return;
         }
         if (force) {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('cachedUserInfo');
+            safeStorageRemove('authToken');
+            safeStorageRemove('cachedUserInfo');
         }
         const settings = initializeDemoStorage();
-        localStorage.setItem(DEMO_STORAGE_KEYS.ACTIVE, '1');
+        safeStorageSet(DEMO_STORAGE_KEYS.ACTIVE, '1');
         set({
             isAuthenticated: true,
             token: null,
@@ -199,9 +228,7 @@ const createAuthStore = () => {
     }
 
     function exitDemoMode() {
-        if (browser) {
-            localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
-        }
+        safeStorageRemove(DEMO_STORAGE_KEYS.ACTIVE);
         set({
             isAuthenticated: false,
             token: null,
@@ -253,13 +280,7 @@ const createAuthStore = () => {
                         } else {
                             const jwtUser = parseJwt(event.newValue);
                             if (jwtUser) {
-                                let syncedUser: User | null = jwtUser;
-                                try {
-                                    const cached = localStorage.getItem('cachedUserInfo');
-                                    if (cached) syncedUser = JSON.parse(cached);
-                                } catch {
-                                    // ignore malformed cache
-                                }
+                                const syncedUser = getCachedUser(jwtUser.id) || jwtUser;
                                 update(state => ({ ...state, isAuthenticated: true, token: event.newValue, user: normalizeUser(syncedUser, false), isLoading: false, isDemo: false }));
                             }
                         }
@@ -267,8 +288,8 @@ const createAuthStore = () => {
                 });
             }
 
-            const token = localStorage.getItem('authToken');
-            const demoActive = localStorage.getItem(DEMO_STORAGE_KEYS.ACTIVE) === '1';
+            const token = safeStorageGet('authToken');
+            const demoActive = safeStorageGet(DEMO_STORAGE_KEYS.ACTIVE) === '1';
 
             if (!LOGIN_URL && !demoActive) {
                 console.error('AuthStore FATAL: VITE_LOGIN_URL environment variable is not set. Authentication cannot proceed.');
@@ -286,21 +307,8 @@ const createAuthStore = () => {
                         enterDemoMode(false);
                     }
                 } else {
-                    // Try to get cached user info for instant load
-                    let initialUser: User | null = null;
-                    const cachedUserStr = localStorage.getItem('cachedUserInfo');
-
-                    if (cachedUserStr) {
-                        try {
-                            initialUser = JSON.parse(cachedUserStr);
-                        } catch (e) {
-                            console.warn('AuthStore: Error parsing cachedUserInfo:', e);
-                        }
-                    }
-
-                    if (!initialUser) {
-                        initialUser = jwtUser;
-                    }
+                    // Try to get cached user info for instant load (only if user ID matches JWT)
+                    const initialUser = getCachedUser(jwtUser.id) || jwtUser;
 
                     setAuthData(token, initialUser);
 
@@ -328,9 +336,7 @@ const createAuthStore = () => {
             update(state => ({ ...state, intendedPath: path }));
         },
         login: () => {
-            if (browser) {
-                localStorage.removeItem(DEMO_STORAGE_KEYS.ACTIVE);
-            }
+            safeStorageRemove(DEMO_STORAGE_KEYS.ACTIVE);
             if (!LOGIN_URL) {
                 console.error('AuthStore: VITE_LOGIN_URL is not configured.');
                 return;
@@ -348,7 +354,7 @@ const createAuthStore = () => {
                 return;
             }
 
-            const currentToken = localStorage.getItem('authToken');
+            const currentToken = safeStorageGet('authToken');
             clearAuthData(); // Clear client-side state immediately
 
             // Optional: Call backend logout endpoint
@@ -393,9 +399,7 @@ const createAuthStore = () => {
                         state.user.settings = sanitized;
                     } else {
                         state.user.settings = merged;
-                        if (browser) {
-                            localStorage.setItem('cachedUserInfo', JSON.stringify(state.user));
-                        }
+                        safeStorageSet('cachedUserInfo', JSON.stringify(state.user));
                     }
                 }
                 return state;

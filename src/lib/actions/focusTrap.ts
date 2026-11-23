@@ -22,7 +22,7 @@ export function focusTrap(node: HTMLElement) {
 	}
 
 	// Move initial focus inside the modal if focus isn't already within it
-	requestAnimationFrame(() => {
+	const rafId = requestAnimationFrame(() => {
 		if (!node.contains(document.activeElement)) {
 			const focusable = getFocusable();
 			if (focusable.length > 0) {
@@ -64,6 +64,7 @@ export function focusTrap(node: HTMLElement) {
 
 	return {
 		destroy() {
+			cancelAnimationFrame(rafId);
 			node.removeEventListener('keydown', handleKeydown);
 			if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
 				try {

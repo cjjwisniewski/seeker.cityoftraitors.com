@@ -525,8 +525,8 @@
 		let skippedCount = selectedKeys.size - eligible.length;
 		for (const card of eligible) {
 			try {
-				await handleManualStockCheck(card);
-				queuedCount++;
+				const ok = await handleManualStockCheck(card);
+				if (ok) queuedCount++;
 			} catch {
 				/* individual errors surfaced by handleManualStockCheck */
 			}
@@ -568,7 +568,11 @@
 	function toggleCondensed() {
 		isCondensed = !isCondensed;
 		if (typeof localStorage !== 'undefined') {
-			localStorage.setItem('seeking-list-condensed', isCondensed.toString());
+			try {
+				localStorage.setItem('seeking-list-condensed', isCondensed.toString());
+			} catch {
+				/* ignore storage access errors */
+			}
 		}
 	}
 
@@ -588,9 +592,9 @@
 	}
 
 	async function handleManualStockCheck(card) {
-		if (!card || !canManualCheckStock) return;
+		if (!card || !canManualCheckStock) return false;
 		const cardKey = getCardKey(card);
-		if (checkingStockCardKeys.has(cardKey)) return;
+		if (checkingStockCardKeys.has(cardKey)) return false;
 
 		const remainingSec = getCardCooldownRemainingSec(card, isAdmin, Date.now());
 		if (remainingSec > 0) {
@@ -598,7 +602,7 @@
 				'warning',
 				`${card.name} was checked recently. Available again in ${formatCooldownRemaining(remainingSec)}.`
 			);
-			return;
+			return false;
 		}
 
 		checkingStockCardKeys.add(cardKey);
@@ -621,6 +625,7 @@
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(payload)
 				});
+				if (!response) return false;
 			}
 
 			if (!response || response.status === 404) {
@@ -633,7 +638,7 @@
 
 			if (!response) {
 				showStockCheckFeedback('error', 'Authentication failed while queuing stock check.');
-				return;
+				return false;
 			}
 
 			let result = null;
@@ -660,7 +665,7 @@
 					'warning',
 					result?.message || 'This card was checked recently. Please wait before checking again.'
 				);
-				return;
+				return false;
 			}
 
 			if (!response.ok) {
@@ -689,9 +694,11 @@
 				showStockCheckFeedback('success', `Queued live stock check for ${card.name}.`);
 				scheduleAutoPoll();
 			}
+			return true;
 		} catch (e) {
 			console.error('Error triggering manual stock check:', e);
 			showStockCheckFeedback('error', e.message || 'Could not queue stock check.');
+			return false;
 		} finally {
 			checkingStockCardKeys.delete(cardKey);
 			checkingStockCardKeys = new Set(checkingStockCardKeys);
@@ -736,9 +743,13 @@
 	}
 
 	onMount(() => {
-		const storedCondensed = localStorage.getItem('seeking-list-condensed');
-		if (storedCondensed !== null) {
-			isCondensed = storedCondensed === 'true';
+		try {
+			const storedCondensed = localStorage.getItem('seeking-list-condensed');
+			if (storedCondensed !== null) {
+				isCondensed = storedCondensed === 'true';
+			}
+		} catch {
+			/* ignore storage access errors */
 		}
 		try {
 			const rawPrefs = localStorage.getItem('seeker_seeking_prefs');
@@ -815,6 +826,18 @@
 		if (stockCheckToastTimer) {
 			clearTimeout(stockCheckToastTimer);
 		}
+		if (longPressTimer) {
+			clearTimeout(longPressTimer);
+			longPressTimer = null;
+		}
+		if (copyDecklistTimer) {
+			clearTimeout(copyDecklistTimer);
+			copyDecklistTimer = null;
+		}
+		if (pinnedCheckRaf && typeof cancelAnimationFrame !== 'undefined') {
+			cancelAnimationFrame(pinnedCheckRaf);
+			pinnedCheckRaf = null;
+		}
 		if (pendingDelete) {
 			flushPendingDelete();
 		}
@@ -850,7 +873,10 @@
 			}
 
 			const data = await response.json();
-			cards = data.cards;
+			const pendingKey = pendingDelete ? getCardKey(pendingDelete.card) : null;
+			cards = pendingKey
+				? (data.cards || []).filter((c) => getCardKey(c) !== pendingKey)
+				: data.cards;
 			if (data.lastChecked) {
 				lastChecked = {
 					cardtrader: data.lastChecked.cardtrader || null,
@@ -1533,7 +1559,7 @@
 {:else if !isAuthenticated}
 	<div class="empty">Please log in to view your seeking list.</div>
 {:else if cards.length === 0 || previewEmpty}
-	<EmptySeekingState on:openImport={() => (showImportModal = true)} />
+	<EmptySeekingState on:openImport={openImportModal} />
 {:else if sortedCards.length === 0}
 	<div class="seeking-list">
 		<div class="empty-filter-state">
@@ -1553,7 +1579,14 @@
 			<table>
 				<thead>
 					<tr>
-						<th class="col-card" on:click={() => sortBy('name')} class:active={sortKey === 'name'}>
+						<th
+							class="col-card"
+							tabindex="0"
+							aria-sort={sortKey === 'name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+							on:click={() => sortBy('name')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('name'))}
+							class:active={sortKey === 'name'}
+						>
 							<span class="th-header-wrap">
 								Card
 								{#if sortKey === 'name'}
@@ -1563,7 +1596,15 @@
 								{/if}
 							</span>
 						</th>
-						<th class="col-set" on:click={() => sortBy('set_code')} class:active={sortKey === 'set_code'} title="Set">
+						<th
+							class="col-set"
+							tabindex="0"
+							aria-sort={sortKey === 'set_code' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+							on:click={() => sortBy('set_code')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('set_code'))}
+							class:active={sortKey === 'set_code'}
+							title="Set"
+						>
 							<span class="th-header-wrap">
 								Set
 								{#if sortKey === 'set_code'}
@@ -1573,7 +1614,15 @@
 								{/if}
 							</span>
 						</th>
-						<th class="col-lang" on:click={() => sortBy('language')} class:active={sortKey === 'language'} title="Language">
+						<th
+							class="col-lang"
+							tabindex="0"
+							aria-sort={sortKey === 'language' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+							on:click={() => sortBy('language')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('language'))}
+							class:active={sortKey === 'language'}
+							title="Language"
+						>
 							<span class="th-header-wrap">
 								Lang
 								{#if sortKey === 'language'}
@@ -1583,7 +1632,15 @@
 								{/if}
 							</span>
 						</th>
-						<th class="col-finish" on:click={() => sortBy('finish')} class:active={sortKey === 'finish'} title="Finish">
+						<th
+							class="col-finish"
+							tabindex="0"
+							aria-sort={sortKey === 'finish' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+							on:click={() => sortBy('finish')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('finish'))}
+							class:active={sortKey === 'finish'}
+							title="Finish"
+						>
 							<span class="th-header-wrap">
 								Finish
 								{#if sortKey === 'finish'}
@@ -1618,7 +1675,10 @@
 						{#if showCardTrader}
 						<th
 							class="th-vendor col-vendor"
+							tabindex="0"
+							aria-sort={sortKey === 'cardtrader_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
 							on:click={() => sortBy('cardtrader_low_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('cardtrader_low_price'))}
 							class:active={sortKey === 'cardtrader_low_price'}
 							title={lastChecked.cardtrader ? `CardTrader last checked: ${formatExactTimestamp(lastChecked.cardtrader)}` : 'CardTrader stock & lowest price'}
 						>
@@ -1642,7 +1702,10 @@
 						{#if showTCGPlayer}
 						<th
 							class="th-vendor col-vendor"
+							tabindex="0"
+							aria-sort={sortKey === 'tcgplayer_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
 							on:click={() => sortBy('tcgplayer_low_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('tcgplayer_low_price'))}
 							class:active={sortKey === 'tcgplayer_low_price'}
 							title={lastChecked.tcgplayer ? `TCGPlayer last checked: ${formatExactTimestamp(lastChecked.tcgplayer)}` : 'TCGPlayer stock & lowest price'}
 						>
@@ -1666,7 +1729,10 @@
 						{#if showManapool}
 						<th
 							class="th-vendor col-vendor"
+							tabindex="0"
+							aria-sort={sortKey === 'manapool_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
 							on:click={() => sortBy('manapool_low_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('manapool_low_price'))}
 							class:active={sortKey === 'manapool_low_price'}
 							title={lastChecked.manapool ? `Mana Pool last checked: ${formatExactTimestamp(lastChecked.manapool)}` : 'Mana Pool stock & lowest price'}
 						>
@@ -1690,7 +1756,10 @@
 						{#if showCardkingdom}
 						<th
 							class="th-vendor col-vendor"
+							tabindex="0"
+							aria-sort={sortKey === 'cardkingdom_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
 							on:click={() => sortBy('cardkingdom_low_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('cardkingdom_low_price'))}
 							class:active={sortKey === 'cardkingdom_low_price'}
 							title={lastChecked.cardkingdom ? `Card Kingdom last checked: ${formatExactTimestamp(lastChecked.cardkingdom)}` : 'Card Kingdom stock & lowest price'}
 						>
@@ -1714,7 +1783,10 @@
 						{#if showCardmarket}
 						<th
 							class="th-vendor col-vendor"
+							tabindex="0"
+							aria-sort={sortKey === 'cardmarket_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
 							on:click={() => sortBy('cardmarket_low_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('cardmarket_low_price'))}
 							class:active={sortKey === 'cardmarket_low_price'}
 							title={lastChecked.cardmarket ? `CardMarket last checked: ${formatExactTimestamp(lastChecked.cardmarket)}` : 'CardMarket stock & lowest price'}
 						>
@@ -1738,7 +1810,10 @@
 						{#if showEbay}
 						<th
 							class="th-vendor col-vendor"
+							tabindex="0"
+							aria-sort={sortKey === 'ebay_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
 							on:click={() => sortBy('ebay_low_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('ebay_low_price'))}
 							class:active={sortKey === 'ebay_low_price'}
 							title={lastChecked.ebay ? `eBay last checked: ${formatExactTimestamp(lastChecked.ebay)}` : 'eBay stock & lowest price'}
 						>
@@ -1762,7 +1837,10 @@
 						{#if showHimarket}
 						<th
 							class="th-vendor col-vendor"
+							tabindex="0"
+							aria-sort={sortKey === 'himarket_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
 							on:click={() => sortBy('himarket_low_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('himarket_low_price'))}
 							class:active={sortKey === 'himarket_low_price'}
 							title={lastChecked.himarket ? `HiMarket last checked: ${formatExactTimestamp(lastChecked.himarket)}` : 'HiMarket stock & lowest price'}
 						>
@@ -1786,7 +1864,10 @@
 						{#if showHareruya}
 						<th
 							class="th-vendor col-vendor"
+							tabindex="0"
+							aria-sort={sortKey === 'hareruya_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
 							on:click={() => sortBy('hareruya_low_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('hareruya_low_price'))}
 							class:active={sortKey === 'hareruya_low_price'}
 							title={lastChecked.hareruya ? `Hareruya last checked: ${formatExactTimestamp(lastChecked.hareruya)}` : 'Hareruya stock & lowest price'}
 						>
@@ -1810,7 +1891,10 @@
 						{#if showRuten}
 						<th
 							class="th-vendor col-vendor"
+							tabindex="0"
+							aria-sort={sortKey === 'ruten_low_price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
 							on:click={() => sortBy('ruten_low_price')}
+							on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), sortBy('ruten_low_price'))}
 							class:active={sortKey === 'ruten_low_price'}
 							title={lastChecked.ruten ? `Ruten last checked: ${formatExactTimestamp(lastChecked.ruten)}` : 'Ruten stock & lowest price (ZHT & EN only)'}
 						>

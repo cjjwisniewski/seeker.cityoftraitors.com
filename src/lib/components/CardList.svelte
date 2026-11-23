@@ -168,13 +168,15 @@
 			faceIndices = { ...faceIndices };
 		}
 
-		if (!newPrint.languages) {
+		if (!newPrint.languages_loaded && !newPrint.languages) {
 			newPrint.languages = await getAvailableLanguages(
 				newPrint.set_code,
 				newPrint.collector_number
 			);
+			newPrint.languages_loaded = true;
 		}
 		card.available_languages = newPrint.languages;
+		card.languages_loaded = true;
 
 		const preferredLang = $auth.user?.settings?.preferredLanguage || 'en';
 		if (card.available_languages.includes(preferredLang)) {
@@ -233,7 +235,7 @@
 			return;
 		}
 
-		const cardUri = `https://api.scryfall.com/cards/${currentPrint.set_code}/${currentPrint.collector_number}/${language}`;
+		const cardUri = `https://api.scryfall.com/cards/${encodeURIComponent(currentPrint.set_code)}/${encodeURIComponent(currentPrint.collector_number)}/${encodeURIComponent(language)}`;
 
 		try {
 			const response = await fetch(cardUri);
@@ -308,12 +310,15 @@
 		);
 		if (!print) return;
 
-		if (!print.languages || print.languages.length <= 1) {
+		if (!print.languages_loaded && (!print.languages || print.languages.length <= 1)) {
 			print.languages = await getAvailableLanguages(print.set_code, print.collector_number);
+			print.languages_loaded = true;
 			card.available_languages = print.languages;
+			card.languages_loaded = true;
 			sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...c, ...card } : c));
 		} else if (card.available_languages !== print.languages) {
 			card.available_languages = print.languages;
+			card.languages_loaded = true;
 			sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...c, ...card } : c));
 		}
 	}
@@ -516,7 +521,7 @@
 
 	async function ensureCardLanguages(card) {
 		if (!card || !card.set || !card.collector_number) return;
-		if (card.available_languages && card.available_languages.length > 1) return;
+		if (card.languages_loaded || (card.available_languages && card.available_languages.length > 1)) return;
 		const key = `${card.id || ''}:${card.set}:${card.collector_number}`;
 		if (languageFetchPromises.has(key)) return;
 
@@ -525,10 +530,14 @@
 				const langs = await getAvailableLanguages(card.set, card.collector_number);
 				if (langs && langs.length > 0) {
 					card.available_languages = langs;
+					card.languages_loaded = true;
 					const currentPrint = card.all_prints?.find(
 						(p) => p.set_code === card.set && p.collector_number === card.collector_number
 					);
-					if (currentPrint) currentPrint.languages = langs;
+					if (currentPrint) {
+						currentPrint.languages = langs;
+						currentPrint.languages_loaded = true;
+					}
 
 					const preferredLang = $auth.user?.settings?.preferredLanguage || 'en';
 					if (!card.selected_language || card.selected_language === 'en') {
@@ -538,8 +547,11 @@
 						}
 					}
 					sortedCards = sortedCards.map((c) => (c.id === card.id ? { ...c, ...card } : c));
+				} else {
+					languageFetchPromises.delete(key);
 				}
 			} catch (err) {
+				languageFetchPromises.delete(key);
 				console.error('Error ensuring card languages:', err);
 			}
 		})();
@@ -561,7 +573,7 @@
 		// remaining cards resolve lazily on hover/focus to avoid Scryfall N+1 rate-limit storms.
 		if (sortedCards && sortedCards.length > 0) {
 			for (const card of sortedCards.slice(0, 12)) {
-				if (!card.available_languages || card.available_languages.length <= 1) {
+				if (!card.languages_loaded && (!card.available_languages || card.available_languages.length <= 1)) {
 					ensureCardLanguages(card);
 				}
 			}

@@ -93,7 +93,8 @@
 			tcgplayer_etched_id: print.tcgplayer_etched_id || null,
 			cardmarket_id: print.cardmarket_id || null,
 			card_faces: cardFaces,
-			languages: undefined as string[] | undefined
+			languages: undefined as string[] | undefined,
+			languages_loaded: false
 		};
 	};
 
@@ -247,6 +248,11 @@
 		document.addEventListener('click', handleDocumentClick);
 		return () => {
 			document.removeEventListener('click', handleDocumentClick);
+			if (debounceTimer) clearTimeout(debounceTimer);
+			if (autocompleteAbortController) {
+				autocompleteAbortController.abort();
+				autocompleteAbortController = null;
+			}
 		};
 	});
 
@@ -353,12 +359,16 @@
 								(p.set_code || '').toLowerCase() === (card.set || '').toLowerCase() &&
 								String(p.collector_number) === String(card.collector_number)
 						) || prints[0];
-					if (initialPrint) initialPrint.languages = initialLanguages;
+					if (initialPrint) {
+						initialPrint.languages = initialLanguages;
+						initialPrint.languages_loaded = true;
+					}
 
 					cardWithPrints = {
 						...card,
 						all_prints: prints,
 						available_languages: initialLanguages,
+						languages_loaded: true,
 						selected_language: selectedLanguage
 					};
 
@@ -385,6 +395,7 @@
 
 				const defaultPrint = normalizePrint(card, card);
 				defaultPrint.languages = initialLanguages;
+				defaultPrint.languages_loaded = true;
 
 				cardWithPrints = {
 					...card,
@@ -396,6 +407,7 @@
 					all_prints: [defaultPrint],
 					prints_loaded: true,
 					available_languages: initialLanguages,
+					languages_loaded: true,
 					selected_language: selectedLanguage
 				};
 
@@ -450,8 +462,10 @@
 					const card = normalizeCard(rawCard);
 
 					let initialLanguages: string[] = [card.lang || 'en'];
+					let languagesLoaded = false;
 					if (index < 12) {
 						initialLanguages = await getAvailableLanguages(card.set, card.collector_number);
+						languagesLoaded = true;
 					}
 
 					let selectedLanguage = initialLanguages.includes(preferredLanguage)
@@ -463,6 +477,7 @@
 					const cardImg = getCardImageUri(card);
 					const defaultPrint = normalizePrint(card, card);
 					defaultPrint.languages = initialLanguages;
+					defaultPrint.languages_loaded = languagesLoaded;
 
 					const cardWithPrints = {
 						...card,
@@ -474,6 +489,7 @@
 						all_prints: [defaultPrint],
 						prints_loaded: !card.prints_search_uri,
 						available_languages: initialLanguages,
+						languages_loaded: languagesLoaded,
 						selected_language: selectedLanguage
 					};
 

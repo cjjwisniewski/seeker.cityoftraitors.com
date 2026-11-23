@@ -108,6 +108,10 @@
 		card.max_price_cap > 0 && activeLowestCents !== null && activeLowestCents <= card.max_price_cap
 	);
 
+	function focusOnMount(node) {
+		node.focus();
+	}
+
 	// Inline quick-edit state for Max Price Cap & Min Condition
 	let editingCap = false;
 	let capDraft = '';
@@ -254,7 +258,7 @@
 								placeholder="No cap"
 								class="inline-cap-input"
 								aria-label="Edit max price cap"
-								autofocus
+								use:focusOnMount
 							/>
 						</div>
 					{:else if card.max_price_cap !== null && card.max_price_cap !== undefined}
@@ -285,7 +289,7 @@
 								on:blur={() => (editingCond = false)}
 								class="inline-cond-select"
 								aria-label="Edit minimum condition"
-								autofocus
+								use:focusOnMount
 							>
 								<option value="">Account Default</option>
 								<option value="ANY">ANY</option>
@@ -501,10 +505,10 @@
 									getStockStatus(card.cardtrader_stock)
 								)}"
 							></i>
-							{#if card.cardtrader_low_price !== null && card.cardtrader_low_price !== undefined}
+							{#if getStockStatus(card.cardtrader_stock) === 'available' && card.cardtrader_low_price > 0}
 								<span class="price-text">
 									{formatPrice(card.cardtrader_low_price)}
-									{#if card.cardtrader_condition && getStockStatus(card.cardtrader_stock) === 'available'}
+									{#if card.cardtrader_condition}
 										<span
 											class="condition-bubble cond-{card.cardtrader_condition.toLowerCase()}"
 											title="Condition: {card.cardtrader_condition}"

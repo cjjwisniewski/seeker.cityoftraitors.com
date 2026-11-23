@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { auth } from '$lib/stores/auth'; // Import the auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import fetch helper
+	import { focusTrap } from '$lib/actions/focusTrap';
 	import {
 		PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL,
 		PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL
@@ -1061,7 +1062,7 @@
 			class="modal-overlay"
 			on:click={() => (showConfirmDialog = false)}
 			on:keydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') showConfirmDialog = false;
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) showConfirmDialog = false;
 			}}
 			role="button"
 			tabindex="0"
@@ -1070,8 +1071,8 @@
 			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal"
+				use:focusTrap
 				on:click|stopPropagation
-				on:keydown|stopPropagation
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="dialog-title"

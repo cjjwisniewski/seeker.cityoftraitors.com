@@ -301,6 +301,10 @@
 				language,
 				availableLanguages,
 				finish,
+				availableFinishes:
+					Array.isArray(scry.finishes) && scry.finishes.length > 0
+						? scry.finishes
+						: ['nonfoil', 'foil'],
 				oracle_id,
 				image_uri,
 				tcgplayer_id: sameLang
@@ -348,6 +352,7 @@
 
 				importResolveStatus = 'Fetching decklist from Moxfield...';
 				let response = null;
+				let primaryNetworkError = false;
 				if (PUBLIC_FETCH_MOXFIELD_DECK_FUNCTION_URL) {
 					try {
 						response = await fetchWithAuth(PUBLIC_FETCH_MOXFIELD_DECK_FUNCTION_URL, {
@@ -356,7 +361,11 @@
 							body: JSON.stringify({ publicId })
 						});
 					} catch (e) {
+						primaryNetworkError = true;
 						response = null;
+					}
+					if (!primaryNetworkError && !response) {
+						throw new Error('Authentication failed while fetching Moxfield deck.');
 					}
 				}
 

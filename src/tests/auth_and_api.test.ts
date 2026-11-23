@@ -1,13 +1,19 @@
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { afterEach, beforeEach, describe, it } from 'node:test';
 import { get } from 'svelte/store';
 import { auth } from '$lib/stores/auth';
 import { fetchWithAuth } from '$lib/utils/api';
 
 describe('auth store and fetchWithAuth fail-closed Demo Mode interception', () => {
+	const originalFetch = globalThis.fetch;
+
 	beforeEach(() => {
 		globalThis.localStorage.clear();
 		auth.clearAuthData();
+	});
+
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
 	});
 
 	it('enters Demo Mode with token: null, isAdmin: false, and Cardmarket disabled', () => {

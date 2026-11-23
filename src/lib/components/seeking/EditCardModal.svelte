@@ -37,6 +37,7 @@
 	let isLoadingCardPrintInfo = false;
 	let settingsModalError = null;
 	let lastInitializedKey = '';
+	let printVariantsRequestId = 0;
 
 	$: if (show && card) {
 		const key = getCardKey(card);
@@ -46,6 +47,7 @@
 		}
 	} else if (!show) {
 		lastInitializedKey = '';
+		printVariantsRequestId++;
 	}
 
 	function initModalFromCard(targetCard) {
@@ -83,15 +85,19 @@
 		);
 
 	async function loadCardPrintVariants(targetCard) {
+		const reqId = ++printVariantsRequestId;
 		if (!targetCard || !targetCard.set_code || !targetCard.collector_number || targetCard.collector_number === 'N/A') {
+			isLoadingCardPrintInfo = false;
 			return;
 		}
 		isLoadingCardPrintInfo = true;
 		try {
 			const url = `https://api.scryfall.com/cards/search?q=cn%3A${encodeURIComponent(targetCard.collector_number)}+set%3A${encodeURIComponent(targetCard.set_code)}&include_multilingual=true&unique=prints`;
 			const res = await fetch(url);
+			if (reqId !== printVariantsRequestId) return;
 			if (!res.ok) return;
 			const data = await res.json();
+			if (reqId !== printVariantsRequestId) return;
 			const prints = data.data || [];
 			if (prints.length === 0) return;
 
@@ -131,9 +137,12 @@
 				editPreviewImageUri = imgMap[editLanguageInput];
 			}
 		} catch (e) {
+			if (reqId !== printVariantsRequestId) return;
 			console.warn('Could not load multilingual print variants from Scryfall:', e);
 		} finally {
-			isLoadingCardPrintInfo = false;
+			if (reqId === printVariantsRequestId) {
+				isLoadingCardPrintInfo = false;
+			}
 		}
 	}
 
@@ -627,7 +636,7 @@
 
 	.edit-finish-segmented {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
 		gap: 0.35rem;
 		background: var(--color-bg-secondary);
 		padding: 0.25rem;
@@ -645,6 +654,8 @@
 		font-size: 0.82rem;
 		font-weight: 600;
 		cursor: pointer;
+		white-space: nowrap;
+		padding: 0 0.25rem;
 		transition: all 0.15s ease;
 	}
 

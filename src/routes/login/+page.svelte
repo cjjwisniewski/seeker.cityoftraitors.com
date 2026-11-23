@@ -41,6 +41,15 @@
 				case 'access_denied':
 					errorMessage = 'Access was denied. Please ensure you authorized Discord login and hold the required role.';
 					break;
+				case 'invalid_token':
+					errorMessage = 'Your authentication token was invalid or expired. Please try logging in again.';
+					break;
+				case 'no_token':
+					errorMessage = 'No authentication token was received from the login callback. Please try again.';
+					break;
+				case 'invalid_callback':
+					errorMessage = 'The login callback parameters were invalid. Please try logging in again.';
+					break;
 				default:
 					errorMessage = 'An unknown authentication error occurred. Please try logging in again.';
 			}

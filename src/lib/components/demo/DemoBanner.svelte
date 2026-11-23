@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { auth } from '$lib/stores/auth';
 	import {
 		demoAlertsStore,
@@ -9,6 +10,13 @@
 	let confirmReset = false;
 	let resetSuccess = false;
 	let resetTimer: ReturnType<typeof setTimeout> | null = null;
+
+	onDestroy(() => {
+		if (resetTimer) {
+			clearTimeout(resetTimer);
+			resetTimer = null;
+		}
+	});
 
 	function handleResetClick() {
 		if (!confirmReset) {

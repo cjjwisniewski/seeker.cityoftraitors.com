@@ -16,6 +16,7 @@
 	let debounceTimer = null;
 	let autocompleteAbortController = null;
 	let autocompleteRequestSeq = 0;
+	let selectCardRequestSeq = 0;
 	let containerEl;
 	let inputEl;
 
@@ -127,6 +128,10 @@
 		return () => {
 			document.removeEventListener('click', handleDocClick);
 			if (debounceTimer) clearTimeout(debounceTimer);
+			if (autocompleteAbortController) {
+				autocompleteAbortController.abort();
+				autocompleteAbortController = null;
+			}
 		};
 	});
 
@@ -199,6 +204,7 @@
 	}
 
 	async function selectCardName(cardName) {
+		const reqSeq = ++selectCardRequestSeq;
 		query = cardName;
 		showSuggestions = false;
 		suggestions = [];
@@ -212,17 +218,21 @@
 				`!"${cardName}"`
 			)}&unique=prints&order=released`;
 			let res = await fetch(searchUrl);
+			if (reqSeq !== selectCardRequestSeq) return;
 			let list = [];
 			if (res.ok) {
 				const data = await res.json();
+				if (reqSeq !== selectCardRequestSeq) return;
 				list = (data.data || []).filter((c) => !c.digital);
 				if (list.length === 0) list = data.data || [];
 			} else {
 				const exactRes = await fetch(
 					`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`
 				);
+				if (reqSeq !== selectCardRequestSeq) return;
 				if (exactRes.ok) {
 					list = [await exactRes.json()];
+					if (reqSeq !== selectCardRequestSeq) return;
 				}
 			}
 
@@ -238,14 +248,19 @@
 			const firstFinishes = list[0].finishes || ['nonfoil'];
 			selectedFinish = firstFinishes.includes(prefFin) ? prefFin : firstFinishes[0];
 		} catch (err) {
+			if (reqSeq !== selectCardRequestSeq) return;
 			inlineError = 'Failed to fetch card printings from Scryfall.';
 			selectedCardName = '';
 		} finally {
-			isLoadingPrints = false;
+			if (reqSeq === selectCardRequestSeq) {
+				isLoadingPrints = false;
+			}
 		}
 	}
 
 	function clearSelection() {
+		selectCardRequestSeq++;
+		isLoadingPrints = false;
 		query = '';
 		suggestions = [];
 		showSuggestions = false;

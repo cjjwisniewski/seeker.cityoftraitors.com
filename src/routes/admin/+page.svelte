@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { auth } from '$lib/stores/auth'; // Import auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import global fetch helper
+	import { focusTrap } from '$lib/actions/focusTrap';
+	import { getSetIconCode } from '$lib/utils/seekingUtils';
 	import { goto } from '$app/navigation'; // For redirecting unauthorized users
 	import {
 		PUBLIC_GET_USER_TABLES_FUNCTION_URL,
@@ -1011,8 +1013,8 @@
 							<div class="form-group toggle-group">
 								<label class="toggle-control-label" for="banner-toggle-switch">Display Active</label>
 								<div class="toggle-wrapper">
-									<label class="toggle-switch" id="banner-toggle-switch">
-										<input type="checkbox" bind:checked={bannerEnabled} />
+									<label class="toggle-switch">
+										<input type="checkbox" id="banner-toggle-switch" bind:checked={bannerEnabled} />
 										<span class="slider round"></span>
 									</label>
 									<span class="toggle-status-text {bannerEnabled ? 'active' : ''}">
@@ -1024,8 +1026,8 @@
 							<div class="form-group toggle-group">
 								<label class="toggle-control-label" for="banner-dm-switch">Broadcast Discord DM</label>
 								<div class="toggle-wrapper">
-									<label class="toggle-switch" id="banner-dm-switch">
-										<input type="checkbox" bind:checked={bannerSendDm} />
+									<label class="toggle-switch">
+										<input type="checkbox" id="banner-dm-switch" bind:checked={bannerSendDm} />
 										<span class="slider round"></span>
 									</label>
 									<span class="toggle-status-text {bannerSendDm ? 'active' : ''}">
@@ -1756,7 +1758,7 @@
 																	<div class="set-cell">
 																		<img
 																			class="set-icon"
-																			src="https://svgs.scryfall.io/sets/{card.set_code?.toLowerCase()}.svg"
+																			src="https://svgs.scryfall.io/sets/{getSetIconCode(card.set_code)}.svg"
 																			alt="{card.set_code}"
 																			loading="lazy"
 																		/>
@@ -1930,7 +1932,7 @@
 			class="modal-overlay"
 			on:click={closeDeleteModal}
 			on:keydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') closeDeleteModal();
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closeDeleteModal();
 			}}
 			role="button"
 			tabindex="0"
@@ -1939,8 +1941,8 @@
 			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal"
+				use:focusTrap
 				on:click|stopPropagation
-				on:keydown|stopPropagation
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="admin-delete-dialog-title"
@@ -1975,7 +1977,7 @@
 			class="modal-overlay"
 			on:click={closeTierModal}
 			on:keydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') closeTierModal();
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closeTierModal();
 			}}
 			role="button"
 			tabindex="0"
@@ -1984,8 +1986,8 @@
 			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal tier-modal"
+				use:focusTrap
 				on:click|stopPropagation
-				on:keydown|stopPropagation
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="admin-tier-dialog-title"
@@ -2046,7 +2048,7 @@
 			class="modal-overlay"
 			on:click={closeNotesModal}
 			on:keydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') closeNotesModal();
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closeNotesModal();
 			}}
 			role="button"
 			tabindex="0"
@@ -2055,8 +2057,8 @@
 			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal tier-modal"
+				use:focusTrap
 				on:click|stopPropagation
-				on:keydown|stopPropagation
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="admin-notes-dialog-title"
@@ -2099,7 +2101,7 @@
 			class="modal-overlay"
 			on:click={closePoisonModal}
 			on:keydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') closePoisonModal();
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closePoisonModal();
 			}}
 			role="button"
 			tabindex="0"
@@ -2108,8 +2110,8 @@
 			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal modal-wide"
+				use:focusTrap
 				on:click|stopPropagation
-				on:keydown|stopPropagation
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="admin-poison-dialog-title"
@@ -2199,7 +2201,7 @@
 			class="modal-overlay"
 			on:click={closeClearPoisonModal}
 			on:keydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') closeClearPoisonModal();
+				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closeClearPoisonModal();
 			}}
 			role="button"
 			tabindex="0"
@@ -2208,8 +2210,8 @@
 			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal"
+				use:focusTrap
 				on:click|stopPropagation
-				on:keydown|stopPropagation
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="admin-clear-poison-dialog-title"

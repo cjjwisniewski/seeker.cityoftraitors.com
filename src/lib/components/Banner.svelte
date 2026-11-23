@@ -10,7 +10,12 @@
 
 	// Reset dismissal if the message changes
 	$: if (message && browser) {
-		const savedDismissed = localStorage.getItem('banner_dismissed_message');
+		let savedDismissed = null;
+		try {
+			savedDismissed = localStorage.getItem('banner_dismissed_message');
+		} catch {
+			/* ignore storage access errors */
+		}
 		if (savedDismissed !== message) {
 			dismissed = false;
 		} else {
@@ -21,7 +26,11 @@
 	function dismiss() {
 		dismissed = true;
 		if (browser) {
-			localStorage.setItem('banner_dismissed_message', message);
+			try {
+				localStorage.setItem('banner_dismissed_message', message);
+			} catch {
+				/* ignore storage access errors */
+			}
 		}
 	}
 </script>

@@ -19,9 +19,13 @@ const applyTheme = (theme) => {
 // Get the initial theme value
 const getInitialTheme = () => {
     if (!browser) return 'system'; // Default to system on server
-    const storedTheme = localStorage.getItem(THEME_KEY);
-    if (storedTheme && ['light', 'dark', 'system'].includes(storedTheme)) {
-        return storedTheme;
+    try {
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        if (storedTheme && ['light', 'dark', 'system'].includes(storedTheme)) {
+            return storedTheme;
+        }
+    } catch {
+        /* ignore storage access errors */
     }
     return 'system'; // Default to system if nothing stored or invalid
 };
@@ -34,7 +38,11 @@ const theme = writable(initialTheme);
 // Update localStorage and apply theme attribute when the store changes
 if (browser) {
     theme.subscribe((value) => {
-        localStorage.setItem(THEME_KEY, value);
+        try {
+            localStorage.setItem(THEME_KEY, value);
+        } catch {
+            /* ignore storage access errors */
+        }
         applyTheme(value);
     });
 

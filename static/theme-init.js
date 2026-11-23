@@ -1,6 +1,11 @@
 (function () {
 	const themeKey = 'color-theme';
-	const storedTheme = localStorage.getItem(themeKey);
+	let storedTheme = null;
+	try {
+		storedTheme = localStorage.getItem(themeKey);
+	} catch {
+		/* ignore storage access errors */
+	}
 	let themeToApply;
 
 	if (storedTheme && ['light', 'dark'].includes(storedTheme)) {

@@ -1,11 +1,19 @@
 <script>
-    import { onMount } from 'svelte';
+    import { onDestroy, onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { auth } from '$lib/stores/auth';
     import { browser } from '$app/environment';
 
     let message = 'Processing login...';
     let error = null;
+    let redirectTimer = null;
+
+    onDestroy(() => {
+        if (redirectTimer) {
+            clearTimeout(redirectTimer);
+            redirectTimer = null;
+        }
+    });
 
     onMount(async () => {
         if (!browser) return; // Should not run server-side, but safeguard
@@ -36,7 +44,7 @@
                  error = `An error occurred during login (${errorCode}).`;
             }
              // Redirect to login page after a delay, showing the error
-            setTimeout(() => {
+            redirectTimer = setTimeout(() => {
                 goto('/login?error=' + encodeURIComponent(errorCode), { replaceState: true });
             }, 3000); // Show error for 3 seconds
             return;
@@ -59,7 +67,7 @@
                 error = result?.error || 'Failed to process token.';
                 console.error('Callback: auth.handleCallback failed.', error);
                  // Redirect to login page after a delay, showing the error
-                setTimeout(() => {
+                redirectTimer = setTimeout(() => {
                     goto('/login?error=' + encodeURIComponent(error), { replaceState: true });
                 }, 3000); // Show error for 3 seconds
             }
