@@ -13,6 +13,10 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   test:
     name: Typecheck, Lint & Unit Tests
@@ -25,7 +29,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -54,7 +58,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install dependencies
         run: |
@@ -146,17 +150,18 @@ jobs:
               --overwrite \
               --content-cache-control "public, max-age=31536000, immutable"
 
-            # 2. Static icons, manifest, sitemap, robots, security.txt
-            for ext in png svg ico webmanifest xml txt; do
-              az storage blob upload-batch \
-                --destination '$web' \
+            # 2. Root static icons, manifest, sitemap, robots, security.txt (never overwrite _app/immutable cache headers)
+            while IFS= read -r relpath; do
+              [ -z "$relpath" ] && continue
+              az storage blob upload \
+                --container-name '$web' \
                 --account-name "$ACCOUNT_NAME" \
-                --source ./build \
-                --pattern "*.$ext" \
+                --name "$relpath" \
+                --file "./build/$relpath" \
                 --auth-mode login \
                 --overwrite \
-                --content-cache-control "public, max-age=86400"
-            done
+                --content-cache-control "public, max-age=86400" >/dev/null
+            done < <(cd ./build && find . -type f ! -path './_app/immutable/*' \( -name '*.png' -o -name '*.svg' -o -name '*.ico' -o -name '*.webmanifest' -o -name '*.xml' -o -name '*.txt' \) | sed 's|^\./||' | sort)
 
             # 3. Unhashed runtime/service-worker assets: always revalidate
             for blob in service-worker.js theme-init.js _app/env.js _app/version.json; do
@@ -183,9 +188,10 @@ jobs:
               --content-cache-control "public, max-age=0, s-maxage=300, must-revalidate"
 
             # 5. Prune stale blobs only after new immutable assets and index.html are live
+            # Preserve backend-generated runtime artifacts (demo-snapshot.json) not present in ./build
             LOCAL_FILES=$(cd ./build && find . -type f | sed 's|^\./||' | sort)
             REMOTE_BLOBS=$(az storage blob list --container-name '$web' --account-name "$ACCOUNT_NAME" --auth-mode login --query "[].name" -o tsv | sort)
-            STALE_BLOBS=$(comm -23 <(printf "%s\n" "$REMOTE_BLOBS") <(printf "%s\n" "$LOCAL_FILES"))
+            STALE_BLOBS=$(comm -23 <(printf "%s\n" "$REMOTE_BLOBS") <(printf "%s\n" "$LOCAL_FILES") | grep -vxF 'demo-snapshot.json' || true)
             if [ -n "$STALE_BLOBS" ]; then
               while IFS= read -r blob; do
                 [ -z "$blob" ] && continue
