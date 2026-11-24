@@ -296,32 +296,20 @@ const createAuthStore = () => {
 			if (!storageListenerRegistered) {
 				storageListenerRegistered = true;
 				window.addEventListener('storage', (event) => {
-					if (event.key === 'authToken') {
-						if (!event.newValue) {
-							if (!get(auth).isDemo) {
-								set({
-									isAuthenticated: false,
-									token: null,
-									user: null,
-									isLoading: false,
-									intendedPath: null,
-									isDemo: false
-								});
-							}
-						} else {
-							const jwtUser = parseJwt(event.newValue);
-							if (jwtUser) {
-								const syncedUser = getCachedUser(jwtUser.id) || jwtUser;
-								update((state) => ({
-									...state,
-									isAuthenticated: true,
-									token: event.newValue,
-									user: normalizeUser(syncedUser, false),
-									isLoading: false,
-									isDemo: false
-								}));
-							}
+					if (event.key === null || (event.key === 'authToken' && !event.newValue)) {
+						if (!get(auth).isDemo) {
+							set({
+								isAuthenticated: false,
+								token: null,
+								user: null,
+								isLoading: false,
+								intendedPath: null,
+								isDemo: false
+							});
 						}
+					} else if (event.key === 'authToken' && event.newValue) {
+						const incomingToken = event.newValue;
+						void refreshUserInfo(incomingToken);
 					}
 				});
 			}

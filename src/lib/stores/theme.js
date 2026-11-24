@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 const THEME_KEY = 'color-theme';
@@ -48,9 +48,8 @@ if (browser) {
 
 	// Listen for system theme changes if the current setting is 'system'
 	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-		if (getInitialTheme() === 'system') {
-			// Re-check in case user changed away from system
-			applyTheme('system'); // Re-apply based on the new system preference
+		if (get(theme) === 'system') {
+			applyTheme('system');
 		}
 	});
 

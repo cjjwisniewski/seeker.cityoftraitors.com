@@ -40,6 +40,9 @@
 	let bannerData = { message: '', type: 'info', enabled: false };
 
 	const fetchBanner = async () => {
+		if ($auth.isDemo || (browser && window.location.pathname.startsWith('/demo'))) {
+			return;
+		}
 		try {
 			const res = await fetch(PUBLIC_GET_BANNER_FUNCTION_URL);
 			if (res.ok) {
@@ -109,6 +112,11 @@
 			showDropdown = false;
 		}
 	}}
+	on:keydown={(e) => {
+		if (e.key === 'Escape' && showDropdown) {
+			showDropdown = false;
+		}
+	}}
 />
 
 <div class="layout">
@@ -166,7 +174,9 @@
 							>
 								{#if $auth.user.avatar}
 									<img
-										src="https://cdn.discordapp.com/avatars/{$auth.user.id}/{$auth.user.avatar}.png"
+										src="https://cdn.discordapp.com/avatars/{encodeURIComponent(
+											String($auth.user.id || '')
+										)}/{encodeURIComponent(String($auth.user.avatar || ''))}.png"
 										alt="{$auth.user.username}'s avatar"
 										class="user-avatar"
 									/>
@@ -218,6 +228,9 @@
 							{/if}
 						</div>
 					{:else if !$auth.isLoading}
+						<div class="public-theme-toggle">
+							<ThemeToggle />
+						</div>
 						<!-- Offer both Demo Sandbox and Discord Login for public visitors -->
 						<a
 							href="/demo"

@@ -1,9 +1,14 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { focusTrap } from '$lib/actions/focusTrap';
+	import { sanitizeExternalUrl } from '$lib/utils/seekingUtils';
 
+	const DEFAULT_DISCORD_INVITE = 'https://discord.gg/a5Kyrfekxd';
 	export let open = false;
-	export let inviteUrl = 'https://discord.gg/a5Kyrfekxd';
+	export let inviteUrl = DEFAULT_DISCORD_INVITE;
+
+	$: safeInviteUrl =
+		sanitizeExternalUrl(inviteUrl, DEFAULT_DISCORD_INVITE) || DEFAULT_DISCORD_INVITE;
 
 	const dispatch = createEventDispatcher<{ close: void }>();
 
@@ -51,7 +56,7 @@
 			<div class="modal-actions">
 				<button type="button" class="btn-secondary" on:click={close}>Cancel</button>
 				<a
-					href={inviteUrl}
+					href={safeInviteUrl}
 					class="btn-primary"
 					target="_blank"
 					rel="noopener noreferrer"

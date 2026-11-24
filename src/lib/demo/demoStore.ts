@@ -328,10 +328,7 @@ function sanitizeCardRecord(
 		ruten_price_twd: sanitizeFx(r.ruten_price_twd),
 		ruten_condition: sanitizeCond(r.ruten_condition),
 		ruten_url: sanitizeSafeUrl(r.ruten_url),
-		historical_pricing:
-			r.historical_pricing && typeof r.historical_pricing === 'object'
-				? (r.historical_pricing as DemoCardRecord['historical_pricing'])
-				: null,
+		historical_pricing: sanitizeHistoricalPricing(r.historical_pricing),
 		demo_baseline_cents: clampBoundedInt(r.demo_baseline_cents, 1, 10_000_000) ?? undefined
 	};
 
@@ -353,6 +350,74 @@ function sanitizeCardRecord(
 	if (!record.ruten_url && defaultIds.ruten_url) record.ruten_url = defaultIds.ruten_url;
 
 	return record;
+}
+
+function sanitizeHistoricalPricing(raw: unknown): DemoCardRecord['historical_pricing'] {
+	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+	const hp = raw as Record<string, unknown>;
+	const optStr = (v: unknown, max = 64): string | null =>
+		typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null;
+	const optCents = (v: unknown): number | null => clampBoundedInt(v, 1, 10_000_000);
+	const vendorLows: Record<
+		string,
+		{ low_cents: number; low_cond: string; last_cents: number; last_at: string }
+	> = {};
+	if (hp.vendor_lows && typeof hp.vendor_lows === 'object' && !Array.isArray(hp.vendor_lows)) {
+		for (const [k, v] of Object.entries(hp.vendor_lows as Record<string, unknown>)) {
+			if (!/^[a-z0-9_]{1,32}$/.test(k) || !v || typeof v !== 'object') continue;
+			const entry = v as Record<string, unknown>;
+			const lowCents = optCents(entry.low_cents);
+			const lastCents = optCents(entry.last_cents);
+			if (lowCents === null || lastCents === null) continue;
+			vendorLows[k] = {
+				low_cents: lowCents,
+				low_cond: optStr(entry.low_cond, 16) || 'NM',
+				last_cents: lastCents,
+				last_at: optStr(entry.last_at, 64) || new Date().toISOString()
+			};
+		}
+	}
+	const history: Array<{ date: string; nm_cents: number | null; played_cents: number | null }> = [];
+	if (Array.isArray(hp.history)) {
+		for (const pt of hp.history.slice(-60)) {
+			if (!pt || typeof pt !== 'object') continue;
+			const p = pt as Record<string, unknown>;
+			const d = optStr(p.date, 32);
+			if (!d) continue;
+			history.push({
+				date: d,
+				nm_cents: optCents(p.nm_cents),
+				played_cents: optCents(p.played_cents)
+			});
+		}
+	}
+	return {
+		is_calibrated: Boolean(hp.is_calibrated),
+		first_observed_at: optStr(hp.first_observed_at, 64) || new Date().toISOString(),
+		observation_count: clampBoundedInt(hp.observation_count, 0, 1_000_000) ?? 0,
+		nm_low_cents: optCents(hp.nm_low_cents),
+		nm_low_condition: optStr(hp.nm_low_condition, 16),
+		nm_low_vendor: optStr(hp.nm_low_vendor, 32),
+		nm_low_at: optStr(hp.nm_low_at, 64),
+		nm_last_seen_cents: optCents(hp.nm_last_seen_cents),
+		nm_last_seen_condition: optStr(hp.nm_last_seen_condition, 16),
+		nm_last_seen_vendor: optStr(hp.nm_last_seen_vendor, 32),
+		nm_last_seen_at: optStr(hp.nm_last_seen_at, 64),
+		played_low_cents: optCents(hp.played_low_cents),
+		played_low_condition: optStr(hp.played_low_condition, 16),
+		played_low_vendor: optStr(hp.played_low_vendor, 32),
+		played_low_at: optStr(hp.played_low_at, 64),
+		played_last_seen_cents: optCents(hp.played_last_seen_cents),
+		played_last_seen_condition: optStr(hp.played_last_seen_condition, 16),
+		played_last_seen_vendor: optStr(hp.played_last_seen_vendor, 32),
+		played_last_seen_at: optStr(hp.played_last_seen_at, 64),
+		last_seen_cents: optCents(hp.last_seen_cents),
+		last_seen_condition: optStr(hp.last_seen_condition, 16),
+		last_seen_vendor: optStr(hp.last_seen_vendor, 32),
+		last_seen_at: optStr(hp.last_seen_at, 64),
+		vendor_lows: vendorLows,
+		history
+	};
 }
 
 type StoredDemoCard = DemoCardRecord & { demo_pending_until?: number; demo_generation?: number };

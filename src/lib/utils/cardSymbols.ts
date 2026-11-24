@@ -19,10 +19,11 @@ export interface TextToken {
  */
 export function getCardSymbolSvg(raw: string): string {
 	if (!raw) return '';
-	const code = raw.replace(/[{}]/g, '').replace(/\//g, '').toUpperCase();
+	const code = raw.replace(/[{}]/g, '').replace(/\//g, '').toUpperCase().trim();
 	if (code === '½') return 'https://svgs.scryfall.io/card-symbols/HALF.svg';
 	if (code === '∞') return 'https://svgs.scryfall.io/card-symbols/INFINITY.svg';
-	return `https://svgs.scryfall.io/card-symbols/${code}.svg`;
+	if (!/^[A-Z0-9]+$/.test(code)) return '';
+	return `https://svgs.scryfall.io/card-symbols/${encodeURIComponent(code)}.svg`;
 }
 
 /**

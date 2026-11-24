@@ -328,7 +328,7 @@
 		isProcessingBulkAction = true;
 		error = null;
 
-		const cardsToDelete = cards.filter((c) => selectedKeys.has(getCardKey(c)));
+		const cardsToDelete = filteredCards.filter((c) => selectedKeys.has(getCardKey(c)));
 		bulkActionProgress = { current: 0, total: cardsToDelete.length };
 		let deletedCount = 0;
 		let failedCount = 0;
@@ -385,7 +385,7 @@
 		isProcessingBulkAction = true;
 		error = null;
 
-		const cardsToUpdate = cards.filter((c) => selectedKeys.has(getCardKey(c)));
+		const cardsToUpdate = filteredCards.filter((c) => selectedKeys.has(getCardKey(c)));
 		bulkActionProgress = { current: 0, total: cardsToUpdate.length };
 		let updatedCount = 0;
 		let failedCount = 0;
@@ -457,7 +457,7 @@
 		isProcessingBulkAction = true;
 		error = null;
 
-		const cardsToUpdate = cards.filter((c) => selectedKeys.has(getCardKey(c)));
+		const cardsToUpdate = filteredCards.filter((c) => selectedKeys.has(getCardKey(c)));
 		bulkActionProgress = { current: 0, total: cardsToUpdate.length };
 		let updatedCount = 0;
 		let failedCount = 0;
@@ -516,7 +516,7 @@
 
 	async function handleBulkStockCheck() {
 		if (selectedKeys.size === 0 || isProcessingBulkAction || !canManualCheckStock) return;
-		const eligible = cards.filter((c) => {
+		const eligible = filteredCards.filter((c) => {
 			if (!selectedKeys.has(getCardKey(c))) return false;
 			return getCardCooldownRemainingSec(c, isAdmin, Date.now()) <= 0;
 		});
@@ -551,7 +551,9 @@
 
 	function handleGlobalKeyDown(event) {
 		if (event.key === 'Escape') {
-			if (enlargedCardImage) {
+			if (openCardMenuKey) {
+				openCardMenuKey = null;
+			} else if (enlargedCardImage) {
 				enlargedCardImage = null;
 			} else if (showSettingsModal) {
 				showSettingsModal = false;
@@ -889,7 +891,7 @@
 			const pendingKey = pendingDelete ? getCardKey(pendingDelete.card) : null;
 			cards = pendingKey
 				? (data.cards || []).filter((c) => getCardKey(c) !== pendingKey)
-				: data.cards;
+				: data.cards || [];
 			if (data.lastChecked) {
 				lastChecked = {
 					cardtrader: data.lastChecked.cardtrader || null,

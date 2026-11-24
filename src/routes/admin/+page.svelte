@@ -3,7 +3,7 @@
 	import { auth } from '$lib/stores/auth'; // Import auth store
 	import { fetchWithAuth } from '$lib/utils/api'; // Import global fetch helper
 	import { focusTrap } from '$lib/actions/focusTrap';
-	import { getSetIconCode } from '$lib/utils/seekingUtils';
+	import { getSetIconCode, sanitizeExternalUrl } from '$lib/utils/seekingUtils';
 	import { goto } from '$app/navigation'; // For redirecting unauthorized users
 	import {
 		PUBLIC_GET_USER_TABLES_FUNCTION_URL,
@@ -294,7 +294,7 @@
 
 	function openTierModal(table) {
 		userToEditTier = table;
-		selectedTier = table.membershipTier || 'Basic';
+		selectedTier = table.tierOverride ? table.membershipTier || 'Basic' : 'None';
 		showTierModal = true;
 	}
 
@@ -322,17 +322,22 @@
 				const errText = response ? await response.text() : 'Network error';
 				throw new Error(`Failed to update tier: ${errText}`);
 			}
-			userTables = userTables.map((u) => {
-				if (u.userId === userToEditTier.userId) {
-					return {
-						...u,
-						membershipTier: selectedTier,
-						tierOverride: selectedTier !== 'None'
-					};
-				}
-				return u;
-			});
-			closeTierModal(true);
+			if (selectedTier === 'None') {
+				closeTierModal(true);
+				await fetchUserTables();
+			} else {
+				userTables = userTables.map((u) => {
+					if (u.userId === userToEditTier.userId) {
+						return {
+							...u,
+							membershipTier: selectedTier,
+							tierOverride: true
+						};
+					}
+					return u;
+				});
+				closeTierModal(true);
+			}
 		} catch (e) {
 			console.error('Error updating user tier:', e);
 			actionError = e.message;
@@ -636,8 +641,8 @@
 		if (!isAuthorized) return;
 		bannerLoading = true;
 		try {
-			const response = await fetch(PUBLIC_GET_BANNER_FUNCTION_URL);
-			if (response.ok) {
+			const response = await fetchWithAuth(PUBLIC_GET_BANNER_FUNCTION_URL);
+			if (response && response.ok) {
 				const data = await response.json();
 				bannerMessage = data.message;
 				bannerType = data.type;
@@ -1568,9 +1573,9 @@
 									<div class="user-card-header">
 										<div class="user-main-info">
 											<div class="user-avatar-badge">
-												{#if table.avatarUrl && !failedAvatarIds.has(table.userId)}
+												{#if sanitizeExternalUrl(table.avatarUrl) && !failedAvatarIds.has(table.userId)}
 													<img
-														src={table.avatarUrl}
+														src={sanitizeExternalUrl(table.avatarUrl)}
 														alt={table.username}
 														class="user-avatar-img"
 														loading="lazy"

@@ -151,7 +151,8 @@ export function simulateVendorOffersForCard(
 		| 'tcgplayer_id'
 		| 'cardtrader_id'
 		| 'manapool_id'
-	>,
+	> &
+		Partial<Pick<DemoCardRecord, 'min_condition'>>,
 	baselineCents: number,
 	generation = 0,
 	existingHist: DemoHistoricalPricing | null = null,
@@ -171,9 +172,27 @@ export function simulateVendorOffersForCard(
 	};
 
 	const conds = ['NM', 'NM', 'SP', 'SP', 'MP'];
+	const condRank: Record<string, number> = {
+		NM: 0,
+		SP: 1,
+		LP: 1,
+		MP: 2,
+		HP: 3,
+		PO: 4,
+		DMG: 4,
+		ANY: 4
+	};
+	const effMinCond = String(card.min_condition || 'ANY')
+		.trim()
+		.toUpperCase();
+	const maxAllowedRank = condRank[effMinCond] ?? 4;
 	const pickCond = (salt: string): string => {
 		const vh = hashSeed(`${seedBase}:cond:${salt}:${generation}`);
 		return conds[vh % conds.length];
+	};
+	const meetsMinCond = (c: string | null): boolean => {
+		if (!c) return false;
+		return (condRank[c.toUpperCase()] ?? 4) <= maxAllowedRank;
 	};
 
 	// Always stock at least 2 core US/Global marketplaces + localized stores for non-English printings
@@ -189,27 +208,54 @@ export function simulateVendorOffersForCard(
 	const rutenInStock =
 		['zht', 'en'].includes(langLower) && (langLower === 'zht' || (h >> 7) % 3 === 0);
 
-	const cardtraderPrice = cardtraderInStock
-		? clampCents(safeBase * factorFor('ct', 91, 108))
-		: null;
-	const tcgPrice = tcgInStock ? clampCents(safeBase * factorFor('tcg', 95, 112)) : null;
-	const manapoolPrice = manapoolInStock ? clampCents(safeBase * factorFor('mp', 93, 107)) : null;
-	const ckPrice = ckInStock ? clampCents(safeBase * factorFor('ck', 102, 122)) : null;
-	const ebayPrice = ebayInStock ? clampCents(safeBase * factorFor('ebay', 96, 125)) : null;
-	const himarketUsdCents = himarketInStock ? clampCents(safeBase * factorFor('hk', 94, 115)) : null;
-	const hareruyaUsdCents = hareruyaInStock
-		? clampCents(safeBase * factorFor('har', 90, 114))
-		: null;
-	const rutenUsdCents = rutenInStock ? clampCents(safeBase * factorFor('rt', 92, 118)) : null;
+	const rawCardtraderCond = cardtraderInStock ? pickCond('ct') : null;
+	const rawTcgCond = tcgInStock ? pickCond('tcg') : null;
+	const rawManapoolCond = manapoolInStock ? pickCond('mp') : null;
+	const rawCkCond = ckInStock ? pickCond('ck') : null;
+	const rawEbayCond = ebayInStock ? pickCond('ebay') : null;
+	const rawHimarketCond = himarketInStock ? pickCond('hk') : null;
+	const rawHareruyaCond = hareruyaInStock ? pickCond('har') : null;
+	const rawRutenCond = rutenInStock ? pickCond('rt') : null;
 
-	const cardtraderCond = cardtraderPrice ? pickCond('ct') : null;
-	const tcgCond = tcgPrice ? pickCond('tcg') : null;
-	const manapoolCond = manapoolPrice ? pickCond('mp') : null;
-	const ckCond = ckPrice ? pickCond('ck') : null;
-	const ebayCond = ebayPrice ? pickCond('ebay') : null;
-	const himarketCond = himarketUsdCents ? pickCond('hk') : null;
-	const hareruyaCond = hareruyaUsdCents ? pickCond('har') : null;
-	const rutenCond = rutenUsdCents ? pickCond('rt') : null;
+	const cardtraderPrice =
+		cardtraderInStock && meetsMinCond(rawCardtraderCond)
+			? clampCents(safeBase * factorFor('ct', 91, 108))
+			: null;
+	const tcgPrice =
+		tcgInStock && meetsMinCond(rawTcgCond)
+			? clampCents(safeBase * factorFor('tcg', 95, 112))
+			: null;
+	const manapoolPrice =
+		manapoolInStock && meetsMinCond(rawManapoolCond)
+			? clampCents(safeBase * factorFor('mp', 93, 107))
+			: null;
+	const ckPrice =
+		ckInStock && meetsMinCond(rawCkCond) ? clampCents(safeBase * factorFor('ck', 102, 122)) : null;
+	const ebayPrice =
+		ebayInStock && meetsMinCond(rawEbayCond)
+			? clampCents(safeBase * factorFor('ebay', 96, 125))
+			: null;
+	const himarketUsdCents =
+		himarketInStock && meetsMinCond(rawHimarketCond)
+			? clampCents(safeBase * factorFor('hk', 94, 115))
+			: null;
+	const hareruyaUsdCents =
+		hareruyaInStock && meetsMinCond(rawHareruyaCond)
+			? clampCents(safeBase * factorFor('har', 90, 114))
+			: null;
+	const rutenUsdCents =
+		rutenInStock && meetsMinCond(rawRutenCond)
+			? clampCents(safeBase * factorFor('rt', 92, 118))
+			: null;
+
+	const cardtraderCond = cardtraderPrice ? rawCardtraderCond : null;
+	const tcgCond = tcgPrice ? rawTcgCond : null;
+	const manapoolCond = manapoolPrice ? rawManapoolCond : null;
+	const ckCond = ckPrice ? rawCkCond : null;
+	const ebayCond = ebayPrice ? rawEbayCond : null;
+	const himarketCond = himarketUsdCents ? rawHimarketCond : null;
+	const hareruyaCond = hareruyaUsdCents ? rawHareruyaCond : null;
+	const rutenCond = rutenUsdCents ? rawRutenCond : null;
 
 	const vendorObservations: Array<{ key: string; price: number; cond: string }> = [];
 	if (cardtraderPrice && cardtraderCond)

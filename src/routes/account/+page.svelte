@@ -337,7 +337,9 @@
 				<div class="avatar-wrapper">
 					{#if user.id && user.avatar}
 						<img
-							src="https://cdn.discordapp.com/avatars/{user.id}/{user.avatar}.png?size=128"
+							src="https://cdn.discordapp.com/avatars/{encodeURIComponent(
+								String(user.id || '')
+							)}/{encodeURIComponent(String(user.avatar || ''))}.png?size=128"
 							alt="{user.username}'s avatar"
 							class="profile-avatar"
 							loading="lazy"
@@ -457,10 +459,10 @@
 							<span class="info-label">Username</span>
 							<span class="info-value">{user.username || 'N/A'}</span>
 						</div>
-						{#if user.global_name}
+						{#if user.globalName || user.global_name}
 							<div class="info-card">
 								<span class="info-label">Display Name</span>
-								<span class="info-value">{user.global_name}</span>
+								<span class="info-value">{user.globalName || user.global_name}</span>
 							</div>
 						{/if}
 						<div class="info-card">

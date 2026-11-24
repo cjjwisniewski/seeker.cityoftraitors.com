@@ -12,7 +12,11 @@ const EXCLUDED_PRECACHE_FILES = new Set([
 	'/sitemap.xml',
 	'/.well-known/security.txt'
 ]);
-const PRECACHE_ASSETS = [...build, ...files.filter((file) => !EXCLUDED_PRECACHE_FILES.has(file))];
+const PRECACHE_ASSETS = [
+	'/index.html',
+	...build.filter((asset) => !asset.endsWith('.ttf')),
+	...files.filter((file) => !EXCLUDED_PRECACHE_FILES.has(file) && !file.endsWith('.ttf'))
+];
 const PRECACHE_SET = new Set(PRECACHE_ASSETS);
 
 // Auth callbacks and live API origins must never be served from or written to cache.
@@ -64,7 +68,9 @@ self.addEventListener('fetch', (event) => {
 					const contentType = response.headers.get('content-type') || '';
 					if (response.ok && contentType.includes('text/html')) {
 						const copy = response.clone();
-						caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
+						event.waitUntil(
+							caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy))
+						);
 					}
 					return response;
 				})

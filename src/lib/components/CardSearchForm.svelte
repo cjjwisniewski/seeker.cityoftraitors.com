@@ -384,11 +384,21 @@
 		await fetchExactCard(suggestion);
 	};
 
+	let searchSeq = 0;
+	let searchAbortController: AbortController | null = null;
+
 	const fetchExactCard = async (name: string) => {
+		const seq = ++searchSeq;
+		if (searchAbortController) {
+			searchAbortController.abort();
+		}
+		searchAbortController = new AbortController();
+		const { signal } = searchAbortController;
 		isSearching = true;
 		try {
 			const exactUrl = `${NAMED_URL}?exact=${encodeURIComponent(name)}`;
-			const response = await fetch(exactUrl);
+			const response = await fetch(exactUrl, { signal });
+			if (seq !== searchSeq) return;
 
 			if (!response.ok) {
 				if (response.status === 404) {
@@ -490,12 +500,16 @@
 				}
 			}
 
+			if (seq !== searchSeq) return;
 			dispatch('search', [cardWithPrints]);
 		} catch (error) {
+			if ((error as Error)?.name === 'AbortError' || seq !== searchSeq) return;
 			console.error(`Error fetching exact card "${name}":`, error);
 			dispatch('search', []);
 		} finally {
-			isSearching = false;
+			if (seq === searchSeq) {
+				isSearching = false;
+			}
 		}
 	};
 
@@ -503,9 +517,16 @@
 		if (!searchTerm.trim() || !validateSearchTerm(searchTerm.trim())) {
 			return;
 		}
+		const seq = ++searchSeq;
+		if (searchAbortController) {
+			searchAbortController.abort();
+		}
+		searchAbortController = new AbortController();
+		const { signal } = searchAbortController;
 		isSearching = true;
 		try {
-			const response = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(searchTerm)}`);
+			const response = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(searchTerm)}`, { signal });
+			if (seq !== searchSeq) return;
 			if (!response.ok) {
 				if (response.status === 404) {
 					console.log(`No cards found for search term: "${searchTerm}"`);
@@ -575,12 +596,16 @@
 				})
 			);
 
+			if (seq !== searchSeq) return;
 			dispatch('search', cardsWithPrints);
 		} catch (error) {
+			if ((error as Error)?.name === 'AbortError' || seq !== searchSeq) return;
 			console.error('Error performing search:', error);
 			dispatch('search', []);
 		} finally {
-			isSearching = false;
+			if (seq === searchSeq) {
+				isSearching = false;
+			}
 		}
 	};
 

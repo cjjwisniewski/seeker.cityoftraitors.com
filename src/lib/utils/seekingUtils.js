@@ -137,13 +137,15 @@ export function getStockStatus(stockValue) {
 }
 
 export function getWebpImageUri(uri) {
-	if (!uri) return '';
-	if (uri.includes('cards.scryfall.io/normal/')) {
-		return uri
+	if (!uri || typeof uri !== 'string') return '';
+	const safe = sanitizeExternalUrl(uri, '');
+	if (!safe) return '';
+	if (safe.includes('cards.scryfall.io/normal/')) {
+		return safe
 			.replace('cards.scryfall.io/normal/', 'cards.scryfall.io/grid/')
 			.replace(/\.jpg(\?.*)?$/, '.webp$1');
 	}
-	return uri;
+	return safe;
 }
 
 export function getSetIconCode(originalCode) {
@@ -911,7 +913,7 @@ export function buildSeekingCsvString(targetCards) {
 	for (const card of targetCards) {
 		const hp = card.historical_pricing;
 		const row = [
-			`"${String(card.name || '').replace(/"/g, '""')}"`,
+			card.name || '',
 			card.set_code,
 			card.collector_number,
 			card.language,
@@ -936,7 +938,7 @@ export function buildSeekingCsvString(targetCards) {
 				? (card.cardkingdom_low_price / 100).toFixed(2)
 				: '',
 			card.cardkingdom_condition || '',
-			`"${(card.cardkingdom_url || '').replace(/"/g, '""')}"`,
+			card.cardkingdom_url || '',
 			getStockStatus(card.ebay_stock),
 			card.ebay_low_price !== null && card.ebay_low_price !== undefined
 				? (card.ebay_low_price / 100).toFixed(2)
@@ -985,14 +987,11 @@ export function buildSeekingCsvString(targetCards) {
 			card.min_condition || ''
 		];
 		const safeRow = row.map((cell) => {
-			const str = cell === null || cell === undefined ? '' : String(cell);
-			if (str.startsWith('"') && /^"[=+\-@\t\r]/.test(str)) {
-				return `"'${str.slice(1)}`;
-			}
+			let str = cell === null || cell === undefined ? '' : String(cell);
 			if (/^[=+\-@\t\r]/.test(str)) {
-				return `'${str}`;
+				str = `'${str}`;
 			}
-			return str;
+			return `"${str.replace(/"/g, '""')}"`;
 		});
 		csvRows.push(safeRow.join(','));
 	}
