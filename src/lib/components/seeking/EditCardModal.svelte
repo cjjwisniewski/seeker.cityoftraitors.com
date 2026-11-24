@@ -187,9 +187,7 @@
 			const min_condition = minConditionInput ? minConditionInput : null;
 			const variantMeta = editLanguageMetaMap[editLanguageInput] || null;
 			const rawTcgId =
-				editFinishInput === 'etched'
-					? variantMeta?.tcgplayer_etched_id
-					: variantMeta?.tcgplayer_id;
+				editFinishInput === 'etched' ? variantMeta?.tcgplayer_etched_id : variantMeta?.tcgplayer_id;
 			const resolvedTcgId = rawTcgId ?? null;
 			const resolvedCmId = variantMeta?.cardmarket_id ?? null;
 
