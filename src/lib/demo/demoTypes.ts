@@ -84,11 +84,11 @@ export interface DemoCardRecord {
 	cardtrader_stock: boolean;
 	cardtrader_low_price: number | null;
 	cardtrader_condition: string | null;
-	tcgplayer_id: string | number;
+	tcgplayer_id: string | number | null;
 	tcgplayer_stock: boolean;
 	tcgplayer_low_price: number | null;
 	tcgplayer_condition: string | null;
-	cardmarket_id: string | number;
+	cardmarket_id: string | number | null;
 	cardmarket_stock: false;
 	cardmarket_low_price: null;
 	cardmarket_condition?: null;

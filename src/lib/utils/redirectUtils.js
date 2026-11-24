@@ -8,9 +8,11 @@
  * @param {string} [origin]
  * @returns {string}
  */
+const DEFAULT_ORIGIN = 'https://seeker.cityoftraitors.com';
+
 export function sanitizeInternalRedirect(
 	rawState,
-	origin = typeof window !== 'undefined' ? window.location.origin : 'https://seeker.cityoftraitors.com'
+	origin = typeof window !== 'undefined' ? window.location.origin : DEFAULT_ORIGIN
 ) {
 	if (typeof rawState !== 'string' || !rawState) {
 		return '/';

@@ -1294,6 +1294,15 @@ export async function handleDemoApiRequest(
 				? sanitizeSafeUrl(bodyObj.new_image_uri)
 				: prevCard.image_uri;
 
+		const nextTcgId =
+			typeof bodyObj.tcgplayer_id === 'string' || typeof bodyObj.tcgplayer_id === 'number'
+				? bodyObj.tcgplayer_id
+				: null;
+		const nextCmId =
+			typeof bodyObj.cardmarket_id === 'string' || typeof bodyObj.cardmarket_id === 'number'
+				? bodyObj.cardmarket_id
+				: null;
+
 		let updatedCard: StoredDemoCard = {
 			...prevCard,
 			id: isRekey ? nextRowKey : prevCard.id,
@@ -1304,10 +1313,8 @@ export async function handleDemoApiRequest(
 			min_condition: nextMinCond,
 			...(isRekey
 				? {
-						tcgplayer_id:
-							bodyObj.tcgplayer_id !== undefined ? bodyObj.tcgplayer_id : null,
-						cardmarket_id:
-							bodyObj.cardmarket_id !== undefined ? bodyObj.cardmarket_id : null
+						tcgplayer_id: nextTcgId,
+						cardmarket_id: nextCmId
 					}
 				: {})
 		};

@@ -527,7 +527,9 @@
 									{formatPrice(card.cardtrader_low_price)}
 									{#if card.cardtrader_condition}
 										<span
-											class="condition-bubble cond-{getNormalizedConditionClass(card.cardtrader_condition)}"
+											class="condition-bubble cond-{getNormalizedConditionClass(
+												card.cardtrader_condition
+											)}"
 											title="Condition: {card.cardtrader_condition}"
 										>
 											{card.cardtrader_condition}
@@ -570,7 +572,9 @@
 									{formatPrice(card.tcgplayer_low_price)}
 									{#if card.tcgplayer_condition}
 										<span
-											class="condition-bubble cond-{getNormalizedConditionClass(card.tcgplayer_condition)}"
+											class="condition-bubble cond-{getNormalizedConditionClass(
+												card.tcgplayer_condition
+											)}"
 											title="Condition: {card.tcgplayer_condition}"
 										>
 											{card.tcgplayer_condition}
@@ -613,7 +617,9 @@
 									{formatPrice(card.manapool_low_price)}
 									{#if card.manapool_condition}
 										<span
-											class="condition-bubble cond-{getNormalizedConditionClass(card.manapool_condition)}"
+											class="condition-bubble cond-{getNormalizedConditionClass(
+												card.manapool_condition
+											)}"
 											title="Condition: {card.manapool_condition}"
 										>
 											{card.manapool_condition}
@@ -656,7 +662,9 @@
 									{formatPrice(card.cardkingdom_low_price)}
 									{#if card.cardkingdom_condition}
 										<span
-											class="condition-bubble cond-{getNormalizedConditionClass(card.cardkingdom_condition)}"
+											class="condition-bubble cond-{getNormalizedConditionClass(
+												card.cardkingdom_condition
+											)}"
 											title="Condition: {card.cardkingdom_condition}"
 										>
 											{card.cardkingdom_condition}
@@ -788,7 +796,9 @@
 									{formatPrice(card.himarket_low_price)}
 									{#if card.himarket_condition}
 										<span
-											class="condition-bubble cond-{getNormalizedConditionClass(card.himarket_condition)}"
+											class="condition-bubble cond-{getNormalizedConditionClass(
+												card.himarket_condition
+											)}"
 											title="Condition: {card.himarket_condition}{card.himarket_price_hkd
 												? ` (${formatHkdPrice(card.himarket_price_hkd)})`
 												: ''}"
@@ -842,7 +852,9 @@
 									{formatPrice(card.hareruya_low_price)}
 									{#if card.hareruya_condition}
 										<span
-											class="condition-bubble cond-{getNormalizedConditionClass(card.hareruya_condition)}"
+											class="condition-bubble cond-{getNormalizedConditionClass(
+												card.hareruya_condition
+											)}"
 											title="Condition: {card.hareruya_condition}{card.hareruya_price_jpy
 												? ` (${formatJpyPrice(card.hareruya_price_jpy)})`
 												: ''}"
@@ -903,7 +915,9 @@
 									{formatPrice(card.ruten_low_price)}
 									{#if card.ruten_condition}
 										<span
-											class="condition-bubble cond-{getNormalizedConditionClass(card.ruten_condition)}"
+											class="condition-bubble cond-{getNormalizedConditionClass(
+												card.ruten_condition
+											)}"
 											title="Condition: {card.ruten_condition}{card.ruten_price_twd
 												? ` (${formatTwdPrice(card.ruten_price_twd)})`
 												: ''}"

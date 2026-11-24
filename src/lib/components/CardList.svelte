@@ -754,7 +754,8 @@
 										id="language-{card.id}"
 										value={card.selected_language || 'en'}
 										on:focus={() => handleLanguageDropdownOpen(card)}
-										on:change={(e) => handleLanguageChange(card, e.currentTarget.value, e.currentTarget)}
+										on:change={(e) =>
+											handleLanguageChange(card, e.currentTarget.value, e.currentTarget)}
 										aria-label="Select card language"
 									>
 										{#each card.available_languages as lang}
