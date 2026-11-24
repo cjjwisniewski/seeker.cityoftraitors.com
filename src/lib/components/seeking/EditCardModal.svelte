@@ -229,8 +229,10 @@
 				throw new Error(result?.message || `Failed to update card (Status ${response.status})`);
 			}
 
-			const updatedTcgId = result.tcgplayer_id !== undefined ? result.tcgplayer_id : resolvedTcgId;
-			const updatedCmId = result.cardmarket_id !== undefined ? result.cardmarket_id : resolvedCmId;
+			const hasResTcg = result?.tcgplayer_id !== undefined;
+			const updatedTcgId = hasResTcg ? result.tcgplayer_id : resolvedTcgId;
+			const hasResCm = result?.cardmarket_id !== undefined;
+			const updatedCmId = hasResCm ? result.cardmarket_id : resolvedCmId;
 
 			const oldKey = getCardKey(card);
 			const updatedCards = cards.map((c) => {
