@@ -229,6 +229,9 @@
 				throw new Error(result?.message || `Failed to update card (Status ${response.status})`);
 			}
 
+			const updatedTcgId = result.tcgplayer_id !== undefined ? result.tcgplayer_id : resolvedTcgId;
+			const updatedCmId = result.cardmarket_id !== undefined ? result.cardmarket_id : resolvedCmId;
+
 			const oldKey = getCardKey(card);
 			const updatedCards = cards.map((c) => {
 				if (getCardKey(c) === oldKey) {
@@ -250,13 +253,12 @@
 							tcgplayer_stock: false,
 							tcgplayer_low_price: null,
 							tcgplayer_condition: null,
-							tcgplayer_id: result.tcgplayer_id !== undefined ? result.tcgplayer_id : resolvedTcgId,
+							tcgplayer_id: updatedTcgId,
 							cardmarket_stock: false,
 							cardmarket_low_price: null,
 							cardmarket_price_eur: null,
 							cardmarket_condition: null,
-							cardmarket_id:
-								result.cardmarket_id !== undefined ? result.cardmarket_id : resolvedCmId,
+							cardmarket_id: updatedCmId,
 							cardmarket_url: '',
 							historical_pricing: null,
 							last_manual_check: null,

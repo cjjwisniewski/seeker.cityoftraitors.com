@@ -164,18 +164,24 @@ export function formatPrice(cents) {
 	return `$${dollars.toFixed(2)}`;
 }
 
+function normalizeLower(val) {
+	if (!val) return '';
+	const s = String(val).trim();
+	return s.toLowerCase();
+}
+
 export function getTCGPlayerUrl(card) {
 	if (!card?.tcgplayer_id) return null;
 	let url = `https://www.tcgplayer.com/product/${encodeURIComponent(String(card.tcgplayer_id))}`;
 	const params = [];
-	const langCode = String(card.language || '').trim().toLowerCase();
+	const langCode = normalizeLower(card.language);
 
 	if (langCode && languageMap[langCode]) {
 		params.push(`Language=${encodeURIComponent(languageMap[langCode])}`);
 	}
 
 	if (card.finish) {
-		const fin = String(card.finish).trim().toLowerCase();
+		const fin = normalizeLower(card.finish);
 		const printing = fin === 'foil' || fin === 'etched' ? 'Foil' : 'Normal';
 		params.push(`Printing=${printing}`);
 	}
@@ -195,13 +201,13 @@ export function getEbayUrl(card, map) {
 			return `https://www.ebay.com/itm/${cleanId}`;
 		}
 	}
-	const langCode = String(card.language || '').trim().toLowerCase();
+	const langCode = normalizeLower(card.language);
 	let lang = langCode && langCode !== 'en' && languageMap[langCode] ? languageMap[langCode] : '';
 	if (langCode === 'zhs') lang = 'Simplified Chinese';
 	if (langCode === 'zht') lang = 'Traditional Chinese';
-	const fin = String(card.finish || '').trim().toLowerCase();
+	const fin = normalizeLower(card.finish);
 	const finish = fin === 'etched' ? 'foil etched' : fin === 'foil' ? 'foil' : '';
-	const setCodeLower = String(card.set_code || '').trim().toLowerCase();
+	const setCodeLower = normalizeLower(card.set_code);
 	const set = card.set_name || (map && setCodeLower && map[setCodeLower]) || card.set_code || '';
 	const keywords = `${card.name || ''} ${set} ${lang} ${finish}`.replace(/\s+/g, ' ').trim();
 	return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keywords)}&_sop=15`;
