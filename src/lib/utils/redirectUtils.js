@@ -1,3 +1,5 @@
+const DEFAULT_ORIGIN = 'https://seeker.cityoftraitors.com';
+
 /**
  * Safely validates an OAuth redirect/state path so it can only navigate
  * within the current origin. Rejects protocol-relative URLs, backslashes,
@@ -8,8 +10,6 @@
  * @param {string} [origin]
  * @returns {string}
  */
-const DEFAULT_ORIGIN = 'https://seeker.cityoftraitors.com';
-
 export function sanitizeInternalRedirect(
 	rawState,
 	origin = typeof window !== 'undefined' ? window.location.origin : DEFAULT_ORIGIN

@@ -186,12 +186,12 @@
 
 			const min_condition = minConditionInput ? minConditionInput : null;
 			const variantMeta = editLanguageMetaMap[editLanguageInput] || null;
-			const resolvedTcgId = variantMeta
-				? editFinishInput === 'etched'
-					? (variantMeta.tcgplayer_etched_id ?? null)
-					: (variantMeta.tcgplayer_id ?? null)
-				: null;
-			const resolvedCmId = variantMeta ? (variantMeta.cardmarket_id ?? null) : null;
+			const rawTcgId =
+				editFinishInput === 'etched'
+					? variantMeta?.tcgplayer_etched_id
+					: variantMeta?.tcgplayer_id;
+			const resolvedTcgId = rawTcgId ?? null;
+			const resolvedCmId = variantMeta?.cardmarket_id ?? null;
 
 			const requestBody = {
 				partitionKey: card.set_code,
