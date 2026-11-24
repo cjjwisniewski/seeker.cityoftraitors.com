@@ -1301,7 +1301,15 @@ export async function handleDemoApiRequest(
 			finish: nextFinish,
 			image_uri: nextImage,
 			max_price_cap: nextMaxCap,
-			min_condition: nextMinCond
+			min_condition: nextMinCond,
+			...(isRekey
+				? {
+						tcgplayer_id:
+							bodyObj.tcgplayer_id !== undefined ? bodyObj.tcgplayer_id : null,
+						cardmarket_id:
+							bodyObj.cardmarket_id !== undefined ? bodyObj.cardmarket_id : null
+					}
+				: {})
 		};
 
 		if (isRekey) {

@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
 	import { browser } from '$app/environment';
+	import { sanitizeInternalRedirect } from '$lib/utils/redirectUtils';
 
 	let message = 'Processing login...';
 	let error = null;
@@ -57,10 +58,7 @@
 			if (result?.success) {
 				message = 'Login successful! Redirecting...';
 				const rawState = state || '/';
-				const redirectTo =
-					rawState.startsWith('/') && !rawState.startsWith('//') && !rawState.includes('\\')
-						? rawState
-						: '/';
+				const redirectTo = sanitizeInternalRedirect(rawState, window.location.origin);
 				console.log('Callback: Redirecting to:', redirectTo);
 				// Use replaceState: true if you don't want the callback page in history
 				goto(redirectTo, { replaceState: true });

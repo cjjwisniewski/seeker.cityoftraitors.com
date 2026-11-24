@@ -715,6 +715,7 @@
 								>
 									<option value="nonfoil">Nonfoil</option>
 									<option value="foil">Foil</option>
+									<option value="etched">Etched</option>
 								</select>
 								<i class="fa-solid fa-chevron-down select-chevron"></i>
 							</div>

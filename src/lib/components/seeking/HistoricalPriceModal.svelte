@@ -405,12 +405,24 @@
 		border-radius: 999px;
 		font-size: 0.72rem;
 		font-weight: 600;
+		background: rgba(245, 158, 11, 0.16);
+		border: 1px solid rgba(217, 119, 6, 0.45);
+		color: #92400e;
+	}
+
+	:global([data-theme='dark']) .hist-status-pill {
 		background: rgba(245, 158, 11, 0.14);
-		border: 1px solid rgba(245, 158, 11, 0.35);
+		border-color: rgba(245, 158, 11, 0.35);
 		color: #fcd34d;
 	}
 
 	.hist-status-pill.calibrated {
+		background: rgba(16, 185, 129, 0.16);
+		border-color: rgba(5, 150, 105, 0.45);
+		color: #065f46;
+	}
+
+	:global([data-theme='dark']) .hist-status-pill.calibrated {
 		background: rgba(16, 185, 129, 0.14);
 		border-color: rgba(16, 185, 129, 0.38);
 		color: #6ee7b7;
@@ -690,32 +702,63 @@
 		display: inline-block;
 		vertical-align: middle;
 		line-height: 1.1;
+		background: rgba(148, 163, 184, 0.2);
+		color: #334155;
+		border: 1px solid rgba(100, 116, 139, 0.35);
+	}
+
+	:global([data-theme='dark']) .condition-bubble {
 		background: rgba(148, 163, 184, 0.16);
 		color: #cbd5e1;
-		border: 1px solid rgba(148, 163, 184, 0.3);
+		border-color: rgba(148, 163, 184, 0.3);
 	}
 
 	.condition-bubble.cond-nm {
 		background: rgba(16, 185, 129, 0.16);
+		color: #065f46;
+		border-color: rgba(5, 150, 105, 0.4);
+	}
+
+	:global([data-theme='dark']) .condition-bubble.cond-nm {
 		color: #34d399;
 		border-color: rgba(16, 185, 129, 0.35);
 	}
 
-	.condition-bubble.cond-sp {
+	.condition-bubble.cond-sp,
+	.condition-bubble.cond-lp {
 		background: rgba(56, 189, 248, 0.16);
+		color: #0369a1;
+		border-color: rgba(2, 132, 199, 0.4);
+	}
+
+	:global([data-theme='dark']) .condition-bubble.cond-sp,
+	:global([data-theme='dark']) .condition-bubble.cond-lp {
 		color: #38bdf8;
 		border-color: rgba(56, 189, 248, 0.35);
 	}
 
 	.condition-bubble.cond-mp {
 		background: rgba(245, 158, 11, 0.16);
+		color: #92400e;
+		border-color: rgba(217, 119, 6, 0.4);
+	}
+
+	:global([data-theme='dark']) .condition-bubble.cond-mp {
 		color: #fbbf24;
 		border-color: rgba(245, 158, 11, 0.35);
 	}
 
 	.condition-bubble.cond-hp,
-	.condition-bubble.cond-po {
+	.condition-bubble.cond-po,
+	.condition-bubble.cond-dmg {
 		background: rgba(249, 115, 22, 0.16);
+		color: #9a3412;
+		border-color: rgba(234, 88, 12, 0.4);
+	}
+
+	:global([data-theme='dark']) .condition-bubble.cond-hp,
+	:global([data-theme='dark']) .condition-bubble.cond-po,
+	:global([data-theme='dark']) .condition-bubble.cond-dmg {
 		color: #fb923c;
 		border-color: rgba(249, 115, 22, 0.35);
 	}

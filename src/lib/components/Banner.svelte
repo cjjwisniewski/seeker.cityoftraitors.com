@@ -120,7 +120,7 @@
 
 	.banner-warning {
 		background: var(--color-warning);
-		color: white;
+		color: #111827;
 	}
 
 	.banner-error {

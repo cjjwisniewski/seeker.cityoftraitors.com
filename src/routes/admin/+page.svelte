@@ -3740,24 +3740,44 @@
 
 	.tier-filter-pill.tier-basic.active {
 		background: rgba(148, 163, 184, 0.2);
+		border-color: #64748b;
+		color: #334155;
+	}
+
+	:global([data-theme='dark']) .tier-filter-pill.tier-basic.active {
 		border-color: #94a3b8;
 		color: #e2e8f0;
 	}
 
 	.tier-filter-pill.tier-premium.active {
-		background: rgba(59, 130, 246, 0.2);
+		background: rgba(59, 130, 246, 0.18);
+		border-color: #2563eb;
+		color: #1d4ed8;
+	}
+
+	:global([data-theme='dark']) .tier-filter-pill.tier-premium.active {
 		border-color: #3b82f6;
 		color: #60a5fa;
 	}
 
 	.tier-filter-pill.tier-legacy.active {
-		background: rgba(168, 85, 247, 0.2);
+		background: rgba(168, 85, 247, 0.18);
+		border-color: #9333ea;
+		color: #7e22ce;
+	}
+
+	:global([data-theme='dark']) .tier-filter-pill.tier-legacy.active {
 		border-color: #a855f7;
 		color: #c084fc;
 	}
 
 	.tier-filter-pill.tier-banned.active {
-		background: rgba(239, 68, 68, 0.2);
+		background: rgba(239, 68, 68, 0.18);
+		border-color: #dc2626;
+		color: #b91c1c;
+	}
+
+	:global([data-theme='dark']) .tier-filter-pill.tier-banned.active {
 		border-color: #ef4444;
 		color: #f87171;
 	}

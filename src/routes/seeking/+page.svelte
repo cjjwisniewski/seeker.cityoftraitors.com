@@ -3083,7 +3083,7 @@
 		border-radius: 10px;
 		font-size: 0.86rem;
 		font-weight: 500;
-		background: var(--color-surface);
+		background: var(--color-bg-elevated);
 		border: 1px solid var(--color-border);
 		box-shadow: var(--shadow-md);
 	}

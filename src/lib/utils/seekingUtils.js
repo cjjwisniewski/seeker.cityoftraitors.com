@@ -165,15 +165,18 @@ export function formatPrice(cents) {
 }
 
 export function getTCGPlayerUrl(card) {
-	let url = `https://www.tcgplayer.com/product/${card.tcgplayer_id}`;
+	if (!card?.tcgplayer_id) return null;
+	let url = `https://www.tcgplayer.com/product/${encodeURIComponent(String(card.tcgplayer_id))}`;
 	const params = [];
+	const langCode = String(card.language || '').trim().toLowerCase();
 
-	if (card.language && languageMap[card.language]) {
-		params.push(`Language=${encodeURIComponent(languageMap[card.language])}`);
+	if (langCode && languageMap[langCode]) {
+		params.push(`Language=${encodeURIComponent(languageMap[langCode])}`);
 	}
 
 	if (card.finish) {
-		const printing = card.finish === 'foil' ? 'Foil' : 'Normal';
+		const fin = String(card.finish).trim().toLowerCase();
+		const printing = fin === 'foil' || fin === 'etched' ? 'Foil' : 'Normal';
 		params.push(`Printing=${printing}`);
 	}
 
@@ -192,12 +195,15 @@ export function getEbayUrl(card, map) {
 			return `https://www.ebay.com/itm/${cleanId}`;
 		}
 	}
-	let lang = card.language !== 'en' && languageMap[card.language] ? languageMap[card.language] : '';
-	if (card.language === 'zhs') lang = 'Simplified Chinese';
-	if (card.language === 'zht') lang = 'Traditional Chinese';
-	const finish = card.finish === 'foil' ? 'foil' : '';
-	const set = card.set_name || (map && map[card.set_code.toLowerCase()]) || card.set_code;
-	const keywords = `${card.name} ${set} ${lang} ${finish}`.replace(/\s+/g, ' ').trim();
+	const langCode = String(card.language || '').trim().toLowerCase();
+	let lang = langCode && langCode !== 'en' && languageMap[langCode] ? languageMap[langCode] : '';
+	if (langCode === 'zhs') lang = 'Simplified Chinese';
+	if (langCode === 'zht') lang = 'Traditional Chinese';
+	const fin = String(card.finish || '').trim().toLowerCase();
+	const finish = fin === 'etched' ? 'foil etched' : fin === 'foil' ? 'foil' : '';
+	const setCodeLower = String(card.set_code || '').trim().toLowerCase();
+	const set = card.set_name || (map && setCodeLower && map[setCodeLower]) || card.set_code || '';
+	const keywords = `${card.name || ''} ${set} ${lang} ${finish}`.replace(/\s+/g, ' ').trim();
 	return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(keywords)}&_sop=15`;
 }
 
@@ -457,7 +463,7 @@ export function getBestOfferDetails(
 			displayName: 'TCGPlayer',
 			cents: Math.round(Number(card.tcgplayer_low_price)),
 			condition: card.tcgplayer_condition || '',
-			url: getTCGPlayerUrl(card)
+			url: card.tcgplayer_id ? getTCGPlayerUrl(card) : null
 		});
 	}
 	if (

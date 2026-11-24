@@ -33,6 +33,7 @@
 	let editPreviewImageUri = '';
 	let editAvailableLanguages = ['en'];
 	let editLanguageImageMap = {};
+	let editLanguageMetaMap = {};
 	let editAvailableFinishes = ['nonfoil', 'foil'];
 	let isLoadingCardPrintInfo = false;
 	let settingsModalError = null;
@@ -110,6 +111,7 @@
 
 			const langs = [];
 			const imgMap = { ...editLanguageImageMap };
+			const metaMap = {};
 			const finishesSet = new Set();
 
 			for (const p of prints) {
@@ -122,6 +124,12 @@
 					if (img) {
 						imgMap[code] = img;
 					}
+					metaMap[code] = {
+						id: p.id || null,
+						tcgplayer_id: p.tcgplayer_id ?? null,
+						tcgplayer_etched_id: p.tcgplayer_etched_id ?? null,
+						cardmarket_id: p.cardmarket_id ?? null
+					};
 				}
 				if (Array.isArray(p.finishes)) {
 					if (p.finishes.includes('nonfoil')) finishesSet.add('nonfoil');
@@ -139,6 +147,7 @@
 
 			editAvailableLanguages = langs;
 			editLanguageImageMap = imgMap;
+			editLanguageMetaMap = metaMap;
 			editAvailableFinishes = Array.from(finishesSet);
 			if (imgMap[editLanguageInput]) {
 				editPreviewImageUri = imgMap[editLanguageInput];
@@ -176,6 +185,13 @@
 			}
 
 			const min_condition = minConditionInput ? minConditionInput : null;
+			const variantMeta = editLanguageMetaMap[editLanguageInput] || null;
+			const resolvedTcgId = variantMeta
+				? editFinishInput === 'etched'
+					? (variantMeta.tcgplayer_etched_id ?? null)
+					: (variantMeta.tcgplayer_id ?? null)
+				: null;
+			const resolvedCmId = variantMeta ? (variantMeta.cardmarket_id ?? null) : null;
 
 			const requestBody = {
 				partitionKey: card.set_code,
@@ -184,7 +200,9 @@
 				min_condition: min_condition,
 				new_language: editLanguageInput,
 				new_finish: editFinishInput,
-				new_image_uri: editPreviewImageUri || card.image_uri
+				new_image_uri: editPreviewImageUri || card.image_uri,
+				tcgplayer_id: resolvedTcgId,
+				cardmarket_id: resolvedCmId
 			};
 
 			const response = await fetchWithAuth(PUBLIC_UPDATE_SEEKING_CARD_FUNCTION_URL, {
@@ -232,10 +250,13 @@
 							tcgplayer_stock: false,
 							tcgplayer_low_price: null,
 							tcgplayer_condition: null,
+							tcgplayer_id: result.tcgplayer_id !== undefined ? result.tcgplayer_id : resolvedTcgId,
 							cardmarket_stock: false,
 							cardmarket_low_price: null,
 							cardmarket_price_eur: null,
 							cardmarket_condition: null,
+							cardmarket_id:
+								result.cardmarket_id !== undefined ? result.cardmarket_id : resolvedCmId,
 							cardmarket_url: '',
 							historical_pricing: null,
 							last_manual_check: null,

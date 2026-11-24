@@ -17,6 +17,7 @@
 		getEbayUrl,
 		getCardmarketUrl,
 		getCardmarketConditionClass,
+		getNormalizedConditionClass,
 		sanitizeExternalUrl
 	} from '$lib/utils/seekingUtils.js';
 	import {
@@ -526,7 +527,7 @@
 									{formatPrice(card.cardtrader_low_price)}
 									{#if card.cardtrader_condition}
 										<span
-											class="condition-bubble cond-{card.cardtrader_condition.toLowerCase()}"
+											class="condition-bubble cond-{getNormalizedConditionClass(card.cardtrader_condition)}"
 											title="Condition: {card.cardtrader_condition}"
 										>
 											{card.cardtrader_condition}
@@ -569,7 +570,7 @@
 									{formatPrice(card.tcgplayer_low_price)}
 									{#if card.tcgplayer_condition}
 										<span
-											class="condition-bubble cond-{card.tcgplayer_condition.toLowerCase()}"
+											class="condition-bubble cond-{getNormalizedConditionClass(card.tcgplayer_condition)}"
 											title="Condition: {card.tcgplayer_condition}"
 										>
 											{card.tcgplayer_condition}
@@ -612,7 +613,7 @@
 									{formatPrice(card.manapool_low_price)}
 									{#if card.manapool_condition}
 										<span
-											class="condition-bubble cond-{card.manapool_condition.toLowerCase()}"
+											class="condition-bubble cond-{getNormalizedConditionClass(card.manapool_condition)}"
 											title="Condition: {card.manapool_condition}"
 										>
 											{card.manapool_condition}
@@ -655,7 +656,7 @@
 									{formatPrice(card.cardkingdom_low_price)}
 									{#if card.cardkingdom_condition}
 										<span
-											class="condition-bubble cond-{card.cardkingdom_condition.toLowerCase()}"
+											class="condition-bubble cond-{getNormalizedConditionClass(card.cardkingdom_condition)}"
 											title="Condition: {card.cardkingdom_condition}"
 										>
 											{card.cardkingdom_condition}
@@ -750,7 +751,7 @@
 								{formatPrice(card.ebay_low_price)}
 								{#if card.ebay_condition}
 									<span
-										class="condition-bubble cond-{card.ebay_condition.toLowerCase()}"
+										class="condition-bubble cond-{getNormalizedConditionClass(card.ebay_condition)}"
 										title="Condition: {card.ebay_condition}"
 									>
 										{card.ebay_condition}
@@ -787,7 +788,7 @@
 									{formatPrice(card.himarket_low_price)}
 									{#if card.himarket_condition}
 										<span
-											class="condition-bubble cond-{card.himarket_condition.toLowerCase()}"
+											class="condition-bubble cond-{getNormalizedConditionClass(card.himarket_condition)}"
 											title="Condition: {card.himarket_condition}{card.himarket_price_hkd
 												? ` (${formatHkdPrice(card.himarket_price_hkd)})`
 												: ''}"
@@ -841,7 +842,7 @@
 									{formatPrice(card.hareruya_low_price)}
 									{#if card.hareruya_condition}
 										<span
-											class="condition-bubble cond-{card.hareruya_condition.toLowerCase()}"
+											class="condition-bubble cond-{getNormalizedConditionClass(card.hareruya_condition)}"
 											title="Condition: {card.hareruya_condition}{card.hareruya_price_jpy
 												? ` (${formatJpyPrice(card.hareruya_price_jpy)})`
 												: ''}"
@@ -902,7 +903,7 @@
 									{formatPrice(card.ruten_low_price)}
 									{#if card.ruten_condition}
 										<span
-											class="condition-bubble cond-{card.ruten_condition.toLowerCase()}"
+											class="condition-bubble cond-{getNormalizedConditionClass(card.ruten_condition)}"
 											title="Condition: {card.ruten_condition}{card.ruten_price_twd
 												? ` (${formatTwdPrice(card.ruten_price_twd)})`
 												: ''}"
@@ -1390,6 +1391,12 @@
 	.hist-badge.hist-at-floor,
 	.hist-badge.hist-at-low {
 		background: rgba(16, 185, 129, 0.14);
+		border-color: rgba(5, 150, 105, 0.45);
+		color: #065f46;
+	}
+
+	:global([data-theme='dark']) .hist-badge.hist-at-floor,
+	:global([data-theme='dark']) .hist-badge.hist-at-low {
 		border-color: rgba(16, 185, 129, 0.45);
 		color: #6ee7b7;
 	}
@@ -1401,6 +1408,12 @@
 	}
 
 	.hist-badge.hist-last-seen {
+		background: rgba(148, 163, 184, 0.16);
+		border-color: rgba(100, 116, 139, 0.35);
+		color: #334155;
+	}
+
+	:global([data-theme='dark']) .hist-badge.hist-last-seen {
 		background: rgba(148, 163, 184, 0.12);
 		border-color: rgba(148, 163, 184, 0.32);
 		color: #cbd5e1;
@@ -1412,8 +1425,13 @@
 	}
 
 	.hist-badge.hist-floor {
-		color: #3b82f6;
+		color: #1d4ed8;
 		background: rgba(59, 130, 246, 0.12);
+		border-color: rgba(37, 99, 235, 0.35);
+	}
+
+	:global([data-theme='dark']) .hist-badge.hist-floor {
+		color: #60a5fa;
 		border-color: rgba(59, 130, 246, 0.35);
 	}
 
@@ -1571,32 +1589,63 @@
 		display: inline-block;
 		vertical-align: middle;
 		line-height: 1.1;
+		background: rgba(148, 163, 184, 0.2);
+		color: #334155;
+		border: 1px solid rgba(100, 116, 139, 0.35);
+	}
+
+	:global([data-theme='dark']) .condition-bubble {
 		background: rgba(148, 163, 184, 0.16);
 		color: #cbd5e1;
-		border: 1px solid rgba(148, 163, 184, 0.3);
+		border-color: rgba(148, 163, 184, 0.3);
 	}
 
 	.condition-bubble.cond-nm {
 		background: rgba(16, 185, 129, 0.16);
+		color: #065f46;
+		border-color: rgba(5, 150, 105, 0.4);
+	}
+
+	:global([data-theme='dark']) .condition-bubble.cond-nm {
 		color: #34d399;
 		border-color: rgba(16, 185, 129, 0.35);
 	}
 
-	.condition-bubble.cond-sp {
+	.condition-bubble.cond-sp,
+	.condition-bubble.cond-lp {
 		background: rgba(56, 189, 248, 0.16);
+		color: #0369a1;
+		border-color: rgba(2, 132, 199, 0.4);
+	}
+
+	:global([data-theme='dark']) .condition-bubble.cond-sp,
+	:global([data-theme='dark']) .condition-bubble.cond-lp {
 		color: #38bdf8;
 		border-color: rgba(56, 189, 248, 0.35);
 	}
 
 	.condition-bubble.cond-mp {
 		background: rgba(245, 158, 11, 0.16);
+		color: #92400e;
+		border-color: rgba(217, 119, 6, 0.4);
+	}
+
+	:global([data-theme='dark']) .condition-bubble.cond-mp {
 		color: #fbbf24;
 		border-color: rgba(245, 158, 11, 0.35);
 	}
 
 	.condition-bubble.cond-hp,
-	.condition-bubble.cond-po {
+	.condition-bubble.cond-po,
+	.condition-bubble.cond-dmg {
 		background: rgba(249, 115, 22, 0.16);
+		color: #9a3412;
+		border-color: rgba(234, 88, 12, 0.4);
+	}
+
+	:global([data-theme='dark']) .condition-bubble.cond-hp,
+	:global([data-theme='dark']) .condition-bubble.cond-po,
+	:global([data-theme='dark']) .condition-bubble.cond-dmg {
 		color: #fb923c;
 		border-color: rgba(249, 115, 22, 0.35);
 	}

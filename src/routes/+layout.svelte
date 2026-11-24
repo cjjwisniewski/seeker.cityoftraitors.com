@@ -11,6 +11,7 @@
 	import DemoBanner from '$lib/components/demo/DemoBanner.svelte';
 	import DemoAlertPreviewModal from '$lib/components/demo/DemoAlertPreviewModal.svelte';
 	import { PUBLIC_GET_BANNER_FUNCTION_URL } from '$env/static/public';
+	import { sanitizeInternalRedirect } from '$lib/utils/redirectUtils';
 
 	// Self-hosted fonts & icons (GDPR-compliant, no external font/icon CDNs)
 	import '@fontsource-variable/montserrat';
@@ -68,10 +69,7 @@
 			const hashParams = new URLSearchParams(window.location.hash.substring(1));
 			const token = hashParams.get('token');
 			const rawState = hashParams.get('state') || '/';
-			const state =
-				rawState.startsWith('/') && !rawState.startsWith('//') && !rawState.includes('\\')
-					? rawState
-					: '/';
+			const state = sanitizeInternalRedirect(rawState, window.location.origin);
 
 			if (token) {
 				console.log('Layout onMount: Found token in URL fragment. Handling callback...');

@@ -17,6 +17,7 @@
 	let initialConditions = {};
 	let buttonStates = {};
 	let faceIndices = {};
+	let variantReqSeq = {};
 
 	// Helper to resolve Scryfall WebP ('grid') image URI with fallbacks
 	function getCardImageUri(cardData) {
@@ -248,7 +249,7 @@
 		}
 	}
 
-	async function handleLanguageChange(card, language) {
+	async function handleLanguageChange(card, language, selectEl = null) {
 		if (!card || !language) return;
 
 		const currentPrint = card.all_prints?.find(
@@ -263,12 +264,18 @@
 			return;
 		}
 
+		const prevLanguage = card.selected_language || 'en';
+		const seq = (variantReqSeq[card.id] || 0) + 1;
+		variantReqSeq[card.id] = seq;
+
 		const cardUri = `https://api.scryfall.com/cards/${encodeURIComponent(currentPrint.set_code)}/${encodeURIComponent(currentPrint.collector_number)}/${encodeURIComponent(language)}`;
 
 		try {
 			const response = await fetch(cardUri);
+			if (variantReqSeq[card.id] !== seq) return;
 			if (!response.ok) throw new Error('Failed to fetch card data');
 			const cardData = await response.json();
+			if (variantReqSeq[card.id] !== seq) return;
 
 			const imageUri = getCardImageUri(cardData);
 			if (!imageUri) throw new Error('No image URI found');
@@ -330,6 +337,10 @@
 						...c,
 						image_uris: { grid: imageUri, normal: imageUri },
 						selected_language: language,
+						localized_id: card.localized_id,
+						localized_tcgplayer_id: card.localized_tcgplayer_id,
+						localized_tcgplayer_etched_id: card.localized_tcgplayer_etched_id,
+						localized_cardmarket_id: card.localized_cardmarket_id,
 						set: currentPrint.set_code,
 						collector_number: currentPrint.collector_number,
 						flavor_text,
@@ -343,7 +354,24 @@
 				return c;
 			});
 		} catch (error) {
+			if (variantReqSeq[card.id] !== seq) return;
 			console.error('Error fetching language-specific card data:', error);
+			if (selectEl) {
+				selectEl.value = prevLanguage;
+			}
+			buttonStates[card.id] = {
+				error: true,
+				success: false,
+				exists: false,
+				message: 'Language unavailable'
+			};
+			buttonStates = { ...buttonStates };
+			setTimeout(() => {
+				if (buttonStates[card.id]?.message === 'Language unavailable') {
+					buttonStates[card.id] = { error: false, success: false, exists: false };
+					buttonStates = { ...buttonStates };
+				}
+			}, 3000);
 		}
 	}
 
@@ -726,7 +754,7 @@
 										id="language-{card.id}"
 										value={card.selected_language || 'en'}
 										on:focus={() => handleLanguageDropdownOpen(card)}
-										on:change={(e) => handleLanguageChange(card, e.target.value)}
+										on:change={(e) => handleLanguageChange(card, e.currentTarget.value, e.currentTarget)}
 										aria-label="Select card language"
 									>
 										{#each card.available_languages as lang}
@@ -787,6 +815,12 @@
 									<span class="price-pill foil-price" title="Estimated Foil Market Price">
 										<span class="finish-glyph" aria-hidden="true">✦</span>
 										<span>Foil {formatCardPrice(currentPrices.usd_foil)}</span>
+									</span>
+								{/if}
+								{#if currentPrices?.usd_etched}
+									<span class="price-pill foil-price" title="Estimated Etched Market Price">
+										<span class="finish-glyph" aria-hidden="true">◆</span>
+										<span>Etched {formatCardPrice(currentPrices.usd_etched)}</span>
 									</span>
 								{/if}
 							</div>

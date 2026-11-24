@@ -49,10 +49,14 @@
     --transition-fast: 0.15s ease;
     --transition-normal: 0.3s ease;
     --transition-slow: 0.5s ease;
+
+    /* Set icon filter */
+    --set-icon-filter: none;
 }
 
 [data-theme='light'] {
     /* Explicit Light Theme */
+    --set-icon-filter: none;
     --color-bg-primary: #f8f9fa;
     --color-bg-secondary: #ffffff;
     --color-bg-elevated: #ffffff;
@@ -111,10 +115,12 @@
     --glass-border: rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 
-    /* Invert set icons in dark mode */
-    .set-icon {
-        filter: invert(0.9);
-    }
+    --set-icon-filter: invert(0.9);
+}
+
+/* Invert set icons in dark mode */
+[data-theme='dark'] .set-icon {
+    filter: var(--set-icon-filter);
 }
 
 * {

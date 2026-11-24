@@ -9,13 +9,13 @@
 	} from '$env/static/public';
 	import {
 		getCardKey,
-		languageMap,
 		isBasicLandCard,
 		parseDecklistText,
 		extractScryfallImage,
 		getWebpImageUri,
 		getSetIconCode
 	} from '$lib/utils/seekingUtils';
+	import { languageNames } from '$lib/utils/languageUtils';
 
 	export let show = false;
 	export let cards = [];
@@ -281,9 +281,7 @@
 
 				let availableLanguages = [];
 				if (langsSet && langsSet.size > 0) {
-					availableLanguages = Array.from(langsSet).filter(
-						(l) => languageMap[l] && l !== 'jp' && l !== 'kr'
-					);
+					availableLanguages = Array.from(langsSet).filter((l) => Boolean(languageNames[l]));
 				}
 				if (availableLanguages.length === 0) {
 					availableLanguages = ['en'];
@@ -862,10 +860,8 @@
 											class="import-select"
 											disabled={isResolvingImport}
 										>
-											{#each Object.entries(languageMap) as [code, label]}
-												{#if code !== 'jp' && code !== 'kr'}
-													<option value={code}>{label}</option>
-												{/if}
+											{#each Object.entries(languageNames) as [code, label]}
+												<option value={code}>{label}</option>
 											{/each}
 										</select>
 									</div>
@@ -910,10 +906,8 @@
 										class="import-select"
 										disabled={isResolvingImport}
 									>
-										{#each Object.entries(languageMap) as [code, label]}
-											{#if code !== 'jp' && code !== 'kr'}
-												<option value={code}>{label}</option>
-											{/if}
+										{#each Object.entries(languageNames) as [code, label]}
+											<option value={code}>{label}</option>
 										{/each}
 									</select>
 								</div>
