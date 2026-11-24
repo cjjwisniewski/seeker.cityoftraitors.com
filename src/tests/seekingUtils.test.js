@@ -198,7 +198,7 @@ describe('seekingUtils core pricing, badges, decklist parser, and CSV export', (
 		assert.equal(dataRow.includes('"\'=CMD|'), true);
 		assert.equal(dataRow.includes(',"\'+exo",'), true);
 		assert.equal(dataRow.includes(',"\'-143",'), true);
-		assert.equal(dataRow.includes(",'@NM,"), true);
+		assert.equal(dataRow.includes(',"\'@NM",'), true);
 		assert.equal(dataRow.includes('"\'=HYPERLINK('), true);
 	});
 });
