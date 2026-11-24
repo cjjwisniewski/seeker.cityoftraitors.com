@@ -221,9 +221,16 @@
 						</div>
 					{:else if !$auth.isLoading}
 						<!-- Offer both Demo Sandbox and Discord Login for public visitors -->
-						<a href="/demo" data-sveltekit-preload-data="off" class="login-button demo-nav-btn"
-							>Try Demo</a
+						<a
+							href="/demo"
+							data-sveltekit-preload-data="off"
+							class="login-button demo-nav-btn"
+							title="Try Demo"
+							aria-label="Try Demo"
 						>
+							<span class="demo-try-prefix">Try</span>
+							<span>Demo</span>
+						</a>
 						<a href="/login" class="login-button">Login</a>
 					{/if}
 				</div>
@@ -274,6 +281,11 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.nav-left {
+		flex-shrink: 0;
 	}
 
 	.brand-link {
@@ -480,6 +492,10 @@
 
 	/* Optional: Style for Login button */
 	.login-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.28em;
 		padding: 0.5rem 1.25rem;
 		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 		color: white;
@@ -487,6 +503,9 @@
 		text-decoration: none;
 		font-size: 0.9rem;
 		font-weight: 600;
+		line-height: 1.2;
+		white-space: nowrap;
+		flex-shrink: 0;
 		transition: all var(--transition-fast);
 		box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 	}
@@ -531,8 +550,21 @@
 	}
 
 	@media (max-width: 768px) {
+		nav {
+			padding: 0 0.75rem;
+		}
+
+		.nav-content {
+			gap: 0.5rem;
+		}
+
+		.brand-link {
+			gap: 0.35rem;
+		}
+
 		.nav-right {
-			gap: 0.45rem;
+			gap: 0.35rem;
+			min-width: 0;
 		}
 
 		.username,
@@ -541,10 +573,60 @@
 		}
 
 		.nav-link {
-			width: 34px;
-			height: 34px;
-			padding: 0.4rem;
+			width: 32px;
+			height: 32px;
+			padding: 0;
 			border-radius: 50%;
+			flex-shrink: 0;
+		}
+
+		.user-button {
+			gap: 0.35rem;
+			padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+		}
+
+		.login-button {
+			padding: 0.42rem 0.8rem;
+			font-size: 0.82rem;
+		}
+	}
+
+	@media (max-width: 480px) {
+		nav {
+			padding: 0 0.625rem;
+		}
+
+		.nav-content {
+			gap: 0.35rem;
+		}
+
+		h3 {
+			font-size: 1.05rem;
+		}
+
+		.nav-right {
+			gap: 0.25rem;
+		}
+
+		.nav-link {
+			width: 30px;
+			height: 30px;
+			font-size: 0.82rem;
+		}
+
+		.demo-try-prefix {
+			display: none;
+		}
+
+		.login-button {
+			padding: 0.38rem 0.65rem;
+			font-size: 0.78rem;
+		}
+	}
+
+	@media (max-width: 350px) {
+		nav h3 {
+			display: none;
 		}
 	}
 </style>
