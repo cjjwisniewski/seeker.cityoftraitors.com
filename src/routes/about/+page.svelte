@@ -551,4 +551,25 @@
 	.about-demo-cta:hover {
 		background: var(--color-primary-dark);
 	}
+
+	@media (max-width: 600px) {
+		.contact-card {
+			flex-wrap: wrap;
+			padding: 0.9rem 1rem;
+		}
+
+		.about-demo-cta {
+			margin-left: 0;
+			width: 100%;
+			justify-content: center;
+		}
+
+		.commands-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.marketplace-pills-grid {
+			grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		}
+	}
 </style>

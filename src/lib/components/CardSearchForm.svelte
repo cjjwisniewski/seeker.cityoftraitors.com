@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { onMount } from 'svelte';
-	import { getLanguageName, getAvailableLanguages } from '$lib/utils/languageUtils';
+	import { getAvailableLanguages } from '$lib/utils/languageUtils';
 	import { auth } from '$lib/stores/auth'; // Import auth store
 
 	const dispatch = createEventDispatcher();

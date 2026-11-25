@@ -1,14 +1,16 @@
 <script>
-	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 
 	export let message = '';
 	export let type = 'info'; // info, warning, error
 	export let enabled = false;
+	export let updatedAt = '';
 
 	let dismissed = false;
 
-	// Reset dismissal if the message changes
+	$: dismissKey = `${type}:${updatedAt || ''}:${message}`;
+
+	// Reset dismissal if the message, type, or version changes
 	$: if (message && browser) {
 		let savedDismissed = null;
 		try {
@@ -16,18 +18,14 @@
 		} catch {
 			/* ignore storage access errors */
 		}
-		if (savedDismissed !== message) {
-			dismissed = false;
-		} else {
-			dismissed = true;
-		}
+		dismissed = savedDismissed === dismissKey;
 	}
 
 	function dismiss() {
 		dismissed = true;
 		if (browser) {
 			try {
-				localStorage.setItem('banner_dismissed_message', message);
+				localStorage.setItem('banner_dismissed_message', dismissKey);
 			} catch {
 				/* ignore storage access errors */
 			}

@@ -4,7 +4,6 @@
 	import { fetchWithAuth } from '$lib/utils/api'; // Import global fetch helper
 	import { focusTrap } from '$lib/actions/focusTrap';
 	import { getSetIconCode, sanitizeExternalUrl } from '$lib/utils/seekingUtils';
-	import { goto } from '$app/navigation'; // For redirecting unauthorized users
 	import {
 		PUBLIC_GET_USER_TABLES_FUNCTION_URL,
 		PUBLIC_GET_SEEKING_LIST_FUNCTION_URL,
@@ -234,7 +233,7 @@
 	let requeuingUser = null; // userId currently being requeued
 	let requeueFeedback = null; // { userId, text, type }
 
-	async function handleRequeueChecks(targetUserId, username) {
+	async function handleRequeueChecks(targetUserId, _username) {
 		if (requeuingUser || !isAuthorized) return;
 		requeuingUser = targetUserId;
 		requeueFeedback = null;
@@ -2150,19 +2149,9 @@
 
 	<!-- Delete User Modal -->
 	{#if showDeleteModal}
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div
-			class="modal-overlay"
-			on:click={closeDeleteModal}
-			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' '))
-					closeDeleteModal();
-			}}
-			role="button"
-			tabindex="0"
-			aria-label="Close dialog"
-		>
-			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+		<div class="modal-overlay" on:click={closeDeleteModal}>
+			<!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal"
 				use:focusTrap
@@ -2200,18 +2189,9 @@
 
 	<!-- Edit Tier Modal -->
 	{#if showTierModal && userToEditTier}
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div
-			class="modal-overlay"
-			on:click={closeTierModal}
-			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closeTierModal();
-			}}
-			role="button"
-			tabindex="0"
-			aria-label="Close dialog"
-		>
-			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+		<div class="modal-overlay" on:click={closeTierModal}>
+			<!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal tier-modal"
 				use:focusTrap
@@ -2273,18 +2253,9 @@
 
 	<!-- Edit Admin Notes Modal -->
 	{#if showNotesModal && userToEditNotes}
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div
-			class="modal-overlay"
-			on:click={closeNotesModal}
-			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) closeNotesModal();
-			}}
-			role="button"
-			tabindex="0"
-			aria-label="Close dialog"
-		>
-			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+		<div class="modal-overlay" on:click={closeNotesModal}>
+			<!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal tier-modal"
 				use:focusTrap
@@ -2334,19 +2305,9 @@
 
 	<!-- Poison Queue Inspector Modal -->
 	{#if showPoisonModal && activePoisonQueue}
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div
-			class="modal-overlay"
-			on:click={closePoisonModal}
-			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' '))
-					closePoisonModal();
-			}}
-			role="button"
-			tabindex="0"
-			aria-label="Close poison inspector"
-		>
-			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+		<div class="modal-overlay" on:click={closePoisonModal}>
+			<!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal modal-wide"
 				use:focusTrap
@@ -2450,19 +2411,9 @@
 
 	<!-- Confirm Poison Queue Purge Modal -->
 	{#if showClearPoisonModal && poisonQueueToClear}
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div
-			class="modal-overlay"
-			on:click={closeClearPoisonModal}
-			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' '))
-					closeClearPoisonModal();
-			}}
-			role="button"
-			tabindex="0"
-			aria-label="Close poison purge confirmation"
-		>
-			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+		<div class="modal-overlay" on:click={closeClearPoisonModal}>
+			<!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal"
 				use:focusTrap
@@ -4903,7 +4854,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 1rem;
+		flex-wrap: wrap;
+		gap: 0.75rem 1rem;
 		width: 100%;
 		margin-top: 1.25rem;
 		padding-top: 1rem;
@@ -4913,6 +4865,7 @@
 	.poison-actions-group {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.65rem;
 	}
 

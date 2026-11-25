@@ -237,4 +237,28 @@
 		color: var(--color-text-secondary);
 		line-height: 1.4;
 	}
+
+	@media (max-width: 480px) {
+		.login-container {
+			padding: 1rem;
+		}
+
+		.login-box {
+			padding: 1.5rem 1.15rem;
+		}
+
+		.login-box h2 {
+			font-size: 1.55rem;
+		}
+
+		.login-button {
+			max-width: 100%;
+			padding: 0.8rem 1.25rem;
+		}
+
+		.demo-button {
+			padding: 0.75rem 1rem;
+			font-size: 0.86rem;
+		}
+	}
 </style>

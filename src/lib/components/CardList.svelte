@@ -1736,6 +1736,8 @@
 
 		.finish-segmented-picker {
 			justify-content: space-between;
+			flex-wrap: wrap;
+			gap: 0.35rem;
 			width: 100%;
 		}
 

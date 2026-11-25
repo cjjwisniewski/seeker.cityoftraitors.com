@@ -7,7 +7,6 @@
 		PUBLIC_DELETE_USER_ACCOUNT_FUNCTION_URL,
 		PUBLIC_UPDATE_USER_SETTING_FUNCTION_URL
 	} from '$env/static/public';
-	import { browser } from '$app/environment'; // To ensure code runs client-side
 	import { languageNames } from '$lib/utils/languageUtils'; // Import language support
 	import { resetDemoWorkspace } from '$lib/demo/demoStore';
 
@@ -50,45 +49,60 @@
 	// Split the user ID into chunks for readability without adding real spaces (facilitates copying)
 	$: userIdChunks = $auth.user?.id?.match(/.{1,4}/g) || [];
 
-	// Default settings derived from user payload
+	// Default settings derived from user payload (guarded against clobbering in-flight saves)
 	$: isAdmin =
 		!isDemo &&
 		(Boolean($auth.user?.isAdmin) || ($auth.user?.roles?.includes('1352632325640294411') ?? false));
 	$: isPremiumOrLegacy =
 		$auth.user?.membershipTier === 'Premium' || $auth.user?.membershipTier === 'Legacy';
-	$: stockAlertEnabled = $auth.user?.settings?.stockAlertEnabled ?? true;
-	$: stockDigestEnabled = $auth.user?.settings?.stockDigestEnabled ?? true;
-	$: stockDigestHourUtc = $auth.user?.settings?.stockDigestHourUtc ?? 13;
-	$: priceDropAlertEnabled = $auth.user?.settings?.priceDropAlertEnabled ?? true;
-	$: priceDropThreshold = $auth.user?.settings?.priceDropThreshold ?? 5;
-	$: preferredLanguage = $auth.user?.settings?.preferredLanguage || 'en';
-	$: preferredFinish = $auth.user?.settings?.preferredFinish || 'nonfoil';
-	$: minCondition = $auth.user?.settings?.minCondition || 'ANY';
-	$: marketplaceCardtraderEnabled = $auth.user?.settings?.marketplaceCardtraderEnabled ?? true;
-	$: marketplaceTcgplayerEnabled = isPremiumOrLegacy
-		? ($auth.user?.settings?.marketplaceTcgplayerEnabled ?? true)
-		: false;
-	$: marketplaceEbayEnabled = isPremiumOrLegacy
-		? ($auth.user?.settings?.marketplaceEbayEnabled ?? false)
-		: false;
-	$: marketplaceManapoolEnabled = isPremiumOrLegacy
-		? ($auth.user?.settings?.marketplaceManapoolEnabled ?? true)
-		: false;
-	$: marketplaceCardkingdomEnabled = isPremiumOrLegacy
-		? ($auth.user?.settings?.marketplaceCardkingdomEnabled ?? false)
-		: false;
-	$: marketplaceHimarketEnabled = isPremiumOrLegacy
-		? ($auth.user?.settings?.marketplaceHimarketEnabled ?? false)
-		: false;
-	$: marketplaceHareruyaEnabled = isPremiumOrLegacy
-		? ($auth.user?.settings?.marketplaceHareruyaEnabled ?? false)
-		: false;
-	$: marketplaceRutenEnabled = isPremiumOrLegacy
-		? ($auth.user?.settings?.marketplaceRutenEnabled ?? false)
-		: false;
-	$: marketplaceCardmarketEnabled = isAdmin
-		? ($auth.user?.settings?.marketplaceCardmarketEnabled ?? false)
-		: false;
+	let stockAlertEnabled = true;
+	let stockDigestEnabled = true;
+	let stockDigestHourUtc = 13;
+	let priceDropAlertEnabled = true;
+	let priceDropThreshold = 5;
+	let preferredLanguage = 'en';
+	let preferredFinish = 'nonfoil';
+	let minCondition = 'ANY';
+	let marketplaceCardtraderEnabled = true;
+	let marketplaceTcgplayerEnabled = false;
+	let marketplaceEbayEnabled = false;
+	let marketplaceManapoolEnabled = false;
+	let marketplaceCardkingdomEnabled = false;
+	let marketplaceHimarketEnabled = false;
+	let marketplaceHareruyaEnabled = false;
+	let marketplaceRutenEnabled = false;
+	let marketplaceCardmarketEnabled = false;
+
+	$: if (!isUpdatingSetting) {
+		const s = $auth.user?.settings;
+		stockAlertEnabled = s?.stockAlertEnabled ?? true;
+		stockDigestEnabled = s?.stockDigestEnabled ?? true;
+		stockDigestHourUtc = s?.stockDigestHourUtc ?? 13;
+		priceDropAlertEnabled = s?.priceDropAlertEnabled ?? true;
+		priceDropThreshold = s?.priceDropThreshold ?? 5;
+		preferredLanguage = s?.preferredLanguage || 'en';
+		preferredFinish = s?.preferredFinish || 'nonfoil';
+		minCondition = s?.minCondition || 'ANY';
+		marketplaceCardtraderEnabled = s?.marketplaceCardtraderEnabled ?? true;
+		marketplaceTcgplayerEnabled = isPremiumOrLegacy
+			? (s?.marketplaceTcgplayerEnabled ?? true)
+			: false;
+		marketplaceEbayEnabled = isPremiumOrLegacy ? (s?.marketplaceEbayEnabled ?? false) : false;
+		marketplaceManapoolEnabled = isPremiumOrLegacy
+			? (s?.marketplaceManapoolEnabled ?? true)
+			: false;
+		marketplaceCardkingdomEnabled = isPremiumOrLegacy
+			? (s?.marketplaceCardkingdomEnabled ?? false)
+			: false;
+		marketplaceHimarketEnabled = isPremiumOrLegacy
+			? (s?.marketplaceHimarketEnabled ?? false)
+			: false;
+		marketplaceHareruyaEnabled = isPremiumOrLegacy
+			? (s?.marketplaceHareruyaEnabled ?? false)
+			: false;
+		marketplaceRutenEnabled = isPremiumOrLegacy ? (s?.marketplaceRutenEnabled ?? false) : false;
+		marketplaceCardmarketEnabled = isAdmin ? (s?.marketplaceCardmarketEnabled ?? false) : false;
+	}
 	$: totalMarketplaceCount = isAdmin ? 9 : 8;
 	$: enabledMarketplaceCount = [
 		marketplaceCardtraderEnabled,
@@ -1141,19 +1155,9 @@
 
 	<!-- Delete Account Confirmation Modal -->
 	{#if showConfirmDialog}
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div
-			class="modal-overlay"
-			on:click={() => (showConfirmDialog = false)}
-			on:keydown={(e) => {
-				if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' '))
-					showConfirmDialog = false;
-			}}
-			role="button"
-			tabindex="0"
-			aria-label="Close dialog"
-		>
-			<!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+		<div class="modal-overlay" on:click={() => (showConfirmDialog = false)}>
+			<!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
 			<div
 				class="modal"
 				use:focusTrap
@@ -1532,16 +1536,19 @@
 	.user-id-pill {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.5rem;
+		flex-wrap: wrap;
+		gap: 0.4rem 0.5rem;
 		background: var(--color-bg-hover, rgba(0, 0, 0, 0.05));
 		border: 1px solid var(--color-border);
 		padding: 0.35rem 0.75rem;
-		border-radius: 9999px;
+		border-radius: 16px;
 		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-		font-size: 0.9rem;
+		font-size: 0.88rem;
 		font-weight: 600;
 		color: var(--color-text-primary);
 		width: fit-content;
+		max-width: 100%;
+		box-sizing: border-box;
 		letter-spacing: 0.02em;
 	}
 

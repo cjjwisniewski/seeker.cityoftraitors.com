@@ -1207,4 +1207,48 @@
 		border-radius: 50%;
 		object-fit: cover;
 	}
+
+	@media (max-width: 480px) {
+		.preview-tabs-bar {
+			padding: 0.55rem 0.75rem;
+		}
+
+		.preview-tabs {
+			flex-wrap: wrap;
+			width: 100%;
+		}
+
+		.preview-tabs button {
+			padding: 0.35rem 0.65rem;
+			font-size: 0.78rem;
+		}
+
+		.discord-chat-surface {
+			padding: 0.75rem;
+		}
+
+		.discord-message {
+			gap: 0.55rem;
+			padding: 0.25rem;
+		}
+
+		.bot-avatar-img {
+			width: 30px;
+			height: 30px;
+		}
+
+		.embed-top-row {
+			flex-direction: column-reverse;
+			gap: 0.65rem;
+		}
+
+		.embed-thumb {
+			width: 64px;
+			height: 90px;
+		}
+
+		.embed-fields-grid {
+			grid-template-columns: 1fr;
+		}
+	}
 </style>

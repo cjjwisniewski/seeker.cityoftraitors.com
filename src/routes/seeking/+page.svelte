@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
 	import { fetchWithAuth } from '$lib/utils/api';
+	import { focusTrap } from '$lib/actions/focusTrap';
 	import {
 		openDemoAlertPreviews,
 		demoResetNonce,
@@ -20,8 +21,6 @@
 		formatExactTimestamp,
 		getCardCooldownRemainingSec,
 		formatCooldownRemaining,
-		getStockIcon,
-		getStockColor,
 		getStockStatus,
 		formatPrice,
 		getLowestOffer,
@@ -106,7 +105,7 @@
 		try {
 			localStorage.setItem(
 				'seeker_seeking_prefs',
-				JSON.stringify({ sortKey, sortDirection, filterInStockOnly })
+				JSON.stringify({ sortKey, sortDirection, filterInStockOnly, filterFoilOnly })
 			);
 		} catch (e) {
 			/* Ignore storage access errors */
@@ -779,6 +778,9 @@
 				if (typeof parsed.filterInStockOnly === 'boolean') {
 					filterInStockOnly = parsed.filterInStockOnly;
 				}
+				if (typeof parsed.filterFoilOnly === 'boolean') {
+					filterFoilOnly = parsed.filterFoilOnly;
+				}
 			}
 		} catch (e) {
 			/* Ignore storage parse errors */
@@ -786,6 +788,10 @@
 		seekingPrefsReady = true;
 		lastDemoResetNonce = $demoResetNonce;
 		demoResetWatchReady = true;
+
+		if (typeof window !== 'undefined') {
+			window.addEventListener('pagehide', handlePageHide);
+		}
 
 		fetchScryfallSets();
 		cooldownInterval = setInterval(() => {
@@ -831,7 +837,16 @@
 		});
 	}
 
+	function handlePageHide() {
+		if (pendingDelete) {
+			flushPendingDelete({ keepalive: true });
+		}
+	}
+
 	onDestroy(() => {
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('pagehide', handlePageHide);
+		}
 		if (unsubscribe) {
 			unsubscribe();
 		}
@@ -917,7 +932,7 @@
 		}
 	}
 
-	async function commitCardDelete(card, restoreIndex = -1) {
+	async function commitCardDelete(card, restoreIndex = -1, { keepalive = false } = {}) {
 		error = null;
 		try {
 			const requestBody = {
@@ -929,7 +944,8 @@
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify(requestBody)
+				body: JSON.stringify(requestBody),
+				...(keepalive ? { keepalive: true } : {})
 			});
 
 			if (!response) {
@@ -961,12 +977,12 @@
 		cards = next;
 	}
 
-	function flushPendingDelete() {
+	function flushPendingDelete(options = {}) {
 		if (!pendingDelete) return;
 		const { card, index, timerId } = pendingDelete;
 		clearTimeout(timerId);
 		pendingDelete = null;
-		commitCardDelete(card, index);
+		commitCardDelete(card, index, options);
 	}
 
 	function undoPendingDelete() {
@@ -1137,7 +1153,14 @@
 		checkHeaderPinned();
 	}
 
-	$: if (searchQuery || filterInStockOnly || filterSetCode || sortKey || sortDirection) {
+	$: if (
+		searchQuery ||
+		filterInStockOnly ||
+		filterFoilOnly ||
+		filterSetCode ||
+		sortKey ||
+		sortDirection
+	) {
 		displayLimit = 100;
 	}
 
@@ -1555,12 +1578,25 @@
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="overlay-backdrop" on:click={() => (enlargedCardImage = null)}>
 		<!-- svelte-ignore a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
-		<img
-			src={enlargedCardImage}
-			alt="Enlarged card"
-			class="enlarged-card"
+		<div
+			class="lightbox-dialog"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Enlarged card preview"
+			tabindex="-1"
+			use:focusTrap
 			on:click|stopPropagation
-		/>
+		>
+			<button
+				type="button"
+				class="lightbox-close-btn"
+				aria-label="Close enlarged card preview"
+				on:click={() => (enlargedCardImage = null)}
+			>
+				<i class="fa-solid fa-xmark"></i>
+			</button>
+			<img src={enlargedCardImage} alt="Enlarged card" class="enlarged-card" />
+		</div>
 	</div>
 {/if}
 
@@ -2154,6 +2190,7 @@
 	<button
 		type="button"
 		class="scroll-top-btn"
+		class:has-bulk-bar={selectedKeys.size > 0}
 		on:click={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
 		title="Scroll to top"
 		aria-label="Scroll to top"
@@ -2182,6 +2219,13 @@
 	onClose={() => (showSettingsModal = false)}
 	onCardUpdated={(updatedCards, rekeyed) => {
 		cards = updatedCards;
+		if (rekeyed && selectedKeys.size > 0) {
+			const validKeys = new Set(updatedCards.map((c) => getCardKey(c)));
+			const nextSel = new Set([...selectedKeys].filter((k) => validKeys.has(k)));
+			if (nextSel.size !== selectedKeys.size) {
+				selectedKeys = nextSel;
+			}
+		}
 		if (rekeyed) {
 			if ($auth.isDemo) {
 				fetchSeekingList(true);
@@ -3011,7 +3055,7 @@
 		width: 100%;
 		height: 100%;
 		background-color: rgba(0, 0, 0, 0.85);
-		z-index: 1000;
+		z-index: 1100;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -3021,13 +3065,43 @@
 		animation: fadeIn 0.3s ease;
 	}
 
+	.lightbox-dialog {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		outline: none;
+	}
+
+	.lightbox-close-btn {
+		position: absolute;
+		top: -0.75rem;
+		right: -0.75rem;
+		width: 34px;
+		height: 34px;
+		border-radius: 50%;
+		border: 1px solid rgba(255, 255, 255, 0.25);
+		background: rgba(15, 23, 42, 0.9);
+		color: #ffffff;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		z-index: 1102;
+		transition: background-color var(--transition-fast);
+	}
+
+	.lightbox-close-btn:hover {
+		background: rgba(30, 41, 59, 1);
+	}
+
 	.enlarged-card {
 		max-width: 90vw;
 		max-height: 90vh;
 		object-fit: contain;
 		border-radius: 4.5% / 3.5%;
 		box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-		z-index: 1001;
+		z-index: 1101;
 		cursor: default;
 		animation: scaleIn 0.3s ease;
 	}
@@ -3197,6 +3271,10 @@
 		border-color: var(--color-primary);
 		color: var(--color-primary);
 		box-shadow: var(--shadow-lg);
+	}
+
+	.scroll-top-btn.has-bulk-bar {
+		bottom: 5.5rem;
 	}
 
 	.under-cap-summary {

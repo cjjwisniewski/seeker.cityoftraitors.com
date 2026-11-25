@@ -8,7 +8,7 @@
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check \"src/**/*.{js,ts,svelte}\" \"scripts/**/*.mjs\" \"static/theme-init.js\" && ESLINT_USE_FLAT_CONFIG=true eslint \"src/**/*.js\" \"scripts/**/*.mjs\" \"static/theme-init.js\"",
+		"lint": "prettier --check \"src/**/*.{js,ts,svelte}\" \"scripts/**/*.mjs\" \"static/theme-init.js\" && ESLINT_USE_FLAT_CONFIG=true eslint \"src/**/*.{js,ts,svelte}\" \"scripts/**/*.mjs\" \"static/theme-init.js\"",
 		"format": "prettier --write \"src/**/*.{js,ts,svelte}\" \"scripts/**/*.mjs\" \"static/theme-init.js\"",
 		"test": "node scripts/run-tests.mjs"
 	},
@@ -18,6 +18,8 @@
 		"@sveltejs/adapter-static": "^3.0.2",
 		"@sveltejs/kit": "^2.20.2",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"@typescript-eslint/eslint-plugin": "^7.18.0",
+		"@typescript-eslint/parser": "^7.18.0",
 		"eslint": "^8.56.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-svelte": "^2.35.1",
